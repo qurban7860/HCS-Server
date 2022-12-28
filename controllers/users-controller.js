@@ -3,12 +3,12 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const HttpError = require('../models/http-error');
-const User = require('../models/user');
+const models = require('../models');
 
 const getUsers = async (req, res, next) => {
   let users;
   try {
-    users = await User.find({}, '-password');
+    users = await models.Users.find({}, '-password');
   } catch (err) {
     const error = new HttpError(
       'Fetching users failed, please try again later.',
@@ -19,20 +19,6 @@ const getUsers = async (req, res, next) => {
   res.json({ users: users.map(user => user.toObject({ getters: true })) });
 };
 
-
-const getActiveUser = async (req, res, next) => {
-  let users;
-  try {
-    users = await User.find({}, '-password');
-  } catch (err) {
-    const error = new HttpError(
-      'Fetching users failed, please try again later.',
-      500
-    );
-    return next(error);
-  }
-  res.json({ users: users.map(user => user.toObject({ getters: true })) });
-};
 
 const signup = async (req, res, next) => {
   console.log(req);
@@ -47,7 +33,7 @@ const signup = async (req, res, next) => {
 
   let existingUser;
   try {
-    existingUser = await User.findOne({ email: email });
+    existingUser = await models.Users.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
       'Signing up failed, please try again later.',
@@ -134,7 +120,7 @@ const login = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await User.findOne({ email: email });
+    existingUser = await models.Users.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
       'Logging in failed, please try again later.',
@@ -201,7 +187,7 @@ const updateUserProfile = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await User.findOne({ email: email });
+    existingUser = await models.Users.findOne({ email: email });
     existingUser.update({_id:doc._id}, {$set:{scores:zz}});
   } catch (err) {
     const error = new HttpError(
