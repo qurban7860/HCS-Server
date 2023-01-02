@@ -3,10 +3,10 @@ const uniqueValidator = require('mongoose-unique-validator');
 
 const Schema = mongoose.Schema;
 
-const assetModelSchema = new Schema({
+const assetDepartmentSchema = new Schema({
     name: { type: String, unique: true },
 });
 
-assetModelSchema.plugin(uniqueValidator);
+assetDepartmentSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('AssetModel', assetModelSchema);
+module.exports = mongoose.model('AssetModel', assetDepartmentSchema);

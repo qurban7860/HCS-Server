@@ -14,7 +14,8 @@ const userSchema = new Schema({
   city: { type: String, required: false},
   zip: { type: String, required: false},
   about: { type: String, required: false},
-  // image: { type: String, required: false },
+  addedBy: { type: String },
+  image: { type: String, required: false },
   // places: [{ type: mongoose.Types.ObjectId, required: false, ref: 'Place' }]
 });
 

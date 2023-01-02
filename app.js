@@ -27,9 +27,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api/places', placesRoutes);
-app.use('/api/users', usersRoutes);
-app.use('/api/assets', assetsRoutes);
+app.use('/api/1.0.0/places', placesRoutes);
+app.use('/api/1.0.0/users', usersRoutes);
+app.use('/api/1.0.0/assets', assetsRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError('Could not find this route.', 404);

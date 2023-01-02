@@ -21,23 +21,7 @@ router.post(
 
 router.post('/login', controllers.userController.login);
 
-
-// router.post(
-//   '/signup',
-//   fileUpload.single('image'),
-//   [
-//     check('name')
-//       .not()
-//       .isEmpty(),
-//     check('email')
-//       .normalizeEmail()
-//       .isEmail(),
-//     check('password').isLength({ min: 6 })
-//   ],
-//   controllers.userController.signup
-// );
-
-
+router.post('/add-new-user', fileUpload.single('image'), controllers.userController.addNewUser);
 
 
 module.exports = router;

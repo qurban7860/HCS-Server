@@ -225,6 +225,61 @@ const updateUserProfile = async (req, res, next) => {
   });
 };
 
+const addNewUser = async (req, res, next) => {
+  const { name, phone, address, country, state, city, zip, about, addedBy } = req.body;
+
+  let existingUser;
+
+  try {
+    existingUser = await models.Users.findOne({ email: email });
+  } catch (err) {
+    const error = new HttpError(
+      'Operation failed. Please try again later.',
+      500
+    );
+    return next(error);
+  }
+
+  if (!existingUser) {
+ 
+   const createdUser = new models.Users({
+     name,
+     phone, 
+     address, 
+     country, 
+     state, 
+     city, 
+     zip, 
+     about,
+     addedBy,
+     image: req.file.path,
+   });
+ 
+   try {
+     const sess = await mongoose.startSession();
+     sess.startTransaction();
+     await createdUser.save();
+     await sess.commitTransaction();
+   } catch (err) {
+     const error = new HttpError(
+       err,
+       500
+     );
+     return next(error);
+   }
+ 
+   res.status(201).json({ user: createdUser });
+   }
+   else{
+      const error = new HttpError(
+      'User already exists. Please enter a different email',
+      403
+      );
+      return next(error);
+    }
+};
+
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
+exports.addNewUser = addNewUser;

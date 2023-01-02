@@ -10,12 +10,14 @@ const router = express.Router();
 
 router.use(checkAuth);
 
-router.post('/saveAsset',fileUpload.single('image'), controllers.assetController.saveAsset);
-router.post('/deleteAsset', controllers.assetController.deleteAsset);
-router.post('/updateAsset',fileUpload.single('image'), controllers.assetController.updateAsset);
+router.post('/',fileUpload.single('image'), controllers.assetController.saveAsset);
 
-router.get('/getAllAssets', controllers.assetController.getAssets);
+router.delete('/:id', controllers.assetController.deleteAsset);
 
+router.patch('/:id',fileUpload.single('image'), controllers.assetController.updateAsset);
 
+router.get('/', controllers.assetController.getAssets);
+
+router.get('/:id', controllers.assetController.getAssets);
 
 module.exports = router;
