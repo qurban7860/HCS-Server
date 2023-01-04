@@ -5,10 +5,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
-const placesRoutes = require('./routes/places-routes');
-const usersRoutes = require('./routes/users-routes');
-const assetsRoutes = require('./routes/assets-routes')
-const HttpError = require('./models/http-error');
+// const placesRoutes = require('./routes/places-routes');
+const usersRoutes = require('./user/routes/users-routes');
+const assetsRoutes = require('./asset/routes/assets-routes')
+const HttpError = require('./global/models/http-error');
 
 const app = express();
 
@@ -27,7 +27,7 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api/1.0.0/places', placesRoutes);
+// app.use('/api/1.0.0/places', placesRoutes);
 app.use('/api/1.0.0/users', usersRoutes);
 app.use('/api/1.0.0/assets', assetsRoutes);
 
