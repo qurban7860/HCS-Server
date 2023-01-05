@@ -1,3 +1,4 @@
+require("dotenv").config();
 const fs = require('fs');
 const path = require('path');
 
@@ -6,11 +7,13 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 
 // const placesRoutes = require('./routes/places-routes');
-const usersRoutes = require('./user/routes/users-routes');
-const assetsRoutes = require('./asset/routes/assets-routes')
+const usersRoutes = require('./appsrc/modules/user/routes/users-routes');
+const assetsRoutes = require('./appsrc/modules/asset/routes/assets-routes')
 const HttpError = require('./global/models/http-error');
 
 const app = express();
+
+const apiPath = `/api/${ process.env.API_VERSION }`;
 
 app.use(bodyParser.json());
 
@@ -28,8 +31,8 @@ app.use((req, res, next) => {
 });
 
 // app.use('/api/1.0.0/places', placesRoutes);
-app.use('/api/1.0.0/users', usersRoutes);
-app.use('/api/1.0.0/assets', assetsRoutes);
+app.use(`${ apiPath }/users`, usersRoutes);
+app.use(`${ apiPath }/assets`, assetsRoutes);
 
 app.use((req, res, next) => {
   const error = new HttpError('Could not find this route.', 404);
@@ -51,10 +54,10 @@ app.use((error, req, res, next) => {
 
 mongoose
   .connect(
-    'mongodb://localhost:27017/test-db'
+    `mongodb://localhost:27017/${ process.env.MONGODB_NAME }`
   )
   .then(() => {
-    app.listen(5000);
+    app.listen(process.env.PORT || 5000);
   })
   .catch(err => {
     console.log(err);
@@ -65,7 +68,7 @@ mongoose
     `mongodb+srv://academind:ORlnOPLKvIH9M9hP@cluster0-ntrwp.mongodb.net/mern?retryWrites=true&w=majority`
   )
   .then(() => {
-    app.listen(5000);
+    app.listen(process.env.PORT || 5000);
   })
   .catch(err => {
     console.log(err);

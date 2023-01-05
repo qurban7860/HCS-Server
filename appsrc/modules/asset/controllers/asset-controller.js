@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 
 const models = require('../models');
-const HttpError = require('../../global/models/http-error');
+const HttpError = require('../../../../global/models/http-error');
 
 
 // GET ASSETS
