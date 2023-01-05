@@ -52,6 +52,11 @@ app.use((error, req, res, next) => {
   res.json({ message: error.message || 'An unknown error occurred!' });
 });
 
+mongoose.set('useNewUrlParser', true);
+//mongoose.set('useFindAndModify', false);
+mongoose.set('useUnifiedTopology', true);
+mongoose.set('useCreateIndex', true);
+
 mongoose
   .connect(
     `mongodb://localhost:27017/${ process.env.MONGODB_NAME }`
@@ -63,6 +68,7 @@ mongoose
     console.log(err);
   });
 
+  /*
 mongoose
   .connect(
     `mongodb+srv://academind:ORlnOPLKvIH9M9hP@cluster0-ntrwp.mongodb.net/mern?retryWrites=true&w=majority`
@@ -73,3 +79,4 @@ mongoose
   .catch(err => {
     console.log(err);
   });
+  */
