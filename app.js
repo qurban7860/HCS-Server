@@ -57,12 +57,22 @@ mongoose.set('useNewUrlParser', true);
 mongoose.set('useUnifiedTopology', true);
 mongoose.set('useCreateIndex', true);
 
+console.log('MONGODB_HOST: '+ process.env.MONGODB_HOST);
+console.log('MONGODB_PORT: '+ process.env.MONGODB_PORT);
+console.log('MONGODB_NAME: '+ process.env.MONGODB_NAME);
+
+let dburl = `mongodb://${ process.env.MONGODB_HOST }:${ process.env.MONGODB_PORT }/${ process.env.MONGODB_NAME }`
+console.log('dburl: '+ dburl);
+
 mongoose
-  .connect(
-    `mongodb://localhost:27017/${ process.env.MONGODB_NAME }`
-  )
+  .connect(dburl)  
   .then(() => {
-    app.listen(process.env.PORT || 5000);
+    //app.listen(process.env.PORT || 3000);
+
+    app.listen({port: process.env.PORT || 3000}, () => {
+      console.log('Listening at http://localhost:3000/ ')
+    })
+
   })
   .catch(err => {
     console.log(err);
