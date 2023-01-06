@@ -13,7 +13,7 @@ const HttpError = require('./global/models/http-error');
 
 const app = express();
 
-const apiPath = `/api/${ process.env.API_VERSION }`;
+const apiPath = process.env.API_ROOT;
 
 app.use(bodyParser.json());
 
@@ -52,6 +52,7 @@ app.use((error, req, res, next) => {
   res.json({ message: error.message || 'An unknown error occurred!' });
 });
 
+// warning fixes
 mongoose.set('useNewUrlParser', true);
 //mongoose.set('useFindAndModify', false);
 mongoose.set('useUnifiedTopology', true);
@@ -67,26 +68,11 @@ console.log('dburl: '+ dburl);
 mongoose
   .connect(dburl)  
   .then(() => {
-    //app.listen(process.env.PORT || 3000);
-
-    app.listen({port: process.env.PORT || 3000}, () => {
-      console.log('Listening at http://localhost:3000/ ')
+    app.listen({port: process.env.APP_PORT || 3000}, () => {
+      console.log(`Listening at  ${process.env.APP_PORT}`)
     })
 
   })
   .catch(err => {
     console.log(err);
   });
-
-  /*
-mongoose
-  .connect(
-    `mongodb+srv://academind:ORlnOPLKvIH9M9hP@cluster0-ntrwp.mongodb.net/mern?retryWrites=true&w=majority`
-  )
-  .then(() => {
-    app.listen(process.env.PORT || 5000);
-  })
-  .catch(err => {
-    console.log(err);
-  });
-  */

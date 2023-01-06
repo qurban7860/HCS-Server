@@ -14,7 +14,7 @@ router.post('/',fileUpload.single('image'), controllers.assetController.saveAsse
 
 router.delete('/:id', controllers.assetController.deleteAsset);
 
-router.patch('/:id',fileUpload.single('image'), controllers.assetController.updateAsset);
+router.put('/:id', controllers.assetController.updateAsset);
 
 router.get('/', controllers.assetController.getAssets);
 
