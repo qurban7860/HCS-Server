@@ -61,7 +61,7 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  const createdUser = new User({
+  const createdUser = new models.Users({
     firstName,
     lastName,
     email,
