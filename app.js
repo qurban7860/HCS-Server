@@ -68,8 +68,8 @@ console.log('dburl: '+ dburl);
 mongoose
   .connect(dburl)  
   .then(() => {
-    app.listen({port: process.env.APP_PORT || 3000}, () => {
-      console.log(`Listening at  ${process.env.APP_PORT}`)
+    app.listen({port: process.env.APP_PORT || 3001}, () => {
+      console.log(`Listening at  http://${process.env.APP_DOMAIN_NAME}:${process.env.APP_PORT}/`)
     })
 
   })
