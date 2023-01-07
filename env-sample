@@ -1,8 +1,8 @@
 APP_CODE=hcs-server
 APP_NAME=Howick Cloud Services Backend
 ENV=dev
-APP_DOMAIN_NAME=
-APP_PORT=
+HOST_NAME=localhost
+PORT=3001
 SSL_Enabled_domain=
 
 
@@ -10,7 +10,7 @@ API_ROOT=/api/1.0.0
 
 MONGODB_HOST=127.0.0.1
 MONGODB_PORT=27017
-MONGODB_NAME=
+MONGODB_NAME=howickDB
 MONGODB_PASSWD=
 
 
