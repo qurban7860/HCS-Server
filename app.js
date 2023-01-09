@@ -15,7 +15,7 @@ require("dotenv").config();
 // const placesRoutes = require('./routes/places-routes');
 const usersRoutes = require('./appsrc/modules/user/routes/users-routes');
 const assetsRoutes = require('./appsrc/modules/asset/routes/assets-routes')
-const HttpError = require('./global/models/http-error');
+const HttpError = require('./appsrc/modules/config/models/http-error');
 
 const app = express();
 
