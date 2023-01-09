@@ -23,5 +23,16 @@ router.post('/login', controllers.userController.login);
 
 router.post('/add-new-user', fileUpload.single('image'), controllers.userController.addNewUser);
 
+//router.post('/',fileUpload.single('image'), controllers.userController.saveUser);
+
+//router.delete('/:id', controllers.userController.deleteUser);
+
+//router.put('/:id', controllers.userController.updateUser);
+
+//router.get('/', controllers.userController.getUsers);
+
+//router.get('/:id', controllers.userController.getUser);
+
+
 
 module.exports = router;

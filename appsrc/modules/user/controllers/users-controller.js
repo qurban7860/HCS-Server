@@ -5,11 +5,50 @@ const jwt = require('jsonwebtoken');
 const HttpError = require('../../../../global/models/http-error');
 const models = require('../models');
 
+function getToken(req) {
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.split(" ")[0] === "Bearer"
+  ) {
+    return req.headers.authorization.split(" ")[1];
+  } 
+  return null;
+}
+
+function validateUser(req){
+  const token = getToken(req);
+  if (!token) {
+    throw new Error("Authorization failed!");
+  } 
+  let secret = 'supersecret_dont_share';
+  jwt.verify(token, secret, function (err, decoded) {
+      if (err) {
+        throw new Error("Error : " + err);
+      }
+      //console.log(decoded);
+      //console.log('authorization successfull');
+  });
+  return true;
+}
+  
+
+
 const getUsers = async (req, res, next) => {
   let users;
   try {
-    users = await models.Users.find({}, '-password');
+    //console.log('going to fetch users')
+    if (validateUser(req)){
+      users = await models.Users.find({}, '-password');
+    }else{
+      const error = new HttpError(
+        'Request is rejected by validator.',
+        500
+      );
+      return next(error);
+    }
+    
   } catch (err) {
+    console.debug(err);
     const error = new HttpError(
       'Fetching users failed, please try again later.',
       500

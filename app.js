@@ -1,10 +1,16 @@
-require("dotenv").config();
+
 const fs = require('fs');
 const path = require('path');
 
 const express = require('express');
+
 const bodyParser = require('body-parser');
-const mongoose = require('mongoose');
+//const mongoose = require('mongoose');
+
+const mongoose = require('./appsrc/modules/db/dbConnection');
+
+require("dotenv").config();
+
 
 // const placesRoutes = require('./routes/places-routes');
 const usersRoutes = require('./appsrc/modules/user/routes/users-routes');
@@ -52,6 +58,7 @@ app.use((error, req, res, next) => {
   res.json({ message: error.message || 'An unknown error occurred!' });
 });
 
+/*
 // warning fixes
 mongoose.set('useNewUrlParser', true);
 //mongoose.set('useFindAndModify', false);
@@ -76,3 +83,8 @@ mongoose
   .catch(err => {
     console.log(err);
   });
+  */
+
+  app.listen({port: process.env.PORT || 3001}, () => {
+    console.log(`Listening at  http://${process.env.HOST_NAME}:${process.env.PORT}/`)
+  })

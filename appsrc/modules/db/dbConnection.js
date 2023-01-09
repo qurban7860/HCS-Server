@@ -1,0 +1,33 @@
+'use strict'
+
+require("dotenv").config();
+
+var mongoose = require('mongoose');
+
+//const dbUri = process.env.dbUri || "mongodb://127.0.0.1/mytestdb";
+
+console.log('MONGODB_HOST: '+ process.env.MONGODB_HOST);
+console.log('MONGODB_PORT: '+ process.env.MONGODB_PORT);
+console.log('MONGODB_NAME: '+ process.env.MONGODB_NAME);
+
+let dburl = `mongodb://${ process.env.MONGODB_HOST }:${ process.env.MONGODB_PORT }/${ process.env.MONGODB_NAME }`
+console.log('dburl: '+ dburl);
+
+const mongooseOptions = {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    //useFindAndModify: false,
+    useCreateIndex: true
+};
+
+mongoose.connect(dburl, mongooseOptions, function(err){
+
+    if (err){
+        console.log('error in db connection');
+        process.exit(1);
+    }else{
+        console.log('database is connected ........');
+    }
+})
+
+exports.mongoose = mongoose;
