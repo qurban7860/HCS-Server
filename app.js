@@ -14,7 +14,10 @@ require("dotenv").config();
 
 // const placesRoutes = require('./routes/places-routes');
 const usersRoutes = require('./appsrc/modules/user/routes/users-routes');
-const assetsRoutes = require('./appsrc/modules/asset/routes/assets-routes')
+const assetsRoutes = require('./appsrc/modules/asset/routes/assets-routes');
+const departmentRoutes = require('./appsrc/modules/department/routes/department-routes');
+const locationRoutes = require('./appsrc/modules/location/routes/location-routes');
+
 const HttpError = require('./appsrc/modules/config/models/http-error');
 
 const app = express();
@@ -39,6 +42,9 @@ app.use((req, res, next) => {
 // app.use('/api/1.0.0/places', placesRoutes);
 app.use(`${ apiPath }/users`, usersRoutes);
 app.use(`${ apiPath }/assets`, assetsRoutes);
+app.use(`${ apiPath }/locations`, locationRoutes);
+app.use(`${ apiPath }/departments`, departmentRoutes);
+
 
 app.use((req, res, next) => {
   const error = new HttpError('Could not find this route.', 404);
