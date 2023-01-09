@@ -8,15 +8,15 @@ const userSchema = new Schema({
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, minlength: 6 },
-  address: { type: String, required: false},
-  country: { type: String, required: false},
-  state: { type: String, required: false},
-  city: { type: String, required: false},
-  zip: { type: String, required: false},
-  about: { type: String, required: false},
+  address: { type: String, required: false },
+  country: { type: String, required: false },
+  state: { type: String, required: false },
+  city: { type: String, required: false },
+  zip: { type: String, required: false },
+  about: { type: String, required: false },
   addedBy: { type: String },
   image: { type: String, required: false },
-  status: { type: String, default: '1'}
+  status: { type: String, default: '1' }
   // places: [{ type: mongoose.Types.ObjectId, required: false, ref: 'Place' }]
 });
 

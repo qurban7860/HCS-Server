@@ -10,7 +10,7 @@ const router = express.Router();
 
 router.use(checkAuth);
 
-router.post('/',fileUpload.single('image'), controllers.assetController.saveAsset);
+router.post('/', fileUpload.single('image'), controllers.assetController.saveAsset);
 
 router.delete('/:id', controllers.assetController.deleteAsset);
 

@@ -43,8 +43,8 @@ const saveAsset = async (req, res, next) => {
   }
   // console.log(image);
   const { department, location, assetModel, name, notes, serial, status, assetTag
-   } = req.body;
-   console.log("req", req.body);
+  } = req.body;
+  console.log("req", req.body);
 
   const createdAsset = new models.Assets({
     name,
@@ -84,7 +84,7 @@ const updateAsset = async (req, res, next) => {
     );
   }
 
-  const { department, location, assetModel, name, notes, serial, status, assetTag, 
+  const { department, location, assetModel, name, notes, serial, status, assetTag,
     replaceImage
   } = req.body;
   const assetID = req.body.id;

@@ -11,42 +11,42 @@ function getToken(req) {
     req.headers.authorization.split(" ")[0] === "Bearer"
   ) {
     return req.headers.authorization.split(" ")[1];
-  } 
+  }
   return null;
 }
 
-function validateUser(req){
+function validateUser(req) {
   const token = getToken(req);
   if (!token) {
     throw new Error("Authorization failed!");
-  } 
+  }
   let secret = 'supersecret_dont_share';
   jwt.verify(token, secret, function (err, decoded) {
-      if (err) {
-        throw new Error("Error : " + err);
-      }
-      //console.log(decoded);
-      //console.log('authorization successfull');
+    if (err) {
+      throw new Error("Error : " + err);
+    }
+    //console.log(decoded);
+    //console.log('authorization successfull');
   });
   return true;
 }
-  
+
 
 
 const getUsers = async (req, res, next) => {
   let users;
   try {
     //console.log('going to fetch users')
-    if (validateUser(req)){
+    if (validateUser(req)) {
       users = await models.Users.find({}, '-password');
-    }else{
+    } else {
       const error = new HttpError(
         'Request is rejected by validator.',
         500
       );
       return next(error);
     }
-    
+
   } catch (err) {
     console.debug(err);
     const error = new HttpError(
@@ -148,7 +148,7 @@ const signup = async (req, res, next) => {
       userId: createdUser.id,
       user: {
         email: createdUser.email,
-        displayName: createdUser.firstName.concat(" ",createdUser.lastName),
+        displayName: createdUser.firstName.concat(" ", createdUser.lastName),
       },
     });;
 };
@@ -215,7 +215,7 @@ const login = async (req, res, next) => {
     userId: existingUser.id,
     user: {
       email: existingUser.email,
-      displayName: existingUser.firstName.concat(" ",existingUser.lastName),
+      displayName: existingUser.firstName.concat(" ", existingUser.lastName),
     },
   });
 };
@@ -227,7 +227,7 @@ const updateUserProfile = async (req, res, next) => {
 
   try {
     existingUser = await models.Users.findOne({ email: email });
-    existingUser.update({_id:doc._id}, {$set:{scores:zz}});
+    existingUser.update({ _id: doc._id }, { $set: { scores: zz } });
   } catch (err) {
     const error = new HttpError(
       'Operation failed. Please try again later.',
@@ -259,7 +259,7 @@ const updateUserProfile = async (req, res, next) => {
     userId: existingUser.id,
     user: {
       email: existingUser.email,
-      displayName: existingUser.firstName.concat(" ",existingUser.lastName),
+      displayName: existingUser.firstName.concat(" ", existingUser.lastName),
     },
   });
 };
@@ -281,54 +281,54 @@ const addNewUser = async (req, res, next) => {
 
   if (!existingUser) {
 
-  let hashedPassword;
-   try {
-     hashedPassword = await bcrypt.hash(password, 12);
-   } catch (err) {
-     const error = new HttpError(
-       'Could not create user, please try again.',
-       500
-     );
-     return next(error);
-   }
- 
-   const createdUser = new models.Users({
-     firstName,
-     lastName,
-     password: hashedPassword,
-     phone, 
-     address, 
-     country, 
-     state, 
-     city, 
-     zip, 
-     about,
-     addedBy,
-     image: req.file.path,
-   });
- 
-   try {
-     const sess = await mongoose.startSession();
-     sess.startTransaction();
-     await createdUser.save();
-     await sess.commitTransaction();
-   } catch (err) {
-     const error = new HttpError(
-       err,
-       500
-     );
-     return next(error);
-   }
- 
-   res.status(201).json({ user: createdUser });
-   }
-   else{
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(password, 12);
+    } catch (err) {
       const error = new HttpError(
-      'User already exists. Please enter a different email',
-      403
+        'Could not create user, please try again.',
+        500
       );
       return next(error);
     }
+
+    const createdUser = new models.Users({
+      firstName,
+      lastName,
+      password: hashedPassword,
+      phone,
+      address,
+      country,
+      state,
+      city,
+      zip,
+      about,
+      addedBy,
+      image: req.file.path,
+    });
+
+    try {
+      const sess = await mongoose.startSession();
+      sess.startTransaction();
+      await createdUser.save();
+      await sess.commitTransaction();
+    } catch (err) {
+      const error = new HttpError(
+        err,
+        500
+      );
+      return next(error);
+    }
+
+    res.status(201).json({ user: createdUser });
+  }
+  else {
+    const error = new HttpError(
+      'User already exists. Please enter a different email',
+      403
+    );
+    return next(error);
+  }
 };
 
 exports.getUsers = getUsers;

@@ -1,4 +1,4 @@
 'use strict'
 module.exports = {
-    Users:require( './user'),
+    Users: require('./user'),
 }
