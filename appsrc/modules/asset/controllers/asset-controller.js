@@ -46,7 +46,7 @@ const saveAsset = async (req, res, next) => {
   } = req.body;
   console.log("req", req.body);
 
-  const createdAsset = new models.Assets({
+  const assetSchema = new models.Assets({
     name,
     status,
     assetTag,
@@ -61,7 +61,7 @@ const saveAsset = async (req, res, next) => {
   try {
     const sess = await mongoose.startSession();
     sess.startTransaction();
-    await createdAsset.save();
+    await assetSchema.save();
     await sess.commitTransaction();
   } catch (err) {
     const error = new HttpError(
@@ -71,7 +71,7 @@ const saveAsset = async (req, res, next) => {
     return next(error);
   }
 
-  res.status(201).json({ asset: createdAsset });
+  res.status(201).json({ asset: assetSchema });
 };
 
 

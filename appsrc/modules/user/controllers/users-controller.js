@@ -25,8 +25,6 @@ function validateUser(req) {
     if (err) {
       throw new Error("Error : " + err);
     }
-    //console.log(decoded);
-    //console.log('authorization successfull');
   });
   return true;
 }
@@ -36,7 +34,6 @@ function validateUser(req) {
 const getUsers = async (req, res, next) => {
   let users;
   try {
-    //console.log('going to fetch users')
     if (validateUser(req)) {
       users = await models.Users.find({}, '-password');
     } else {
@@ -106,15 +103,6 @@ const signup = async (req, res, next) => {
     email,
     password: hashedPassword,
   });
-
-  // const createdUser = new User({
-  //   firstName,
-  //   lastName,
-  //   email,
-  //   image: req.file.path,
-  //   password: hashedPassword,
-  //   places: []
-  // });
 
   try {
     await createdUser.save();
@@ -264,7 +252,7 @@ const updateUserProfile = async (req, res, next) => {
   });
 };
 
-const addNewUser = async (req, res, next) => {
+const newUser = async (req, res, next) => {
   const { firstName, lastName, phone, address, country, state, city, zip, about, addedBy } = req.body;
 
   let existingUser;
@@ -334,4 +322,4 @@ const addNewUser = async (req, res, next) => {
 exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
-exports.addNewUser = addNewUser;
+exports.newUser = newUser;

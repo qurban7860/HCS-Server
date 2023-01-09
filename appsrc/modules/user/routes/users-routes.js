@@ -21,7 +21,7 @@ router.post(
 
 router.post('/login', controllers.userController.login);
 
-router.post('/add-new-user', fileUpload.single('image'), controllers.userController.addNewUser);
+router.post('/add-new-user', fileUpload.single('image'), controllers.userController.newUser);
 
 //router.post('/',fileUpload.single('image'), controllers.userController.saveUser);
 
