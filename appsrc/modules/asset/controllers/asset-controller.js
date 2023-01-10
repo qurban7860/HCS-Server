@@ -5,35 +5,20 @@ const mongoose = require('mongoose');
 
 const models = require('../models');
 const HttpError = require('../../../../appsrc/modules/config/models/http-error');
+let dbFunctions = require('../../db/dbFunctions')
 
+this.db = new dbFunctions(models.Assets);
 
-// GET ASSETS
+//Error Handling is pending in response
 const getAssets = async (req, res, next) => {
-  let assets;
-  try {
-    assets = await models.Assets.find();
-  } catch (err) {
-    const error = new HttpError(
-      'Something went wrong, could not find a Assets.',
-      500
-    );
-    return next(error);
-  }
-
-  if (!assets) {
-    const error = new HttpError(
-      'No Assets Found',
-      404
-    );
-    return next(error);
-  }
-
-  res.json({ assets: assets });
-
+    this.db.getArray(null,{} , null, null, response);
+    function response(error, data) {    
+      error ? "": res.json({ assets: data });
+    }
 };
 
 
-// SAVE ASSET
+//Error Handling is pending in response
 const saveAsset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -41,10 +26,8 @@ const saveAsset = async (req, res, next) => {
       new HttpError('Invalid inputs passed, please check your data.', 422)
     );
   }
-  // console.log(image);
   const { department, location, assetModel, name, notes, serial, status, assetTag
   } = req.body;
-  console.log("req", req.body);
 
   const assetSchema = new models.Assets({
     name,
@@ -58,77 +41,67 @@ const saveAsset = async (req, res, next) => {
     image: req.file.path,
   });
 
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await assetSchema.save();
-    await sess.commitTransaction();
-  } catch (err) {
-    const error = new HttpError(
-      err,
-      500
-    );
-    return next(error);
+  this.db.saveObject(assetSchema, response);
+  function response(error, data) {      
+    error ? "": res.status(201).json({ asset: data });
   }
-
-  res.status(201).json({ asset: assetSchema });
 };
 
 
-// UPDATE ASSET
-const updateAsset = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return next(
-      new HttpError('Invalid inputs passed, please check your data.', 422)
-    );
-  }
+// // UPDATE ASSET
+// const updateAsset = async (req, res, next) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     return next(
+//       new HttpError('Invalid inputs passed, please check your data.', 422)
+//     );
+//   }
 
-  const { department, location, assetModel, name, notes, serial, status, assetTag,
-    replaceImage
-  } = req.body;
-  const assetID = req.body.id;
+//   const { department, location, assetModel, name, notes, serial, status, assetTag,
+//     replaceImage
+//   } = req.body;
+//   const assetID = req.body.id;
 
-  let updatedAsset;
-  try {
-    updatedAsset = await models.Assets.findById(assetID);
-    updatedAsset.name = name;
-    updatedAsset.assetTag = assetTag;
-    updatedAsset.department = department;
-    updatedAsset.location = location;
-    updatedAsset.assetModel = assetModel;
-    updatedAsset.notes = notes;
-    updatedAsset.serial = serial;
-    updatedAsset.status = status;
-    updated.image = req.file.path;
+//   let updatedAsset;
+//   try {
+//     updatedAsset = await models.Assets.findById(assetID);
+//     updatedAsset.name = name;
+//     updatedAsset.assetTag = assetTag;
+//     updatedAsset.department = department;
+//     updatedAsset.location = location;
+//     updatedAsset.assetModel = assetModel;
+//     updatedAsset.notes = notes;
+//     updatedAsset.serial = serial;
+//     updatedAsset.status = status;
+//     updated.image = req.file.path;
 
 
-    // if(replaceImage){
-    //   asset = await models.Assets.findByIdAndUpdate(assetID, {$set: assetData});
-    // }
-  } catch (err) {
-    const error = new HttpError(
-      err,
-      500
-    );
-    return next(error);
-  }
+//     // if(replaceImage){
+//     //   asset = await models.Assets.findByIdAndUpdate(assetID, {$set: assetData});
+//     // }
+//   } catch (err) {
+//     const error = new HttpError(
+//       err,
+//       500
+//     );
+//     return next(error);
+//   }
 
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await updatedAsset.save();
-    await sess.commitTransaction();
-  } catch (err) {
-    const error = new HttpError(
-      err,
-      500
-    );
-    return next(error);
-  }
+//   try {
+//     const sess = await mongoose.startSession();
+//     sess.startTransaction();
+//     await updatedAsset.save();
+//     await sess.commitTransaction();
+//   } catch (err) {
+//     const error = new HttpError(
+//       err,
+//       500
+//     );
+//     return next(error);
+//   }
 
-  res.status(200).json({ asset: updatedAsset });
-};
+//   res.status(200).json({ asset: updatedAsset });
+// };
 
 
 // DELETE ASSET
