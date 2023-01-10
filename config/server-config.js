@@ -10,10 +10,10 @@ const setHeaders = require('../middleware/set-header');
 const errorHandler = require('../middleware/error-handler');
 
 // ROUTES
-const usersRoutes = require('../appsrc/modules/user/routes/users-routes');
-const assetsRoutes = require('../appsrc/modules/asset/routes/assets-routes');
-const departmentRoutes = require('../appsrc/modules/department/routes/department-routes');
-const locationRoutes = require('../appsrc/modules/location/routes/location-routes');
+const usersRoutes = require('../appsrc/modules/user/routes/user-route');
+const assetsRoutes = require('../appsrc/modules/asset/routes/asset-route');
+const departmentRoutes = require('../appsrc/modules/department/routes/department-route');
+const locationRoutes = require('../appsrc/modules/customer/routes/location-route');
 
 
 /**
