@@ -2,7 +2,7 @@ const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 
 const models = require('../models');
-const HttpError = require('../../../../appsrc/modules/config/models/http-error');
+const HttpError = require('../../config/models/http-error');
 
 
 // GET DEPARTMENTS

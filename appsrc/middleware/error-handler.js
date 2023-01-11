@@ -1,4 +1,4 @@
-const HttpError = require('../../appsrc/modules/config/models/http-error');
+const HttpError = require('../modules/config/models/http-error');
 
 module.exports = (error, req, res, next) => {
     if (req.file) {
