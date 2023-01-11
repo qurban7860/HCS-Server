@@ -6,8 +6,8 @@ class dbFunctions {
     this.model = model;
   }
 
-  getArray(fields, query, sort, order, callback) {
-    this.model.find(query).exec((err, documents) => {
+  getArray(fields, query, orderBy, callback) {
+    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err);
       } else {
