@@ -6,18 +6,18 @@ const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 
 const router = express.Router();
-
+this.cntrl = controllers.assetController;
 
 router.use(checkAuth);
 
-router.post('/', fileUpload.single('image'), controllers.assetController.saveAsset);
+router.post('/', fileUpload.single('image'), this.cntrl.saveAsset);
 
-router.delete('/:id', controllers.assetController.deleteAsset);
+router.delete('/:id', this.cntrl.deleteAsset);
 
-router.put('/:id', controllers.assetController.updateAsset);
+router.put('/:id', this.cntrl.updateAsset);
 
-router.get('/', controllers.assetController.getAssets);
+router.get('/', this.cntrl.getAssets);
 
-router.get('/:id', controllers.assetController.getAssets);
+router.get('/:id', this.cntrl.getAssets);
 
 module.exports = router;

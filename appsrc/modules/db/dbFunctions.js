@@ -28,6 +28,16 @@ class dbFunctions {
     });
   }
 
+  deleteObject(id, callback) {
+    models.Assets.deleteOne({ _id: id }).then(function (result) {
+      callback(null, result);
+    }).catch(function (err) {
+      callback(err);
+    });
+  }
+
+
+
 
 }
 
