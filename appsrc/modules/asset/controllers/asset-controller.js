@@ -21,11 +21,11 @@ this.orderBy = { name: 1 };
 
 exports.getAssets = async (req, res, next) => {
   this.db.getList(this.fields, this.query, this.orderBy, response);
-  function response(error, data) {
+  function response(error, responce) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json({ data });
+      res.json( responce );
     }
   }
 };
