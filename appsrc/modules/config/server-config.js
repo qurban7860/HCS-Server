@@ -31,9 +31,9 @@ class App {
    */
   constructor() {
     this.app = express();
+    this.app.use(bodyParser.json());
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
-    this.app.use(bodyParser.json());
     this.registerRoutes();
     this.app.use(errorHandler);
   }

@@ -70,7 +70,7 @@ exports.saveAsset = async (req, res, next) => {
   }
 };
 
-exports.updateAsset = async (req, res, next) => { 
+exports.updateAsset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return next(
@@ -78,15 +78,14 @@ exports.updateAsset = async (req, res, next) => {
     );
   }
 
-  const { department, location, assetModel, name, notes, serial, status, assetTag,
+  const { department, location, assetModel, name, notes, serial, status, assetTag, imagePath,
     replaceImage
   } = req.body;
-  console.log('BDY', name);
   const assetID = req.params.id;
-  console.log('CONSLOLE', assetID);
+  console.log(assetID);
   let updatedAsset
   try {
-    updatedAsset = await models.Assets.findByIdAndUpdate(
+    updatedAsset = await models.Assets.updateOne(
       { _id: assetID },
       {
         name,
@@ -97,6 +96,7 @@ exports.updateAsset = async (req, res, next) => {
         location,
         department,
         notes,
+        image: replaceImage == true ? req.file.path : imagePath,
       }
     );
   } catch (err) {

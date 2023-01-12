@@ -29,5 +29,6 @@ mongoose.connect(dburl, mongooseOptions, function (err) {
         console.log('database is connected ........');
     }
 })
+mongoose.set('useFindAndModify', false);
 
 exports.mongoose = mongoose;
