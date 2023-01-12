@@ -18,6 +18,16 @@ this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };
 
+
+
+/**
+ * get Assets arraylist
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
+
 exports.getAsset = async (req, res, next) => {
   this.db.getObjectById(this.fields, req.params.id, response);
   function response(error, responce) {
@@ -29,7 +39,13 @@ exports.getAsset = async (req, res, next) => {
   }
 };
 
-
+/**
+ * get Assets arraylist
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
 exports.getAssets = async (req, res, next) => {
   this.db.getList(this.fields, this.query, this.orderBy, response);
   function response(error, responce) {
@@ -41,6 +57,13 @@ exports.getAssets = async (req, res, next) => {
   }
 };
 
+/**
+ * delete asset function
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
 exports.deleteAsset = async (req, res, next) => {
   this.db.deleteObject(req.params.id, response);
   function response(error, result) {
@@ -52,6 +75,13 @@ exports.deleteAsset = async (req, res, next) => {
   }
 };
 
+/**
+ * add asset function
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
 exports.postAsset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -81,6 +111,13 @@ exports.postAsset = async (req, res, next) => {
   }
 };
 
+/**
+ * update Asset function
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
 exports.putAsset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
