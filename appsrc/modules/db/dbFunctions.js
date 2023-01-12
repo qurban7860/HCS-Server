@@ -6,7 +6,17 @@ class dbFunctions {
     this.model = model;
   }
 
-  getArray(fields, query, orderBy, callback) {
+  getObjectById(fields, query, orderBy, callback) {
+    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, documents);
+      }
+    });
+  }
+
+  getObject(fields, query, orderBy, callback) {
     this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err);
@@ -17,7 +27,18 @@ class dbFunctions {
   }
 
 
-  saveObject(Object, callback) {
+  getList(fields, query, orderBy, callback) {
+    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
+      if (err) {
+        callback(err);
+      } else {
+        callback(null, documents);
+      }
+    });
+  }
+
+
+  postObject(Object, callback) {
     Object.save((error, data) => {
       if (error) {
         console.error(error);
@@ -30,6 +51,15 @@ class dbFunctions {
 
   deleteObject(id, callback) {
     models.Assets.deleteOne({ _id: id }).then(function (result) {
+      callback(null, result);
+    }).catch(function (err) {
+      callback(err);
+    });
+  }
+
+
+  putObject(id, assetSchema, callback) {
+    models.Assets.updateOne({ _id: id, assetSchema}).then(function (result) {
       callback(null, result);
     }).catch(function (err) {
       callback(err);
