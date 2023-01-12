@@ -10,14 +10,15 @@ this.cntrl = controllers.assetController;
 
 router.use(checkAuth);
 
-router.post('/', fileUpload.single('image'), this.cntrl.saveAsset);
 
-router.delete('/:id', this.cntrl.deleteAsset);
+router.post('/', fileUpload.single('image'), this.cntrl.postAsset);
 
-// router.put('/:id', fileUpload.single('image'), this.cntrl.updateAsset);
+router.get('/:id', this.cntrl.getAsset);
 
 router.get('/', this.cntrl.getAssets);
 
-// router.get('/:id', this.cntrl.getAssets);
+router.put('/:id', fileUpload.single('image'), this.cntrl.putAsset);
+
+router.delete('/:id', this.cntrl.deleteAsset);
 
 module.exports = router;

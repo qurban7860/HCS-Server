@@ -6,8 +6,8 @@ class dbFunctions {
     this.model = model;
   }
 
-  getObjectById(fields, query, orderBy, callback) {
-    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
+  getObjectById(fields, id, callback) {
+    this.model.findById(id, fields).exec((err, documents) => {
       if (err) {
         callback(err);
       } else {
@@ -15,17 +15,6 @@ class dbFunctions {
       }
     });
   }
-
-  getObject(fields, query, orderBy, callback) {
-    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
-      if (err) {
-        callback(err);
-      } else {
-        callback(null, documents);
-      }
-    });
-  }
-
 
   getList(fields, query, orderBy, callback) {
     this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
@@ -58,17 +47,13 @@ class dbFunctions {
   }
 
 
-  putObject(id, assetSchema, callback) {
-    models.Assets.updateOne({ _id: id, assetSchema}).then(function (result) {
-      callback(null, result);
+  putObject(id, scheme, callback) {
+    models.Assets.updateOne({ _id: id}, scheme).then(function (doc) {
+      callback(null, doc);
     }).catch(function (err) {
       callback(err);
     });
   }
-
-
-
-
 }
 
 

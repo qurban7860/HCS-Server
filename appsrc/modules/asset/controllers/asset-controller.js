@@ -18,6 +18,17 @@ this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };
 
+exports.getAsset = async (req, res, next) => {
+  this.db.getObjectById(this.fields, req.params.id, response);
+  function response(error, responce) {
+    if (error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(responce);
+    }
+  }
+};
+
 
 exports.getAssets = async (req, res, next) => {
   this.db.getList(this.fields, this.query, this.orderBy, response);
@@ -25,7 +36,7 @@ exports.getAssets = async (req, res, next) => {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json( responce );
+      res.json(responce);
     }
   }
 };
@@ -36,12 +47,12 @@ exports.deleteAsset = async (req, res, next) => {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.status(StatusCodes.OK).send(rtnMsg.deleteMsg(result));
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
 };
 
-exports.saveAsset = async (req, res, next) => {
+exports.postAsset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -70,104 +81,19 @@ exports.saveAsset = async (req, res, next) => {
   }
 };
 
-// exports.updateAsset = async (req, res, next) => {
-//   console.log("ok....");
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     return next(
-//       new HttpError('Invalid inputs passed, please check your data.', 422)
-//     );
-//   }
-
-//   const { department, location, assetModel, name, notes, serial, status, assetTag, imagePath,
-//     replaceImage
-//   } = req.body;
-//   const assetID = req.params.id;
-//   console.log(assetID);
-//   let updatedAsset
-//   try {
-//     updatedAsset = await models.Assets.updateOne(
-//       { _id: assetID },
-//       {
-//         name,
-//         status,
-//         assetTag,
-//         assetModel,
-//         serial,
-//         location,
-//         department,
-//         notes,
-//         image: replaceImage == true ? req.file.path : imagePath,
-//       }
-//     );
-//   } catch (err) {
-//     const error = new HttpError(
-//       err,
-//       500
-//     );
-//     return next(error);
-//   }
-
-//   res.status(200).json({ asset: updatedAsset });
-// };
-
-
-
-// exports.updateAsset = async (req, res, next) => {
-//   const { department, location, assetModel, name, notes, serial, status, assetTag, imagePath,
-//     replaceImage
-//   } = req.body;
-//   const assetSchema = new models.Assets({
-//     name,
-//     status,
-//     assetTag,
-//     assetModel,
-//     serial,
-//     location,
-//     department,
-//     notes,
-//     image: replaceImage == true ? req.file.path : imagePath
-//   });
-// exports.updateAsset = async (req, res, next) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     return next(
-//       new HttpError('Invalid inputs passed, please check your data.', 422)
-//     );
-//   }
-//   const { department, location, assetModel, name, notes, serial, status, assetTag, 
-//     imagePath
-//   } = req.body;
-//   const assetID = req.params.id;
-//   let updatedAsset
-//   try {
-//     updatedAsset = await models.Assets.updateOne(
-//       { _id: assetID },
-//       {
-//         name,
-//         status,
-//         assetTag,
-//         assetModel,
-//         serial,
-//         location,
-//         department,
-//         notes,
-//         image: req.file == undefined ? imagePath : req.file.path,
-//       }
-//     );
-//   } catch (err) {
-//     const error = new HttpError(
-//       err,
-//       500
-//     );
-//     return next(error);
-//   }
-
-  // this.db.putObject(req.params.id, assetSchema, response);
-  // function response(error, result) {
-  //   if (error) {
-  //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-  //   } else {
-  //     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-  //   }
-  // }
+exports.putAsset = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
+    this.db.putObject(req.params.id, req.body, response);
+    function response(error, result) {
+      if (error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+      }
+    }
+  }
+};
