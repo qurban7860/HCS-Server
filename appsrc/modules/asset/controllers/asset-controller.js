@@ -77,12 +77,10 @@ exports.updateAsset = async (req, res, next) => {
       new HttpError('Invalid inputs passed, please check your data.', 422)
     );
   }
-
-  const { department, location, assetModel, name, notes, serial, status, assetTag, imagePath,
-    replaceImage
+  const { department, location, assetModel, name, notes, serial, status, assetTag, 
+    imagePath
   } = req.body;
   const assetID = req.params.id;
-  console.log(assetID);
   let updatedAsset
   try {
     updatedAsset = await models.Assets.updateOne(
@@ -96,7 +94,7 @@ exports.updateAsset = async (req, res, next) => {
         location,
         department,
         notes,
-        image: replaceImage == true ? req.file.path : imagePath,
+        image: req.file == undefined ? imagePath : req.file.path,
       }
     );
   } catch (err) {
