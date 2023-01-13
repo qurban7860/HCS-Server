@@ -16,7 +16,7 @@ class dbFunctions {
     });
   }
 
-  getList(fields, query, orderBy, callback) {
+  getObjectList(fields, query, orderBy, callback) {
     this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err);
@@ -47,7 +47,7 @@ class dbFunctions {
   }
 
 
-  putObject(id, scheme, callback) {
+  patchObject(id, scheme, callback) {
     models.Assets.updateOne({ _id: id}, scheme).then(function (doc) {
       callback(null, doc);
     }).catch(function (err) {

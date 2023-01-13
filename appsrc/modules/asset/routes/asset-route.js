@@ -8,8 +8,7 @@ const checkAuth = require('../../../middleware/check-auth');
 const router = express.Router();
 this.cntrl = controllers.assetController;
 
-router.use(checkAuth);
-
+// router.use(checkAuth);
 
 router.post('/', fileUpload.single('image'), this.cntrl.postAsset);
 
@@ -17,7 +16,7 @@ router.get('/:id', this.cntrl.getAsset);
 
 router.get('/', this.cntrl.getAssets);
 
-router.put('/:id', fileUpload.single('image'), this.cntrl.putAsset);
+router.patch('/:id', fileUpload.single('image'), this.cntrl.patchAsset);
 
 router.delete('/:id', this.cntrl.deleteAsset);
 

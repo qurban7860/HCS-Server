@@ -47,7 +47,7 @@ exports.getAsset = async (req, res, next) => {
  * @returns {json} - return json responce at client
  */
 exports.getAssets = async (req, res, next) => {
-  this.db.getList(this.fields, this.query, this.orderBy, response);
+  this.db.getObjectList(this.fields, this.query, this.orderBy, response);
   function response(error, responce) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -118,13 +118,13 @@ exports.postAsset = async (req, res, next) => {
  * @param {next} next - Next method to call
  * @returns {json} - return json responce at client
  */
-exports.putAsset = async (req, res, next) => {
+exports.patchAsset = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
-    this.db.putObject(req.params.id, req.body, response);
+    this.db.patchObject(req.params.id, req.body, response);
     function response(error, result) {
       if (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));

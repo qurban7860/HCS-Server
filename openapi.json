@@ -19,7 +19,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost/api/1.0.0/"
+      "url": "http://localhost:5001/api/1.0.0/"
     }
   ],
   "tags": [
@@ -227,7 +227,7 @@
             "description": "ID of asset to return",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
               "format": "int64"
             }
           }
@@ -281,7 +281,7 @@
             "description": "ID of asset that needs to be updated",
             "required": true,
             "schema": {
-              "type": "integer",
+              "type": "string",
               "format": "int64"
             }
           },
@@ -298,7 +298,15 @@
             "in": "query",
             "description": "Status of asset that needs to be updated",
             "schema": {
-              "type": "string"
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Status of asset that needs to be updated",
+            "schema": {
+              "type": "integer"
             }
           }
         ],
