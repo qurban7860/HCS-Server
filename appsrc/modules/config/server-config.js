@@ -15,6 +15,8 @@ const assetsRoutes = require('../asset/routes/asset-route');
 const departmentRoutes = require('../department/routes/department-route');
 const locationRoutes = require('../customer/routes/location-route');
 
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = require('../../../openapi.json');
 
 /**
  * This class is the main App entry point.
@@ -35,6 +37,11 @@ class App {
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
     this.registerRoutes();
+    this.app.use(
+      '/api-docs',
+      swaggerUi.serve,
+      swaggerUi.setup(swaggerDocument)
+    );
     this.app.use(errorHandler);
   }
 
@@ -44,6 +51,9 @@ class App {
     this.app.use(`${ apiPath }/locations`, locationRoutes);
     this.app.use(`${ apiPath }/departments`, departmentRoutes);
   }
+
+  
+  
 
   start(){
         try {
