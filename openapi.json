@@ -46,6 +46,51 @@
   ],
   "paths": {
     "/assets": {
+      "get": {
+        "tags": [
+          "asset"
+        ],
+        "summary": "get list of assets",
+        "description": "Returns a list of assets",
+        "operationId": "getAssets",
+        "parameters": [
+          
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/Asset"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid ID supplied"
+          },
+          "404": {
+            "description": "Asset not found"
+          }
+        },
+        "security": [
+          {
+            "api_key": []
+          },
+          {
+            "assets_auth": [
+              "write:assets",
+              "read:assets"
+            ]
+          }
+        ]
+      },
       "put": {
         "tags": [
           "asset"
@@ -222,7 +267,7 @@
           }
         ]
       },
-      "post": {
+      "patch": {
         "tags": [
           "asset"
         ],
