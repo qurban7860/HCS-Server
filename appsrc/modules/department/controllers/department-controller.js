@@ -1,129 +1,129 @@
 const { validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 
 const models = require('../models');
 const HttpError = require('../../config/models/http-error');
+let dbFunctions = require('../../db/dbFunctions')
+
+let rtnMsg = require('../../config/static/static')
 
 
-// GET DEPARTMENTS
-const getDepartments = async (req, res, next) => {
-  let departments;
-  try {
-    departments = await models.Department.find();
-  } catch (err) {
-    const error = new HttpError(
-      'Something went wrong, could not find any Department.',
-      500
-    );
-    return next(error);
+
+this.db = new dbFunctions(models.Department);
+
+this.fields = {};
+this.query = {};
+this.orderBy = { name: 1 };
+
+
+
+/**
+ * get Department object
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
+
+exports.getDepartment = async (req, res, next) => {
+  this.db.getObjectById(this.fields, req.params.id, response);
+  function response(error, responce) {
+    if (error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(responce);
+    }
   }
-
-  if (!departments) {
-    const error = new HttpError(
-      'No Department Found',
-      404
-    );
-    return next(error);
-  }
-
-  res.json({ departments: departments });
-
 };
 
+/**
+ * get Departments arraylist
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
+exports.getDepartments = async (req, res, next) => {
+  this.db.getObjectList(this.fields, this.query, this.orderBy, response);
+  function response(error, responce) {
+    if (error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(responce);
+    }
+  }
+};
 
-// SAVE DEPARTMENT
-const addDepartment = async (req, res, next) => {
+/**
+ * delete department function
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
+exports.deleteDepartments = async (req, res, next) => {
+  this.db.deleteObject(req.params.id, response);
+  function response(error, result) {
+    if (error) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    }
+  }
+};
+
+/**
+ * add department function
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
+exports.postDepartment = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(
-      new HttpError('Invalid inputs passed, please check your data.', 422)
-    );
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    console.log(req.body);
+    const { name } = req.body;
+    const departmentSchema = new models.Department({
+      name,
+      createdAt: new Date()
+    });
+
+    this.db.postObject(departmentSchema, response);
+    function response(error, responce) {
+      if (error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.json({ department: responce });
+      }
+    }
   }
-  const { name } = req.body;
-
-  const newDepartment = new models.Department({
-    name
-  });
-
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await newDepartment.save();
-    await sess.commitTransaction();
-  } catch (err) {
-    const error = new HttpError(
-      err,
-      500
-    );
-    return next(error);
-  }
-
-  res.status(201).json({ department: newDepartment });
 };
 
-
-// UPDATE DEPARTMENT
-const updateDepartment = async (req, res, next) => {
+/**
+ * update department function
+ * @param {request} req - Request
+ * @param {response} res - Response
+ * @param {next} next - Next method to call
+ * @returns {json} - return json responce at client
+ */
+ exports.patchDepartment = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return next(
-      new HttpError('Invalid inputs passed, please check your data.', 422)
-    );
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    this.db.patchObject(req.params.id, req.body, response);
+    function response(error, result) {
+      if (error) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+      }
+    }
   }
-
-  const { name } = req.body;
-  const departmentId = req.body.id;
-
-  let updatedDepartment;
-  try {
-    updatedDepartment = await models.Department.findById(departmentId);
-    updatedDepartment.name = name;
-  } catch (err) {
-    const error = new HttpError(
-      err,
-      500
-    );
-    return next(error);
-  }
-
-  try {
-    const sess = await mongoose.startSession();
-    sess.startTransaction();
-    await updatedDepartment.save();
-    await sess.commitTransaction();
-  } catch (err) {
-    const error = new HttpError(
-      err,
-      500
-    );
-    return next(error);
-  }
-
-  res.status(200).json({ department: updatedDepartment });
 };
-
-
-// DELETE DEPARTMENT
-const deleteDepartment = async (req, res, next) => {
-  const departmentId = req.params.id;
-
-  let department;
-  try {
-    department = await models.Department.findOneAndRemove(departmentId);
-  } catch (err) {
-    const error = new HttpError(
-      'Something went wrong, could not delete asset.',
-      500
-    );
-    return next(error);
-  }
-
-  res.status(200).json({ message: 'Deleted Department.' });
-};
-
-
-// exports.getasset = getasset;
-exports.addDepartment = addDepartment;
-exports.updateDepartment = updateDepartment;
-exports.deleteDepartment = deleteDepartment;
-exports.getDepartments = getDepartments;

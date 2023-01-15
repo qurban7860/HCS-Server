@@ -87,7 +87,7 @@ exports.postAsset = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const { department, location, assetModel, name, notes, serial, status, assetTag } = req.body;
+    const { department_id, location, assetModel, name, notes, serial, status, assetTag } = req.body;
     const assetSchema = new models.Assets({
       name,
       status,
@@ -95,8 +95,9 @@ exports.postAsset = async (req, res, next) => {
       assetModel,
       serial,
       location,
-      department,
+      department_id,
       notes,
+      createdAt: new Date(),
       image: req.file == undefined ? null : req.file.path,
     });
 

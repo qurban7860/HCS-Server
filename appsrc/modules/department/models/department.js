@@ -6,8 +6,8 @@ const Schema = mongoose.Schema;
 
 const departmentSchema = new Schema({
     name: { type: String },
-    createdAt: {  type: Date },
-    updatedAt: {  type: Date },
+    createdAt: { type: Date },
+    updatedAt: { type: Date,  default: Date.now },
     deletedAt: {  type: Date },
 });
 

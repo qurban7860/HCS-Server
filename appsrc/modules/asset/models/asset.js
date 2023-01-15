@@ -9,15 +9,14 @@ const assetSchema = new Schema({
     status: { type: String, required: true },
     assetTag: { type: String },
     assetModel: { type: String },
-    serial: { type: Number, required: true },
-    // locationId: {  type: Schema.ObjectId , required: true },
+    serial: { type: String, required: true },
+    department_id: {  type: Schema.ObjectId , required: true },
     location: { type: String, required: true },
-    department: { type: String },
     notes: { type: String },
     image: { type: String },
     qrCode: { type: String },
     createdAt: { type: Date },
-    updatedAt: { type: Date },
+    updatedAt: { type: Date,  default: Date.now },
     deletedAt: { type: Date },
 });
 
