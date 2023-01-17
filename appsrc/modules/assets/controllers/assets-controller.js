@@ -39,7 +39,7 @@ exports.getAsset = async (req, res, next) => {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      res.json(response != null ? response : {});
     }
   }
 };
@@ -58,7 +58,7 @@ exports.getAssets = async (req, res, next) => {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      res.json(response != null ? response : []);
     }
   }
 };
