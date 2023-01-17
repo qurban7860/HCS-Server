@@ -9,10 +9,14 @@ const HttpError = require('../../config/models/http-error');
 let dbService = require('../../db/dbService')
 
 let rtnMsg = require('../../config/static/static')
-
-
-
 this.db = new dbService(models.Assets);
+
+
+if(process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined) {
+  this.debug = process.env.LOG_TO_CONSOLE;
+} else {
+  this.debug = false;
+}
 
 this.fields = {};
 this.query = {};
@@ -29,8 +33,9 @@ this.orderBy = { name: 1 };
  */
 
 exports.getAsset = async (req, res, next) => {
-  this.db.getObjectById(this.fields, req.params.id, response);
-  function response(error, response) {
+  if(this.debug) console.log("getObjectById..");
+  this.db.getObjectById(this.fields, req.params.id, callbackFunc);
+  function callbackFunc(error, response) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
@@ -47,8 +52,9 @@ exports.getAsset = async (req, res, next) => {
  * @returns {json} - return json response at client
  */
 exports.getAssets = async (req, res, next) => {
-  this.db.getObjectList(this.fields, this.query, this.orderBy, response);
-  function response(error, response) {
+  if(this.debug) console.log("getObjectList..");
+  this.db.getObjectList(this.fields, this.query, this.orderBy, callbackFunc);
+  function callbackFunc(error, response) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
@@ -65,8 +71,9 @@ exports.getAssets = async (req, res, next) => {
  * @returns {json} - return json response at client
  */
 exports.deleteAsset = async (req, res, next) => {
-  this.db.deleteObject(req.params.id, response);
-  function response(error, result) {
+  if(this.debug) console.log("deleteObject..");
+  this.db.deleteObject(req.params.id, callbackFunc);
+  function callbackFunc(error, result) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
@@ -83,6 +90,7 @@ exports.deleteAsset = async (req, res, next) => {
  * @returns {json} - return json response at client
  */
 exports.postAsset = async (req, res, next) => {
+  if(this.debug) console.log("postObject..");
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -101,8 +109,8 @@ exports.postAsset = async (req, res, next) => {
       image: req.file == undefined ? null : req.file.path,
     });
 
-    this.db.postObject(assetSchema, response);
-    function response(error, response) {
+    this.db.postObject(assetSchema, callbackFunc);
+    function callbackFunc(error, response) {
       if (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
@@ -120,13 +128,14 @@ exports.postAsset = async (req, res, next) => {
  * @returns {json} - return json response at client
  */
 exports.patchAsset = async (req, res, next) => {
+  if(this.debug) console.log("patchObject..");
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
-    this.db.patchObject(req.params.id, req.body, response);
-    function response(error, result) {
+    this.db.patchObject(req.params.id, req.body, callbackFunc);
+    function callbackFunc(error, result) {
       if (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {

@@ -6,12 +6,12 @@ const Schema = mongoose.Schema;
 
 const assetSchema = new Schema({
     name: { type: String },
-    status: { type: String, required: true },
+    status: { type: String},
     assetTag: { type: String },
     assetModel: { type: String },
     serial: { type: String, required: true },
-    department_id: {  type: Schema.ObjectId , required: true },
-    location: { type: String, required: true },
+    department_id: {  type: Schema.ObjectId },
+    location: { type: String },
     notes: { type: String },
     image: { type: String },
     qrCode: { type: String },
