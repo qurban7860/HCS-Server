@@ -6,7 +6,7 @@ const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 
 const router = express.Router();
-this.cntrl = controllers.assetController;
+this.cntrl = controllers.assetsController;
 
 
 // router.use(checkAuth);

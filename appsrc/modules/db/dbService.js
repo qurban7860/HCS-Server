@@ -9,9 +9,9 @@ class dbService {
   getObjectById(fields, id, callback) {
     this.model.findById(id, fields).exec((err, documents) => {
       if (err) {
-        callback(err);
+        callback(err, {});
       } else {
-        callback(null, documents);
+        callback(null, documents != null ? documents : {});
       }
     });
   }
@@ -19,9 +19,9 @@ class dbService {
   getObjectList(fields, query, orderBy, callback) {
     this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
       if (err) {
-        callback(err);
+        callback(err, []);
       } else {
-        callback(null, documents);
+        callback(null, documents != null ? documents : []);
       }
     });
   }

@@ -1,3 +1,3 @@
 module.exports = {
-    assetController: require('./assets-controller'),
+    assetsController: require('./assets-controller'),
 }
