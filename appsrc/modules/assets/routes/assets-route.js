@@ -8,6 +8,7 @@ const checkAuth = require('../../../middleware/check-auth');
 const router = express.Router();
 this.cntrl = controllers.assetController;
 
+
 // router.use(checkAuth);
 
 router.post('/', fileUpload.single('image'), this.cntrl.postAsset);

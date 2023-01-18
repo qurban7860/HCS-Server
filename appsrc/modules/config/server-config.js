@@ -18,6 +18,8 @@ const locationRoutes = require('../customers/routes/location-route');
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
 
+const morgan = require('morgan');
+
 /**
  * This class is the main App entry point.
  *
@@ -33,6 +35,7 @@ class App {
    */
   constructor() {
     this.app = express();
+    this.app.use(morgan('short'));
     this.app.use(bodyParser.json());
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
@@ -43,6 +46,10 @@ class App {
       swaggerUi.setup(swaggerDocument)
     );
     this.app.use(errorHandler);
+
+
+
+
   }
 
   registerRoutes(){
@@ -51,6 +58,9 @@ class App {
     this.app.use(`${ apiPath }/locations`, locationRoutes);
     this.app.use(`${ apiPath }/departments`, departmentRoutes);
   }
+
+
+
 
   
   
