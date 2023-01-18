@@ -5,7 +5,7 @@ const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
 const Schema = mongoose.Schema;
 
 const assetSchema = new Schema({
-    name: { type: String },
+    name: { type: String, required: true  },
     status: { type: String},
     assetTag: { type: String },
     assetModel: { type: String },

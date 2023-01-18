@@ -18,7 +18,7 @@ router.get('/', this.cntrl.getDepartments);
 
 router.put('/:id', fileUpload.single('image'), this.cntrl.patchDepartment);
 
-router.delete('/:id', this.cntrl.deleteDepartments);
+router.delete('/:id', this.cntrl.deleteDepartment);
 
 // router.get('/:id', controllers.departmentController.getAssets);
 

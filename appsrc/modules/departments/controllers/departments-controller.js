@@ -64,9 +64,10 @@ exports.getDepartments = async (req, res, next) => {
  * @param {next} next - Next method to call
  * @returns {json} - return json response at client
  */
-exports.deleteDepartments = async (req, res, next) => {
-  this.db.deleteObject(req.params.id, response);
-  function response(error, result) {
+ exports.deleteDepartment = async (req, res, next) => {
+  if(this.debug) console.log("deleteObject..");
+  this.db.deleteObject(req.params.id, callbackFunc);
+  function callbackFunc(error, result) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
@@ -89,7 +90,7 @@ exports.postDepartment = async (req, res, next) => {
   } else {
     console.log(req.body);
     const { name } = req.body;
-    const departmentSchema = new models.Department({
+    const departmentSchema = new models.Departments({
       name,
       createdAt: new Date()
     });
@@ -112,7 +113,7 @@ exports.postDepartment = async (req, res, next) => {
  * @param {next} next - Next method to call
  * @returns {json} - return json response at client
  */
- exports.patchDepartment = async (req, res, next) => {
+exports.patchDepartment = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
