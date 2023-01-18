@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 
 const models = require('../models');
+const logger = require('../../config/logger');
 const HttpError = require('../../config/models/http-error');
 let dbService = require('../../db/dbService')
 
@@ -52,6 +53,12 @@ exports.getAsset = async (req, res, next) => {
  * @returns {json} - return json response at client
  */
 exports.getAssets = async (req, res, next) => {
+  logger.info("message here", {meta1: 'meta1'});
+  logger.warn("message");
+  logger.error("message");
+  logger.debug("message");
+  logger.error(new Error('this is new error'));
+  
   if(this.debug) console.log("getObjectList..");
   this.db.getObjectList(this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {

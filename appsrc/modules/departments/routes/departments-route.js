@@ -10,7 +10,7 @@ this.cntrl = controllers.departmentController;
 
 // router.use(checkAuth);
 
-router.post('/', this.cntrl.postDepartment);
+router.post('/', fileUpload.single('image'), this.cntrl.postDepartment);
 
 router.get('/:id', this.cntrl.getDepartment);
 
