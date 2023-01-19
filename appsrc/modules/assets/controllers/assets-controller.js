@@ -40,7 +40,7 @@ this.populate = 'department_id';
 
 exports.getAsset = async (req, res, next) => {
   if(this.debug) console.log("getObjectById..");
-  this.db.getObjectById(this.fields, req.params.id, callbackFunc);
+  this.db.getObjectById(this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -65,7 +65,7 @@ exports.getAssets = async (req, res, next) => {
   // logger.error("message");
   // logger.debug("getObjectList");
 
-  this.db.getObjectList(this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.db.getObjectList(this.fields, this.query, this.orderBy, '', callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

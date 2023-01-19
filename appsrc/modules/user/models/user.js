@@ -17,7 +17,6 @@ const userSchema = new Schema({
   addedBy: { type: String },
   image: { type: String, required: false },
   status: { type: String, default: '1' }
-  // places: [{ type: mongoose.Types.ObjectId, required: false, ref: 'Place' }]
 });
 
 userSchema.plugin(uniqueValidator);

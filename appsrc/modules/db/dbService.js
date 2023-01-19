@@ -6,8 +6,8 @@ class dbService {
     this.model = model;
   }
 
-  getObjectById(fields, id, callback) {
-    this.model.findById(id, fields).exec((err, documents) => {
+  getObjectById(fields, id, populate, callback) {
+    this.model.findById(id, fields).populate(populate).exec((err, documents) => {
       if (err) {
         callback(err, {});
       } else {
@@ -37,7 +37,7 @@ class dbService {
       }
     });
   }
-  console.log(populate);    console.log(populate);
+
   deleteObject(id, callback) {
     models.Assets.deleteOne({ _id: id }).then(function (result) {
       callback(null, result);
