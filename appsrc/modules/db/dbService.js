@@ -16,8 +16,8 @@ class dbService {
     });
   }
 
-  getObjectList(fields, query, orderBy, callback) {
-    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
+  getObjectList(fields, query, orderBy, populate, callback) {
+    this.model.find(query, fields).populate(populate).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err, []);
       } else {
@@ -37,7 +37,7 @@ class dbService {
       }
     });
   }
-
+  console.log(populate);    console.log(populate);
   deleteObject(id, callback) {
     models.Assets.deleteOne({ _id: id }).then(function (result) {
       callback(null, result);

@@ -5,18 +5,21 @@ const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
 const Schema = mongoose.Schema;
 
 const assetSchema = new Schema({
-    name: { type: String, required: true  },
-    status: { type: String},
+    name: { type: String, required: true },
+    status: { type: String },
     assetTag: { type: String },
     assetModel: { type: String },
     serial: { type: String, required: true },
-    department_id: {  type: Schema.ObjectId },
+    department_id: {
+        type: Schema.ObjectId,
+        ref: 'Department'
+    },
     location: { type: String },
     notes: { type: String },
     image: { type: String },
     qrCode: { type: String },
     createdAt: { type: Date },
-    updatedAt: { type: Date,  default: Date.now },
+    updatedAt: { type: Date, default: Date.now },
     deletedAt: { type: Date },
 });
 

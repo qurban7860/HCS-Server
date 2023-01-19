@@ -25,6 +25,8 @@ if(process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };
+this.populate = 'department_id';
+
 
 
 
@@ -63,7 +65,7 @@ exports.getAssets = async (req, res, next) => {
   // logger.error("message");
   // logger.debug("getObjectList");
 
-  this.db.getObjectList(this.fields, this.query, this.orderBy, callbackFunc);
+  this.db.getObjectList(this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
