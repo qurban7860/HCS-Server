@@ -16,8 +16,8 @@ class dbService {
     });
   }
 
-  getObjectList(fields, query, orderBy, populate, callback) {
-    this.model.find(query, fields).populate(populate).sort(orderBy).exec((err, documents) => {
+  getObjectList(fields, query, orderBy, callback) {
+    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err, []);
       } else {

@@ -25,7 +25,7 @@ if(process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };
-this.populate = 'department_id';
+this.populate = 'department';
 
 
 
@@ -65,7 +65,7 @@ exports.getAssets = async (req, res, next) => {
   // logger.error("message");
   // logger.debug("getObjectList");
 
-  this.db.getObjectList(this.fields, this.query, this.orderBy, '', callbackFunc);
+  this.db.getObjectList(this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -109,7 +109,7 @@ exports.postAsset = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const { department_id, location, assetModel, name, notes, serial, status, assetTag } = req.body;
+    const { department, location, assetModel, name, notes, serial, status, assetTag } = req.body;
     const assetSchema = new models.Assets({
       name,
       status,
@@ -117,7 +117,7 @@ exports.postAsset = async (req, res, next) => {
       assetModel,
       serial,
       location,
-      department_id,
+      department,
       notes,
       createdAt: new Date(),
       image: req.file == undefined ? null : req.file.path,
