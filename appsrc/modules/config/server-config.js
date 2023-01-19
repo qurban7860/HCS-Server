@@ -35,7 +35,7 @@ class App {
    */
   constructor() {
     this.app = express();
-    this.app.use(morgan('short'));
+    this.app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"'));   
     this.app.use(bodyParser.json());
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
