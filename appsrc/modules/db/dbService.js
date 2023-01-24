@@ -6,7 +6,7 @@ class dbService {
     this.model = model;
   }
 
-  getObjectById(fields, id, populate, callback) {
+  getObjectById(fields, id, populate, callback) {    
     this.model.findById(id, fields).populate(populate).exec((err, documents) => {
       if (err) {
         callback(err, {});
@@ -26,18 +26,6 @@ class dbService {
     });
   }
 
-
-  postObject(Object, callback) {
-    Object.save((error, data) => {
-      if (error) {
-        console.error(error);
-        callback(err);
-      } else {
-        callback(null, data);
-      }
-    });
-  }
-
   deleteObject(id, callback) {
     models.Assets.deleteOne({ _id: id }).then(function (result) {
       callback(null, result);
@@ -46,6 +34,16 @@ class dbService {
     });
   }
 
+  postObject(Object, callback) {
+    Object.save((error, data) => {
+      if (error) {
+        console.error(error);
+        callback(error);
+      } else {
+        callback(null, data);
+      }
+    });
+  }
 
   patchObject(id, scheme, callback) {
     models.Assets.updateOne({ _id: id}, scheme).then(function (doc) {

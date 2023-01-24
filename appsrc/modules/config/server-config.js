@@ -13,7 +13,7 @@ const errorHandler = require('../../middleware/error-handler');
 const usersRoutes = require('../user/routes/user-route');
 const assetsRoutes = require('../assets/routes/assets-route');
 const departmentRoutes = require('../departments/routes/departments-route');
-const locationRoutes = require('../customers/routes/location-route');
+const locationRoutes = require('../customers/routes/locations-route');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');

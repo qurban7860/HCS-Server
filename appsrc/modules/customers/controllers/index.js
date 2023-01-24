@@ -1,4 +1,4 @@
 module.exports = {
-    locationController: require('./location-controller'),
-
+    locationController: require('./locations-controller'),
+    customerController: require('./customers-controller'),
 }

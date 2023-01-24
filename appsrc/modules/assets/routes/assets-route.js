@@ -11,11 +11,11 @@ this.cntrl = controllers.assetsController;
 
 // router.use(checkAuth);
 
-router.post('/', fileUpload.single('image'), this.cntrl.postAsset);
-
 router.get('/:id', this.cntrl.getAsset);
 
 router.get('/', this.cntrl.getAssets);
+
+router.post('/', fileUpload.single('image'), this.cntrl.postAsset);
 
 router.patch('/:id', fileUpload.single('image'), this.cntrl.patchAsset);
 

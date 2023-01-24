@@ -14,8 +14,8 @@ router.delete('/:id', controllers.locationController.deleteLocation);
 
 router.put('/', controllers.locationController.updateLocation);
 
-router.get('/', controllers.locationController.getLocations);
+//router.get('/', controllers.lcontrollersocationController.getLocations);
 
 // router.get('/:id', controllers.locationController.getAssets);
 
-module.exports = router;
+module.exports = router;controllers
