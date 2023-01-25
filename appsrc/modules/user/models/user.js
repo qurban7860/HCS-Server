@@ -8,17 +8,23 @@ const userSchema = new Schema({
   lastName: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true, minlength: 6 },
+  passwordText: { type: String},
+  phoneNumber: { type: Number },
   address: { type: String, required: false },
-  country: { type: String, required: false },
-  state: { type: String, required: false },
-  city: { type: String, required: false },
-  zip: { type: String, required: false },
-  about: { type: String, required: false },
+  country: { type: String },
+  state: { type: String },
+  city: { type: String },
+  zip: { type: String },
+  about: { type: String },
   addedBy: { type: String },
-  image: { type: String, required: false },
-  status: { type: String, default: '1' }
+  image: { type: String },
+  status: { type: String, default: 'Active' },
+  isVerified: { type: Boolean, default: true },
+  role: { type: String },
+  createdAt: { type: Date },
+  updatedAt: { type: Date, default: Date.now },
+  deletedAt: { type: Date },
 });
-
 userSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('User', userSchema);

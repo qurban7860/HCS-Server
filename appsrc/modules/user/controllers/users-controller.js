@@ -5,6 +5,30 @@ const jwt = require('jsonwebtoken');
 const HttpError = require('../../../../appsrc/modules/config/models/http-error');
 const models = require('../models');
 
+const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+// const HttpError = require('../../config/models/http-errorus');
+let UserService = require('../service/user-service')
+this.userserv = new UserService(models.Users);
+
+let dbService = require('../../db/dbService')
+let rtnMsg = require('../../config/static/static')
+this.db = new dbService(models.Users);
+
+const logger = require('../../config/logger');
+
+if (process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined) {
+  this.debug = process.env.LOG_TO_CONSOLE;
+} else {
+  this.debug = false;
+}
+
+this.fields = {};
+this.query = {};
+this.orderBy = { name: 1 };
+this.populate = '';
+
+///////////////////////////////////////////////////////////////////////////
+
 function getToken(req) {
   if (
     req.headers.authorization &&
@@ -28,33 +52,6 @@ function validateUser(req) {
   });
   return true;
 }
-
-
-
-const getUsers = async (req, res, next) => {
-  let users;
-  try {
-    if (validateUser(req)) {
-      users = await models.Users.find({}, '-password');
-    } else {
-      const error = new HttpError(
-        'Request is rejected by validator.',
-        500
-      );
-      return next(error);
-    }
-
-  } catch (err) {
-    console.debug(err);
-    const error = new HttpError(
-      'Fetching users failed, please try again later.',
-      500
-    );
-    return next(error);
-  }
-  res.json({ users: users.map(user => user.toObject({ getters: true })) });
-};
-
 
 const signup = async (req, res, next) => {
   console.log(req);
@@ -102,6 +99,7 @@ const signup = async (req, res, next) => {
     lastName,
     email,
     password: hashedPassword,
+    passwordText: password
   });
 
   try {
@@ -208,48 +206,102 @@ const login = async (req, res, next) => {
   });
 };
 
-const updateUserProfile = async (req, res, next) => {
-  const { id, phone, address, country, state, city, zip, about } = req.body;
-
-  let existingUser;
-
-  try {
-    existingUser = await models.Users.findOne({ email: email });
-    existingUser.update({ _id: doc._id }, { $set: { scores: zz } });
-  } catch (err) {
-    const error = new HttpError(
-      'Operation failed. Please try again later.',
-      500
-    );
-    return next(error);
+exports.getUser = async (req, res, next) => {
+  this.userserv.getObjectById(this.fields, req.params.id, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
   }
+};
 
-  if (!existingUser) {
-    const error = new HttpError(
-      'User not found',
-      403
-    );
-    return next(error);
+
+exports.getUsers = async (req, res, next) => {
+  this.userserv.getUsers(this.fields, this.query, this.orderBy, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
   }
+};
 
-  try {
+/**
+* add user function
+* @param {request} req - Request
+* @param {response} res - Response
+* @param {next} next - Next method to call
+* @returns {json} - return json response at client
+*/
+exports.postUser = async (req, res, next) => {
 
-  } catch (err) {
-    const error = new HttpError(
-      'Logging in failed, please try again later.',
-      500
-    );
-    return next(error);
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    const { firstName, lastName, email, password, address, country, state, city, zip,
+      about, role, addedBy, phoneNumber } = req.body;
+
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(password, 12);
+    } catch (err) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)); return next(err);
+    }
+
+    const userSchema = new models.Users({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      passwordText: password,
+      address,
+      country,
+      state,
+      city,
+      zip,
+      about,
+      addedBy,
+      role,
+      phoneNumber,
+      createdAt: new Date(),
+      image: req.file == undefined ? null : req.file.path,
+    });
+
+    this.userserv.postUser(userSchema, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.json({ user: response });
+      }
+    }
   }
+};
 
-  res.json({
-    accessToken: token,
-    userId: existingUser.id,
-    user: {
-      email: existingUser.email,
-      displayName: existingUser.firstName.concat(" ", existingUser.lastName),
-    },
-  });
+exports.patchUser = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
+    this.db.patchObject(req.params.id, req.body, callbackFunc);
+    function callbackFunc(error, result) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+      }
+    }
+  }
 };
 
 const newUser = async (req, res, next) => {
@@ -319,7 +371,63 @@ const newUser = async (req, res, next) => {
   }
 };
 
-exports.getUsers = getUsers;
+const updateUserProfile = async (req, res, next) => {
+  const { id, phone, address, country, state, city, zip, about } = req.body;
+
+  let existingUser;
+
+  try {
+    existingUser = await models.Users.findOne({ email: email });
+    existingUser.update({ _id: doc._id }, { $set: { scores: zz } });
+  } catch (err) {
+    const error = new HttpError(
+      'Operation failed. Please try again later.',
+      500
+    );
+    return next(error);
+  }
+
+  if (!existingUser) {
+    const error = new HttpError(
+      'User not found',
+      403
+    );
+    return next(error);
+  }
+
+  try {
+
+  } catch (err) {
+    const error = new HttpError(
+      'Logging in failed, please try again later.',
+      500
+    );
+    return next(error);
+  }
+
+  res.json({
+    accessToken: token,
+    userId: existingUser.id,
+    user: {
+      email: existingUser.email,
+      displayName: existingUser.firstName.concat(" ", existingUser.lastName),
+    },
+  });
+};
+
+exports.deleteUser = async (req, res, next) => {
+  this.userserv.deleteObject(req.params.id, callbackFunc);
+  function callbackFunc(error, result) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    }
+  }
+};
+
+// exports.getUsers = getUsers;
 exports.signup = signup;
 exports.login = login;
 exports.newUser = newUser;
