@@ -27,7 +27,7 @@ class dbService {
   }
 
   deleteObject(id, callback) {
-    models.Assets.deleteOne({ _id: id }).then(function (result) {
+    this.model.deleteOne({ _id: id }).then(function (result) {
       callback(null, result);
     }).catch(function (err) {
       callback(err);
@@ -46,7 +46,7 @@ class dbService {
   }
 
   patchObject(id, scheme, callback) {
-    models.Assets.updateOne({ _id: id}, scheme).then(function (doc) {
+    this.model.updateOne({ _id: id}, scheme).then(function (doc) {
       callback(null, doc);
     }).catch(function (err) {
       callback(err);
