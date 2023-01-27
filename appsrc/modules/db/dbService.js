@@ -25,8 +25,7 @@ class dbService {
     });
   }
 
-  deleteObject(model, id, callback) {
-    model.deleteOne({ _id: id }).then(function (result) {
+
       callback(null, result);
     }).catch(function (err) {
       callback(err);
@@ -44,8 +43,7 @@ class dbService {
     });
   }
 
-  patchObject(model, id, scheme, callback) {
-    model.updateOne({ _id: id }, scheme).then(function (doc) {
+
       callback(null, doc);
     }).catch(function (err) {
       callback(err);

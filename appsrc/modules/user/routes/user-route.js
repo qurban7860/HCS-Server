@@ -5,33 +5,32 @@ const controllers = require('../controllers');
 const fileUpload = require('../../../middleware/file-upload');
 
 const router = express.Router();
+this.cntrl = controllers.userController;
 
-router.get('/', controllers.userController.getUsers);
 
 router.post(
-  '/signup',
-  [
-    check('firstName').not().isEmpty(),
-    check('lastName').not().isEmpty(),
-    check('email').normalizeEmail().isEmail(),
-    check('password').isLength({ min: 6 })
-  ],
-  controllers.userController.signup
+'/signup',
+[
+check('firstName').not().isEmpty(),
+check('lastName').not().isEmpty(),
+check('email').normalizeEmail().isEmail(),
+check('password').isLength({ min: 6 })
+],
+this.cntrl.signup
 );
 
-router.post('/login', controllers.userController.login);
+router.post('/login', this.cntrl.login);
 
-router.post('/add-new-user', fileUpload.single('image'), controllers.userController.newUser);
+router.post('/add-new-user', fileUpload.single('image'), this.cntrl.newUser);
 
-//router.post('/',fileUpload.single('image'), controllers.userController.saveUser);
+router.post('/',fileUpload.single('image'), this.cntrl.postUser);
 
-//router.delete('/:id', controllers.userController.deleteUser);
+router.get('/', this.cntrl.getUsers);
 
-//router.put('/:id', controllers.userController.updateUser);
+router.get('/:id', this.cntrl.getUser);
 
-//router.get('/', controllers.userController.getUsers);
+router.delete('/:id', this.cntrl.deleteUser);
 
-//router.get('/:id', controllers.userController.getUser);
 
 
 
