@@ -3,19 +3,19 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const models = require('../models');
+const { Assets } = require('../models');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let assetservice = require('../service/assetservice')
-this.aserv = new assetservice(models.Assets);
+this.aserv = new assetservice();
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'department';
 
 exports.getAsset = async (req, res, next) => {
-  this.aserv.getObjectById(this.fields, req.params.id, this.populate, callbackFunc);
+  this.aserv.getObjectById(Assets, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -24,10 +24,11 @@ exports.getAsset = async (req, res, next) => {
       res.json(response);
     }
   }
+
 };
 
 exports.getAssets = async (req, res, next) => {
-  this.aserv.getAssets(this.fields, this.query, this.orderBy, callbackFunc);
+  this.aserv.getAssets(Assets, this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -39,7 +40,7 @@ exports.getAssets = async (req, res, next) => {
 };
 
 exports.deleteAsset = async (req, res, next) => {
-  this.aserv.deleteObject(req.params.id, callbackFunc);
+  this.aserv.deleteObject(Assets, req.params.id, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -56,7 +57,7 @@ exports.postAsset = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     const { department, location, assetModel, name, notes, serial, status, assetTag } = req.body;
-    const assetSchema = new models.Assets({
+    const assetSchema = new Assets({
       name,
       status,
       assetTag,
@@ -88,7 +89,7 @@ exports.patchAsset = async (req, res, next) => {
   } else {
     req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
 
-    this.aserv.patchAsset(req.params.id, req.body, callbackFunc);
+    this.aserv.patchAsset(Assets, req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));

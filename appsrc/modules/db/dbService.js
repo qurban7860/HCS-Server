@@ -2,12 +2,11 @@ const models = require('../assets/models');
 const mongoose = require('mongoose');
 
 class dbService {
-  constructor(model) {
-    this.model = model;
+  constructor() {
   }
 
-  getObjectById(fields, id, populate, callback) {    
-    this.model.findById(id, fields).populate(populate).exec((err, documents) => {
+  getObjectById(model, fields, id, populate, callback) {
+    model.findById(id, fields).populate(populate).exec((err, documents) => {
       if (err) {
         callback(err, {});
       } else {
@@ -16,8 +15,8 @@ class dbService {
     });
   }
 
-  getObjectList(fields, query, orderBy, callback) {
-    this.model.find(query, fields).sort(orderBy).exec((err, documents) => {
+  getObjectList(model, fields, query, orderBy, callback) {
+    model.find(query, fields).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err, []);
       } else {
@@ -26,8 +25,8 @@ class dbService {
     });
   }
 
-  deleteObject(id, callback) {
-    models.Assets.deleteOne({ _id: id }).then(function (result) {
+  deleteObject(model, id, callback) {
+    model.deleteOne({ _id: id }).then(function (result) {
       callback(null, result);
     }).catch(function (err) {
       callback(err);
@@ -45,8 +44,8 @@ class dbService {
     });
   }
 
-  patchObject(id, scheme, callback) {
-    models.Assets.updateOne({ _id: id}, scheme).then(function (doc) {
+  patchObject(model, id, scheme, callback) {
+    model.updateOne({ _id: id }, scheme).then(function (doc) {
       callback(null, doc);
     }).catch(function (err) {
       callback(err);
