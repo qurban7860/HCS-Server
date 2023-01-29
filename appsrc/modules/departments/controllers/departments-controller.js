@@ -6,13 +6,12 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 
 const models = require('../models');
 const HttpError = require('../../config/models/http-error');
-let dbService = require('../../db/dbService')
-
+const { Departments } = require('../models');
+const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-
-
-this.db = new dbService(models.Departments);
+let deptservice = require('../service/department-service')
+this.deptserv = new deptservice();
 
 this.fields = {};
 this.query = {};
@@ -29,7 +28,7 @@ this.orderBy = { name: 1 };
  */
 
 exports.getDepartment = async (req, res, next) => {
-  this.db.getObjectById(this.fields, req.params.id, response);
+  this.deptserv.getObjectById(Departments, this.fields, req.params.id, response);
   function response(error, response) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -47,7 +46,7 @@ exports.getDepartment = async (req, res, next) => {
  * @returns {json} - return json response at client
  */
 exports.getDepartments = async (req, res, next) => {
-  this.db.getObjectList(this.fields, this.query, this.orderBy, response);
+  this.deptserv.getDepartments(Departments, this.fields, this.query, this.orderBy, response);
   function response(error, response) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -66,7 +65,7 @@ exports.getDepartments = async (req, res, next) => {
  */
  exports.deleteDepartment = async (req, res, next) => {
   if(this.debug) console.log("deleteObject..");
-  this.db.deleteObject(req.params.id, callbackFunc);
+  this.deptserv.deleteObject(req.params.id, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -95,7 +94,7 @@ exports.postDepartment = async (req, res, next) => {
       createdAt: new Date()
     });
 
-    this.db.postObject(departmentSchema, response);
+    this.deptserv.postObject(departmentSchema, response);
     function response(error, response) {
       if (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -118,7 +117,7 @@ exports.patchDepartment = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.db.patchObject(req.params.id, req.body, response);
+    this.deptserv.patchObject(req.params.id, req.body, response);
     function response(error, result) {
       if (error) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));

@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 let dbService = require('../../db/dbService')
 
 
-class UserService {
+class CustomerService {
   constructor() {
     this.db = new dbService();
   }
@@ -18,7 +18,7 @@ class UserService {
   }
 
 
-  getUsers(model, fields, query, orderBy, callback) {
+  getCustomers(model, fields, query, orderBy, callback) {
     this.db.getObjectList(model, fields, query, orderBy, callbackFunc);
     function callbackFunc(error, response) {
       if (error) callback(error, {});
@@ -35,7 +35,7 @@ class UserService {
     }
   };
 
-  postUser(userSchema, callback) {
+  postCustomer(userSchema, callback) {
     this.db.postObject(userSchema, callbackFunction);
     function callbackFunction(error, response) {
       if (error) callback(error, {});
@@ -43,7 +43,7 @@ class UserService {
     }
   }
 
-  patchUser(model, id, userSchema, callback) {
+  patchCustomer(model, id, userSchema, callback) {
     this.db.patchObject(model, id, userSchema, callbackFunc);
     function callbackFunc(error, result) {
       if (error) callback(error, {});
@@ -53,4 +53,4 @@ class UserService {
 }
 
 
-module.exports = UserService;
+module.exports = CustomerService;

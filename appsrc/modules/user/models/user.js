@@ -18,7 +18,7 @@ const userSchema = new Schema({
   about: { type: String },
   addedBy: { type: String },
   image: { type: String },
-  status: { type: String, default: 'Active' },
+  status: { type: String, default: 'active' },
   isVerified: { type: Boolean, default: true },
   role: { type: String },
   createdAt: { type: Date },

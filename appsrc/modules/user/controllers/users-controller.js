@@ -3,16 +3,14 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const HttpError = require('../../../../appsrc/modules/config/models/http-error');
-const models = require('../models');
+const { Users } = require('../models');
 
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-// const HttpError = require('../../config/models/http-errorus');
 let UserService = require('../service/user-service')
-this.userserv = new UserService(models.Users);
+this.userserv = new UserService();
 
 let dbService = require('../../db/dbService')
 let rtnMsg = require('../../config/static/static')
-this.db = new dbService(models.Users);
 
 const logger = require('../../config/logger');
 
@@ -66,7 +64,7 @@ const signup = async (req, res, next) => {
 
   let existingUser;
   try {
-    existingUser = await models.Users.findOne({ email: email });
+    existingUser = await Users.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
       'Signing up failed, please try again later.',
@@ -94,7 +92,7 @@ const signup = async (req, res, next) => {
     return next(error);
   }
 
-  const createdUser = new models.Users({
+  const createdUser = new Users({
     firstName,
     lastName,
     email,
@@ -145,7 +143,7 @@ const login = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await models.Users.findOne({ email: email });
+    existingUser = await Users.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
       'Logging in failed, please try again later.',
@@ -207,7 +205,7 @@ const login = async (req, res, next) => {
 };
 
 exports.getUser = async (req, res, next) => {
-  this.userserv.getObjectById(this.fields, req.params.id, this.populate, callbackFunc);
+  this.userserv.getObjectById(Users, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -220,7 +218,7 @@ exports.getUser = async (req, res, next) => {
 
 
 exports.getUsers = async (req, res, next) => {
-  this.userserv.getUsers(this.fields, this.query, this.orderBy, callbackFunc);
+  this.userserv.getUsers(Users, this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -255,7 +253,7 @@ exports.postUser = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)); return next(err);
     }
 
-    const userSchema = new models.Users({
+    const userSchema = new Users({
       firstName,
       lastName,
       email,
@@ -291,8 +289,19 @@ exports.patchUser = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let hashedPassword;
+    try {
+      hashedPassword = await bcrypt.hash(req.body.password, 12);
+    } catch (err) {
+      const error = new HttpError(
+        'Could not create password, please try again.',
+        500
+      );
+    return next(error);
+    }
+    req.body.password = hashedPassword;
     req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
-    this.db.patchObject(req.params.id, req.body, callbackFunc);
+    this.userserv.patchObject(req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -310,7 +319,7 @@ const newUser = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await models.Users.findOne({ email: email });
+    existingUser = await Users.findOne({ email: email });
   } catch (err) {
     const error = new HttpError(
       'Operation failed. Please try again later.',
@@ -332,7 +341,7 @@ const newUser = async (req, res, next) => {
       return next(error);
     }
 
-    const createdUser = new models.Users({
+    const createdUser = new Users({
       firstName,
       lastName,
       password: hashedPassword,
@@ -377,7 +386,7 @@ const updateUserProfile = async (req, res, next) => {
   let existingUser;
 
   try {
-    existingUser = await models.Users.findOne({ email: email });
+    existingUser = await Users.findOne({ email: email });
     existingUser.update({ _id: doc._id }, { $set: { scores: zz } });
   } catch (err) {
     const error = new HttpError(

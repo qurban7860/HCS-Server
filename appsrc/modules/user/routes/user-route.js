@@ -25,6 +25,8 @@ router.post('/add-new-user', fileUpload.single('image'), this.cntrl.newUser);
 
 router.post('/',fileUpload.single('image'), this.cntrl.postUser);
 
+router.patch('/:id', fileUpload.single('image'), this.cntrl.patchUser);
+
 router.get('/', this.cntrl.getUsers);
 
 router.get('/:id', this.cntrl.getUser);

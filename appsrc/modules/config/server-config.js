@@ -13,7 +13,9 @@ const errorHandler = require('../../middleware/error-handler');
 const usersRoutes = require('../user/routes/user-route');
 const assetsRoutes = require('../assets/routes/assets-route');
 const departmentRoutes = require('../departments/routes/departments-route');
-const locationRoutes = require('../customers/routes/locations-route');
+const customerRoutes = require('../customers/routes/customers-route');
+const siteRoutes = require('../sites/routes/sites-route');
+
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -56,8 +58,11 @@ class App {
   registerRoutes(){
     this.app.use(`${ apiPath }/users`, usersRoutes);
     this.app.use(`${ apiPath }/assets`, assetsRoutes);
-    this.app.use(`${ apiPath }/locations`, locationRoutes);
     this.app.use(`${ apiPath }/departments`, departmentRoutes);
+    this.app.use(`${ apiPath }/customers`, customerRoutes);
+    this.app.use(`${ apiPath }/sites`, siteRoutes);
+
+
   }
 
 

@@ -4,14 +4,13 @@ const mongoose = require('mongoose');
 let dbService = require('../../db/dbService')
 
 
-class customerservice {
-  constructor(model) {
-    this.model = model;
-    this.db = new dbService(models.Customers);
+class Department {
+  constructor() {
+    this.db = new dbService();
   }
 
-  getObjectById(fields, id, populate, callback) {
-    this.db.getObjectById(fields, id, populate, callbackFunc);
+  getObjectById(model, fields, id, populate, callback) {
+    this.db.getObjectById(model, fields, id, populate, callbackFunc);
     function callbackFunc(error, response) {
       if (error) callback(error, {});
       else callback(null, response);
@@ -19,8 +18,8 @@ class customerservice {
   }
 
 
-  getCustomers(fields, query, orderBy, callback) {
-    this.db.getObjectList(fields, query, orderBy, callbackFunc);
+  getDepartments(model, fields, query, orderBy, callback) {
+    this.db.getObjectList(model, fields, query, orderBy, callbackFunc);
     function callbackFunc(error, response) {
       if (error) callback(error, {});
       else callback(null, response);
@@ -28,24 +27,24 @@ class customerservice {
   };
 
 
-  deleteObject(id, callback) {
-    this.db.deleteObject(id, callbackFunc);
+  deleteObject(model, id, callback) {
+    this.db.deleteObject(model, id, callbackFunc);
     function callbackFunc(error, response) {
       if (error) callback(error, {});
       else callback(null, response);
     }
   };
 
-  postCustomer(customerSchema, callback) {
-    this.db.postObject(customerSchema, callbackFunction);
+  postDepartment(departmentSchema, callback) {
+    this.db.postObject(departmentSchema, callbackFunction);
     function callbackFunction(error, response) {
       if (error) callback(error, {});
       else callback(null, response);
     }
   }
 
-  patchCustomer(id, customerSchema, callback) {
-    this.db.patchObject(id, customerSchema, callbackFunc);
+  patchDepartment(model, id, departmentSchema, callback) {
+    this.db.patchObject(model, id, departmentSchema, callbackFunc);
     function callbackFunc(error, result) {
       if (error) callback(error, {});
       else callback(null, result);
@@ -54,4 +53,4 @@ class customerservice {
 }
 
 
-module.exports = customerservice;
+module.exports = Department;
