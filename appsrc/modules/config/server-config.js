@@ -15,6 +15,8 @@ const assetsRoutes = require('../assets/routes/assets-route');
 const departmentRoutes = require('../departments/routes/departments-route');
 const customerRoutes = require('../customers/routes/customers-route');
 const siteRoutes = require('../sites/routes/sites-route');
+const contactRoutes = require('../contacts/routes/contacts-route');
+
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -61,6 +63,8 @@ class App {
     this.app.use(`${ apiPath }/departments`, departmentRoutes);
     this.app.use(`${ apiPath }/customers`, customerRoutes);
     this.app.use(`${ apiPath }/sites`, siteRoutes);
+    this.app.use(`${ apiPath }/contacts`, contactRoutes);
+
 
 
   }

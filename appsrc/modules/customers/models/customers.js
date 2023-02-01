@@ -7,10 +7,11 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const customerSchema = new Schema({
-        _Id: { type: GUID.type, default: GUID.value },
         name: { type: String, required: true },
         tradingName: { type: String },
-        mainSite: { type: Schema.Types.ObjectId, ref: 'customersites' },
+        mainSite: { type: Schema.Types.ObjectId, ref: 'sites' },
+        sites: [{ type: Schema.ObjectId, ref: 'sites' }],
+        contacts: [{ type: Schema.ObjectId, ref: 'contacts' }],
         accountManager: { type: Schema.Types.ObjectId, ref: 'users' },
         projectManager: { type: Schema.Types.ObjectId, ref: 'users' },
         supportManager: { type: Schema.Types.ObjectId, ref: 'users' },

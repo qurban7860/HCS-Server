@@ -3,19 +3,19 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customers } = require('../models');
+const { Notes } = require('../models');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let customerService = require('../service/customers-service')
-this.customerserv = new customerService();
+let noteService = require('../service/notes-service')
+this.noteserv = new noteService();
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'user';
 
-exports.getCustomer = async (req, res, next) => {
-  this.customerserv.getObjectById(Customers, this.fields, req.params.id, this.populate, callbackFunc);
+exports.getNote = async (req, res, next) => {
+  this.noteserv.getObjectById(Notes, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -27,8 +27,8 @@ exports.getCustomer = async (req, res, next) => {
 
 };
 
-exports.getCustomers = async (req, res, next) => {
-  this.customerserv.getCustomers(Customers, this.fields, this.query, this.orderBy, callbackFunc);
+exports.getNotes = async (req, res, next) => {
+  this.noteserv.getNotes(Notes, this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -39,8 +39,8 @@ exports.getCustomers = async (req, res, next) => {
   }
 };
 
-exports.deleteCustomer = async (req, res, next) => {
-  this.customerserv.deleteObject(Customers, req.params.id, callbackFunc);
+exports.deleteNote = async (req, res, next) => {
+  this.noteserv.deleteObject(Notes, req.params.id, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -52,44 +52,35 @@ exports.deleteCustomer = async (req, res, next) => {
   }
 };
 
-exports.postCustomer = async (req, res, next) => {
+exports.postNote = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const { 
-        name, tradingName, mainSite, sites, contacts, accountManager, projectManager, supportManager, 
-        isDisabled, isArchived } = req.body;
-
-    const siteArr =  sites.split(',');
-    const contactArr = contacts.split(',');
+    const { customer, site, contact, user, note, isArchived } = req.body;
     
-    const customerSchema = new Customers({
-        name,
-        tradingName,
-        mainSite,
-        sites: siteArr,
-        contacts: contactArr,
-        accountManager,
-        projectManager,
-        supportManager,
-        isDisabled,
-        isArchived
+    const noteSchema = new Notes({
+      customer,
+      site,
+      contact,
+      user,
+      note,
+      isArchived
     });
 
-    this.customerserv.postCustomer(customerSchema, callbackFunc);
+    this.noteserv.postNote(noteSchema, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ customers: response });
+        res.json({ notes: response });
       }
     }
   }
 };
 
-exports.patchCustomer = async (req, res, next) => {
+exports.patchNote = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -98,7 +89,7 @@ exports.patchCustomer = async (req, res, next) => {
     req.body.contacts = req.body.contacts.split(',');
 
 
-    this.customerserv.patchCustomer(Customers, req.params.id, req.body, callbackFunc);
+    this.noteserv.patchNote(Notes, req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
