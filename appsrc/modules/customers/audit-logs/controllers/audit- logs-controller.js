@@ -1,21 +1,17 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customers } = require('../models');
-const HttpError = require('../../config/models/http-error');
-const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static')
+const { AuditLogs } = require('../models');
+const logger = require('../../../config/logger');
+let rtnMsg = require('../../../config/static/static')
 
-let customerService = require('../service/customers-service')
-this.customerserv = new customerService();
+let auditLogService = require('../service/audit-logs-service')
+this.auditLogserv = new auditLogService();
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'users';
+this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'user';
 
-exports.getCustomer = async (req, res, next) => {
-  this.customerserv.getObjectById(Customers, this.fields, req.params.id, this.populate, callbackFunc);
+exports.getAuditLog = async (req, res, next) => {
+  this.auditLogserv.getObjectById(AuditLogs, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -27,8 +23,8 @@ exports.getCustomer = async (req, res, next) => {
 
 };
 
-exports.getCustomers = async (req, res, next) => {
-  this.customerserv.getCustomers(Customers, this.fields, this.query, this.orderBy, callbackFunc);
+exports.getAuditLogs = async (req, res, next) => {
+  this.auditLogserv.getAuditLogs(AuditLogs, this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -39,8 +35,8 @@ exports.getCustomers = async (req, res, next) => {
   }
 };
 
-exports.deleteCustomer = async (req, res, next) => {
-  this.customerserv.deleteObject(Customers, req.params.id, callbackFunc);
+exports.deleteAuditLog = async (req, res, next) => {
+  this.auditLogserv.deleteObject(AuditLogs, req.params.id, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -52,53 +48,45 @@ exports.deleteCustomer = async (req, res, next) => {
   }
 };
 
-exports.postCustomer = async (req, res, next) => {
+exports.postAuditLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     const { 
-        name, tradingName, mainSite, sites, contacts, accountManager, projectManager, supportManager, 
-        isDisabled, isArchived } = req.body;
+      customer, site, contact, user, note, activityType, activitySummary,     
+      activityDetail, createdBy, createdIP,} = req.body;
+    const auditLogSchema = new AuditLogs({
+      customer,     
+      site,     
+      contact,     
+      user,     
+      note,     
+      activityType,     
+      activitySummary,     
+      activityDetail,     
+      createdBy,     
+      createdIP,
+  });
 
-    const siteArr =  sites.split(',');
-    const contactArr = contacts.split(',');
-    
-    const customerSchema = new Customers({
-        name,
-        tradingName,
-        mainSite,
-        sites: siteArr,
-        contacts: contactArr,
-        accountManager,
-        projectManager,
-        supportManager,
-        isDisabled,
-        isArchived
-    });
-
-    this.customerserv.postCustomer(customerSchema, callbackFunc);
+    this.auditLogserv.postAuditLog(auditLogSchema, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ customers: response });
+        res.json({ auditLogs: response });
       }
     }
   }
 };
 
-exports.patchCustomer = async (req, res, next) => {
+exports.patchAuditLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    req.body.sites = req.body.sites.split(',');
-    req.body.contacts = req.body.contacts.split(',');
-
-
-    this.customerserv.patchCustomer(Customers, req.params.id, req.body, callbackFunc);
+    this.auditLogserv.patchAuditLog(AuditLogs, req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));

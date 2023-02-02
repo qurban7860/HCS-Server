@@ -1,21 +1,17 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customers } = require('../models');
-const HttpError = require('../../config/models/http-error');
-const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static')
+const { Contacts } = require('../models');
+const logger = require('../../../config/logger');
+let rtnMsg = require('../../../config/static/static')
 
-let customerService = require('../service/customers-service')
-this.customerserv = new customerService();
+let contactService = require('../service/contacts-service')
+this.contactserv = new contactService();
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'users';
+this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'user';
 
-exports.getCustomer = async (req, res, next) => {
-  this.customerserv.getObjectById(Customers, this.fields, req.params.id, this.populate, callbackFunc);
+exports.getContact = async (req, res, next) => {
+  this.contactserv.getObjectById(Contacts, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -27,8 +23,8 @@ exports.getCustomer = async (req, res, next) => {
 
 };
 
-exports.getCustomers = async (req, res, next) => {
-  this.customerserv.getCustomers(Customers, this.fields, this.query, this.orderBy, callbackFunc);
+exports.getContacts = async (req, res, next) => {
+  this.contactserv.getContacts(Contacts, this.fields, this.query, this.orderBy, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -39,8 +35,8 @@ exports.getCustomers = async (req, res, next) => {
   }
 };
 
-exports.deleteCustomer = async (req, res, next) => {
-  this.customerserv.deleteObject(Customers, req.params.id, callbackFunc);
+exports.deleteContact = async (req, res, next) => {
+  this.contactserv.deleteObject(Contacts, req.params.id, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -52,53 +48,45 @@ exports.deleteCustomer = async (req, res, next) => {
   }
 };
 
-exports.postCustomer = async (req, res, next) => {
+exports.postContact = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     const { 
-        name, tradingName, mainSite, sites, contacts, accountManager, projectManager, supportManager, 
-        isDisabled, isArchived } = req.body;
-
-    const siteArr =  sites.split(',');
-    const contactArr = contacts.split(',');
-    
-    const customerSchema = new Customers({
-        name,
-        tradingName,
-        mainSite,
-        sites: siteArr,
-        contacts: contactArr,
-        accountManager,
-        projectManager,
-        supportManager,
+        customerId, firstName, lastName, title, contactTypes,
+        phone, email, isPrimary, isDisabled, isArchived,} = req.body;
+    const contactSchema = new Contacts({
+        customerId,
+        firstName,
+        lastName,
+        title,
+        contactTypes,
+        phone,
+        email,
+        isPrimary,
         isDisabled,
-        isArchived
+        isArchived,
     });
 
-    this.customerserv.postCustomer(customerSchema, callbackFunc);
+    this.contactserv.postContact(contactSchema, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ customers: response });
+        res.json({ contacts: response });
       }
     }
   }
 };
 
-exports.patchCustomer = async (req, res, next) => {
+exports.patchContact = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    req.body.sites = req.body.sites.split(',');
-    req.body.contacts = req.body.contacts.split(',');
-
-
-    this.customerserv.patchCustomer(Customers, req.params.id, req.body, callbackFunc);
+    this.contactserv.patchContact(Contacts, req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
