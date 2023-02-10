@@ -61,8 +61,8 @@ exports.postCustomer = async (req, res, next) => {
         name, tradingName, mainSite, sites, contacts, accountManager, projectManager, supportManager, 
         isDisabled, isArchived } = req.body;
 
-    const siteArr =  sites.split(',');
-    const contactArr = contacts.split(',');
+    const siteArr =  sites ? sites.split(',') : [];
+    const contactArr = sites ? contacts.split(',') : [];
     
     const customerSchema = new Customers({
         name,
@@ -83,7 +83,7 @@ exports.postCustomer = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ customers: response });
+        res.json({ customer: response });
       }
     }
   }
