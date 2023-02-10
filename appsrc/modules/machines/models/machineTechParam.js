@@ -16,26 +16,15 @@ const machineTechParamSchema = new Schema({
     description: { type: String },
     // description of TechnicalParam
     
-    category: { type: Schema.Types.ObjectId , ref: 'machineTechParamCategory' },
+    category: { type: Schema.Types.ObjectId , ref: 'machineTechParamCategory' }
     // Param category
-
-    isDisabled: { type: Boolean, default: false },
-    // a TechnicalParam can be disabled. A disabled TechnicalParam can not be used to 
-    // perform any new action like selling machines or new contact, etc. 
-     
-    isArchived: { type: Boolean, default: false },
-    // a TechnicalParam can be archived. An archived TechnicalParam and its associated 
-    // data will not appear in reports
-    
-    createdAt: { type: Date , default: Date.now },
-    // Date/Time for record creation. more detail is in auditlog collection
-    
-    updatedAt: { type: Date , dfault: Date.now }
-    // Date/Time for record last updated. more detail is in auditlog collection
 },
 {
     collection: 'MachineTechParams'
 });
+
+const baseSchema = require('./baseSchema');
+machineTechParamSchema.add(baseSchema);
 
 machineTechParamSchema.plugin(uniqueValidator);
 

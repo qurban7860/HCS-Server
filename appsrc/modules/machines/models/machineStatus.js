@@ -24,24 +24,13 @@ const machineStatusSchema = new Schema({
     
     displayOrderNo: { type: Number },
     // order to display in dropdown lists
-     
-    isDisabled: { type: Boolean, default: false },
-    // a Status can be disabled. A disabled Status can not be used to 
-    // perform any new action like selling machines or new contact, etc. 
-     
-    isArchived: { type: Boolean, default: false },
-    // a Status can be archived. An archived Status and its associated 
-    // data will not appear in reports
-    
-    createdAt: { type: Date , default: Date.now },
-    // Date/Time for record creation. more detail is in auditlog collection
-    
-    updatedAt: { type: Date , dfault: Date.now }
-    // Date/Time for record last updated. more detail is in auditlog collection
 },
 {
     collection: 'MachineStatuses'
 });
+
+const baseSchema = require('./baseSchema');
+machineStatusSchema.add(baseSchema);
 
 machineStatusSchema.plugin(uniqueValidator);
 
