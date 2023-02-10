@@ -2,10 +2,13 @@ const models = require('../assets/models');
 const mongoose = require('mongoose');
 
 class dbService {
+  
   constructor() {
   }
 
   getObjectById(model, fields, id, populate, callback) {
+    //console.log('populate :'+populate);
+
     model.findById(id, fields).populate(populate).exec((err, documents) => {
       if (err) {
         callback(err, {});
@@ -15,8 +18,9 @@ class dbService {
     });
   }
 
-  getObjectList(model, fields, query, orderBy, callback) {
-    model.find(query, fields).sort(orderBy).exec((err, documents) => {
+  getObjectList(model, fields, query, orderBy, populate, callback) {
+    //console.log('populate :'+populate);
+    model.find(query, fields).populate(populate).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err, []);
       } else {
@@ -44,8 +48,9 @@ class dbService {
     });
   }
 
-  patchObject(model, id, scheme, callback) {
-    model.updateOne({ _id: id }, scheme).then(function (doc) {
+  patchObject(model, id, Object, callback) {
+    model.updateOne({ _id: id }, Object).then(function (doc) {
+      //console.log("doc: "+JSON.stringify(doc) );
       callback(null, doc);
     }).catch(function (err) {
       callback(err);

@@ -19,6 +19,8 @@ const customerContactRoutes = require('../customers/contacts/routes/contacts-rou
 const cusomterNoteRoutes = require('../customers/notes/routes/notes-route');
 const customerAuditLogRoutes = require('../customers/audit-logs/routes/audit-logs-route');
 
+const machineRoutes  = require ('../machines/routes');
+
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -69,9 +71,8 @@ class App {
     this.app.use(`${ apiPath }/contacts`, customerContactRoutes);
     this.app.use(`${ apiPath }/notes`, cusomterNoteRoutes);
     this.app.use(`${ apiPath }/audit-logs`, customerAuditLogRoutes);
-
-
-
+    
+    machineRoutes.registerMachineRoutes(this.app, apiPath);
   }
 
 
