@@ -94,8 +94,12 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    req.body.sites = req.body.sites.split(',');
-    req.body.contacts = req.body.contacts.split(',');
+    if(req.body.sites){
+      req.body.sites = req.body.sites.split(',');
+    }
+    if(req.body.contacts){
+      req.body.contacts = req.body.contacts.split(',');
+    }
 
 
     this.customerserv.patchCustomer(Customers, req.params.id, req.body, callbackFunc);
