@@ -1,18 +1,29 @@
 const { validationResult } = require('express-validator');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Sites } = require('../models');
-const HttpError = require('../../../config/models/http-error');
-const logger = require('../../../config/logger');
-let rtnMsg = require('../../../config/static/static')
 
-let SiteService = require('../service/site-service')
-this.siteserv = new SiteService();
+const HttpError = require('../../config/models/http-error');
+const logger = require('../../config/logger');
+let rtnMsg = require('../../config/static/static')
+
+let customerDBService = require('../service/customerDBService')
+this.dbservice = new customerDBService();
+
+const { CustomerSite } = require('../models');
+
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'department';
 
-exports.getSite = async (req, res, next) => {
-  this.siteserv.getObjectById(Sites, this.fields, req.params.id, this.populate, callbackFunc);
+this.fields = {};
+this.query = {};
+this.orderBy = { name: 1 };  
+this.populate = {path: '', select: ''};
+
+
+exports.getCustomerSite = async (req, res, next) => {
+  this.dbservice.getObjectById(CustomerSite, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -24,8 +35,8 @@ exports.getSite = async (req, res, next) => {
 
 };
 
-exports.getSites = async (req, res, next) => {
-  this.siteserv.getSites(Sites, this.fields, this.query, this.orderBy, callbackFunc);
+exports.getCustomerSites = async (req, res, next) => {
+  this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -36,8 +47,9 @@ exports.getSites = async (req, res, next) => {
   }
 };
 
-exports.deleteSite = async (req, res, next) => {
-  this.siteserv.deleteObject(Sites, req.params.id, callbackFunc);
+exports.deleteCustomerSite = async (req, res, next) => {
+  this.dbservice.deleteObject(CustomerSite, req.params.id, callbackFunc);
+  console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -48,51 +60,48 @@ exports.deleteSite = async (req, res, next) => {
   }
 };
 
-exports.postSite = async (req, res, next) => {
+function getCategoryFromReq(req){
+  const { name, description, isDisabled, isArchived } = req.body;
+  /*
+  console.log('name: '+name);
+  console.log('description: '+name);
+  console.log('isDisabled: '+name);
+  console.log('isArchived: '+name);
+  */
+  return  new CustomerSite({
+    name, 
+    description, 
+    isDisabled,
+    isArchived
+  });
+  
+  //return category;
+
+}
+
+exports.postCustomerSite = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const { name, billingSite, phone, email, fax, website, street, suburb,
-       city, region, country, isDisabled, isArchived } = req.body;
-    const siteSchema = new Sites({
-      name,
-      billingSite,
-      phone,
-      email,
-      fax,
-      website,
-      address: {
-        street,
-        suburb,
-        city,
-        region,
-        country,
-      },
-      isDisabled, 
-      isArchived
-    });
-
-    this.siteserv.postSite(siteSchema, callbackFunc);
+    this.dbservice.postObject(getCategoryFromReq(req), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ Sites: response });
+        res.json({ customerSite: response });
       }
     }
   }
 };
 
-exports.patchSite = async (req, res, next) => {
+exports.patchCustomerSite = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    req.body.image = req.file == undefined ? req.body.imagePath : req.file.path;
-
-    this.siteserv.patchSite(Sites, req.params.id, req.body, callbackFunc);
+    this.dbservice.patchObject(CustomerSite, req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));

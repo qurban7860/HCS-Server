@@ -3,19 +3,27 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Notes } = require('../models');
-const HttpError = require('../../../config/models/http-error');
-const logger = require('../../../config/logger');
-let rtnMsg = require('../../../config/static/static')
 
-let noteService = require('../service/notes-service')
-this.noteserv = new noteService();
+const HttpError = require('../../config/models/http-error');
+const logger = require('../../config/logger');
+let rtnMsg = require('../../config/static/static')
+
+let customerDBService = require('../service/customerDBService')
+this.dbservice = new customerDBService();
+
+const { CustomerContact } = require('../models');
+
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'users ';
 
-exports.getNote = async (req, res, next) => {
-  this.noteserv.getObjectById(Notes, this.fields, req.params.id, this.populate, callbackFunc);
+this.fields = {};
+this.query = {};
+this.orderBy = { name: 1 };  
+this.populate = {path: '', select: ''};
+
+
+exports.getCustomerContact = async (req, res, next) => {
+  this.dbservice.getObjectById(CustomerContact, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -27,8 +35,8 @@ exports.getNote = async (req, res, next) => {
 
 };
 
-exports.getNotes = async (req, res, next) => {
-  this.noteserv.getNotes(Notes, this.fields, this.query, this.orderBy, callbackFunc);
+exports.getCustomerContacts = async (req, res, next) => {
+  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -39,8 +47,8 @@ exports.getNotes = async (req, res, next) => {
   }
 };
 
-exports.deleteNote = async (req, res, next) => {
-  this.noteserv.deleteObject(Notes, req.params.id, callbackFunc);
+exports.deleteCustomerContact = async (req, res, next) => {
+  this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -52,44 +60,48 @@ exports.deleteNote = async (req, res, next) => {
   }
 };
 
-exports.postNote = async (req, res, next) => {
+function getCategoryFromReq(req){
+  const { name, description, isDisabled, isArchived } = req.body;
+  /*
+  console.log('name: '+name);
+  console.log('description: '+name);
+  console.log('isDisabled: '+name);
+  console.log('isArchived: '+name);
+  */
+  return  new CustomerContact({
+    name, 
+    description, 
+    isDisabled,
+    isArchived
+  });
+  
+  //return category;
+
+}
+
+exports.postCustomerContact = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const { customer, site, contact, user, note, isArchived } = req.body;
-    
-    const noteSchema = new Notes({
-      customer,
-      site,
-      contact,
-      user,
-      note,
-      isArchived
-    });
-
-    this.noteserv.postNote(noteSchema, callbackFunc);
+    this.dbservice.postObject(getCategoryFromReq(req), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ notes: response });
+        res.json({ customerCategory: response });
       }
     }
   }
 };
 
-exports.patchNote = async (req, res, next) => {
+exports.patchCustomerContact = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    req.body.sites = req.body.sites.split(',');
-    req.body.contacts = req.body.contacts.split(',');
-
-
-    this.noteserv.patchNote(Notes, req.params.id, req.body, callbackFunc);
+    this.dbservice.patchObject(CustomerContact, req.params.id, req.body, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));

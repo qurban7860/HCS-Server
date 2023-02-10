@@ -1,4 +1,7 @@
 'use strict'
 module.exports = {
-    Customers: require('./customers'),
+    Customer: require('./customer'),
+    customerSite: require('./customerSite'),
+    customerContact: require('./customerContact'),
+    customerNote: require('./customerNote')
 }
