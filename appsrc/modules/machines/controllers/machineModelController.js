@@ -19,6 +19,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
+//this.populate = 'category';
 this.populate = {path: 'category', select: '_id name description'};
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
