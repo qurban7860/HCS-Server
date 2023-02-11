@@ -11,14 +11,14 @@ const machineCategorySchema = new Schema({
 
     description: { type: String },
     // description of model
-},
+    },
     {
         collection: 'MachineCategories'
     }
 );
 
-const baseSchema = require('./baseSchema');
-machineCategorySchema.add(baseSchema);
+const docAuditSchema = require('./baseSchema');
+machineCategorySchema.add(docAuditSchema);
 
 machineCategorySchema.plugin(uniqueValidator);
 
