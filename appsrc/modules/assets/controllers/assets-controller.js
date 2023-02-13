@@ -12,7 +12,7 @@ let assetservice = require('../service/assetservice')
 this.aserv = new assetservice();
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = 'department';
+this.fields = {}, this.query = {}, this.orderBy = { name: 1 }, this.populate = '';
 
 exports.getAsset = async (req, res, next) => {
   this.aserv.getObjectById(Assets, this.fields, req.params.id, this.populate, callbackFunc);
@@ -56,7 +56,7 @@ exports.postAsset = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const { department, location, assetModel, name, notes, serial, status, assetTag } = req.body;
+    const { location, assetModel, name, notes, serial, status, assetTag } = req.body;
     const assetSchema = new Assets({
       name,
       status,
@@ -64,7 +64,6 @@ exports.postAsset = async (req, res, next) => {
       assetModel,
       serial,
       location,
-      department,
       notes,
       createdAt: new Date(),
       image: req.file == undefined ? null : req.file.path,

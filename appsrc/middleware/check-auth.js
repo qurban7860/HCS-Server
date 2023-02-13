@@ -13,13 +13,13 @@ module.exports = (req, res, next) => {
     }
     //const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
     const decodedToken = {
-      userId: "63b889ff7d2bd88d8076262c",
-      email: "naveed@terminustech.co.nz",
-      iat: 1676242110,
-      exp: 1676245710
+      userId: "639b0dcde7a66c6d1ae4b43f", 
+      email: "harisahmaad@gmail.com",
+      iat: 2976242110,
+      exp: 3676245710
     }
     req.body.loginUser = decodedToken;
-    //req.loginUser = { userId:'63b889ff7d2bd88d8076262c' };
+    //req.loginUser = { userId:'639b0dcde7a66c6d1ae4b43f' };
 
     //req.loginUser = { userId: decodedToken.userId };
     next();

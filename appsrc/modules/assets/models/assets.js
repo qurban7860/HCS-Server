@@ -10,10 +10,6 @@ const assetSchema = new Schema({
     assetTag: { type: String },
     assetModel: { type: String },
     serial: { type: String, required: true },
-    department: {
-        type: Schema.ObjectId,
-        ref: 'Department'
-    },
     location: { type: String },
     notes: { type: String },
     image: { type: String },
