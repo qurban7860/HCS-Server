@@ -28,7 +28,7 @@ const docSchema = new Schema({
         contacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
         // list of contact associated with organization
         
-        primaryBillingContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        primaryBillingContact: { type: Schema.Types, ref: 'CustomerContact' },
         // primary Billing Contact for the customer
         
         primaryTechnicalContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },

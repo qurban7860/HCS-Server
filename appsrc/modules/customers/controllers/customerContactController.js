@@ -151,3 +151,6 @@ function getDocumentFromReq(req, reqType){
   return doc;
 
 }
+
+
+exports.getDocumentFromReq = getDocumentFromReq;

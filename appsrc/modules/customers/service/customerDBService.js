@@ -1,5 +1,6 @@
 const models = require('../models');
 const mongoose = require('mongoose');
+var async = require("async");
 
 let dbService = require('../../db/dbService')
 
@@ -35,27 +36,48 @@ class MachineService {
 
   postObject(newdocument, callback) {
     const db = this.db;
-    if(newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string"){
-      this.db.postObject(newdocument.mainSite, callbackFunction);
-      function callbackFunction(error, response) {
-        if (error) callback(error, {});
-        else {
-          newdocument.sites.push(response._id);
-          newdocument.mainSite = response._id;
-          db.postObject(newdocument, callbackFunction);
+    async.waterfall([
+      function (callback) {
+        if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
+          this.db.postObject(newdocument.mainSite, callbackFunction);
           function callbackFunction(error, response) {
+            console.log(error);
             if (error) callback(error, {});
-            else callback(null, response);
+            else {
+              newdocument.sites.push(response._id);
+              newdocument.mainSite = response._id;
+              callback(null, newdocument);
+            }
           }
+        } else {
+          callback(null, newdocument);
         }
-      }
-    } else {
+      }.bind(this),
+      function (data, callback) {
+        console.log("newdocument.primaryBillingContact", typeof newdocument.primaryBillingContact);
+        if (newdocument.primaryBillingContact != undefined && typeof newdocument.primaryBillingContact !== "string") {
+          this.db.postObject(newdocument.primaryBillingContact, callbackFunction);
+          function callbackFunction(error, response) {
+            console.log(error);
+            if (error) callback(error, {});
+            else {
+              newdocument.contacts.push(response._id);
+              newdocument.primaryBillingContact = response._id;
+              callback(null, newdocument);
+            }
+          }
+        } else {
+          callback(null, newdocument);
+        }
+      }.bind(this),
+    ], function (err, result) {
+      if (err) return callback(err);
       db.postObject(newdocument, callbackFunction);
       function callbackFunction(error, response) {
         if (error) callback(error, {});
         else callback(null, response);
       }
-    }
+    }.bind(this));
   }
 
 

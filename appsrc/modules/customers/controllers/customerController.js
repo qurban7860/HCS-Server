@@ -17,6 +17,8 @@ const { customerSite } = require('../models');
 
 
 const SiteC = require('../controllers/customerSiteController');
+const ContactC = require('../controllers/customerContactController');
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -148,6 +150,12 @@ function getDocumentFromReq(req, reqType){
 
   if ("primaryBillingContact" in req.body){
     doc.primaryBillingContact = primaryBillingContact;
+  }
+
+  if(doc.primaryBillingContact != undefined && typeof primaryBillingContact !== "string") {
+    var req = {};
+    req.body = primaryBillingContact;
+    doc.primaryBillingContact = ContactC.getDocumentFromReq(req, 'new');
   }
   
   if ("primaryTechnicalContact" in req.body){
