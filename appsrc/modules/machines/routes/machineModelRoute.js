@@ -8,7 +8,7 @@ const controllers = require('../controllers');
 const controller = controllers.machineModelController;
 
 const router = express.Router();
-// router.use(checkAuth);
+router.use(checkAuth);
 
 router.get('/:id', controller.getMachineModel);
 
@@ -17,8 +17,6 @@ router.get('/', controller.getMachineModels);
 router.post('/',  controller.postMachineModel);
 
 router.patch('/:id',  controller.patchMachineModel);
-
-//router.patch('/:id', fileUpload.single('image'), this.cntrl.patchModel);
 
 router.delete('/:id', controller.deleteMachineModel);
 

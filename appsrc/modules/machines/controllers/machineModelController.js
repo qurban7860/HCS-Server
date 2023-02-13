@@ -62,34 +62,19 @@ exports.deleteMachineModel = async (req, res, next) => {
   }
 };
 
-function getModelFromReq(req){
-  const { name, description, category, isDisabled, isArchived } = req.body;
-  /*
-  console.log('name: '+name);
-  console.log('description: '+name);
-  console.log('category: '+category);
-  console.log('isDisabled: '+name);
-  console.log('isArchived: '+name);
-  */
-  return  new MachineModel({
-    name, 
-    description, 
-    category,
-    isDisabled,
-    isArchived
-  });
-}
-
 exports.postMachineModel = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getModelFromReq(req), callbackFunc);
+    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error
+          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+        );
       } else {
         res.json({ MachineModel: response });
       }
@@ -103,14 +88,67 @@ exports.patchMachineModel = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(MachineModel, req.params.id, req.body, callbackFunc);
+    this.dbservice.patchObject(MachineModel, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error
+          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+        );
       } else {
         res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
       }
     }
   }
 };
+
+/*
+function getModelFromReq(req){
+  const { name, description, category, isDisabled, isArchived } = req.body;
+  return  new MachineModel({
+    name, 
+    description, 
+    category,
+    isDisabled,
+    isArchived
+  });
+}
+*/
+
+function getDocumentFromReq(req, reqType){
+  const { name, description, category, isDisabled, isArchived, loginUser } = req.body;
+  
+  let doc = {};
+  if (reqType && reqType == "new"){
+    doc = new MachineModel({});
+  }
+
+  if ("name" in req.body){
+    doc.name = name;
+  }
+  if ("description" in req.body){
+    doc.description = description;
+  }
+  if ("category" in req.body){
+    doc.category = category;
+  }
+  
+  if ("isDisabled" in req.body){
+    doc.isDisabled = isDisabled;
+  }
+  if ("isArchived" in req.body){
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+  } 
+
+  //console.log("doc in http req: ", doc);
+  return doc;
+
+}

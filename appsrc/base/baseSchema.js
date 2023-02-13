@@ -1,18 +1,15 @@
-module.exports = docAuditSchema = {
-    createdAt: { type: Date , default: Date.now() },
-    // Date/Time for record creation. more detail is in auditlog collection
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
 
+let docAuditSchema = {
     createdBy: { type: Schema.Types.ObjectId , ref: 'User' },
     // System user information who has created document. more detail is in auditlog collection
-
-    updatedAt: { type: Date , dfault: Date.now() },
-    // Date/Time for record last updated. more detail is in auditlog collection
-
+    
     updatedBy: { type: Schema.Types.ObjectId , ref: 'User' },
     // System user information who has updated document. more detail is in auditlog collection
 }
 
-module.exports = docVisibilitySchema = {
+let  docVisibilitySchema = {
     isDisabled: { type: Boolean, default: false },
     // a document can be disabled. A disabled document can not be used to 
     // perform any new action like new selection in other document, etc. 
@@ -22,8 +19,8 @@ module.exports = docVisibilitySchema = {
     // data will not appear in reports
 }
 
-module.exports = docAddressSchema = {
-    Address: {
+let  docAddressSchema = {
+    address: {
         street: { type: String },
         // street address like 117 vincent street, 5/2 grey street, etc.
         suburb: { type: String },
@@ -39,7 +36,7 @@ module.exports = docAddressSchema = {
     }
 }
 
-module.exports = docContactSchema = {
+let  docContactSchema = {
     phone: { type: String },
     // phone/mobile numbers. Phone number must with country code. 
     // There can be multiple comma separated entries 
@@ -53,3 +50,7 @@ module.exports = docContactSchema = {
     website: { type: String },
     // website address of organization / site . 
 }
+
+ module.exports = {docAuditSchema, docVisibilitySchema, docAddressSchema, docContactSchema };
+
+ 

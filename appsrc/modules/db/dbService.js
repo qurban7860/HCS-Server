@@ -52,8 +52,9 @@ class dbService {
     model.updateOne({ _id: id }, Object).then(function (doc) {
       //console.log("doc: "+JSON.stringify(doc) );
       callback(null, doc);
-    }).catch(function (err) {
-      callback(err);
+    }).catch(function (error) {
+      console.error(error);
+      callback(error);
     });
   }
 }

@@ -1,12 +1,12 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
+const baseSchema = require('../../../base/baseSchema');
+
 const GUID = require('mongoose-guid')(mongoose);
-
-
 const Schema = mongoose.Schema;
 
-const machineModelSchema = new Schema({
+const docSchema = new Schema({
     name: { type: String, required: true, unique: true },
     // name of model 
     
@@ -20,9 +20,10 @@ const machineModelSchema = new Schema({
     collection: 'MachineModels'
 });
 
-const baseSchema = require('./baseSchema');
-machineModelSchema.add(baseSchema);
+docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docVisibilitySchema);
+docSchema.add(baseSchema.docAuditSchema);
 
-machineModelSchema.plugin(uniqueValidator);
+docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineModel', machineModelSchema);
+module.exports = mongoose.model('MachineModel', docSchema);

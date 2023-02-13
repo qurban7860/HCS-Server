@@ -1,32 +1,34 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
+const baseSchema = require('../../../base/baseSchema');
+
 const GUID = require('mongoose-guid')(mongoose);
-
-
 const Schema = mongoose.Schema;
 
-const notesSchema = new Schema({
-        customer: { type: Schema.Types.ObjectId, ref: 'customers' },
-
-        site: { type: Schema.Types.ObjectId, ref: 'customersites' },
-
-        contact: { type: Schema.Types.ObjectId, ref: 'customercontacts' },
-
-        user: { type: Schema.Types.ObjectId, ref: 'users' },
-
-        note: { type: String },
-
-        isArchived: { type: Boolean, default: false },
-
-        createdAt: { type: Date, default: Date.now, required: true },
-
-        updatedAt: { type: Date, default: Date.now, required: true }
+const docSchema = new Schema({
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
+        // guid of customer from customers collection.
+        
+        site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
+        // guid of side from sites collection.
+      
+        contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        // guid of contact from contacts collection.
+      
+        user: { type: Schema.Types.ObjectId, ref: 'user' },
+        // guid of user from users collection.
+        
+        note: { type: String, required: true },
+        // This will be used to handle any kind of comments or notes against any above field
 },
-        {
-                collection: 'CustomerNotes'
-        });
+{
+        collection: 'CustomerNotes'
+});
 
-notesSchema.plugin(uniqueValidator);
+docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docVisibilitySchema);
+docSchema.add(baseSchema.docAuditSchema);
+docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('CustomerNote', notesSchema);
+module.exports = mongoose.model('CustomerNote', docSchema);

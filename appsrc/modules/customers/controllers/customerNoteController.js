@@ -60,35 +60,18 @@ exports.deleteCustomerNote = async (req, res, next) => {
   }
 };
 
-function getCategoryFromReq(req){
-  const { name, description, isDisabled, isArchived } = req.body;
-  /*
-  console.log('name: '+name);
-  console.log('description: '+name);
-  console.log('isDisabled: '+name);
-  console.log('isArchived: '+name);
-  */
-  return  new CustomerNote({
-    name, 
-    description, 
-    isDisabled,
-    isArchived
-  });
-  
-  //return category;
-
-}
-
 exports.postCustomerNote = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getCategoryFromReq(req), callbackFunc);
+    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
       } else {
         res.json({ customerNote: response });
       }
@@ -101,14 +84,59 @@ exports.patchCustomerNote = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(CustomerNote, req.params.id, req.body, callbackFunc);
+    this.dbservice.patchObject(CustomerNote, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
       } else {
         res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
       }
     }
   }
 };
+
+function getDocumentFromReq(req, reqType){
+  const { customer, site, contact, user,  note,  
+    isDisabled, isArchived, loginUser } = req.body;
+  
+  let doc = {};
+  if (reqType && reqType == "new"){
+    doc = new CustomerNote({});
+  }
+  if ("customer" in req.body){
+    doc.customer = customer;
+  }
+  if ("site" in req.body){
+    doc.site = site;
+  }
+  if ("contact" in req.body){
+    doc.contact = contact;
+  }
+  if ("user" in req.body){
+    doc.user = user;
+  }
+  if ("note" in req.body){
+    doc.note = note;
+  }
+  
+  if ("isDisabled" in req.body){
+    doc.isDisabled = isDisabled;
+  }
+  if ("isArchived" in req.body){
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+  } 
+
+  //console.log("doc in http req: ", doc);
+  return doc;
+
+}

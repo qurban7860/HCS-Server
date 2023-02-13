@@ -33,16 +33,18 @@ class MachineService {
     }
   };
 
-  postObject(newdocument, callback) {
-    this.db.postObject(newdocument, callbackFunction);
+  postObject(document, callback) {
+    //console.log("Object To Post :", document);
+    this.db.postObject(document, callbackFunction);
     function callbackFunction(error, response) {
       if (error) callback(error, {});
       else callback(null, response);
     }
   }
 
-  patchObject(model, id, newValues, callback) {
-    this.db.patchObject(model, id, newValues, callbackFunc);
+  patchObject(model, id, document, callback) {
+    //console.log("Document To Patch :", document);
+    this.db.patchObject(model, id, document, callbackFunc);
     function callbackFunc(error, result) {
       if (error) callback(error, {});
       else callback(null, result);

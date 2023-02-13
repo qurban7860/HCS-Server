@@ -8,7 +8,7 @@ const controllers = require('../controllers');
 const controller = controllers.machineCategoryController;
 
 const router = express.Router();
-// router.use(checkAuth);
+router.use(checkAuth);
 
 router.get('/:id', controller.getMachineCategory);
 
@@ -17,8 +17,6 @@ router.get('/', controller.getMachineCategories);
 router.post('/',  controller.postMachineCategory);
 
 router.patch('/:id',  controller.patchMachineCategory);
-
-//router.patch('/:id', fileUpload.single('image'), this.cntrl.patchCustomer);
 
 router.delete('/:id', controller.deleteMachineCategory);
 

@@ -1,49 +1,37 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
+const baseSchema = require('../../../base/baseSchema');
 const GUID = require('mongoose-guid')(mongoose);
 
 const Schema = mongoose.Schema;
 
-const sitesSchema = new Schema({
-    customerId: { type: Schema.Types.ObjectId, ref: 'customers' },
+const docSchema = new Schema({
+    customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+    // guid of customer from customers collection. 
+    
+    name: { type: String , required: true },
+    // name of site. default will be organization name
 
-    name: { type: String, required: true },
-
-    billingSite: { type: Schema.Types.ObjectId, ref: 'customersites' },
-
-    phone: { type: String },
-
-    email: { type: String },
-
-    fax: { type: String },
-
-    website: { type: String },
-
-    address: {
-        street: { type: String },
-        suburb: { type: String },
-        city: { type: String },
-        region: { type: String },
-        postcode: { type: String },
-        country: { type: String }
-
-    },
-
-    contacts: [{ type: Schema.Types.ObjectId, ref: 'customercontacts' }],
-
-    isDisabled: { type: Boolean, default: false },
-
-    isArchived: { type: Boolean, default: false },
-
-    createdAt: { type: Date, default: Date.now, required: true },
-
-    updatedAt: { type: Date, default: Date.now, required: true }
+    primaryBillingContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+    // primary Billing Contact for the site
+    
+    primaryTechnicalContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+    // primary Technical Contact for the site
+    
+    contacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
+    // list of associated other contacts (GUIDs) from contacts collection
 },
-    {
-        collection: 'CustomerSites'
-    });
+{
+    collection: 'CustomerSites'
+});
 
-sitesSchema.plugin(uniqueValidator);
+docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docContactSchema);
+docSchema.add(baseSchema.docAddressSchema);
+docSchema.add(baseSchema.docVisibilitySchema);
+docSchema.add(baseSchema.docAuditSchema);
 
-module.exports = mongoose.model('CustomerSite', sitesSchema);
+docSchema.plugin(uniqueValidator);
+
+module.exports = mongoose.model('CustomerSite', docSchema);

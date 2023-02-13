@@ -60,25 +60,6 @@ exports.deleteCustomerContact = async (req, res, next) => {
   }
 };
 
-function getCategoryFromReq(req){
-  const { name, description, isDisabled, isArchived } = req.body;
-  /*
-  console.log('name: '+name);
-  console.log('description: '+name);
-  console.log('isDisabled: '+name);
-  console.log('isArchived: '+name);
-  */
-  return  new CustomerContact({
-    name, 
-    description, 
-    isDisabled,
-    isArchived
-  });
-  
-  //return category;
-
-}
-
 exports.postCustomerContact = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -88,7 +69,9 @@ exports.postCustomerContact = async (req, res, next) => {
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
       } else {
         res.json({ customerCategory: response });
       }
@@ -101,14 +84,71 @@ exports.patchCustomerContact = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(CustomerContact, req.params.id, req.body, callbackFunc);
+    this.dbservice.patchObject(CustomerContact, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error
+          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
       } else {
         res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
       }
     }
   }
 };
+
+function getDocumentFromReq(req, reqType){
+  const { customer, firstName, lastName, title, contactTypes, phone, email, sites, 
+    isDisabled, isArchived, loginUser } = req.body;
+  
+  let doc = {};
+  if (reqType && reqType == "new"){
+    doc = new CustomerContact({});
+  }
+  if ("customer" in req.body){
+    doc.customer = customer;
+  }
+  if ("firstName" in req.body){
+    doc.firstName = firstName;
+  }
+  if ("lastName" in req.body){
+    doc.lastName = lastName;
+  }
+  if ("title" in req.body){
+    doc.title = title;
+  }
+  if ("contactTypes" in req.body){
+    doc.contactTypes = contactTypes;
+  }
+
+
+  if ("phone" in req.body){
+    doc.phone = phone;
+  }
+  if ("email" in req.body){
+    doc.email = email;
+  }
+  if ("sites" in req.body){
+    doc.sites = sites;
+  }
+  
+  if ("isDisabled" in req.body){
+    doc.isDisabled = isDisabled;
+  }
+  if ("isArchived" in req.body){
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+  } 
+
+  //console.log("doc in http req: ", doc);
+  return doc;
+
+}
