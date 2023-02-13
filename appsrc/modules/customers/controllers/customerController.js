@@ -19,7 +19,8 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
-this.populate = '';
+//this.populate = 'mainSite';
+this.populate = {path: '', select: ''};
 //this.populate = {path: 'category', select: '_id name description'};
 //this.populate = {path: 'category', model: 'CustomerCategory', select: '_id name description'};
 
