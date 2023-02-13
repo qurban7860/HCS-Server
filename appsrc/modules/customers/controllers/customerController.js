@@ -128,10 +128,20 @@ function getDocumentFromReq(req, reqType){
     doc.type = type;
   }
 
+  if ("mainSite" in req.body){
+    doc.mainSite = mainSite;
+  }
+
+  if(doc.mainSite != undefined && typeof doc.mainSite !== "string") {
+    var req = {};
+    req.body = mainSite;
+    doc.mainSite = SiteC.getDocumentFromReq(req, 'new');
+  }
   
   if ("sites" in req.body){
     doc.sites = sites;
   }
+
   if ("contacts" in req.body){
     doc.contacts = contacts;
   }
@@ -139,9 +149,11 @@ function getDocumentFromReq(req, reqType){
   if ("primaryBillingContact" in req.body){
     doc.primaryBillingContact = primaryBillingContact;
   }
+  
   if ("primaryTechnicalContact" in req.body){
     doc.primaryTechnicalContact = primaryTechnicalContact;
   }
+
   if ("accountManager" in req.body){
     doc.accountManager = accountManager;
   }
@@ -167,16 +179,6 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
   } 
-
-  if ("mainSite" in req.body){
-    doc.mainSite = mainSite;
-  }
-
-  if(doc.mainSite != undefined && typeof doc.mainSite !== "string") {
-    var req = {};
-    req.body = mainSite;
-    doc.mainSite = SiteC.getDocumentFromReq(req, 'new');
-  }
 
 
   //console.log("doc in http req: ", doc);

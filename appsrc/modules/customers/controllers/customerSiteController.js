@@ -99,7 +99,8 @@ exports.patchCustomerSite = async (req, res, next) => {
   }
 };
 
-exports.getDocumentFromReq = function getDocumentFromReq(req, reqType){
+function getDocumentFromReq(req, reqType){
+  console.log(req.body);
   const { customer, name, phone, email, fax, website, address, 
     primaryBillingContact, primaryTechnicalContact, contacts,
     isDisabled, isArchived, loginUser } = req.body;
@@ -160,3 +161,5 @@ exports.getDocumentFromReq = function getDocumentFromReq(req, reqType){
   return doc;
 
 }
+
+exports.getDocumentFromReq = getDocumentFromReq;
