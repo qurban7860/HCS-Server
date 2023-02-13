@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerContact } = require('../models');
+const { customerContact } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -23,7 +23,7 @@ this.populate = {path: '', select: ''};
 
 
 exports.getCustomerContact = async (req, res, next) => {
-  this.dbservice.getObjectById(CustomerContact, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(customerContact, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -36,7 +36,7 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(customerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -48,8 +48,7 @@ exports.getCustomerContacts = async (req, res, next) => {
 };
 
 exports.deleteCustomerContact = async (req, res, next) => {
-  this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
-  console.log(req.params.id);
+  this.dbservice.deleteObject(customerContact, req.params.id, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -65,7 +64,7 @@ exports.postCustomerContact = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getCategoryFromReq(req), callbackFunc);
+    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -84,7 +83,7 @@ exports.patchCustomerContact = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(CustomerContact, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(customerContact, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -105,7 +104,7 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new CustomerContact({});
+    doc = new customerContact({});
   }
   if ("customer" in req.body){
     doc.customer = customer;
@@ -148,7 +147,7 @@ function getDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
   } 
 
-  //console.log("doc in http req: ", doc);
+
   return doc;
 
 }

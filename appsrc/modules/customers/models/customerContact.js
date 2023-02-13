@@ -7,7 +7,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
         
-        customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer'},
         // guid of customer from customers collection.
         
         firstName: { type: String, required: true},
