@@ -172,7 +172,7 @@ function getDocumentFromReq(req, reqType){
     doc.mainSite = mainSite;
   }
 
-  if(typeof doc.mainSite !== "string") {
+  if(doc.mainSite != undefined && typeof doc.mainSite !== "string") {
     var req = {};
     req.body = mainSite;
     doc.mainSite = SiteC.getDocumentFromReq(req, 'new');

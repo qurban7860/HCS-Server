@@ -35,8 +35,7 @@ class MachineService {
 
   postObject(newdocument, callback) {
     const db = this.db;
-
-    if(typeof newdocument.mainSite !== "string"){
+    if(newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string"){
       this.db.postObject(newdocument.mainSite, callbackFunction);
       function callbackFunction(error, response) {
         if (error) callback(error, {});
