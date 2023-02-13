@@ -65,31 +65,7 @@ exports.postMachineCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-<<<<<<< HEAD:appsrc/modules/customers/controllers/customers-controller.js
-    const { 
-        name, tradingName, mainSite, sites, contacts, accountManager, projectManager, supportManager, 
-        isDisabled, isArchived } = req.body;
-
-    const siteArr =  sites ? sites.split(',') : [];
-    const contactArr = sites ? contacts.split(',') : [];
-    
-    const customerSchema = new Customers({
-        name,
-        tradingName,
-        mainSite,
-        sites: siteArr,
-        contacts: contactArr,
-        accountManager,
-        projectManager,
-        supportManager,
-        isDisabled,
-        isArchived
-    });
-
-    this.customerserv.postCustomer(customerSchema, callbackFunc);
-=======
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
->>>>>>> machines:appsrc/modules/machines/controllers/machineCategoryController.js
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -97,11 +73,7 @@ exports.postMachineCategory = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
-<<<<<<< HEAD:appsrc/modules/customers/controllers/customers-controller.js
-        res.json({ customer: response });
-=======
         res.json({ MachineCategory: response });
->>>>>>> machines:appsrc/modules/machines/controllers/machineCategoryController.js
       }
     }
   }
@@ -112,19 +84,7 @@ exports.patchMachineCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-<<<<<<< HEAD:appsrc/modules/customers/controllers/customers-controller.js
-    if(req.body.sites){
-      req.body.sites = req.body.sites.split(',');
-    }
-    if(req.body.contacts){
-      req.body.contacts = req.body.contacts.split(',');
-    }
-
-
-    this.customerserv.patchCustomer(Customers, req.params.id, req.body, callbackFunc);
-=======
     this.dbservice.patchObject(MachineCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
->>>>>>> machines:appsrc/modules/machines/controllers/machineCategoryController.js
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
