@@ -13,6 +13,11 @@ this.dbservice = new customerDBService();
 
 const { Customer } = require('../models');
 
+const { customerSite } = require('../models');
+
+
+const SiteC = require('../controllers/customerSiteController');
+
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -122,11 +127,6 @@ function getDocumentFromReq(req, reqType){
   if ("type" in req.body){
     doc.type = type;
   }
-  if ("mainSite" in req.body){
-    doc.mainSite = mainSite;
-  }
-
-
 
   
   if ("sites" in req.body){
@@ -168,7 +168,17 @@ function getDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
   } 
 
+  if ("mainSite" in req.body){
+    doc.mainSite = mainSite;
+  }
+
+  if(typeof doc.mainSite !== "string") {
+    var req = {};
+    req.body = mainSite;
+    doc.mainSite = SiteC.getDocumentFromReq(req, 'new');
+  }
+
+
   //console.log("doc in http req: ", doc);
   return doc;
-
 }

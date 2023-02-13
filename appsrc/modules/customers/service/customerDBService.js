@@ -34,12 +34,32 @@ class MachineService {
   };
 
   postObject(newdocument, callback) {
-    this.db.postObject(newdocument, callbackFunction);
-    function callbackFunction(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+    const db = this.db;
+
+    if(typeof newdocument.mainSite !== "string"){
+      this.db.postObject(newdocument.mainSite, callbackFunction);
+      function callbackFunction(error, response) {
+        if (error) callback(error, {});
+        else {
+          newdocument.sites.push(response._id);
+          newdocument.mainSite = response._id;
+          db.postObject(newdocument, callbackFunction);
+          function callbackFunction(error, response) {
+            if (error) callback(error, {});
+            else callback(null, response);
+          }
+        }
+      }
+    } else {
+      db.postObject(newdocument, callbackFunction);
+      function callbackFunction(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
     }
   }
+
+
 
   patchObject(model, id, newValues, callback) {
     this.db.patchObject(model, id, newValues, callbackFunc);
