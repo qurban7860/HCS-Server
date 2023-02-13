@@ -16,7 +16,7 @@ const docSchema = new Schema({
         contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         // guid of contact from contacts collection.
       
-        user: { type: Schema.Types.ObjectId, ref: 'user' },
+        user: { type: Schema.Types.ObjectId, ref: 'User' },
         // guid of user from users collection.
         
         note: { type: String, required: true },
