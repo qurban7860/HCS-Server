@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerSite } = require('../models');
+const { customerSite } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -106,7 +106,7 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new CustomerSite({});
+    doc = new customerSite({});
   }
   if ("customer" in req.body){
     doc.customer = customer;
