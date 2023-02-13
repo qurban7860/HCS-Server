@@ -23,7 +23,7 @@ this.populate = {path: '', select: ''};
 
 
 exports.getCustomerSite = async (req, res, next) => {
-  this.dbservice.getObjectById(CustomerSite, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(customerSite, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -36,7 +36,7 @@ exports.getCustomerSite = async (req, res, next) => {
 };
 
 exports.getCustomerSites = async (req, res, next) => {
-  this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(customerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -48,7 +48,7 @@ exports.getCustomerSites = async (req, res, next) => {
 };
 
 exports.deleteCustomerSite = async (req, res, next) => {
-  this.dbservice.deleteObject(CustomerSite, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(customerSite, req.params.id, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -85,7 +85,7 @@ exports.patchCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(customerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
