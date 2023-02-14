@@ -29,7 +29,7 @@ this.orderBy = { name: 1 };
 this.populate = [
   {path: 'mainSite', select: 'address name phone email'}, 
   {path: 'primaryBillingContact', select: 'firstName'},
-  
+
   {path: 'accountManager', select: 'firstName lastName email'},
   {path: 'projectManager', select: 'firstName lastName email'},
   {path: 'supportManager', select: 'firstName lastName email'},
@@ -84,6 +84,7 @@ exports.postCustomer = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    var _this = this;
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -91,7 +92,15 @@ exports.postCustomer = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
-        res.json({ Customer: response });
+        _this.dbservice.getObjectById(Customer, _this.fields, response._id, _this.populate, callbackFunc);
+        function callbackFunc(error, response) {
+          if (error) {
+            logger.error(new Error(error));
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+          } else {
+            res.json({ Customer: response });
+          }
+        }
       }
     }
   }
