@@ -16,8 +16,8 @@ const { Customer } = require('../models');
 const { customerSite } = require('../models');
 
 
-const SiteC = require('../controllers/customerSiteController');
-const ContactC = require('../controllers/customerContactController');
+const customerSiteController = require('../controllers/customerSiteController');
+const customerContactController = require('../controllers/customerContactController');
 
 
 
@@ -45,7 +45,6 @@ exports.getCustomer = async (req, res, next) => {
       res.json(response);
     }
   }
-
 };
 
 exports.getCustomers = async (req, res, next) => {
@@ -140,7 +139,8 @@ function getDocumentFromReq(req, reqType){
   if(doc.mainSite != undefined && typeof doc.mainSite !== "string") {
     var reqMainSite = {};
     reqMainSite.body = mainSite;
-    doc.mainSite = SiteC.getDocumentFromReq(reqMainSite, 'new');
+    doc.mainSite = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
+    doc.mainSite.customer = doc._id;
   }
   
   if ("sites" in req.body){
@@ -158,7 +158,8 @@ function getDocumentFromReq(req, reqType){
   if(doc.primaryBillingContact != undefined && typeof primaryBillingContact !== "string") {
     var reqPrimaryBillingContact = {};
     reqPrimaryBillingContact.body = primaryBillingContact;
-    doc.primaryBillingContact = ContactC.getDocumentFromReq(reqPrimaryBillingContact, 'new');
+    doc.primaryBillingContact = customerContactController.getDocumentFromReq(reqPrimaryBillingContact, 'new');
+    doc.primaryBillingContact.customer = doc._id;
   }
   
   if ("primaryTechnicalContact" in req.body){
