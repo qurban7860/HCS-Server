@@ -15,10 +15,7 @@ const docSchema = new Schema({
         
         type: { type: String },
         //its value can be "SP", "Customer"
-
-        // mainSiteObject: { type: Schema.Types , ref: 'CustomerSite' },
-        // // Received Object for main site/location or headoffice
-        
+       
         mainSite: { type: Schema.Types , ref: 'CustomerSite' },
         // it will be considered main site/location or headoffice 
         

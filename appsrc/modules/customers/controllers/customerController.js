@@ -26,12 +26,17 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
-//this.populate = 'mainSite';
-this.populate = [{path: 'mainSite', select: 'address name phone email'}, 
+this.populate = [
+  {path: 'mainSite', select: 'address name phone email'}, 
   {path: 'primaryBillingContact', select: 'firstName'},
   {path: 'accountManager', select: 'firstName lastName email'},
   {path: 'projectManager', select: 'firstName lastName email'},
   {path: 'supportManager', select: 'firstName lastName email'},
+];
+
+
+this.populateList = [
+  {path: 'mainSite', select: 'address name phone email'}
 ];
 
 
@@ -48,7 +53,7 @@ exports.getCustomer = async (req, res, next) => {
 };
 
 exports.getCustomers = async (req, res, next) => {
-  this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
