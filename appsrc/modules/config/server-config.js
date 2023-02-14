@@ -51,30 +51,19 @@ class App {
       swaggerUi.setup(swaggerDocument)
     );
     this.app.use(errorHandler);
-
-
-
-
   }
 
   registerRoutes(){
     this.app.use(`${ apiPath }/users`, usersRoutes);
     this.app.use(`${ apiPath }/assets`, assetsRoutes);
     this.app.use(`${ apiPath }/departments`, departmentRoutes);
-
-
     
     machineRoutes.registerMachineRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
-    
-    
   }
 
 
 
-
-  
-  
 
   start(){
         try {

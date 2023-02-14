@@ -4,9 +4,13 @@ const Schema = mongoose.Schema;
 let docAuditSchema = {
     createdBy: { type: Schema.Types.ObjectId , ref: 'User' },
     // System user information who has created document. more detail is in auditlog collection
+    createIP: {type: String},
+    //user ip address
     
     updatedBy: { type: Schema.Types.ObjectId , ref: 'User' },
     // System user information who has updated document. more detail is in auditlog collection
+    updatedIP: {type: String},
+    //user ip address
 }
 
 let  docVisibilitySchema = {

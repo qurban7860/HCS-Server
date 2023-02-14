@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let machineDBService = require('../service/machineDBService')
 this.dbservice = new machineDBService();
 
-const { MachineCategory } = require('../models');
+const { MachineStatus } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -19,11 +19,13 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
+//this.populate = 'category';
 this.populate = {path: '', select: ''};
+//this.populate = {path: '<field name>', model: '<model name>', select: '<space separated field names>'};
 
 
-exports.getMachineCategory = async (req, res, next) => {
-  this.dbservice.getObjectById(MachineCategory, this.fields, req.params.id, this.populate, callbackFunc);
+exports.getMachineStatus = async (req, res, next) => {
+  this.dbservice.getObjectById(MachineStatus, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -35,8 +37,8 @@ exports.getMachineCategory = async (req, res, next) => {
 
 };
 
-exports.getMachineCategories = async (req, res, next) => {
-  this.dbservice.getObjectList(MachineCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+exports.getMachineStatuses = async (req, res, next) => {
+  this.dbservice.getObjectList(MachineStatus, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -47,9 +49,9 @@ exports.getMachineCategories = async (req, res, next) => {
   }
 };
 
-exports.deleteMachineCategory = async (req, res, next) => {
-  this.dbservice.deleteObject(MachineCategory, req.params.id, callbackFunc);
-  console.log(req.params.id);
+exports.deleteMachineStatus = async (req, res, next) => {
+  this.dbservice.deleteObject(MachineStatus, req.params.id, callbackFunc);
+  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -60,7 +62,7 @@ exports.deleteMachineCategory = async (req, res, next) => {
   }
 };
 
-exports.postMachineCategory = async (req, res, next) => {
+exports.postMachineStatus = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -69,29 +71,31 @@ exports.postMachineCategory = async (req, res, next) => {
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
-        res.json({ MachineCategory: response });
+        res.json({ MachineStatus: response });
       }
     }
   }
 };
 
-exports.patchMachineCategory = async (req, res, next) => {
+exports.patchMachineStatus = async (req, res, next) => {
   const errors = validationResult(req);
+  //console.log('calling patchMachineStatus');
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(MachineCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(MachineStatus, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
       }
@@ -101,11 +105,11 @@ exports.patchMachineCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, isDisabled, isArchived, loginUser } = req.body;
+  const { name, description, displayOrderNo, isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new MachineCategory({});
+    doc = new MachineStatus({});
   }
 
   if ("name" in req.body){
@@ -114,6 +118,11 @@ function getDocumentFromReq(req, reqType){
   if ("description" in req.body){
     doc.description = description;
   }
+
+  if ("displayOrderNo" in req.body){
+    doc.displayOrderNo = displayOrderNo;
+  }
+  
   if ("isDisabled" in req.body){
     doc.isDisabled = isDisabled;
   }
