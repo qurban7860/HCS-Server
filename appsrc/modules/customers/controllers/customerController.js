@@ -27,9 +27,12 @@ this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
 //this.populate = 'mainSite';
-this.populate = {path: 'mainSite', select: 'address name phone email'};
-//this.populate = {path: 'category', select: '_id name description'};
-//this.populate = {path: 'category', model: 'CustomerCategory', select: '_id name description'};
+this.populate = [{path: 'mainSite', select: 'address name phone email'}, 
+  {path: 'primaryBillingContact', select: 'firstName'},
+  {path: 'accountManager', select: 'firstName lastName email'},
+  {path: 'projectManager', select: 'firstName lastName email'},
+  {path: 'supportManager', select: 'firstName lastName email'},
+];
 
 
 exports.getCustomer = async (req, res, next) => {
@@ -115,7 +118,7 @@ function getDocumentFromReq(req, reqType){
     primaryBillingContact, primaryTechnicalContact, 
     accountManager, projectManager, supportManager, 
     isDisabled, isArchived, loginUser } = req.body;
-  
+
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new Customer({});
@@ -135,9 +138,9 @@ function getDocumentFromReq(req, reqType){
   }
 
   if(doc.mainSite != undefined && typeof doc.mainSite !== "string") {
-    var req = {};
-    req.body = mainSite;
-    doc.mainSite = SiteC.getDocumentFromReq(req, 'new');
+    var reqMainSite = {};
+    reqMainSite.body = mainSite;
+    doc.mainSite = SiteC.getDocumentFromReq(reqMainSite, 'new');
   }
   
   if ("sites" in req.body){
@@ -153,9 +156,9 @@ function getDocumentFromReq(req, reqType){
   }
 
   if(doc.primaryBillingContact != undefined && typeof primaryBillingContact !== "string") {
-    var req = {};
-    req.body = primaryBillingContact;
-    doc.primaryBillingContact = ContactC.getDocumentFromReq(req, 'new');
+    var reqPrimaryBillingContact = {};
+    reqPrimaryBillingContact.body = primaryBillingContact;
+    doc.primaryBillingContact = ContactC.getDocumentFromReq(reqPrimaryBillingContact, 'new');
   }
   
   if ("primaryTechnicalContact" in req.body){
@@ -187,6 +190,8 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
   } 
+
+
 
 
   //console.log("doc in http req: ", doc);

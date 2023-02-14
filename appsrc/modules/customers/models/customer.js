@@ -34,13 +34,13 @@ const docSchema = new Schema({
         primaryTechnicalContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         // primary Technical Contact for the customer
         
-        accountManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+        accountManager: { type: Schema.Types.ObjectId , ref: 'User' },
         // account manager for this customer from Howick Side 
         
-        projectManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+        projectManager: { type: Schema.Types.ObjectId , ref: 'User' },
         // technical project manager for this customer from Howick Side
         
-        supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+        supportManager: { type: Schema.Types.ObjectId , ref: 'User' },
         // support project manager for this customer from Howick Side
 },
 {
