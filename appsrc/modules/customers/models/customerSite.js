@@ -7,7 +7,7 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-    customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
+    customer: { type: Schema.Types.ObjectId, ref: 'Customer' , required: true},
     // guid of customer from customers collection. 
     
     name: { type: String , required: true },
