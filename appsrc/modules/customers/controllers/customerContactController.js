@@ -47,6 +47,22 @@ exports.getCustomerContacts = async (req, res, next) => {
   }
 };
 
+
+exports.getSPCustomerContacts = async (req, res, next) => {
+  this.populateObj = {path: 'customer', select: 'type'};
+  this.dbservice.getObjectList(customerContact, this.fields, this.query, this.orderBy, this.populateObj, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response.filter(data => {
+        return data.customer && data.customer.type && data.customer.type == 'SP' ? data : null;
+      }));
+    }
+  }
+};
+
 exports.deleteCustomerContact = async (req, res, next) => {
   this.dbservice.deleteObject(customerContact, req.params.id, callbackFunc);
   function callbackFunc(error, result) {
