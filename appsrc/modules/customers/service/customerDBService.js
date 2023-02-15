@@ -38,8 +38,8 @@ class MachineService {
     const db = this.db;
     async.waterfall([
       function (callback) {
-        if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
-          this.db.postObject(newdocument.mainSite, callbackFunction);
+        if (newdocument.site != undefined && typeof newdocument.site !== "string") {
+          this.db.postObject(newdocument.site, callbackFunction);
           function callbackFunction(error, response) {
             console.log(error);
             if (error) callback(error, {});
@@ -72,6 +72,9 @@ class MachineService {
       }.bind(this),
     ], function (err, result) {
       if (err) return callback(err);
+      console.log("newdocument", newdocument);
+
+      
       db.postObject(newdocument, callbackFunction);
       function callbackFunction(error, response) {
         if (error) callback(error, {});

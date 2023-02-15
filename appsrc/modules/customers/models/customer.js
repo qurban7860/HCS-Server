@@ -15,8 +15,12 @@ const docSchema = new Schema({
         
         type: { type: String },
         //its value can be "SP", "Customer"
-       
-        mainSite: { type: Schema.Types , ref: 'CustomerSite' },
+
+        
+        // site: { type: Schema.Types , ref: 'CustomerSite' },
+        // // main site object
+
+        mainSite: { type: Schema.Types.ObjectId , ref: 'CustomerSite' },
         // it will be considered main site/location or headoffice 
         
         sites: [{ type: Schema.Types.ObjectId, ref: 'CustomerSite' }],
@@ -25,7 +29,7 @@ const docSchema = new Schema({
         contacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
         // list of contact associated with organization
         
-        primaryBillingContact: { type: Schema.Types, ref: 'CustomerContact' },
+        primaryBillingContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         // primary Billing Contact for the customer
         
         primaryTechnicalContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
