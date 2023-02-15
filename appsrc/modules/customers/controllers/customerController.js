@@ -129,7 +129,7 @@ exports.patchCustomer = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { name, tradingName, type, site, mainSite, sites, contacts,
-    billingContact, primaryBillingContact, primaryTechnicalContact, 
+    billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
     accountManager, projectManager, supportManager, 
     isDisabled, isArchived, loginUser } = req.body;
 
@@ -191,6 +191,17 @@ function getDocumentFromReq(req, reqType){
   
   if ("primaryTechnicalContact" in req.body){
     doc.primaryTechnicalContact = primaryTechnicalContact;
+  }
+
+  if ("technicalContact" in req.body){
+    doc.technicalContact = technicalContact;
+  }
+
+  if(doc.technicalContact != undefined && typeof technicalContact !== "string") {
+    var reqprimaryTechnicalContact = {};
+    reqprimaryTechnicalContact.body = technicalContact;
+    doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
+    doc.technicalContact.customer = doc._id;
   }
 
   if ("accountManager" in req.body){

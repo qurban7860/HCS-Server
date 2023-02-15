@@ -69,6 +69,22 @@ class MachineService {
           callback(null, newdocument);
         }
       }.bind(this),
+      function (data, callback) {
+        if (newdocument.technicalContact != undefined && typeof newdocument.technicalContact !== "string") {
+          this.db.postObject(newdocument.technicalContact, callbackFunction);
+          function callbackFunction(error, response) {
+            console.log(error);
+            if (error) callback(error, {});
+            else {
+              newdocument.contacts.push(response._id);
+              newdocument.primaryTechnicalContact = response._id;
+              callback(null, newdocument);
+            }
+          }
+        } else {
+          callback(null, newdocument);
+        }
+      }.bind(this),
     ], function (err, result) {
       if (err) return callback(err);
       db.postObject(newdocument, callbackFunction);
