@@ -129,7 +129,7 @@ exports.patchCustomer = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { name, tradingName, type, site, mainSite, sites, contacts,
-    primaryBillingContact, primaryTechnicalContact, 
+    billingContact, primaryBillingContact, primaryTechnicalContact, 
     accountManager, projectManager, supportManager, 
     isDisabled, isArchived, loginUser } = req.body;
 
@@ -178,11 +178,15 @@ function getDocumentFromReq(req, reqType){
     doc.primaryBillingContact = primaryBillingContact;
   }
 
-  if(doc.primaryBillingContact != undefined && typeof primaryBillingContact !== "string") {
+  if ("billingContact" in req.body){
+    doc.billingContact = billingContact;
+  }
+
+  if(doc.billingContact != undefined && typeof billingContact !== "string") {
     var reqPrimaryBillingContact = {};
-    reqPrimaryBillingContact.body = primaryBillingContact;
-    doc.primaryBillingContact = customerContactController.getDocumentFromReq(reqPrimaryBillingContact, 'new');
-    doc.primaryBillingContact.customer = doc._id;
+    reqPrimaryBillingContact.body = billingContact;
+    doc.billingContact = customerContactController.getDocumentFromReq(reqPrimaryBillingContact, 'new');
+    doc.billingContact.customer = doc._id;
   }
   
   if ("primaryTechnicalContact" in req.body){
@@ -215,9 +219,5 @@ function getDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
   } 
 
-
-
-
-  //console.log("doc in http req: ", doc);
   return doc;
 }

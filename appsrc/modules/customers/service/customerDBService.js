@@ -54,9 +54,8 @@ class MachineService {
         }
       }.bind(this),
       function (data, callback) {
-        console.log("newdocument.primaryBillingContact", typeof newdocument.primaryBillingContact);
-        if (newdocument.primaryBillingContact != undefined && typeof newdocument.primaryBillingContact !== "string") {
-          this.db.postObject(newdocument.primaryBillingContact, callbackFunction);
+        if (newdocument.billingContact != undefined && typeof newdocument.billingContact !== "string") {
+          this.db.postObject(newdocument.billingContact, callbackFunction);
           function callbackFunction(error, response) {
             console.log(error);
             if (error) callback(error, {});
@@ -72,9 +71,6 @@ class MachineService {
       }.bind(this),
     ], function (err, result) {
       if (err) return callback(err);
-      console.log("newdocument", newdocument);
-
-      
       db.postObject(newdocument, callbackFunction);
       function callbackFunction(error, response) {
         if (error) callback(error, {});
