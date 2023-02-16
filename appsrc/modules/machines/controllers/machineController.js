@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let machineDBService = require('../service/machineDBService')
 this.dbservice = new machineDBService();
 
-const { MachineCategory } = require('../models');
+const { Machine } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -19,11 +19,13 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
+//this.populate = 'category';
 this.populate = {path: '', select: ''};
+//this.populate = {path: '<field name>', model: '<model name>', select: '<space separated field names>'};
 
 
-exports.getMachineCategory = async (req, res, next) => {
-  this.dbservice.getObjectById(MachineCategory, this.fields, req.params.id, this.populate, callbackFunc);
+exports.getMachine = async (req, res, next) => {
+  this.dbservice.getObjectById(Machine, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -35,8 +37,8 @@ exports.getMachineCategory = async (req, res, next) => {
 
 };
 
-exports.getMachineCategories = async (req, res, next) => {
-  this.dbservice.getObjectList(MachineCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+exports.getMachines = async (req, res, next) => {
+  this.dbservice.getObjectList(Machine, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -47,9 +49,9 @@ exports.getMachineCategories = async (req, res, next) => {
   }
 };
 
-exports.deleteMachineCategory = async (req, res, next) => {
-  this.dbservice.deleteObject(MachineCategory, req.params.id, callbackFunc);
-  console.log(req.params.id);
+exports.deleteMachine = async (req, res, next) => {
+  this.dbservice.deleteObject(Machine, req.params.id, callbackFunc);
+  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -60,7 +62,7 @@ exports.deleteMachineCategory = async (req, res, next) => {
   }
 };
 
-exports.postMachineCategory = async (req, res, next) => {
+exports.postMachine = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -69,29 +71,31 @@ exports.postMachineCategory = async (req, res, next) => {
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
-        res.json({ MachineCategory: response });
+        res.json({ Machine: response });
       }
     }
   }
 };
 
-exports.patchMachineCategory = async (req, res, next) => {
+exports.patchMachine = async (req, res, next) => {
   const errors = validationResult(req);
+  //console.log('calling patchMachine');
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(MachineCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(Machine, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
       }
@@ -101,11 +105,23 @@ exports.patchMachineCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, isDisabled, isArchived, loginUser } = req.body;
+  const { serialNo, parentMachine, name, description, status, supplier, machineModel, 
+    workOrderRef, customer, instalationSite, billingSite, operators,
+    accountManager, projectManager, supportManager, license, logo,
+    tools, internalTags, customerTags,
+    isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new MachineCategory({});
+    doc = new Machine({});
+  }
+
+  
+  if ("serialNo" in req.body){
+    doc.serialNo = serialNo;
+  }
+  if ("parentMachine" in req.body){
+    doc.parentMachine = parentMachine;
   }
 
   if ("name" in req.body){
@@ -114,6 +130,60 @@ function getDocumentFromReq(req, reqType){
   if ("description" in req.body){
     doc.description = description;
   }
+  if ("status" in req.body){
+    doc.status = status;
+  }
+
+  if ("supplier" in req.body){
+    doc.supplier = supplier;
+  }
+  if ("machineModel" in req.body){
+    doc.machineModel = machineModel;
+  }
+
+  if ("workOrderRef" in req.body){
+    doc.workOrderRef = workOrderRef;
+  }
+  if ("customer" in req.body){
+    doc.customer = customer;
+  }
+  if ("instalationSite" in req.body){
+    doc.instalationSite = instalationSite;
+  }
+  if ("billingSite" in req.body){
+    doc.billingSite = billingSite;
+  }
+  if ("operators" in req.body){
+    doc.operators = operators;
+  }
+
+  if ("accountManager" in req.body){
+    doc.accountManager = accountManager;
+  }
+  if ("projectManager" in req.body){
+    doc.projectManager = projectManager;
+  }
+  if ("supportManager" in req.body){
+    doc.supportManager = supportManager;
+  }
+
+  if ("license" in req.body){
+    doc.license = license;
+  }
+  if ("logo" in req.body){
+    doc.logo = logo;
+  }
+  if ("tools" in req.body){
+    doc.tools = tools;
+  }
+  
+  if ("internalTags" in req.body){
+    doc.internalTags = internalTags;
+  }
+  if ("customerTags" in req.body){
+    doc.customerTags = customerTags;
+  }
+  
   if ("isDisabled" in req.body){
     doc.isDisabled = isDisabled;
   }
