@@ -105,7 +105,7 @@ exports.patchMachine = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { serialNo, parentMachine, name, description, status, supplier, model, 
+  const { serialNo, parentMachine, name, description, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo,
     tools, internalTags, customerTags,
@@ -137,8 +137,8 @@ function getDocumentFromReq(req, reqType){
   if ("supplier" in req.body){
     doc.supplier = supplier;
   }
-  if ("model" in req.body){
-    doc.model = model;
+  if ("machineModel" in req.body){
+    doc.machineModel = machineModel;
   }
 
   if ("workOrderRef" in req.body){

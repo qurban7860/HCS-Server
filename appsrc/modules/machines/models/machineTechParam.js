@@ -16,7 +16,7 @@ const docSchema = new Schema({
     description: { type: String },
     // description of TechnicalParam
     
-    category: { type: Schema.Types.ObjectId , ref: 'machineTechParamCategory' }
+    category: { type: Schema.Types.ObjectId , ref: 'MachineTechParamCategory' }
     // Param category
 },
 {

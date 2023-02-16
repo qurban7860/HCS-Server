@@ -8,9 +8,10 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
     
-    serialNo: { type: String, required: true, unique: true },
+    serialNo: { type: String , required: true, unique: true},
     // Serial No of machine
-  
+  //
+
     parentMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // parent machine id
   
@@ -29,7 +30,7 @@ const docSchema = new Schema({
     supplier: { type: Schema.Types.ObjectId , ref: 'MachineSupplier' },
     // supplier information
   
-    model: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
+    machineModel: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
     // Status information of machine
   
     workOrderRef: { type: String },
@@ -59,8 +60,8 @@ const docSchema = new Schema({
     license: { type: Schema.Types.ObjectId , ref: 'MachineLicense' },
     // current applied license
   
-    logo: { type: Schema.Types.ObjectId , ref: 'SystemFile' },
-    // primary/logo image for the files collection
+    logo: { type: Schema.Types.ObjectId  },
+    // primary/logo image for the files collection  ref: 'SystemFile'
   
     tools: [{ type: Schema.Types.ObjectId , ref: 'MachineTool' }],
     // tools

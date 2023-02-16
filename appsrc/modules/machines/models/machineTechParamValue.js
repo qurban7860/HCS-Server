@@ -9,9 +9,9 @@ const Schema = mongoose.Schema;
 const docSchema = new Schema({
     machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
     // machine information 
-    TechParam: { type: Schema.Types.ObjectId , required:true, ref: 'MachineTechParam' },
+    techParam: { type: Schema.Types.ObjectId , required:true, ref: 'MachineTechParam' },
     // configuration name
-    TechParamValue: { type: String },
+    techParamValue: { type: String },
     // value of configuration
     activatedAt: { type: Date , default: Date.now },
     // activation date for this configuration

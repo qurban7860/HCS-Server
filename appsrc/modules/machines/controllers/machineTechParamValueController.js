@@ -105,7 +105,7 @@ exports.patchMachineTechParamValue = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, param, paramValue, activatedAt, expiryDate, note, isDisabled, isArchived, loginUser } = req.body;
+  const { machine, techParam, techParamValue, activatedAt, expiryDate, note, isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -115,11 +115,11 @@ function getDocumentFromReq(req, reqType){
   if ("machine" in req.body){
     doc.machine = machine;
   }
-  if ("param" in req.body){
-    doc.param = param;
+  if ("techParam" in req.body){
+    doc.techParam = techParam;
   }
-  if ("paramValue" in req.body){
-    doc.paramValue = paramValue;
+  if ("techParamValue" in req.body){
+    doc.techParamValue = techParamValue;
   }
   if ("activatedAt" in req.body){
     doc.activatedAt = activatedAt;

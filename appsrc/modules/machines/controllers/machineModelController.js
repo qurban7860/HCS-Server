@@ -150,7 +150,14 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
+  /*
+  for (key in doc){
+    if (key=="createdIP")
+      console.log(key, doc[key]);
+  }
+  //doc.push(createdIP: "abc12");
+  */
+  console.log("doc in http req: ", doc);
   return doc;
 
 }
