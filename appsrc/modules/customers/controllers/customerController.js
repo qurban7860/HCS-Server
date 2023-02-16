@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-
+var ObjectId = require('mongoose').Types.ObjectId;
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -133,7 +133,6 @@ function getDocumentFromReq(req, reqType){
     accountManager, projectManager, supportManager, 
     isDisabled, isArchived, loginUser } = req.body;
 
-    console.log("req.body", req.body);
 
   let doc = {};
   if (reqType && reqType == "new"){
@@ -204,24 +203,28 @@ function getDocumentFromReq(req, reqType){
     doc.technicalContact.customer = doc._id;
   }
 
-  if ("accountManager" in req.body){
+  if ("accountManager" in req.body && ObjectId.isValid(accountManager)){
     doc.accountManager = accountManager;
   }
 
-  if ("projectManager" in req.body){
+  if ("projectManager" in req.body && ObjectId.isValid(projectManager)){
     doc.projectManager = projectManager;
   }
 
-  if ("supportManager" in req.body){
+  if ("supportManager" in req.body && ObjectId.isValid(supportManager)){
     doc.supportManager = supportManager;
   }
 
   if ("isDisabled" in req.body){
     doc.isDisabled = isDisabled;
   }
+
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
+
+
+
 
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
