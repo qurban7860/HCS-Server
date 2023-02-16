@@ -19,8 +19,7 @@ class dbService {
   }
 
   getObjectList(model, fields, query, orderBy, populate, callback) {
-    //console.log('populate :'+populate);
-    model.find(query).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
+    model.find(query).collation({locale: "en"}).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
       if (err) {
         callback(err, []);
       } else {
