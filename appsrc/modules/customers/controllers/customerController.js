@@ -160,8 +160,10 @@ function getDocumentFromReq(req, reqType){
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
   } 
 
   //console.log("doc in http req: ", doc);

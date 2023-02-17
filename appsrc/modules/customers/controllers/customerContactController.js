@@ -65,7 +65,7 @@ exports.postCustomerContact = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getCategoryFromReq(req), callbackFunc);
+    this.dbservice.postObject(getDocumentFromReq(req, "new"), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -144,8 +144,10 @@ function getDocumentFromReq(req, reqType){
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
   } 
 
   //console.log("doc in http req: ", doc);
