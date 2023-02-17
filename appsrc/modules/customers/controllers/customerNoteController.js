@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { customerNote } = require('../models');
+const { CustomerNote } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -23,7 +23,7 @@ this.populate = {path: '', select: ''};
 
 
 exports.getCustomerNote = async (req, res, next) => {
-  this.dbservice.getObjectById(customerNote, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(CustomerNote, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -36,7 +36,7 @@ exports.getCustomerNote = async (req, res, next) => {
 };
 
 exports.getCustomerNotes = async (req, res, next) => {
-  this.dbservice.getObjectList(customerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -48,7 +48,7 @@ exports.getCustomerNotes = async (req, res, next) => {
 };
 
 exports.deleteCustomerNote = async (req, res, next) => {
-  this.dbservice.deleteObject(customerNote, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(CustomerNote, req.params.id, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -73,7 +73,7 @@ exports.postCustomerNote = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
-        res.json({ customerNote: response });
+        res.json({ CustomerNote: response });
       }
     }
   }
@@ -84,7 +84,7 @@ exports.patchCustomerNote = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(customerNote, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(CustomerNote, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -104,7 +104,7 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new customerNote({});
+    doc = new CustomerNote({});
   }
   if ("customer" in req.body){
     doc.customer = customer;
@@ -132,8 +132,10 @@ function getDocumentFromReq(req, reqType){
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
   } 
 
   //console.log("doc in http req: ", doc);

@@ -50,10 +50,6 @@ class App {
       swaggerUi.setup(swaggerDocument)
     );
     this.app.use(errorHandler);
-
-
-
-
   }
 
   registerRoutes(){
@@ -64,15 +60,10 @@ class App {
     
     machineRoutes.registerMachineRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
-    
-    
   }
 
 
 
-
-  
-  
 
   start(){
         try {

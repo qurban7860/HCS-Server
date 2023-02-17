@@ -20,10 +20,10 @@ const docSchema = new Schema({
     collection: 'MachineModels'
 });
 
-docSchema.set('timestamps', true);
+
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
-
+docSchema.set('timestamps', true);
 docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('MachineModel', docSchema);

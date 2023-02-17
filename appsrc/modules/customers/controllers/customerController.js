@@ -13,7 +13,7 @@ this.dbservice = new customerDBService();
 
 const { Customer } = require('../models');
 
-const { customerSite } = require('../models');
+const { CustomerSite } = require('../models');
 
 
 const customerSiteController = require('../controllers/customerSiteController');
@@ -157,7 +157,7 @@ function getDocumentFromReq(req, reqType){
   }
 
 
-  console.log("doc.site", doc.site);
+  //console.log("doc.site", doc.site);
   if(doc.site != undefined && typeof doc.site !== "string") {
     var reqMainSite = {};
     reqMainSite.body = site;
@@ -229,8 +229,10 @@ function getDocumentFromReq(req, reqType){
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
   } 
 
   return doc;

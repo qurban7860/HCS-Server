@@ -6,7 +6,7 @@
 # application data 
 uploads/
 .env
-
+howickcopy.sh
 
 # Node artifact files
 node_modules/
