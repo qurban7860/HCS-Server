@@ -26,6 +26,14 @@ class MachineService {
     }
   };
 
+  getObjectListWithAggregate(model, aggregate, params, callback) {
+    this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) callback(error, {});
+      else callback(null, response);
+    }
+  };
+
   deleteObject(model, id, callback) {
     this.db.deleteObject(model, id, callbackFunc);
     function callbackFunc(error, response) {

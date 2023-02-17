@@ -36,8 +36,30 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};   
-  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.query = req.query != "undefined" ? req.query : {};
+  if(this.query){
+    this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  } else {
+    var aggregate = [
+      {
+        $lookup: {
+          from: "Customers",
+          localField: "customer",
+          foreignField: "_id",
+          as: "customer"
+        }
+      },
+        {
+        $match: {
+          "customer.type" : "SP"
+        }
+      }
+    ];
+
+    var params = {};
+    this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, params, callbackFunc);
+  }
+
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

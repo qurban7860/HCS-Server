@@ -1,6 +1,6 @@
 'use strict'
 module.exports = {
-    Machine: require('./Machine'),
+    Machine: require('./machine'),
     MachineAuditLog: require('./machineAuditLog'),
     MachineCategory: require('./machineCategory'),
     MachineLicense: require('./machineLicense'),
@@ -13,5 +13,4 @@ module.exports = {
     MachineTechParamValue: require('./machineTechParamValue'),
     MachineTool: require('./machineTool'),
     MachineToolInstalled: require('./machineToolInstalled')
-    
 }

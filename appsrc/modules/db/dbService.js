@@ -28,6 +28,19 @@ class dbService {
     });
   }
 
+
+  getObjectListWithAggregate(model, aggregate, params, callback) {
+    model.aggregate([
+      aggregate
+    ]).exec((err, documents) => {
+      if (err) {
+        callback(err, []);
+      } else {
+        callback(null, documents != null ? documents : []);
+      }
+    });
+  }
+
   deleteObject(model, id, callback) {
     model.deleteOne({ _id: id }).then(function (result) {
       callback(null, result);

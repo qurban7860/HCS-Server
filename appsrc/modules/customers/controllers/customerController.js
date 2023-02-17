@@ -67,7 +67,6 @@ exports.getCustomers = async (req, res, next) => {
 
 exports.deleteCustomer = async (req, res, next) => {
   this.dbservice.deleteObject(Customer, req.params.id, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

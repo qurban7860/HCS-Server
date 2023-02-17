@@ -14,7 +14,7 @@ router.get('/:id', controller.getCustomerContact);
 
 router.get('/', controller.getCustomerContacts);
 
-router.get("/sp/data", controller.getSPCustomerContacts);
+// router.get("/sp/data", controller.getSPCustomerContacts);
 
 router.post('/',  controller.postCustomerContact);
 
