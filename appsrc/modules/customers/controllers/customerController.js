@@ -127,7 +127,7 @@ exports.patchCustomer = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, tradingName, type, site, mainSite, sites, contacts,
+  const { name, tradingName, type, siteObj, mainSite, sites, contacts,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
     accountManager, projectManager, supportManager, 
     isDisabled, isArchived, loginUser } = req.body;
@@ -151,17 +151,17 @@ function getDocumentFromReq(req, reqType){
     doc.mainSite = mainSite;
   }
 
-  if ("site" in req.body){
-    doc.site = site;
+  if ("siteObj" in req.body){
+    doc.siteObj = siteObj;
   }
 
 
   //console.log("doc.site", doc.site);
-  if(doc.site != undefined && typeof doc.site !== "string") {
+  if(doc.siteObj != undefined && typeof doc.siteObj !== "string") {
     var reqMainSite = {};
-    reqMainSite.body = site;
-    doc.site = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
-    doc.site.customer = doc._id;
+    reqMainSite.body = siteObj;
+    doc.siteObj = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
+    doc.siteObj.customer = doc._id;
   }
   
   if ("sites" in req.body){

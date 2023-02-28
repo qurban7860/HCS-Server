@@ -46,8 +46,8 @@ class MachineService {
     const db = this.db;
     async.waterfall([
       function (callback) {
-        if (newdocument.site != undefined && typeof newdocument.site !== "string") {
-          this.db.postObject(newdocument.site, callbackFunction);
+        if (newdocument.siteObj != undefined && typeof newdocument.siteObj !== "string") {
+          this.db.postObject(newdocument.siteObj, callbackFunction);
           function callbackFunction(error, response) {
             console.log(error);
             if (error) callback(error, {});
@@ -70,6 +70,21 @@ class MachineService {
             else {
               newdocument.contacts.push(response._id);
               newdocument.primaryBillingContact = response._id;
+              callback(null, newdocument);
+            }
+          }
+        } else {
+          callback(null, newdocument);
+        }
+      }.bind(this),
+      function (data, callback) {
+        if (newdocument.technicalContact != undefined && typeof newdocument.technicalContact !== "string") {
+          this.db.postObject(newdocument.technicalContact, callbackFunction);
+          function callbackFunction(error, response) {
+            console.log(error);
+            if (error) callback(error, {});
+            else {
+              newdocument.contacts.push(response._id);
               newdocument.primaryTechnicalContact = response._id;
               callback(null, newdocument);
             }
