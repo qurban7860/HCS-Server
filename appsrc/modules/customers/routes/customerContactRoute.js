@@ -12,7 +12,8 @@ const controller = controllers.customerContactController;
 const router = express.Router();
 
 const baseRoute = `/:customerId/contacts`;
-// router.use(checkAuth);
+
+router.use(checkAuth);
 
 router.get(`${baseRoute}/:id`, checkCustomerID,controller.getCustomerContact);
 

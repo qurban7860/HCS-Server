@@ -16,7 +16,7 @@ module.exports = (req, res, next) => {
     }
     //console.log(`process.env.JWT_SECRETKEY: ${process.env.JWT_SECRETKEY}`);
     const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-    //console.log(`decodedToken: ${ JSON.stringify(decodedToken1)}`);
+    //console.log(`decodedToken: ${ JSON.stringify(decodedToken)}`);
     /*
     const decodedToken = {
       userId: "63b889ff7d2bd88d8076262c",

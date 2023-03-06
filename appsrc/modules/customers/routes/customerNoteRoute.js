@@ -13,6 +13,8 @@ const router = express.Router();
 
 const baseRoute = `/:customerId/notes`;
 
+router.use(checkAuth);
+
 router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerNote);
 
 router.get(`${baseRoute}`, checkCustomerID, controller.getCustomerNotes);

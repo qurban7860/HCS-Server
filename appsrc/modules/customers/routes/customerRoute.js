@@ -8,7 +8,8 @@ const controllers = require('../controllers');
 const controller = controllers.customerController;
 
 const router = express.Router();
-// router.use(checkAuth);
+
+router.use(checkAuth);
 
 router.get('/:id', controller.getCustomer);
 
