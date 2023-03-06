@@ -23,19 +23,33 @@ this.populate = {path: '', select: ''};
 
 
 exports.getCustomerSite = async (req, res, next) => {
-  this.dbservice.getObjectById(CustomerSite, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
+    this.dbservice.getObjectById(CustomerSite, this.fields, req.params.id, this.populate, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.json(response);
+      }
     }
-  }
-
 };
 
 exports.getCustomerSites = async (req, res, next) => {
+    this.customerId = req.params.customerId;
+    this.query = req.query != "undefined" ? req.query : {};  
+    this.query.customer = this.customerId; 
+    this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(json(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)));
+      } else {
+        res.json(response);
+      }
+    }
+};
+
+exports.searchCustomerSites = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};   
   this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
@@ -63,6 +77,7 @@ exports.deleteCustomerSite = async (req, res, next) => {
 
 
 exports.postCustomerSite = async (req, res, next) => {
+// from the body of the request
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));

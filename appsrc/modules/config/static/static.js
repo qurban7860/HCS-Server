@@ -22,5 +22,17 @@ module.exports = {
         } else {
             return getReasonPhrase(code);
         }
+    },
+    recordMissingParamsMessage(parent ,code) {
+        if (code == 400) {
+            const response = {
+                statusCode: code,
+                message: `Insufficients params received. ${parent} ID required!`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
     }
 };

@@ -36,6 +36,21 @@ exports.getCustomerNote = async (req, res, next) => {
 };
 
 exports.getCustomerNotes = async (req, res, next) => {
+  this.customerId = req.params.customerId;
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.query.customer = this.customerId; 
+  this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
+
+exports.searchCustomerNotes = async (req, res, next) => {
   this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

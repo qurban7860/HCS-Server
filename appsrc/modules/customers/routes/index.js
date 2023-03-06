@@ -10,7 +10,7 @@ const customerNoteRoute = require('./customerNoteRoute');
 exports.registerCustomerRoutes = (app, apiPath) => {
     const rootPath = `${apiPath}/customers`
     app.use(`${rootPath}/customers`, customerRoute);
-    app.use(`${rootPath}/sites`, customerSiteRoute);
-    app.use(`${rootPath}/contacts`, customerContactRoute);
-    app.use(`${rootPath}/notes`, customerNoteRoute);
+    app.use(`${rootPath}`, customerSiteRoute);
+    app.use(`${rootPath}`, customerContactRoute);
+    app.use(`${rootPath}`, customerNoteRoute);
 }

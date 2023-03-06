@@ -19,7 +19,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
-this.populate = {path: '', select: ''};
+this.populate = {path: 'customer', select: 'name'};
 
 
 exports.getCustomerContact = async (req, res, next) => {
@@ -36,6 +36,43 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
+  this.customerId = req.params.customerId;
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.query.customer = this.customerId; 
+  if(this.query){
+    this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  } else {
+    var aggregate = [
+      {
+        $lookup: {
+          from: "Customers",
+          localField: "customer",
+          foreignField: "_id",
+          as: "customer"
+        }
+      },
+        {
+        $match: {
+          "customer.type" : "SP"
+        }
+      }
+    ];
+
+    var params = {};
+    this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, params, callbackFunc);
+  }
+
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
+
+exports.searchCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   if(this.query){
     this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);

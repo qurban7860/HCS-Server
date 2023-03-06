@@ -3,23 +3,26 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomerID = require('../../../middleware/check-parentID')('customer');
+
 
 const controllers = require('../controllers');
 const controller = controllers.customerNoteController;
 
 const router = express.Router();
-// router.use(checkAuth);
 
-router.get('/:id', controller.getCustomerNote);
+const baseRoute = `/:customerId/notes`;
 
-router.get('/', controller.getCustomerNotes);
+router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerNote);
 
-router.post('/',  controller.postCustomerNote);
+router.get(`${baseRoute}`, checkCustomerID, controller.getCustomerNotes);
 
-router.patch('/:id',  controller.patchCustomerNote);
+router.post(`${baseRoute}`, checkCustomerID, controller.postCustomerNote);
 
-//router.patch('/:id', fileUpload.single('image'), this.cntrl.patchModel);
+router.patch(`${baseRoute}/:id`, checkCustomerID, controller.patchCustomerNote);
 
-router.delete('/:id', controller.deleteCustomerNote);
+router.delete(`${baseRoute}/:id`, checkCustomerID, controller.deleteCustomerNote);
+
+router.get(`/notes/`, controller.searchCustomerNotes);
 
 module.exports = router;
