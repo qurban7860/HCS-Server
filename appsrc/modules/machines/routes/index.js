@@ -16,7 +16,7 @@ exports.registerMachineRoutes = (app, apiPath) => {
     app.use(`${ rootPath }/techparamcategories`, require('./machineTechParamCategoryRoute'));
     app.use(`${ rootPath }/techparams`, require('./machineTechParamRoute'));
     app.use(`${ rootPath }/techparamvalues`, require('./machineTechParamValueRoute'));
-    app.use(`${ rootPath }/toolsinstalled`, require('./machineToolInstalledRoute'));
+    app.use(`${ rootPath }`, require('./machineToolInstalledRoute'));
     app.use(`${ rootPath }/tools`, require('./machineToolRoute'));
 }
 

@@ -3,21 +3,28 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkMachineID = require('../../../middleware/check-parentID')('machine');
+
 
 const controllers = require('../controllers');
 const controller = controllers.machineNoteController;
 
 const router = express.Router();
+
+const baseRoute = `/machines/:machineId/notes`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineNote);
+router.get(`${baseRoute}/:id`, checkMachineID, controller.getMachineNote);
 
-router.get('/', controller.getMachineNotes);
+router.get(`${baseRoute}`, checkMachineID, controller.getMachineNotes);
 
-router.post('/',  controller.postMachineNote);
+router.post(`${baseRoute}`, checkMachineID, controller.postMachineNote);
 
-router.patch('/:id',  controller.patchMachineNote);
+router.patch(`${baseRoute}/:id`, checkMachineID, controller.patchMachineNote);
 
-router.delete('/:id', controller.deleteMachineNote);
+router.delete(`${baseRoute}/:id`, checkMachineID, controller.deleteMachineNote);
+
+// router.get('machines/notes/search', checkMachineID, controller.searchMachineNotes);
 
 module.exports = router;
