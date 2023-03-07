@@ -23,7 +23,7 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordMissingParamsMessage(parent ,code) {
+    recordMissingParamsMessage(code, parent) {
         if (code == 400) {
             const response = {
                 statusCode: code,
@@ -34,5 +34,17 @@ module.exports = {
         } else {
             return getReasonPhrase(code);
         }
-    }
+    },
+    invalidIdMessage(code, parent) {
+        if (code == 400) {
+            const response = {
+                statusCode: code,
+                message: `${parent} ID not found!`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
 };
