@@ -16,8 +16,8 @@ const { Customer } = require('../models');
 const { CustomerSite } = require('../models');
 
 
-const customerSiteController = require('../controllers/customerSiteController');
-const customerContactController = require('../controllers/customerContactController');
+const customerSiteController = require('./customerSiteController');
+const customerContactController = require('./customerContactController');
 
 
 

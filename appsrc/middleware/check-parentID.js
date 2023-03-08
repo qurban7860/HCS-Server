@@ -1,22 +1,29 @@
-const HttpError = require('../modules/config/models/http-error');
 const { StatusCodes } = require('http-status-codes');
+
 var ObjectId = require('mongoose').Types.ObjectId;
 let rtnMsg = require('../modules/config/static/static')
 
 
-function checkParentID(parent) {
-  return function(req, res, next) {
-    try{
-      if(!ObjectId.isValid(req.params[`${parent}Id`])){
-        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(parent, StatusCodes.BAD_REQUEST));
-      }
-      next();
+function checkParentID(parent, model) {
+  return function (req, res, next) {
+    if (!ObjectId.isValid(req.params[`${parent}Id`])) {
+      console.log('response1');
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, parent));
     }
-    catch (err) {
-      const error = new HttpError('Error in Middleware!', 403);
-      return next(error);
+    else {
+      const objID = new ObjectId(req.params[`${parent}Id`]);
+      model.findOne({ _id: objID }).exec(function (err, record) {
+        if (err) {
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err);
+        }
+        if (!record) {
+          return res.status(StatusCodes.NOT_FOUND).send(rtnMsg.invalidIdMessage(StatusCodes.NOT_FOUND, parent));
+        } else {
+          next();
+        }
+      });
     }
-  }
+  };
 }
 
 module.exports = checkParentID;

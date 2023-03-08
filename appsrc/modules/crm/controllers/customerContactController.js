@@ -3,6 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const { Customer } = require('../models');
+const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -193,15 +195,17 @@ exports.patchCustomerContact = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType){
-  const { customer, firstName, lastName, title, contactTypes, phone, email, sites, 
+  const { firstName, lastName, title, contactTypes, phone, email, sites, 
     isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new CustomerContact({});
   }
-  if ("customer" in req.body){
-    doc.customer = customer;
+  if (req.params){
+    doc.customer = req.params.customerId;
+  }else{
+    doc.customer = req.body.customer;
   }
   if ("firstName" in req.body){
     doc.firstName = firstName;
