@@ -11,21 +11,31 @@ const controller = controllers.customerContactController;
 
 const router = express.Router();
 
+//  - base route for module
+// - /api/1.0.0/crm/customers
+
 const baseRoute = `/:customerId/contacts`;
+// - /api/1.0.0/crm/customers/:customerId/contacts
 
 router.use(checkAuth);
 
+// - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.get(`${baseRoute}/:id`, checkCustomerID,controller.getCustomerContact);
 
-router.get(`${baseRoute}`, checkCustomerID, controller.getCustomerContacts);
+// - /api/1.0.0/crm/customers/:customerId/contacts/
+router.get(`${baseRoute}/`, checkCustomerID, controller.getCustomerContacts);
 
-router.post(`${baseRoute}`, checkCustomerID,controller.postCustomerContact);
+// - /api/1.0.0/crm/customers/:customerId/contacts/
+router.post(`${baseRoute}/`, checkCustomerID,controller.postCustomerContact);
 
+// - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.patch(`${baseRoute}/:id`, checkCustomerID, controller.patchCustomerContact);
 
+// - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.delete(`${baseRoute}/:id`, checkCustomerID, controller.deleteCustomerContact);
 
-router.get(`/contacts/`, controller.searchCustomerContacts);
+
+//router.get(`/contacts/`, controller.searchCustomerContacts);
 
 
 module.exports = router;
