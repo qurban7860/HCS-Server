@@ -14,7 +14,7 @@ const router = express.Router();
 //  - base route for module
 // - /api/1.0.0/crm/customers
 
-const baseRouteForObject = `/:customerId/notes`;
+const baseRouteForObject = `/customers/:customerId/notes`;
 // - /api/1.0.0/crm/customers/:customerId/notes/
 
 router.use(checkAuth);
@@ -34,6 +34,7 @@ router.patch(`${baseRouteForObject}/:id`, checkCustomerID, controller.patchCusto
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
 router.delete(`${baseRouteForObject}/:id`, checkCustomerID, controller.deleteCustomerNote);
 
-//router.get(`/notes/`, controller.searchCustomerNotes);
+// - /api/1.0.0/crm/notes/search
+router.get(`/notes/search`, controller.searchCustomerNotes);
 
 module.exports = router;

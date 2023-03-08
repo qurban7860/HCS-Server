@@ -4,6 +4,8 @@ const fs         = require('fs');
 const path       = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
+var cors = require('cors')
+
 
 // MIDDLEWARE
 const setHeaders = require('../../middleware/set-header');
@@ -44,6 +46,8 @@ class App {
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
     this.registerRoutes();
+    this.app.use(cors());
+    // this.app.options('*', cors());
     this.app.use(
       '/api-docs',
       swaggerUi.serve,

@@ -13,7 +13,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/crm/customers
 
-const baseRouteForObject = `/:customerId/sites`; 
+const baseRouteForObject = `/customers/:customerId/sites`; 
 // - /api/1.0.0/crm/customers/:customerId/sites 
 
 // EndPoint: {{baseUrl}}/crm/customers/:customerId/sites/:id
@@ -38,7 +38,7 @@ router.patch(`${baseRouteForObject}/:id`, checkCustomerID,  controller.patchCust
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.delete(`${baseRouteForObject}/:id`, checkCustomerID, controller.deleteCustomerSite);
 
-//// - /api/1.0.0/crm/customers/sites/
-//router.get(`/sites/`, controller.searchCustomerSites);
+//// - /api/1.0.0/crm/sites/
+router.get(`/sites/`, controller.searchCustomerSites);
 
 module.exports = router;

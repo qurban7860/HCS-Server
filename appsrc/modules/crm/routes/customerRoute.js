@@ -31,4 +31,8 @@ router.patch(`${baseRouteForObject}/:id`,  controller.patchCustomer);
 // - /api/1.0.0/crm/customers/:id
 router.delete(`${baseRouteForObject}/:id`, controller.deleteCustomer);
 
+// - /api/1.0.0/crm/customers/search
+// router.get(`/customers/search`, controller.searchCustomers);
+
+
 module.exports = router;
