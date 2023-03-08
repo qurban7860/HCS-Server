@@ -23,16 +23,30 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordMissingParamsMessage(parent ,code) {
+    recordMissingParamsMessage(code, parent) {
         if (code == 400) {
             const response = {
-                statusCode: code,
-                message: `Insufficients params received. ${parent} ID required!`
+                isError: "true", 
+                MessageCode: code,
+                Message: `Insufficients params received. ${parent} ID required!`
             };
 
             return response;
         } else {
             return getReasonPhrase(code);
         }
-    }
+    },
+    invalidIdMessage(code, parent) {
+        if (code == 404) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: `${parent} ID not found!`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
 };

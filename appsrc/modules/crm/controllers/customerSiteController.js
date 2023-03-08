@@ -29,14 +29,15 @@ exports.getCustomerSite = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
+        // check if the customer id is valid
         res.json(response);
       }
     }
 };
 
 exports.getCustomerSites = async (req, res, next) => {
-    this.customerId = req.params.customerId;
     this.query = req.query != "undefined" ? req.query : {};  
+    this.customerId = req.params.customerId;
     this.query.customer = this.customerId; 
     this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
@@ -70,6 +71,7 @@ exports.deleteCustomerSite = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      // get the customer first and validate
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -77,7 +79,6 @@ exports.deleteCustomerSite = async (req, res, next) => {
 
 
 exports.postCustomerSite = async (req, res, next) => {
-// from the body of the request
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -117,7 +118,7 @@ exports.patchCustomerSite = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   console.log(req.body);
-  const { customer, name, phone, email, fax, website, address, 
+  const { name, phone, email, fax, website, address, 
     primaryBillingContact, primaryTechnicalContact, contacts,
     isDisabled, isArchived, loginUser } = req.body;
   
@@ -125,8 +126,11 @@ function getDocumentFromReq(req, reqType){
   if (reqType && reqType == "new"){
     doc = new CustomerSite({});
   }
-  if ("customer" in req.body){
-    doc.customer = customer;
+  // get customer from params
+  if (req.params){
+    doc.customer = req.params.customerId;
+  }else{
+    doc.customer = req.body.customer;
   }
   if ("name" in req.body){
     doc.name = name;
