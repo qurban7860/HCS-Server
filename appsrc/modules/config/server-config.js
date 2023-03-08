@@ -16,7 +16,7 @@ const usersRoutes = require('../user/routes/user-route');
 const assetsRoutes = require('../assets/routes/assets-route');
 const machineRoutes  = require ('../machines/routes');
 
-const customerRoutes  = require ('../customers/routes');
+const customerRoutes  = require ('../crm/routes');
 
 
 

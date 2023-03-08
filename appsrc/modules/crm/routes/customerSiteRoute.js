@@ -3,7 +3,8 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomerID = require('../../../middleware/check-parentID')('customer');
+const { Customer } = require('../models');
+const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
 const controllers = require('../controllers');
 const controller = controllers.customerSiteController;
@@ -13,8 +14,8 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/crm/customers
 
-const baseRouteForObject = `/customers/:customerId/sites`; 
 // - /api/1.0.0/crm/customers/:customerId/sites 
+const baseRouteForObject = `/customers/:customerId/sites`; 
 
 // EndPoint: {{baseUrl}}/crm/customers/:customerId/sites/:id
 // localhost://api/1.0.0/crm/customers/:customerId/sites 
@@ -38,7 +39,7 @@ router.patch(`${baseRouteForObject}/:id`, checkCustomerID,  controller.patchCust
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.delete(`${baseRouteForObject}/:id`, checkCustomerID, controller.deleteCustomerSite);
 
-//// - /api/1.0.0/crm/sites/
-router.get(`/sites/`, controller.searchCustomerSites);
+//// - /api/1.0.0/crm/sites/search
+router.get(`/sites/search`, controller.searchCustomerSites);
 
 module.exports = router;

@@ -16,8 +16,8 @@ const router = express.Router();
 //  - base route for module
 // - /api/1.0.0/crm/customers
 
-const baseRoute = `/customers/:customerId/contacts`;
 // - /api/1.0.0/crm/customers/:customerId/contacts
+const baseRoute = `/customers/:customerId/contacts`;
 
 router.use(checkAuth);
 
