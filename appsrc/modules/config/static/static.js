@@ -26,8 +26,9 @@ module.exports = {
     recordMissingParamsMessage(code, parent) {
         if (code == 400) {
             const response = {
-                statusCode: code,
-                message: `Insufficients params received. ${parent} ID required!`
+                isError: "true", 
+                MessageCode: code,
+                Message: `Insufficients params received. ${parent} ID required!`
             };
 
             return response;
@@ -36,10 +37,11 @@ module.exports = {
         }
     },
     invalidIdMessage(code, parent) {
-        if (code == 400) {
+        if (code == 404) {
             const response = {
-                statusCode: code,
-                message: `${parent} ID not found!`
+                isError: "true", 
+                MessageCode: code,
+                Message: `${parent} ID not found!`
             };
 
             return response;

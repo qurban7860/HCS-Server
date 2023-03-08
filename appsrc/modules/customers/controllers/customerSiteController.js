@@ -79,7 +79,6 @@ exports.deleteCustomerSite = async (req, res, next) => {
 
 
 exports.postCustomerSite = async (req, res, next) => {
-// from the body of the request
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));

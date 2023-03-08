@@ -13,7 +13,7 @@ const router = express.Router();
 
 const baseRoute = `/:customerId/sites`; 
 
-// router.use(checkAuth);
+router.use(checkAuth);
 
 router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerSite);
 
