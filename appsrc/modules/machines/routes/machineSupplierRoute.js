@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineSupplierController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/suppliers`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineSupplier);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineSupplier);
 
-router.get('/', controller.getMachineSuppliers);
+router.get(`${baseRouteForObject}/`, controller.getMachineSuppliers);
 
-router.post('/',  controller.postMachineSupplier);
+router.post(`${baseRouteForObject}/`,  controller.postMachineSupplier);
 
-router.patch('/:id',  controller.patchMachineSupplier);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineSupplier);
 
-router.delete('/:id', controller.deleteMachineSupplier);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineSupplier);
 
 module.exports = router;

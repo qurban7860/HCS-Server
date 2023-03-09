@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineTechParamController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/techparams`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineTechParam);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineTechParam);
 
-router.get('/', controller.getMachineTechParams);
+router.get(`${baseRouteForObject}/`, controller.getMachineTechParams);
 
-router.post('/',  controller.postMachineTechParam);
+router.post(`${baseRouteForObject}/`,  controller.postMachineTechParam);
 
-router.patch('/:id',  controller.patchMachineTechParam);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineTechParam);
 
-router.delete('/:id', controller.deleteMachineTechParam);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineTechParam);
 
 module.exports = router;

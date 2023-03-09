@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineCategoryController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/categories`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineCategory);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineCategory);
 
-router.get('/', controller.getMachineCategories);
+router.get(`${baseRouteForObject}/`, controller.getMachineCategories);
 
-router.post('/',  controller.postMachineCategory);
+router.post(`${baseRouteForObject}/`,  controller.postMachineCategory);
 
-router.patch('/:id',  controller.patchMachineCategory);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineCategory);
 
-router.delete('/:id', controller.deleteMachineCategory);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineCategory);
 
 module.exports = router;

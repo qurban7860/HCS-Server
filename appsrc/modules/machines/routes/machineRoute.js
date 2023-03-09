@@ -8,16 +8,26 @@ const controllers = require('../controllers');
 const controller = controllers.machineController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products/machines
+
+const baseRouteForObject = `/machines`; 
+
+// EndPoint: {{baseUrl}}/products/machines/
+// localhost://api/1.0.0/products/machines/ 
+//localhost://api/1.0.0/products/search/
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachine);
+router.get(`${baseRouteForObject}/:id`, controller.getMachine);
 
-router.get('/', controller.getMachines);
+router.get(`${baseRouteForObject}/`, controller.getMachines);
 
-router.post('/',  controller.postMachine);
+router.post(`${baseRouteForObject}`,  controller.postMachine);
 
-router.patch('/:id',  controller.patchMachine);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachine);
 
-router.delete('/:id', controller.deleteMachine);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachine);
 
 module.exports = router;

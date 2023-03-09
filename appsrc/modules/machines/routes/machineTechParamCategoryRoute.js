@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineTechParamCategoryController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/techparamcategories`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineTechParamCategory);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineTechParamCategory);
 
-router.get('/', controller.getMachineTechParamCategories);
+router.get(`${baseRouteForObject}/`, controller.getMachineTechParamCategories);
 
-router.post('/',  controller.postMachineTechParamCategory);
+router.post(`${baseRouteForObject}/`,  controller.postMachineTechParamCategory);
 
-router.patch('/:id',  controller.patchMachineTechParamCategory);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineTechParamCategory);
 
-router.delete('/:id', controller.deleteMachineTechParamCategory);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineTechParamCategory);
 
 module.exports = router;

@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineToolController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/tools`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineTool);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineTool);
 
-router.get('/', controller.getMachineTools);
+router.get(`${baseRouteForObject}/`, controller.getMachineTools);
 
-router.post('/',  controller.postMachineTool);
+router.post(`${baseRouteForObject}/`,  controller.postMachineTool);
 
-router.patch('/:id',  controller.patchMachineTool);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineTool);
 
-router.delete('/:id', controller.deleteMachineTool);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineTool);
 
 module.exports = router;

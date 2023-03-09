@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineAuditLogController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/auditlogs`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineAuditLog);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineAuditLog);
 
-router.get('/', controller.getMachineAuditLogs);
+router.get(`${baseRouteForObject}/`, controller.getMachineAuditLogs);
 
-router.post('/',  controller.postMachineAuditLog);
+router.post(`${baseRouteForObject}/`,  controller.postMachineAuditLog);
 
-router.patch('/:id',  controller.patchMachineAuditLog);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineAuditLog);
 
-router.delete('/:id', controller.deleteMachineAuditLog);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineAuditLog);
 
 module.exports = router;
