@@ -38,6 +38,21 @@ exports.getMachineTechParamValue = async (req, res, next) => {
 };
 
 exports.getMachineTechParamValues = async (req, res, next) => {
+  this.machineId = req.params.machineId;
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.query.machine = this.machineId;
+  this.dbservice.getObjectList(MachineTechParamValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
+
+exports.searchMachineTechParamValues = async (req, res, next) => {
   this.dbservice.getObjectList(MachineTechParamValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -105,7 +120,7 @@ exports.patchMachineTechParamValue = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, techParam, techParamValue, activatedAt, expiryDate, note, isDisabled, isArchived, loginUser } = req.body;
+  const { techParam, techParamValue, activatedAt, expiryDate, note, isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -113,7 +128,9 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("machine" in req.body){
-    doc.machine = machine;
+    doc.machine = req.body.machine;
+  }else{
+    doc.machine = req.params.machineId;
   }
   if ("techParam" in req.body){
     doc.techParam = techParam;

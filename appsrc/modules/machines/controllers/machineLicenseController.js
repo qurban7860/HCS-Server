@@ -38,6 +38,21 @@ exports.getMachineLicense = async (req, res, next) => {
 };
 
 exports.getMachineLicenses = async (req, res, next) => {
+  this.machineId = req.params.machineId;
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.query.machine = this.machineId;
+  this.dbservice.getObjectList(MachineLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
+
+exports.searchMachineLicenses = async (req, res, next) => {
   this.dbservice.getObjectList(MachineLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -105,7 +120,7 @@ exports.patchMachineLicense = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, licenseKey, licenseDetail, isDisabled, isArchived, loginUser } = req.body;
+  const { licenseKey, licenseDetail, isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -113,7 +128,9 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("machine" in req.body){
-    doc.machine = machine;
+    doc.machine = req.body.machine;
+  }else{
+    doc.machine = req.params.machineId;
   }
   if ("licenseKey" in req.body){
     doc.licenseKey = licenseKey;

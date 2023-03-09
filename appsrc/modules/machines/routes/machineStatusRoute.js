@@ -8,16 +8,22 @@ const controllers = require('../controllers');
 const controller = controllers.machineStatusController;
 
 const router = express.Router();
+
+//  - route information from parent
+// - /api/1.0.0/products
+
+const baseRouteForObject = `/statuses`; 
+
 router.use(checkAuth);
 
-router.get('/:id', controller.getMachineStatus);
+router.get(`${baseRouteForObject}/:id`, controller.getMachineStatus);
 
-router.get('/', controller.getMachineStatuses);
+router.get(`${baseRouteForObject}/`, controller.getMachineStatuses);
 
-router.post('/',  controller.postMachineStatus);
+router.post(`${baseRouteForObject}/`,  controller.postMachineStatus);
 
-router.patch('/:id',  controller.patchMachineStatus);
+router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineStatus);
 
-router.delete('/:id', controller.deleteMachineStatus);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineStatus);
 
 module.exports = router;
