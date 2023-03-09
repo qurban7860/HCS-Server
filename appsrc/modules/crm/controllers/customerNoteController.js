@@ -36,9 +36,8 @@ exports.getCustomerNote = async (req, res, next) => {
 };
 
 exports.getCustomerNotes = async (req, res, next) => {
-  this.customerId = req.params.customerId;
-  this.query = req.query != "undefined" ? req.query : {};  
-  this.query.customer = this.customerId; 
+  this.query = req.query.query != "undefined" ? req.query.query : {}; 
+  this.populate = req.query.populate != "undefined" ? req.query.populate : {};  
   this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
