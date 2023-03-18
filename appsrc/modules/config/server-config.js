@@ -15,7 +15,7 @@ const errorHandler = require('../../middleware/error-handler');
 const usersRoutes = require('../user/routes/user-route');
 const assetsRoutes = require('../assets/routes/assets-route');
 const machineRoutes  = require ('../machines/routes');
-
+const securityRoutes  = require ('../security/routes');
 const customerRoutes  = require ('../crm/routes');
 
 
@@ -64,6 +64,7 @@ class App {
     
     machineRoutes.registerMachineRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
+    securityRoutes.registerSecurityRoutes(this.app, apiPath);
   }
 
 

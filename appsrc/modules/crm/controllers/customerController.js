@@ -136,6 +136,8 @@ function getDocumentFromReq(req, reqType){
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new Customer({});
+    doc.type = "customer";
+
   }
   if ("name" in req.body){
     doc.name = name;
@@ -144,7 +146,6 @@ function getDocumentFromReq(req, reqType){
     doc.tradingName = tradingName;
   }
   // if ("type" in req.body){
-    doc.type = "customer";
   // }
 
   if ("mainSite" in req.body){
