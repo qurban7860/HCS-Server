@@ -18,7 +18,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { name: 1 };  
+this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = {path: '', select: ''};
 //this.populate = {path: '<field name>', model: '<model name>', select: '<space separated field names>'};
@@ -38,6 +38,9 @@ exports.getMachine = async (req, res, next) => {
 };
 
 exports.getMachines = async (req, res, next) => {
+  // console.log("Machine Body : ",req.query);
+  this.query = req.query.query != "undefined" ? req.query.query : {}; 
+  this.populate = req.query.populate != "undefined" ? req.query.populate : {};  
   this.dbservice.getObjectList(Machine, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -105,8 +108,8 @@ exports.patchMachine = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { serialNo, parentMachine, name, description, status, supplier, machineModel, 
-    workOrderRef, customer, instalationSite, billingSite, operators,
+  const { serialNo, parentMachine, parentSerialNo, name, description, status, supplier, machineModel, 
+    workOrder, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo,
     tools, internalTags, customerTags,
     isDisabled, isArchived, loginUser } = req.body;
@@ -123,7 +126,9 @@ function getDocumentFromReq(req, reqType){
   if ("parentMachine" in req.body){
     doc.parentMachine = parentMachine;
   }
-
+  if ("parentSerialNo" in req.body){
+    doc.parentSerialNo =  parentSerialNo;
+  }
   if ("name" in req.body){
     doc.name = name;
   }
@@ -141,8 +146,8 @@ function getDocumentFromReq(req, reqType){
     doc.machineModel = machineModel;
   }
 
-  if ("workOrderRef" in req.body){
-    doc.workOrderRef = workOrderRef;
+  if ("workOrder" in req.body){
+    doc.workOrderRef = workOrder;
   }
   if ("customer" in req.body){
     doc.customer = customer;

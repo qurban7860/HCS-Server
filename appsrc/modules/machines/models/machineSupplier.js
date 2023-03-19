@@ -28,4 +28,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineSuppllier', docSchema);
+module.exports = mongoose.model('MachineSupplier', docSchema);
