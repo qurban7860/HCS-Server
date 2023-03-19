@@ -143,9 +143,9 @@ function getDocumentFromReq(req, reqType){
   if ("tradingName" in req.body){
     doc.tradingName = tradingName;
   }
-  if ("type" in req.body){
-    doc.type = type;
-  }
+  // if ("type" in req.body){
+    doc.type = "customer";
+  // }
 
   if ("mainSite" in req.body){
     doc.mainSite = mainSite;
