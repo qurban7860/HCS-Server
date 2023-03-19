@@ -123,10 +123,5 @@ async function getDocumentFromReq(req, reqType){
     doc.activityDetail = activityDetail;
   }
   
-  var reqprimaryTechnicalContact = {};
-    reqprimaryTechnicalContact.body = technicalContact;
-    doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
-    doc.technicalContact.customer = doc._id;
-
   return doc;
 }

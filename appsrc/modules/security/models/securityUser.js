@@ -48,7 +48,7 @@ const docSchema = new Schema({
                           
 },
 {
-        collection: 'SecurityUser'
+        collection: 'SecurityUsers'
 });
 
 docSchema.set('timestamps', true);

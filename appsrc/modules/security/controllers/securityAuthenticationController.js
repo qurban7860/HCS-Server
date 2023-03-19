@@ -35,6 +35,7 @@ this.populateList = [
 
 exports.login = async (req, res, next) => {
   const errors = validationResult(req);
+  var _this=this;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -53,13 +54,16 @@ exports.login = async (req, res, next) => {
           if(passwordsResponse){
             const token = await issueToken(existingUser._id, existingUser.email);
             if(token){
-              // this.dbservice.postObject(addAccessLog('login', existingUser), callbackFunc);
-              //   function callbackFunc(error, response) {
-              //     if (error) {
-              //       logger.error(new Error(error));
-              //       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-              //     }
-              //   }
+              const accessLogObject = addAccessLog('login', existingUser._id);
+              console.log('accesslog----->', accessLogObject);
+              _this.dbservice.postObject(accessLogObject, callbackFunc);
+              
+                function callbackFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                  }
+                }
               res.json({ accessToken: token,
                 userId: existingUser.id,
                 user: {
@@ -124,15 +128,19 @@ async function issueToken(userID, userEmail){
   return token;
 };
 
-function addAccessLog(actionType, user, ip=null){
+function addAccessLog(actionType, userID, ip=null){
   if(actionType == 'login'){
+    console.log('user--->', userID);
+    currentTime = new Date();
     var signInLog = {
-      user,
+      user: userID,
+      loginTime: currentTime,
       LoginIP: ip,
-      logoutTime: null
     };
-    reqMainSite.body = siteObj;
-    securitySignInLogController.getDocumentFromReq(signInLog, 'new');
+    var reqSignInLog = {};
+    reqSignInLog.body = signInLog;
+    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
+    return res;
   }
   
 }
@@ -151,7 +159,6 @@ function getDocumentFromReq(req, reqType){
   if ("password" in req.body){
     doc.password = password;
   }
-  
   
   if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;

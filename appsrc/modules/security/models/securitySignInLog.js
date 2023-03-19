@@ -6,7 +6,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
         
-    // user: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
+    user: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
     // guid of user from users collection.
     
     loginTime: { type: Date , default: Date.now, required: true },

@@ -105,13 +105,16 @@ exports.patchSignInLog = async (req, res, next) => {
 };
 
 
-async function getDocumentFromReq(req, reqType){
-  const { loginTime, logoutTime, LoginIP } = req.body;
+function getDocumentFromReq(req, reqType){
+  const { user, loginTime, logoutTime, LoginIP } = req.body;
 
   let doc = {};
   
   if (reqType && reqType == "new"){
     doc = new SecuritySignInLog({});
+  }
+  if ("user" in req.body){
+    doc.user = user;
   }
   if ("loginTime" in req.body){
     doc.loginTime = loginTime;
@@ -125,3 +128,5 @@ async function getDocumentFromReq(req, reqType){
 
   return doc;
 }
+
+exports.getDocumentFromReq = getDocumentFromReq;
