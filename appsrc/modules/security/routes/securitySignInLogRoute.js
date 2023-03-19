@@ -33,7 +33,7 @@ router.post(`${baseRoute}/`, controller.postSignInLog);
 router.patch(`${baseRoute}/:id`,  controller.patchSignInLog);
 
 // - /api/1.0.0/users/:userId/signinlogs/:id
-router.delete(`${baseRoute}/:id`,  controller.deleteSignInLog);s
+router.delete(`${baseRoute}/:id`,  controller.deleteSignInLog);
 
 
 module.exports = router;
