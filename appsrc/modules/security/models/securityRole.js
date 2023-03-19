@@ -29,7 +29,7 @@ const docSchema = new Schema({
             
 },
 {
-        collection: 'SecurityRole'
+        collection: 'SecurityRoles'
 });
 
 docSchema.set('timestamps', true);

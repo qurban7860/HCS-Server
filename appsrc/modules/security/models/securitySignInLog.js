@@ -22,7 +22,7 @@ const docSchema = new Schema({
                           
 },
 {
-        collection: 'SecuritySignInLog'
+        collection: 'SecuritySignInLogs'
 });
 
 docSchema.plugin(uniqueValidator);

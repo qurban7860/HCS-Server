@@ -6,33 +6,34 @@ const checkAuth = require('../../../middleware/check-auth');
 
 
 const controllers = require('../controllers');
-const controller = controllers.securityAuthenticationController;
+const controller = controllers.securitySignInLogController;
 
 const router = express.Router();
 
 //  - base route for module
-// - /api/1.0.0/security/users/
+// - /api/1.0.0/users/:userId/signinlogs/
 
-// - /api/1.0.0/security/users/:id
-const baseRoute = `/users/:userId/auditlogs/`;
+// - /api/1.0.0/users/:userId/signinlogs/
+const baseRoute = `/users/:userId/signinlogs/`;
 
 // router.use(checkAuth);
 
-// - /api/1.0.0/security/getToken/
-router.post(`/getToken/`, controller.login);
 
-// - /api/1.0.0/security/forgetPasswd/
-// router.get(`${baseRoute}/`,  controller.getSecurityUsers);
 
-// // - /api/1.0.0/security/logout/:userId
-// router.post(`${baseRoute}/`, controller.postSecurityUser);
+// - /api/1.0.0/users/:userId/signinlogs/:id
+router.get(`${baseRoute}/:id`, controller.getSecuritySignInLog);
 
-// // - /api/1.0.0/security/users/:id
-// router.patch(`${baseRoute}/:id`,  controller.patchSecurityUser);
+// - /api/1.0.0/users/:userId/signinlogs/
+router.get(`${baseRoute}/`,  controller.getSecuritySignInLogs);
 
-// // - /api/1.0.0/security/users/:id
-// router.delete(`${baseRoute}/:id`,  controller.deleteSecurityUser);
+// - /api/1.0.0/users/:userId/signinlogs/
+router.post(`${baseRoute}/`, controller.postSignInLog);
 
+// - /api/1.0.0/users/:userId/signinlogs/:id
+router.patch(`${baseRoute}/:id`,  controller.patchSignInLog);
+
+// - /api/1.0.0/users/:userId/signinlogs/:id
+router.delete(`${baseRoute}/:id`,  controller.deleteSignInLog);s
 
 
 module.exports = router;
