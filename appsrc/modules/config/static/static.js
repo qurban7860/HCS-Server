@@ -36,6 +36,32 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
+    recordDuplicateRecordMessage(code) {
+        if (code == 400) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: `Duplicate entry found!`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
+    recordInvalidCredenitalsMessage(code){
+        if (code == 403) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: 'Could not log you in, please check your credentials and try again.'
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
     invalidIdMessage(code, parent) {
         if (code == 404) {
             const response = {
