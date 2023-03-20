@@ -18,6 +18,16 @@ class dbService {
     });
   }
 
+  getObject(model, query, populate, callback) {
+    model.findOne(query).populate(populate).exec((err, document) => {
+      if (err) {
+        callback(err, {});
+      } else {
+        callback(null, document || {});
+      }
+    });
+  }
+
   getObjectList(model, fields, query, orderBy, populate, callback) {
     model.find(query).collation({locale: "en"}).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
       if (err) {
