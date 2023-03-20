@@ -38,9 +38,11 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.customerId = req.params.customerId;
-  this.query = req.query != "undefined" ? req.query : {};  
-  this.query.customer = this.customerId; 
+  // this.customerId = req.params.customerId;
+  // this.query = req.query != "undefined" ? req.query : {};  
+  // this.query.customer = this.customerId; 
+  this.query = req.query.query != "undefined" ? req.query.query : {}; 
+  this.populate = req.query.populate != "undefined" ? req.query.populate : {}; 
   if(this.query){
     this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   } else {

@@ -42,6 +42,8 @@ this.populateList = [
 
 
 exports.getCustomer = async (req, res, next) => {
+  this.query = req.query.query != "undefined" ? req.query.query : {}; 
+  this.populate = req.query.populate != "undefined" ? req.query.populate : {}; 
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
