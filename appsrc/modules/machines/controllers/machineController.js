@@ -87,7 +87,7 @@ exports.postMachine = async (req, res, next) => {
 
 exports.patchMachine = async (req, res, next) => {
   const errors = validationResult(req);
-  //console.log('calling patchMachine');
+  console.log('calling patchMachine',req.body);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -108,10 +108,10 @@ exports.patchMachine = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { serialNo, parentMachine, parentSerialNo, name, description, status, supplier, machineModel, 
-    workOrder, customer, instalationSite, billingSite, operators,
+  const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
+    workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo,
-    tools, internalTags, customerTags,
+    tools, description, internalTags, customerTags,
     isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -123,31 +123,26 @@ function getDocumentFromReq(req, reqType){
   if ("serialNo" in req.body){
     doc.serialNo = serialNo;
   }
+  if ("name" in req.body){
+    doc.name = name;
+  }
   if ("parentMachine" in req.body){
     doc.parentMachine = parentMachine;
   }
   if ("parentSerialNo" in req.body){
     doc.parentSerialNo =  parentSerialNo;
   }
-  if ("name" in req.body){
-    doc.name = name;
-  }
-  if ("description" in req.body){
-    doc.description = description;
-  }
   if ("status" in req.body){
     doc.status = status;
   }
-
   if ("supplier" in req.body){
     doc.supplier = supplier;
   }
   if ("machineModel" in req.body){
     doc.machineModel = machineModel;
   }
-
-  if ("workOrder" in req.body){
-    doc.workOrderRef = workOrder;
+  if ("workOrderRef" in req.body){
+    doc.workOrderRef = workOrderRef;
   }
   if ("customer" in req.body){
     doc.customer = customer;
@@ -161,7 +156,6 @@ function getDocumentFromReq(req, reqType){
   if ("operators" in req.body){
     doc.operators = operators;
   }
-
   if ("accountManager" in req.body){
     doc.accountManager = accountManager;
   }
@@ -181,14 +175,15 @@ function getDocumentFromReq(req, reqType){
   if ("tools" in req.body){
     doc.tools = tools;
   }
-  
   if ("internalTags" in req.body){
     doc.internalTags = internalTags;
   }
   if ("customerTags" in req.body){
     doc.customerTags = customerTags;
   }
-  
+  if ("description" in req.body){
+    doc.description = description;
+  }
   if ("isDisabled" in req.body){
     doc.isDisabled = isDisabled;
   }
