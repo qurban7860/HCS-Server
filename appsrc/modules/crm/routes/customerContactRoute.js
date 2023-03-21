@@ -40,4 +40,9 @@ router.delete(`${baseRoute}/:id`, checkCustomerID, controller.deleteCustomerCont
 router.get(`/contacts/search`, controller.searchCustomerContacts);
 
 
+// - /api/1.0.0/crm/sp/contacts
+router.get(`/sp/contacts`, controller.getSPCustomerContacts);
+
+
+
 module.exports = router;

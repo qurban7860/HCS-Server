@@ -38,34 +38,12 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  // this.customerId = req.params.customerId;
-  // this.query = req.query != "undefined" ? req.query : {};  
-  // this.query.customer = this.customerId; 
-  this.query = req.query.query != "undefined" ? req.query.query : {}; 
-  this.populate = req.query.populate != "undefined" ? req.query.populate : {}; 
-  if(this.query){
-    this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  } else {
-    var aggregate = [
-      {
-        $lookup: {
-          from: "Customers",
-          localField: "customer",
-          foreignField: "_id",
-          as: "customer"
-        }
-      },
-        {
-        $match: {
-          "customer.type" : "SP"
-        }
-      }
-    ];
-
-    var params = {};
-    this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, params, callbackFunc);
-  }
-
+  this.customerId = req.params.customerId;
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.query.customer = this.customerId; 
+  
+  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -78,28 +56,42 @@ exports.getCustomerContacts = async (req, res, next) => {
 
 exports.searchCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  if(this.query){
-    this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  } else {
-    var aggregate = [
-      {
-        $lookup: {
-          from: "Customers",
-          localField: "customer",
-          foreignField: "_id",
-          as: "customer"
-        }
-      },
-        {
-        $match: {
-          "customer.type" : "SP"
-        }
-      }
-    ];
-
-    var params = {};
-    this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, params, callbackFunc);
+  
+  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
   }
+};
+
+
+
+exports.getSPCustomerContacts = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
+
+  var aggregate = [
+    {
+      $lookup: {
+        from: "Customers",
+        localField: "customer",
+        foreignField: "_id",
+        as: "customer"
+      }
+    },
+      {
+      $match: {
+        "customer.type" : "SP"
+      }
+    }
+  ];
+
+  var params = {};
+  this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, params, callbackFunc);
 
   function callbackFunc(error, response) {
     if (error) {
@@ -112,38 +104,38 @@ exports.searchCustomerContacts = async (req, res, next) => {
 };
 
 
-exports.getSPCustomerContacts = async (req, res, next) => {
-  const { Customer } = require('../models');
-  var spFields = { _id: 1 };
-  var spQuery = { "type": "SP" };
+// exports.getSPCustomerContacts = async (req, res, next) => {
+//   const { Customer } = require('../models');
+//   var spFields = { _id: 1 };
+//   var spQuery = { "type": "SP" };
 
-  this.dbservice.getObjectList(Customer, spFields, spQuery, this.orderBy, '', callbackFunc);
+//   this.dbservice.getObjectList(Customer, spFields, spQuery, this.orderBy, '', callbackFunc);
 
-  var _this = this;
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      _this.queryCustomer = {
-        customer:
-        {
-          $in:
-            response
-        }
-      };
-      _this.dbservice.getObjectList(CustomerContact, _this.fields, _this.queryCustomer, _this.orderBy, _this.populateObj, callbackFunc);
-      function callbackFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-        } else {
-          res.json(response);
-        }
-      }
-    }
-  }
-};
+//   var _this = this;
+//   function callbackFunc(error, response) {
+//     if (error) {
+//       logger.error(new Error(error));
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//     } else {
+//       _this.queryCustomer = {
+//         customer:
+//         {
+//           $in:
+//             response
+//         }
+//       };
+//       _this.dbservice.getObjectList(CustomerContact, _this.fields, _this.queryCustomer, _this.orderBy, _this.populateObj, callbackFunc);
+//       function callbackFunc(error, response) {
+//         if (error) {
+//           logger.error(new Error(error));
+//           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//         } else {
+//           res.json(response);
+//         }
+//       }
+//     }
+//   }
+// };
 
 exports.deleteCustomerContact = async (req, res, next) => {
   this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
