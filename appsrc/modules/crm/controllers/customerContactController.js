@@ -21,7 +21,11 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
-this.populate = {path: 'customer', select: 'name'};
+this.populate = [
+                {path: 'customer', select: 'name'},
+                {path: 'createdBy', select: 'firstName lastName'},
+                {path: 'updatedBy', select: 'firstName lastName'}
+                ];
 
 
 exports.getCustomerContact = async (req, res, next) => {
@@ -38,10 +42,9 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.customerId = req.params.customerId;
   this.query = req.query != "undefined" ? req.query : {};  
+  this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
-  
   this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   function callbackFunc(error, response) {

@@ -19,7 +19,13 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
-this.populate = {path: '', select: ''};
+this.populate = [
+  {path: 'contact', select: 'firstName lastName'},
+  {path: 'site', select: 'name'},
+  {path: 'user', select: 'firstName'},
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
+]
 
 
 exports.getCustomerNote = async (req, res, next) => {
@@ -36,8 +42,10 @@ exports.getCustomerNote = async (req, res, next) => {
 };
 
 exports.getCustomerNotes = async (req, res, next) => {
-  this.query = req.query.query != "undefined" ? req.query.query : {}; 
-  this.populate = req.query.populate != "undefined" ? req.query.populate : {};  
+  this.query = req.query != "undefined" ? req.query : {}; 
+  this.customerId = req.params.customerId;
+  this.query.customer = this.customerId; 
+  console.log("This query ")
   this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -63,7 +71,6 @@ exports.searchCustomerNotes = async (req, res, next) => {
 
 exports.deleteCustomerNote = async (req, res, next) => {
   this.dbservice.deleteObject(CustomerNote, req.params.id, callbackFunc);
-  console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -153,8 +160,6 @@ function getDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 
-
-  //console.log("doc in http req: ", doc);
   return doc;
 
 }

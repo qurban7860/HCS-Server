@@ -19,7 +19,10 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
-this.populate = {path: '', select: ''};
+this.populate = [
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
+];
 
 
 exports.getCustomerSite = async (req, res, next) => {
@@ -36,8 +39,7 @@ exports.getCustomerSite = async (req, res, next) => {
 };
 
 exports.getCustomerSites = async (req, res, next) => {
-    this.query = req.query.query != "undefined" ? req.query.query : {}; 
-    this.populate = req.query.populate != "undefined" ? req.query.populate : {};   
+    this.query = req.query != "undefined" ? req.query : {};   
     this.customerId = req.params.customerId;
     this.query.customer = this.customerId; 
     this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
@@ -66,7 +68,6 @@ exports.searchCustomerSites = async (req, res, next) => {
 
 exports.deleteCustomerSite = async (req, res, next) => {
   this.dbservice.deleteObject(CustomerSite, req.params.id, callbackFunc);
-  console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -118,7 +119,6 @@ exports.patchCustomerSite = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType){
-  console.log(req.body);
   const { name, phone, email, fax, website, address, 
     primaryBillingContact, primaryTechnicalContact, contacts,
     isDisabled, isArchived, loginUser } = req.body;
@@ -180,7 +180,6 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
 
 }

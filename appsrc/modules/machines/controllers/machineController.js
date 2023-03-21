@@ -18,10 +18,19 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
+this.orderBy = { createdAt: -1 };  
 //this.populate = 'category';
-this.populate = {path: '', select: ''};
-//this.populate = {path: '<field name>', model: '<model name>', select: '<space separated field names>'};
+this.populate = [
+      {path: 'machineModel', select: '_id name'},
+      {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
+      {path: 'supplier', select: '_id name'},
+      {path: 'status', select: '_id name'},
+      {path: 'customer', select: '_id name'},
+      {path: 'billingSite', select: '_id name'},
+      {path: 'instalationSite', select: '_id name address'},
+      {path: 'createdBy', select: 'firstName lastName'},
+      {path: 'updatedBy', select: 'firstName lastName'}
+    ];
 
 
 exports.getMachine = async (req, res, next) => {
@@ -38,9 +47,7 @@ exports.getMachine = async (req, res, next) => {
 };
 
 exports.getMachines = async (req, res, next) => {
-  // console.log("Machine Body : ",req.query);
-  this.query = req.query.query != "undefined" ? req.query.query : {}; 
-  this.populate = req.query.populate != "undefined" ? req.query.populate : {};  
+  this.query = req.query != "undefined" ? req.query : {};  
   this.dbservice.getObjectList(Machine, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

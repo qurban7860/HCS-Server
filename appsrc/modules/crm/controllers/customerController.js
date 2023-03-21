@@ -33,6 +33,8 @@ this.populate = [
   {path: 'accountManager', select: 'firstName lastName email'},
   {path: 'projectManager', select: 'firstName lastName email'},
   {path: 'supportManager', select: 'firstName lastName email'},
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
 ];
 
 
@@ -42,8 +44,9 @@ this.populateList = [
 
 
 exports.getCustomer = async (req, res, next) => {
-  this.query = req.query.query != "undefined" ? req.query.query : {}; 
-  this.populate = req.query.populate != "undefined" ? req.query.populate : {}; 
+  this.query = req.query != "undefined" ? req.query : {};
+  this.customerId = req.params.customerId;
+  this.query.customer = this.customerId; 
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -109,7 +112,6 @@ exports.postCustomer = async (req, res, next) => {
 
 exports.patchCustomer = async (req, res, next) => {
   const errors = validationResult(req);
-  //console.log('calling patchCustomer');
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -158,8 +160,6 @@ function getDocumentFromReq(req, reqType){
     doc.siteObj = siteObj;
   }
 
-
-  //console.log("doc.site", doc.site);
   if(doc.siteObj != undefined && typeof doc.siteObj !== "string") {
     var reqMainSite = {};
     reqMainSite.body = siteObj;
