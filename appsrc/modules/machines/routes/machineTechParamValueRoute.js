@@ -22,15 +22,15 @@ const baseRouteForObject = `/machines/:machineId/techparamvalues`;
 
 router.use(checkAuth);
 
-router.get(`${baseRouteForObject}/:id`, controller.getMachineTechParamValue);
+router.get(`${baseRouteForObject}/:id`, checkMachineID, controller.getMachineTechParamValue);
 
-router.get(`${baseRouteForObject}/`, controller.getMachineTechParamValues);
+router.get(`${baseRouteForObject}/`, checkMachineID, controller.getMachineTechParamValues);
 
-router.post(`${baseRouteForObject}/`,  controller.postMachineTechParamValue);
+router.post(`${baseRouteForObject}/`, checkMachineID,  controller.postMachineTechParamValue);
 
-router.patch(`${baseRouteForObject}/:id`,  controller.patchMachineTechParamValue);
+router.patch(`${baseRouteForObject}/:id`, checkMachineID,  controller.patchMachineTechParamValue);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteMachineTechParamValue);
+router.delete(`${baseRouteForObject}/:id`, checkMachineID, controller.deleteMachineTechParamValue);
 
 router.get('/techparamvalues/search',  controller.searchMachineTechParamValues);
 
