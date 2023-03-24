@@ -28,6 +28,9 @@ this.populate = [
       {path: 'customer', select: '_id name'},
       {path: 'billingSite', select: '_id name'},
       {path: 'instalationSite', select: '_id name address'},
+      {path: 'accountManager', select: '_id firstName lastName'},
+      {path: 'projectManager', select: '_id firstName lastName'},
+      {path: 'supportManager', select: '_id firstName lastName'},
       {path: 'createdBy', select: 'firstName lastName'},
       {path: 'updatedBy', select: 'firstName lastName'}
     ];
