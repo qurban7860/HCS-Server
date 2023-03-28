@@ -1,9 +1,8 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const fileUpload = require('../../../middleware/file-upload');
-const checkAuth = require('../../../middleware/check-auth');
-
+const { SecurityUser } = require('../models');
+const checkUserID = require('../../../middleware/check-parentID')('user', SecurityUser);
 
 const controllers = require('../controllers');
 const controller = controllers.securityAuthenticationController;
@@ -21,18 +20,7 @@ const baseRoute = `/users`;
 // - /api/1.0.0/security/getToken/
 router.post(`/getToken/`, controller.login);
 
-// - /api/1.0.0/security/forgetPasswd/
-// router.get(`${baseRoute}/`,  controller.getSecurityUsers);
-
-// // - /api/1.0.0/security/logout/:userId
-// router.post(`${baseRoute}/`, controller.postSecurityUser);
-
-// // - /api/1.0.0/security/users/:id
-// router.patch(`${baseRoute}/:id`,  controller.patchSecurityUser);
-
-// // - /api/1.0.0/security/users/:id
-// router.delete(`${baseRoute}/:id`,  controller.deleteSecurityUser);
-
-
+// - /api/1.0.0/security/logout/:userID
+router.post(`/logout/:userID`, checkUserID, controller.logout);
 
 module.exports = router;

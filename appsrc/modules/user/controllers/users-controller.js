@@ -97,7 +97,6 @@ const signup = async (req, res, next) => {
     lastName,
     email,
     password: hashedPassword,
-    passwordText: password
   });
 
   try {

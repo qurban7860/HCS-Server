@@ -141,8 +141,13 @@ function getDocumentFromReq(req, reqType){
   if (reqType && reqType == "new"){
     doc = new Customer({});
     doc.type = "customer";
-
+  }else{
+    if ("type" in req.body){
+      doc.type = type;
+    }
   }
+
+
   if ("name" in req.body){
     doc.name = name;
   }

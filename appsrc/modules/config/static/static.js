@@ -75,4 +75,17 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
+    recordLogoutMessage(code){
+        if (code == 200) {
+            const response = {
+                isError: "false", 
+                MessageCode: code,
+                Message: "Logout successfully"
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    }
 };

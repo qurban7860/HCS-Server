@@ -49,22 +49,19 @@ exports.login = async (req, res, next) => {
       } else {  
         if(!(_.isEmpty(response))){
           const existingUser = response;
-          console.log('user--->', existingUser);
           const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
           if(passwordsResponse){
-            const token = await issueToken(existingUser._id, existingUser.email);
-            if(token){
-              const accessLogObject = addAccessLog('login', existingUser._id);
-              console.log('accesslog----->', accessLogObject);
-              _this.dbservice.postObject(accessLogObject, callbackFunc);
-              
-                function callbackFunc(error, response) {
+            const accessToken = await issueToken(existingUser._id, existingUser.email);
+            if(accessToken){
+              updatedToken = updateUserToken(accessToken);
+              _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+                function callbackPatchFunc(error, response) {
                   if (error) {
                     logger.error(new Error(error));
                     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                   }
                 }
-              res.json({ accessToken: token,
+              res.json({ accessToken,
                 userId: existingUser.id,
                 user: {
                   email: existingUser.email,
@@ -91,7 +88,7 @@ exports.logout = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     }
   }
 };
@@ -128,10 +125,21 @@ async function issueToken(userID, userEmail){
   return token;
 };
 
+function updateUserToken(accessToken){
+  currentDate = new Date();
+  let doc = {};
+  let token = {
+    accessToken: accessToken,
+    tokenCreation: currentDate,
+    tokenExpiry: new Date(currentDate.getTime() + 60 * 60 * 1000)
+  }
+  doc.token = token;
+  return doc;
+}
+
 function addAccessLog(actionType, userID, ip=null){
-  if(actionType == 'login'){
-    console.log('user--->', userID);
-    currentTime = new Date();
+  currentTime = new Date();
+  if(actionType == 'login'){ 
     var signInLog = {
       user: userID,
       loginTime: currentTime,
@@ -140,6 +148,15 @@ function addAccessLog(actionType, userID, ip=null){
     var reqSignInLog = {};
     reqSignInLog.body = signInLog;
     const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
+    return res;
+  }
+  if(actionType == 'logout'){
+    var signOutLog = {
+      user: userID,
+      logOutTime: currentTime
+    };
+    reqSignOutLog.body = signInLog;
+    const res = securitySignOutLogController.getDocumentFromReq(reqSignInLog, 'new');
     return res;
   }
   
