@@ -20,9 +20,10 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
-this.populate = {path: 'category', select: '_id name description'};
-//this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
-
+this.populate = [
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
+];
 
 exports.getMachineToolInstalled = async (req, res, next) => {
   this.dbservice.getObjectById(MachineToolInstalled, this.fields, req.params.id, this.populate, callbackFunc);

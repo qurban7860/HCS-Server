@@ -19,9 +19,11 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
-this.populate = {path: 'category', select: '_id name description'};
-//this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
+this.populate = [
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'},
+  {path: 'techParam',  populate: { path: 'category'}},
+];
 
 
 exports.getMachineTechParamValue = async (req, res, next) => {

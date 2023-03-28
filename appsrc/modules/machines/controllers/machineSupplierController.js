@@ -20,7 +20,10 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
-this.populate = {path: '', select: ''};
+this.populate = [
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
+];
 //this.populate = {path: '<field name>', model: '<model name>', select: '<space separated field names>'};
 
 

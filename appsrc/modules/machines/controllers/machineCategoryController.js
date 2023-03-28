@@ -19,7 +19,10 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };    
-this.populate = {path: '', select: ''};
+this.populate = [
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
+];
 
 
 exports.getMachineCategory = async (req, res, next) => {

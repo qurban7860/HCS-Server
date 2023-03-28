@@ -18,10 +18,11 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
-this.populate = {path: 'category', select: '_id name description'};
-//this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
+this.orderBy = { createdAt: -1 };  
+this.populate = [
+  {path: 'createdBy', select: 'firstName lastName'},
+  {path: 'updatedBy', select: 'firstName lastName'}
+];
 
 
 exports.getMachineNote = async (req, res, next) => {
@@ -99,7 +100,6 @@ exports.postMachineNote = async (req, res, next) => {
 
 exports.patchMachineNote = async (req, res, next) => {
   const errors = validationResult(req);
-  //console.log('calling patchMachineNote');
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -126,12 +126,9 @@ function getDocumentFromReq(req, reqType){
   if (reqType && reqType == "new"){
     doc = new MachineNote({});
   }
-
-  if ("machine" in req.body){
-    doc.machine = req.body.machine;
-  }else{
+  
     doc.machine = req.params.machineId;
-  }
+
   if ("note" in req.body){
     doc.note = note;
   }

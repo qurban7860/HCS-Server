@@ -38,6 +38,7 @@ exports.getMachineTechParam = async (req, res, next) => {
 };
 
 exports.getMachineTechParams = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
   this.dbservice.getObjectList(MachineTechParam, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
