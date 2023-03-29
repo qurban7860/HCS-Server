@@ -210,15 +210,15 @@ function getDocumentFromReq(req, reqType){
     doc.technicalContact.customer = doc._id;
   }
 
-  if ("accountManager" in req.body && ObjectId.isValid(accountManager)){
+  if ("accountManager" in req.body){
     doc.accountManager = accountManager;
   }
 
-  if ("projectManager" in req.body && ObjectId.isValid(projectManager)){
+  if ("projectManager" in req.body){
     doc.projectManager = projectManager;
   }
 
-  if ("supportManager" in req.body && ObjectId.isValid(supportManager)){
+  if ("supportManager" in req.body){
     doc.supportManager = supportManager;
   }
 
