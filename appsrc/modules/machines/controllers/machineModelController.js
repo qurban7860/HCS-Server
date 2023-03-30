@@ -161,7 +161,6 @@ function getDocumentFromReq(req, reqType){
   }
   //doc.push(createdIP: "abc12");
   */
-  console.log("doc in http req: ", doc);
   return doc;
 
 }

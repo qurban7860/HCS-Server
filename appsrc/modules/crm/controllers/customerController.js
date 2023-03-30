@@ -147,29 +147,63 @@ function getDocumentFromReq(req, reqType){
     }
   }
 
-
   if ("name" in req.body){
     doc.name = name;
   }
   if ("tradingName" in req.body){
     doc.tradingName = tradingName;
   }
+
+  // if ("mainSite" in req.body){
+  //   doc.mainSite = mainSite;
+  // }
+
+  // if ("technicalContact" in req.body){
+  //   doc.technicalContact = technicalContact;
+  // }
+
+  // if ("billingContact" in req.body){
+  //   doc.billingContact = billingContact;
+  // }
+
   // if ("type" in req.body){
   // }
 
-  if ("mainSite" in req.body){
-    doc.mainSite = mainSite;
-  }
+  if (reqType && reqType == "new"){
+    if(mainSite != undefined && typeof mainSite !== "string") {
+      var reqMainSite = {};
+      reqMainSite.body = mainSite;
+      doc.mainSite = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
+      doc.mainSite.customer = doc._id;
+    }
 
-  if ("siteObj" in req.body){
-    doc.siteObj = siteObj;
-  }
+    if(technicalContact != undefined && typeof technicalContact !== "string") {
+      var reqprimaryTechnicalContact = {};
+      reqprimaryTechnicalContact.body = technicalContact;
+      doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
+      doc.technicalContact.customer = doc._id;
+    }
 
-  if(doc.siteObj != undefined && typeof doc.siteObj !== "string") {
-    var reqMainSite = {};
-    reqMainSite.body = siteObj;
-    doc.siteObj = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
-    doc.siteObj.customer = doc._id;
+    if(billingContact != undefined && typeof billingContact !== "string") {
+      var reqPrimarybillingContact = {};
+      reqPrimarybillingContact.body = billingContact;
+      doc.billingContact = customerContactController.getDocumentFromReq(reqPrimarybillingContact, 'new');
+      doc.billingContact.customer = doc._id;
+    }
+
+
+  }else{
+    if ("mainSite" in req.body){
+      doc.mainSite = mainSite;
+    }
+
+    if ("primaryBillingContact" in req.body){
+      doc.primaryBillingContact = primaryBillingContact;
+    }
+
+    if ("primaryTechnicalContact" in req.body){
+      doc.primaryTechnicalContact = primaryTechnicalContact;
+    }
   }
   
   if ("sites" in req.body){
@@ -178,36 +212,6 @@ function getDocumentFromReq(req, reqType){
 
   if ("contacts" in req.body){
     doc.contacts = contacts;
-  }
-
-  if ("primaryBillingContact" in req.body){
-    doc.primaryBillingContact = primaryBillingContact;
-  }
-
-  if ("billingContact" in req.body){
-    doc.billingContact = billingContact;
-  }
-
-  if(doc.billingContact != undefined && typeof billingContact !== "string") {
-    var reqPrimaryBillingContact = {};
-    reqPrimaryBillingContact.body = billingContact;
-    doc.billingContact = customerContactController.getDocumentFromReq(reqPrimaryBillingContact, 'new');
-    doc.billingContact.customer = doc._id;
-  }
-  
-  if ("primaryTechnicalContact" in req.body){
-    doc.primaryTechnicalContact = primaryTechnicalContact;
-  }
-
-  if ("technicalContact" in req.body){
-    doc.technicalContact = technicalContact;
-  }
-
-  if(doc.technicalContact != undefined && typeof technicalContact !== "string") {
-    var reqprimaryTechnicalContact = {};
-    reqprimaryTechnicalContact.body = technicalContact;
-    doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
-    doc.technicalContact.customer = doc._id;
   }
 
   if ("accountManager" in req.body){

@@ -38,6 +38,7 @@ const docSchema = new Schema({
         collection: 'CustomerContacts'
 });
 docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docAddressSchema);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 

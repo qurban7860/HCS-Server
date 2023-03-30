@@ -1,6 +1,13 @@
 const { getReasonPhrase } = require('http-status-codes');
 
 module.exports = {
+    recordCustomMessage(code, message){
+        if (code) {
+            return message;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
     recordDelMessage(code, results) {
         if (code == 200) {
             if (results != undefined && results.deletedCount > 0) {
