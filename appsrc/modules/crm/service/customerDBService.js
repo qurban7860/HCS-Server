@@ -10,6 +10,14 @@ class MachineService {
     this.db = new dbService();
   }
 
+  getObject(model, query, populate, callback) {
+    this.db.getObject(model, query, populate, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) callback(error, {});
+      else callback(null, response);
+    }
+  }
+
   getObjectById(model, fields, id, populate, callback) {
     this.db.getObjectById(model, fields, id, populate, callbackFunc);
     function callbackFunc(error, response) {
@@ -46,8 +54,8 @@ class MachineService {
     const db = this.db;
     async.waterfall([
       function (callback) {
-        if (newdocument.siteObj != undefined && typeof newdocument.siteObj !== "string") {
-          this.db.postObject(newdocument.siteObj, callbackFunction);
+        if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
+          this.db.postObject(newdocument.mainSite, callbackFunction);
           function callbackFunction(error, response) {
             console.log(error);
             if (error) callback(error, {});

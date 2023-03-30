@@ -7,7 +7,6 @@ let rtnMsg = require('../modules/config/static/static')
 function checkParentID(parent, model) {
   return function (req, res, next) {
     if (!ObjectId.isValid(req.params[`${parent}Id`])) {
-      console.log('response1');
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, parent));
     }
     else {

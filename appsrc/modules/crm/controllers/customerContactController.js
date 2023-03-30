@@ -192,7 +192,7 @@ exports.patchCustomerContact = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType){
-  const { firstName, lastName, title, contactTypes, phone, email, sites, 
+  const { firstName, lastName, title, contactTypes, phone, email, sites,  address,
     isDisabled, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -226,6 +226,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("sites" in req.body){
     doc.sites = sites;
+  }
+  if ("address" in req.body){
+    doc.address = address;
   }
   
   if ("isDisabled" in req.body){

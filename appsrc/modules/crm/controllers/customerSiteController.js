@@ -6,12 +6,14 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static')
+let rtnMsg = require('../../config/static/static');
+const _ = require('lodash');
 
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerSite } = require('../models');
+const { CustomerSite, Customer } = require('../models');
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -20,8 +22,10 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'createdBy', select: 'firstName lastName'},
-  {path: 'updatedBy', select: 'firstName lastName'}
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'},
+  {path: 'primaryBillingContact', select: 'firstName lastName'},
+  {path: 'primaryTechnicalContact', select: 'firstName lastName'},
 ];
 
 
@@ -101,25 +105,55 @@ exports.postCustomerSite = async (req, res, next) => {
 
 exports.patchCustomerSite = async (req, res, next) => {
   const errors = validationResult(req);
+  var _this = this;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+    if("isArchived" in req.body){
+      let queryString  = { _id: req.params.customerId, mainSite: req.params.id };
+      this.dbservice.getObject(Customer, queryString, this.populate, getObjectCallback);
+      async function getObjectCallback(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else { 
+          if(_.isEmpty(response)){
+            _this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
+            function callbackFunc(error, result) {
+              if (error) {
+                logger.error(new Error(error));
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+                  //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+                  );
+              } else {
+                res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+              }
+            }
+          }
+          else{
+            res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Main Site cannot be deleted!"));
+          }
+        }
+      }
+    }
+    else{
+      this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+        }
       }
     }
   }
 };
 
 function getDocumentFromReq(req, reqType){
-  const { name, phone, email, fax, website, address, 
+  const { name, phone, email, fax, website, address, lat, long, 
     primaryBillingContact, primaryTechnicalContact, contacts,
     isDisabled, isArchived, loginUser } = req.body;
   
@@ -155,6 +189,14 @@ function getDocumentFromReq(req, reqType){
 
   if ("contacts" in req.body){
     doc.contacts = contacts;
+  }
+
+  if ("lat" in req.body){
+    doc.lat = lat;
+  }
+
+  if ("long" in req.body){
+    doc.long = long;
   }
 
   if ("primaryBillingContact" in req.body){

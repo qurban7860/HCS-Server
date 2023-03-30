@@ -52,7 +52,6 @@ exports.getMachineCategories = async (req, res, next) => {
 
 exports.deleteMachineCategory = async (req, res, next) => {
   this.dbservice.deleteObject(MachineCategory, req.params.id, callbackFunc);
-  console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

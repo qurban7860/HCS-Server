@@ -13,6 +13,12 @@ const docSchema = new Schema({
     name: { type: String , required: true },
     // name of site. default will be organization name
 
+    lat: { type: String },
+    // latitude coordinates of site
+
+    long: { type: String },
+    // // longitude coordinates of site
+
     primaryBillingContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
     // primary Billing Contact for the site
     

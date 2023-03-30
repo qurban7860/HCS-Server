@@ -31,7 +31,6 @@ module.exports = (req, res, next) => {
     //console.log(`The client's IP Address is: ${clientIP}`);
 
     req.body.loginUser = decodedToken;
-    
     next();
   } catch (err) {
     const error = new HttpError('Authentication failed!', 403);
