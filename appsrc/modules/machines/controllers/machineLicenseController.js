@@ -18,10 +18,8 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
+this.orderBy = { createdAt: -1 }; 
 this.populate = {path: '', select: ''};
-//this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
 
 exports.getMachineLicense = async (req, res, next) => {
@@ -66,7 +64,6 @@ exports.searchMachineLicenses = async (req, res, next) => {
 
 exports.deleteMachineLicense = async (req, res, next) => {
   this.dbservice.deleteObject(MachineLicense, req.params.id, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -99,7 +96,6 @@ exports.postMachineLicense = async (req, res, next) => {
 
 exports.patchMachineLicense = async (req, res, next) => {
   const errors = validationResult(req);
-  //console.log('calling patchMachineLicense');
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {

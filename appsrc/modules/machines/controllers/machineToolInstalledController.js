@@ -19,10 +19,10 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
 this.populate = [
   {path: 'createdBy', select: 'firstName lastName'},
-  {path: 'updatedBy', select: 'firstName lastName'}
+  {path: 'updatedBy', select: 'firstName lastName'},
+  {path: 'tool', select: 'name'}
 ];
 
 exports.getMachineToolInstalled = async (req, res, next) => {
@@ -67,7 +67,6 @@ exports.searchMachineToolInstalled = async (req, res, next) => {
 
 exports.deleteMachineToolInstalled = async (req, res, next) => {
   this.dbservice.deleteObject(MachineToolInstalled, req.params.id, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -100,7 +99,6 @@ exports.postMachineToolInstalled = async (req, res, next) => {
 
 exports.patchMachineToolInstalled = async (req, res, next) => {
   const errors = validationResult(req);
-  //console.log('calling patchMachineToolInstalled');
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -156,7 +154,6 @@ function getDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 
-  //console.log("doc in http req: ", doc);
   return doc;
 
 }
