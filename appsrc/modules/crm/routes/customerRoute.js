@@ -14,7 +14,7 @@ const router = express.Router();
 const baseRouteForObject = `/customers`; 
 
 
-// router.use(checkAuth);
+router.use(checkAuth);
 
 // - /api/1.0.0/crm/customers/:id
 router.get(`${baseRouteForObject}/:id`, controller.getCustomer);

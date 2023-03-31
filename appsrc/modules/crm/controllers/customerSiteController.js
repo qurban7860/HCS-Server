@@ -13,7 +13,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, Customer } = require('../models');
-
+const { Machine } = require('../../machines/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -110,6 +110,7 @@ exports.patchCustomerSite = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if("isArchived" in req.body){
+      // check if site exiists in customer schema
       let queryString  = { _id: req.params.customerId, mainSite: req.params.id };
       this.dbservice.getObject(Customer, queryString, this.populate, getObjectCallback);
       async function getObjectCallback(error, response) {
@@ -118,15 +119,38 @@ exports.patchCustomerSite = async (req, res, next) => {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else { 
           if(_.isEmpty(response)){
-            _this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
-            function callbackFunc(error, result) {
+            // check if site exists in machine schema
+            let queryStringMachine = { 
+              $or: [{
+                  instalationSite: req.params.id
+                }, {
+                  billingSite: req.params.id
+              }]
+            };
+            _this.dbservice.getObject(Machine, queryStringMachine, this.populate, getMachineObjectCallback);
+            async function getMachineObjectCallback(error, response) {
               if (error) {
                 logger.error(new Error(error));
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-                  //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-                  );
-              } else {
-                res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+              } else { 
+                console.log('response--->', response);
+                if(_.isEmpty(response)){ 
+                  _this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
+                  function callbackFunc(error, result) {
+                    if (error) {
+                      logger.error(new Error(error));
+                      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+                        //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+                        );
+                    } 
+                    else {
+                      res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+                    }
+                  }
+                }
+                else{
+                  res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Machine assigned site cannot be deleted!"));
+                }
               }
             }
           }

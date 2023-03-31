@@ -31,8 +31,8 @@ this.populate = [
       {path: 'accountManager', select: '_id firstName lastName'},
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
-      {path: 'createdBy', select: 'firstName lastName'},
-      {path: 'updatedBy', select: 'firstName lastName'}
+      {path: 'createdBy', select: 'name'},
+      {path: 'updatedBy', select: 'name'}
     ];
 
 

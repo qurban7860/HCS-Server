@@ -22,8 +22,8 @@ this.orderBy = { createdAt: -1 };
 //this.populate = 'category';
 this.populate = [
   {path: 'category', select: '_id name description'},
-  {path: 'createdBy', select: 'firstName lastName'},
-  {path: 'updatedBy', select: 'firstName lastName'}
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'}
 ];
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
