@@ -19,12 +19,14 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: '', select: ''}
+  {path: 'customer', select: 'name'},
+  {path: 'contact', select: 'firstName lastName'},
 ];
 
 
 this.populateList = [
-  {path: '', select: ''}
+  {path: 'customer', select: 'name'},
+  {path: 'contact', select: 'firstName lastName'}
 ];
 
 
@@ -41,7 +43,7 @@ exports.getSecurityUser = async (req, res, next) => {
 };
 
 exports.getSecurityUsers = async (req, res, next) => {
-  this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.query = req.query != "undefined" ? req.query : {};  
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
