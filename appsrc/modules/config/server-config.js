@@ -46,7 +46,10 @@ class App {
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
     this.registerRoutes();
-    this.app.use(cors());
+    this.app.use(cors({
+        origin: '*'
+      }
+    ));
     // this.app.options('*', cors());
     this.app.use(
       '/api-docs',
