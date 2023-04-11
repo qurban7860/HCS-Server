@@ -122,7 +122,7 @@ function getDocumentFromReq(req, reqType){
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo,
     tools, description, internalTags, customerTags,
-    isDisabled, isArchived, loginUser } = req.body;
+    isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -194,8 +194,8 @@ function getDocumentFromReq(req, reqType){
   if ("description" in req.body){
     doc.description = description;
   }
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;

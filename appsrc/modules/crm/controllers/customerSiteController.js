@@ -179,7 +179,7 @@ exports.patchCustomerSite = async (req, res, next) => {
 function getDocumentFromReq(req, reqType){
   const { name, phone, email, fax, website, address, lat, long, 
     primaryBillingContact, primaryTechnicalContact, contacts,
-    isDisabled, isArchived, loginUser } = req.body;
+    isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -230,8 +230,8 @@ function getDocumentFromReq(req, reqType){
     doc.primaryTechnicalContact = primaryTechnicalContact;
   }
   
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
