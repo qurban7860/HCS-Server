@@ -135,7 +135,7 @@ function getDocumentFromReq(req, reqType){
   const { name, tradingName, type, siteObj, mainSite, sites, contacts,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
     accountManager, projectManager, supportManager, 
-    isDisabled, isArchived, loginUser } = req.body;
+    isActive, isArchived, loginUser } = req.body;
 
 
   let doc = {};
@@ -227,8 +227,8 @@ function getDocumentFromReq(req, reqType){
     doc.supportManager = supportManager;
   }
 
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
 
   if ("isArchived" in req.body){

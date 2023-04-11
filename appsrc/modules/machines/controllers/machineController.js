@@ -97,6 +97,7 @@ exports.postMachine = async (req, res, next) => {
 
 exports.patchMachine = async (req, res, next) => {
   const errors = validationResult(req);
+  console.log('calling patchMachine',req.body);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -119,9 +120,9 @@ exports.patchMachine = async (req, res, next) => {
 function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
-    accountManager, projectManager, supportManager, license, logo,
-    tools, description, internalTags, customerTags, siteMilestone,
-    isDisabled, isArchived, loginUser } = req.body;
+    accountManager, projectManager, supportManager, license, logo, siteMilestone,
+    tools, description, internalTags, customerTags,
+    isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -196,8 +197,8 @@ function getDocumentFromReq(req, reqType){
   if ("siteMilestone" in req.body){
     doc.siteMilestone = siteMilestone;
   }
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;

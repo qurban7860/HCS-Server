@@ -107,7 +107,7 @@ exports.patchSecurityConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { blockedUsers, blockedCustomers, whiteListIPs, blackListIPs, isDisabled, isArchived} = req.body;
+  const { blockedUsers, blockedCustomers, whiteListIPs, blackListIPs, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -128,8 +128,8 @@ function getDocumentFromReq(req, reqType){
     doc.blackListIPs = blackListIPs;
   }
 
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
 
   if ("isArchived" in req.body){

@@ -109,19 +109,19 @@ exports.patchMachineModel = async (req, res, next) => {
 
 /*
 function getModelFromReq(req){
-  const { name, description, category, isDisabled, isArchived } = req.body;
+  const { name, description, category, isActive, isArchived } = req.body;
   return  new MachineModel({
     name, 
     description, 
     category,
-    isDisabled,
+    isActive,
     isArchived
   });
 }
 */
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, category, isDisabled, isArchived, loginUser } = req.body;
+  const { name, description, category, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -138,8 +138,8 @@ function getDocumentFromReq(req, reqType){
     doc.category = category;
   }
   
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;

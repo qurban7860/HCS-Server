@@ -150,7 +150,7 @@ exports.patchSecurityModule = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, accessForNormalUsers, isDisabled, isArchived } = req.body;
+  const { name, description, accessForNormalUsers, isActive, isArchived } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -165,8 +165,8 @@ function getDocumentFromReq(req, reqType){
   if ("accessForNormalUsers" in req.body){
     doc.accessForNormalUsers = accessForNormalUsers;
   }
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
