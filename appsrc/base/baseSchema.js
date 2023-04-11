@@ -14,7 +14,7 @@ let docAuditSchema = {
 }
 
 let  docVisibilitySchema = {
-    isDisabled: { type: Boolean, default: false },
+    isActive: { type: Boolean, default: true },
     // a document can be disabled. A disabled document can not be used to 
     // perform any new action like new selection in other document, etc. 
      
