@@ -120,7 +120,7 @@ exports.patchMachine = async (req, res, next) => {
 function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
-    accountManager, projectManager, supportManager, license, logo,
+    accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags,
     isActive, isArchived, loginUser } = req.body;
   
@@ -193,6 +193,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("description" in req.body){
     doc.description = description;
+  }
+  if ("siteMilestone" in req.body){
+    doc.siteMilestone = siteMilestone;
   }
   if ("isActive" in req.body){
     doc.isActive = isActive;

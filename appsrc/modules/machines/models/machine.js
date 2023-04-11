@@ -71,6 +71,8 @@ const docSchema = new Schema({
   
     customerTags: [{ type: String }],
     // list of tags used for reporting by customer
+
+    siteMilestone: { type: String }
 },
 {
     collection: 'Machines'
