@@ -102,7 +102,7 @@ exports.patchSecurityRole = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, allModules, allWriteAccess, modules, isDisabled, isArchived} = req.body;
+  const { name, description, allModules, allWriteAccess, modules, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -128,8 +128,8 @@ function getDocumentFromReq(req, reqType){
     doc.modules = modules;
   }
 
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
 
   if ("isArchived" in req.body){

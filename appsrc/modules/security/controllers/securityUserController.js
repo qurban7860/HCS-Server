@@ -139,7 +139,7 @@ exports.patchSecurityUser = async (req, res, next) => {
 
 async function getDocumentFromReq(req, reqType){
   const { customer, contact, name, phone, email, login,
-     password, expireAt, roles, isDisabled, isArchived } = req.body;
+     password, expireAt, roles, isActive, isArchived } = req.body;
 
 
   let doc = {};
@@ -187,8 +187,8 @@ async function getDocumentFromReq(req, reqType){
     doc.roles = roles;
   }
 
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
 
   if ("isArchived" in req.body){

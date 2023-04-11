@@ -108,7 +108,7 @@ function getDocumentFromReq(req, reqType){
   const { machine, category, model, supplier, status, note, 
     tool, toolInstalled, techParam, techParamValue,
     activityType, activitySummary, activityDetail,
-    isDisabled, isArchived, loginUser } = req.body;
+    isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -161,8 +161,8 @@ function getDocumentFromReq(req, reqType){
     doc.activityDetail = activityDetail;
   }
   
-  if ("isDisabled" in req.body){
-    doc.isDisabled = isDisabled;
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
