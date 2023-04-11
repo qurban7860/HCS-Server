@@ -5,7 +5,7 @@ var async = require("async");
 let dbService = require('../../db/dbService')
 
 
-class MachineService {
+class CustomerService {
   constructor() {
     this.db = new dbService();
   }
@@ -123,4 +123,4 @@ class MachineService {
 }
 
 
-module.exports = MachineService;
+module.exports = CustomerService;

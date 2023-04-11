@@ -6,6 +6,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
+const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -176,18 +177,35 @@ exports.patchCustomerContact = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(CustomerContact, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
+    var _this = this;
+    this.query = req.query != "undefined" ? req.query : {}; 
+    this.query.customer = req.params.customerId;
+    this.query._id = req.params.id;
+    // let queryString  = { _id: req.params.customerId, customer: req.params.id };
+    this.dbservice.getObject(CustomerContact, this.query, this.populate, getObjectCallback);
+    async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else { 
+        if(!(_.isEmpty(response))){
+          _this.dbservice.patchObject(CustomerContact, req.params.id, getDocumentFromReq(req), callbackFunc);
+          function callbackFunc(error, result) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+                error
+                //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+                );
+            } else {
+              res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+            }
+          }
+        }else{
+          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Customer ID Mismatch!"));
+        }
       }
-    }
+    }  
   }
 };
 
@@ -216,8 +234,6 @@ function getDocumentFromReq(req, reqType){
   if ("contactTypes" in req.body){
     doc.contactTypes = contactTypes;
   }
-
-
   if ("phone" in req.body){
     doc.phone = phone;
   }
