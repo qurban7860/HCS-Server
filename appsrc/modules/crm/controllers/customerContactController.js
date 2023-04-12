@@ -182,7 +182,7 @@ exports.postCustomerContact = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
-        res.json({ customerCategory: response });
+        res.status(StatusCodes.CREATED).json({ customerCategory: response });
       }
     }
   }
@@ -214,7 +214,7 @@ exports.patchCustomerContact = async (req, res, next) => {
                 //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
                 );
             } else {
-              res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+              res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
             }
           }
         }else{

@@ -79,7 +79,7 @@ exports.postMachineTool = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.json({ MachineTool: response });
+        res.status(StatusCodes.CREATED).json({ MachineTool: response });
       }
     }
   }
@@ -100,7 +100,7 @@ exports.patchMachineTool = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }
