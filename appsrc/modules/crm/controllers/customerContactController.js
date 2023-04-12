@@ -142,14 +142,30 @@ exports.getSPCustomerContacts = async (req, res, next) => {
 // };
 
 exports.deleteCustomerContact = async (req, res, next) => {
-  this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
-  function callbackFunc(error, result) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+  let id = req.params.id;
+  let customerId = req.params.customerId;
+  
+  if(req.params.id && req.params.customerId) {
+    let customerContact = await CustomerContact.findOne({_id:req.params.id, customer:req.params.customerId});
+    
+    if(customerContact) {
+
+      this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        }
+      }
     }
+    else {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+  }
+  else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 };
 
