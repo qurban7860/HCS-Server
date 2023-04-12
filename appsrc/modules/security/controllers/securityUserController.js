@@ -11,6 +11,8 @@ let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
 const { SecurityUser } = require('../models');
+const { Customer } = require('../../crm/models');
+const { Machine } = require('../../machines/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -56,14 +58,30 @@ exports.getSecurityUsers = async (req, res, next) => {
 };
 
 exports.deleteSecurityUser = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityUser, req.params.id, callbackFunc);
-  function callbackFunc(error, result) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+
+  let user = await SecurityUser.findById(req.params.id); 
+
+  if(user.isArchived) {
+    
+    let customer = await Customer.findOne({createdBy:user.id});
+    let machine = await Machine.findOne({createdBy:user.id});
+
+    if(!customer && !machine) {
+      this.dbservice.deleteObject(SecurityUser, req.params.id, (error, result)=>{
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        }
+      });
     }
+    else {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+  }
+  else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 };
 
