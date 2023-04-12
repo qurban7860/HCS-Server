@@ -17,7 +17,7 @@ const assetsRoutes = require('../assets/routes/assets-route');
 const machineRoutes  = require ('../machines/routes');
 const securityRoutes  = require ('../security/routes');
 const customerRoutes  = require ('../crm/routes');
-
+const dashboardRoute  = require ('../dashboard/routes');
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -68,6 +68,7 @@ class App {
     machineRoutes.registerMachineRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
+    dashboardRoute.registerDashboardRoutes(this.app, apiPath);
   }
 
 
