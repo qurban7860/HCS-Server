@@ -70,14 +70,27 @@ exports.searchCustomerNotes = async (req, res, next) => {
 };
 
 exports.deleteCustomerNote = async (req, res, next) => {
-  this.dbservice.deleteObject(CustomerNote, req.params.id, callbackFunc);
-  function callbackFunc(error, result) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+
+  if(req.params.id && req.params.customerId) {
+    let customerNote = await CustomerNote.findOne({_id:req.params.id, customer:req.params.customerId});
+    
+    if(customerNote) {
+      this.dbservice.deleteObject(CustomerNote, req.params.id, callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        }
+      }
     }
+    else {
+      res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
+    }
+  }
+  else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 };
 
