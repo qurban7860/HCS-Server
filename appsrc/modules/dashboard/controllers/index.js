@@ -1,3 +1,3 @@
 module.exports = {
-    assetsController: require('./assets-controller'),
+    dashboardController: require('./dashboardController'),
 }
