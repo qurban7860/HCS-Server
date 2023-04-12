@@ -75,7 +75,7 @@ exports.postAsset = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.json({ assets: response });
+        res.status(StatusCodes.CREATED).json({ assets: response });
       }
     }
   }
@@ -94,7 +94,7 @@ exports.patchAsset = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }

@@ -108,7 +108,7 @@ exports.postSecurityUser = async (req, res, next) => {
               logger.error(new Error(error));
               res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              res.json({ user: response });
+              res.status(StatusCodes.CREATED).json({ user: response });
             }
           }  
         }else{
@@ -145,7 +145,7 @@ exports.patchSecurityUser = async (req, res, next) => {
                 logger.error(new Error(error));
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
               } else {
-                res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+                res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
               }
             }     
         }

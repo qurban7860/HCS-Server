@@ -79,7 +79,7 @@ exports.postSecurityConfig = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.json({ SecurityConfig: response });
+        res.status(StatusCodes.CREATED).json({ SecurityConfig: response });
       }
     }
   }
@@ -99,7 +99,7 @@ exports.patchSecurityConfig = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }

@@ -89,7 +89,7 @@ exports.postMachine = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.json({ Machine: response });
+        res.status(StatusCodes.CREATED).json({ Machine: response });
       }
     }
   }
@@ -110,7 +110,7 @@ exports.patchMachine = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }
