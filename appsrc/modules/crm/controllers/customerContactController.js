@@ -1,4 +1,4 @@
-const { validationResult } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
@@ -170,6 +170,10 @@ exports.deleteCustomerContact = async (req, res, next) => {
 };
 
 exports.postCustomerContact = async (req, res, next) => {
+  await body('email')
+  .isEmail().withMessage('Invalid email format')
+  .run(req);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -189,6 +193,10 @@ exports.postCustomerContact = async (req, res, next) => {
 };
 
 exports.patchCustomerContact = async (req, res, next) => {
+  await body('email')
+  .isEmail().withMessage('Invalid email format')
+  .run(req);
+  
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
