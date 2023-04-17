@@ -6,7 +6,6 @@ const _ = require('lodash');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-const _ = require('lodash');
 
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
