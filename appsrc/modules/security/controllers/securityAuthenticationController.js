@@ -14,7 +14,7 @@ let securityDBService = require('../service/securityDBService');
 this.dbservice = new securityDBService();
 
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser } = require('../models');
+const { SecurityUser, SecuritySignInLog } = require('../models');
 
 
 
@@ -82,15 +82,17 @@ exports.login = async (req, res, next) => {
 
 
 exports.logout = async (req, res, next) => {
-  this.dbservice.getObjectList(SecurityConfig, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+
+  const logoutResponse = await addAccessLog('logout', req.params.userID);
+  this.dbservice.postObject(logoutResponse, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+      } else {
+        res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+      }
     }
-  }
 };
 
 
@@ -137,7 +139,7 @@ function updateUserToken(accessToken){
   return doc;
 }
 
-function addAccessLog(actionType, userID, ip=null){
+async function addAccessLog(actionType, userID, ip=null){
   currentTime = new Date();
   if(actionType == 'login'){ 
     var signInLog = {
@@ -153,10 +155,11 @@ function addAccessLog(actionType, userID, ip=null){
   if(actionType == 'logout'){
     var signOutLog = {
       user: userID,
-      logOutTime: currentTime
+      logOutTime: currentTime,
     };
-    reqSignOutLog.body = signInLog;
-    const res = securitySignOutLogController.getDocumentFromReq(reqSignInLog, 'new');
+    var reqSignOutLog = {};
+    reqSignOutLog.body = signOutLog;
+    const res = securitySignInLogController.getDocumentFromReq(reqSignOutLog, 'new');
     return res;
   }
   

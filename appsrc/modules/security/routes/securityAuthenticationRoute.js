@@ -21,6 +21,6 @@ const baseRoute = `/users`;
 router.post(`/getToken/`, controller.login);
 
 // - /api/1.0.0/security/logout/:userID
-router.post(`/logout/:userID`, checkUserID, controller.logout);
+router.post(`/logout/:userID`, controller.logout);
 
 module.exports = router;

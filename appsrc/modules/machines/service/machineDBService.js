@@ -9,6 +9,14 @@ class MachineService {
     this.db = new dbService();
   }
 
+  getObject(model, query, populate, callback) {
+    this.db.getObject(model, query, populate, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) callback(error, {});
+      else callback(null, response);
+    }
+  }
+
   getObjectById(model, fields, id, populate, callback) {
     this.db.getObjectById(model, fields, id, populate, callbackFunc);
     function callbackFunc(error, response) {
