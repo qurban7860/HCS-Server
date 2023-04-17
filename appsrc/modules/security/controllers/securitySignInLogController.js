@@ -126,6 +126,11 @@ function getDocumentFromReq(req, reqType){
     doc.LoginIP = LoginIP;
   }
 
+  if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  }
+
   return doc;
 }
 
