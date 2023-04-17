@@ -14,10 +14,10 @@ let rtnMsg = require('../../config/static/static')
 exports.getData = async (req, res, next) => {
 
   try{
-    let customerCount = await Customer.find({isActive:true}).countDocuments();
-    let machineCount = await Machine.find({isActive:true}).countDocuments();
-    let userCount = await SecurityUser.find({isActive:true}).countDocuments();
-    let siteCount = await CustomerSite.find({isActive:true}).countDocuments();
+    let customerCount = await Customer.find({isActive:true, isArchived:false}).countDocuments();
+    let machineCount = await Machine.find({isActive:true, isArchived:false}).countDocuments();
+    let userCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
     res.json({customerCount, machineCount, userCount, siteCount});
 
   }catch(e) {
