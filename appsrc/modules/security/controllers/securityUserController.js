@@ -6,6 +6,7 @@ const _ = require('lodash');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
+const _ = require('lodash');
 
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
@@ -23,12 +24,13 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
+  {path: 'roles', select: 'name'},
 ];
-
 
 this.populateList = [
   {path: 'customer', select: 'name'},
-  {path: 'contact', select: 'firstName lastName'}
+  {path: 'contact', select: 'firstName lastName'},
+  {path: 'roles', select: 'name'},
 ];
 
 
@@ -60,8 +62,7 @@ exports.getSecurityUsers = async (req, res, next) => {
 exports.deleteSecurityUser = async (req, res, next) => {
 
   let user = await SecurityUser.findById(req.params.id); 
-
-  if(user.isArchived) {
+  if(!(_.isEmpty(user)) && user.isArchived) {
     
     let customer = await Customer.findOne({createdBy:user.id});
     let machine = await Machine.findOne({createdBy:user.id});

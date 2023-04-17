@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const _ = require('lodash');
 
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -64,20 +65,43 @@ exports.deleteMachineTechParam = async (req, res, next) => {
 };
 
 exports.postMachineTechParam = async (req, res, next) => {
+  var _this = this;
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.CREATED).json({ MachineTechParam: response });
+  // if(!_.isEmpty(errors)){
+  //   res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Schema Validation Faliure"));
+  // } 
+
+
+  let queryString  = { $or: [
+    { name: req.body.name },
+    { code: req.body.code }
+  ]};
+  this.dbservice.getObject(MachineTechParam, queryString, this.populate, getObjectCallback);
+  async function getObjectCallback(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      if(_.isEmpty(response)){
+        _this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+        function callbackFunc(error, response) {
+          if (error) {
+            logger.error(new Error(error));
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+              error
+              //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+          } else {
+            res.status(StatusCodes.CREATED).json({ MachineTechParam: response });
+          }
+        }    
+      } else{
+        if(req.body.name == response.name){
+          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Name must be unique!"));          
+        } 
+        if(req.body.code == response.code){
+          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Code must be unique!"));          
+        }        
       }
     }
   }
@@ -85,20 +109,41 @@ exports.postMachineTechParam = async (req, res, next) => {
 
 exports.patchMachineTechParam = async (req, res, next) => {
   const errors = validationResult(req);
+  var _this = this;
+
+  // if(!_.isEmpty(errors)){
+  //   res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Schema Validation Faliure"));
+  // } 
   //console.log('calling patchMachineTechParam');
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    this.dbservice.patchObject(MachineTechParam, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+
+  let queryString  = { $or: [
+    { name: req.body.name },
+    { code: req.body.code }
+  ]};
+  this.dbservice.getObject(MachineTechParam, queryString, this.populate, getObjectCallback);
+  async function getObjectCallback(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      if(_.isEmpty(response)){
+        _this.dbservice.patchObject(MachineTechParam, req.params.id, getDocumentFromReq(req), callbackFunc);
+        function callbackFunc(error, result) {
+          if (error) {
+            logger.error(new Error(error));
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+              error
+              //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+          } else {
+            if(req.body.name == response.name){
+              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Name must be unique!"));          
+            } 
+            if(req.body.code == response.code){
+              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Code must be unique!"));          
+            }
+          }
+        }      
       }
     }
   }

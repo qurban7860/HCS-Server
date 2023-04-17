@@ -2,7 +2,7 @@ const { getReasonPhrase } = require('http-status-codes');
 
 module.exports = {
     recordCustomMessage(code, message){
-        if (code) {
+        if (message) {
             return message;
         } else {
             return getReasonPhrase(code);
