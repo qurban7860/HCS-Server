@@ -171,7 +171,16 @@ exports.deleteCustomerContact = async (req, res, next) => {
 
 exports.postCustomerContact = async (req, res, next) => {
   await body('email')
-  .isEmail().withMessage('Invalid email format')
+  .optional()
+  .custom((value, { req }) => {
+    if (!value || value.trim() === '') {
+      return true;
+    } else {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      // return validator.isEmail(value);
+    }
+  })
+  .withMessage('Invalid email format')
   .run(req);
 
   const errors = validationResult(req);
@@ -196,7 +205,16 @@ exports.postCustomerContact = async (req, res, next) => {
 
 exports.patchCustomerContact = async (req, res, next) => {
   await body('email')
-  .isEmail().withMessage('Invalid email format')
+  .optional()
+  .custom((value, { req }) => {
+    if (!value || value.trim() === '') {
+      return true;
+    } else {
+      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+      // return validator.isEmail(value);
+    }
+  })
+  .withMessage('Invalid email format')
   .run(req);
   
   const errors = validationResult(req);
