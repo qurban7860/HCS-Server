@@ -123,23 +123,53 @@ exports.postSecurityUser = async (req, res, next) => {
 
 exports.patchSecurityUser = async (req, res, next) => {
   const errors = validationResult(req);
+  var _this = this;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if (req.url.includes("updatePassword")) {
+      let queryString  = { _id: req.params.id };
+      this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
+      async function getObjectCallback(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          if(!(_.isEmpty(response))){
+            const passwordsResponse = await comparePasswords(req.body.oldPassword, response.password)
+            if(passwordsResponse){
+              const doc = await getDocumentFromReq(req);
+              _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+              function callbackFunc(error, result) {
+                if (error) {
+                  logger.error(new Error(error));
+                  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                } else {
+                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                }
+              }  
+            }else{
+              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Wrong password entered"));  
+            }            
+          }else{
+            res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "User not found!"));
+          }
+        }
+      }      
+    } else {
     // check if email already exists
-    var _this = this;
-    let queryString  = { email: req.body.email};
-    this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
-    async function getObjectCallback(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-        // check if theres any other user by the same email
-        if(!(_.isEmpty(response)) && (response._id != req.params.id)){
-          // return error message
-          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
-        }else{
+      let queryString  = { email: req.body.email};
+      this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
+      async function getObjectCallback(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          // check if theres any other user by the same email
+          if(!(_.isEmpty(response)) && (response._id != req.params.id)){
+            // return error message
+            res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
+          }else{
             const doc = await getDocumentFromReq(req);
             _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
             function callbackFunc(error, result) {
@@ -150,10 +180,25 @@ exports.patchSecurityUser = async (req, res, next) => {
                 res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
               }
             }     
+          }
         }
       }
     }
   }
+};
+
+
+async function comparePasswords(encryptedPass, textPass, next){
+  let isValidPassword = false;
+  try {
+    isValidPassword = await bcrypt.compare(encryptedPass, textPass);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return next(error);
+  }
+
+  return isValidPassword;
 };
 
 

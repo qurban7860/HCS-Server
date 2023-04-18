@@ -30,6 +30,9 @@ router.post(`${baseRoute}/`, controller.postSecurityUser);
 // - /api/1.0.0/security/users/:id
 router.patch(`${baseRoute}/:id`,  controller.patchSecurityUser);
 
+// - /api/1.0.0/security/users/updatePassword/:id
+router.patch(`${baseRoute}/updatePassword/:id`,  controller.patchSecurityUser);
+
 // - /api/1.0.0/security/users/:id
 router.delete(`${baseRoute}/:id`,  controller.deleteSecurityUser);
 
