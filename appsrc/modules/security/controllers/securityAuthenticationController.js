@@ -34,75 +34,63 @@ this.populateList = [
 
 
 exports.login = async (req, res, next) => {
+  
+  // console.log('req.body :', req.body);
   const errors = validationResult(req);
   var _this=this;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     // check if email exists
-    let queryString  = { email: req.body.email };
-    this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
+    //console.log('req.body :', req.body);
+    let queryString  = { login: req.body.email };
+
+    this.dbservice.getObject(SecurityUser, queryString, {path: 'customer', select: 'name type isActive isArchived'}, getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {  
-        if(!(_.isEmpty(response))){
+        //console.log('response.customer: ', response.customer);
+        //console.log('response.customer.type:', response.customer.type);
+
+        //&& response.customer.type == 'SP'  && response.customer.isActive && !response.customer.isArchived
+        
+        if(!(_.isEmpty(response)) && isValidCustomer(response.customer)  ){
           const existingUser = response;
-          var aggregate = [
-            {
-              $lookup: {
-                from: "Customers",
-                localField: "customer",
-                foreignField: "_id",
-                as: "customer"
-              }
-            },
-              {
-              $match: {
-                "customer.type" : "SP",
-                "customer._id": existingUser.customer
-              }
-            }
-          ];
-        
-          var params = {};
-          _this.dbservice.getObjectListWithAggregate(SecurityUser, aggregate, params, callbackFunc);
-        
-          async function callbackFunc(error, response) {
-            if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-            } else {
-              if(response.length > 0){
-                const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
-                if(passwordsResponse){
-                  const accessToken = await issueToken(existingUser._id, existingUser.email);
-                  if(accessToken){
-                    updatedToken = updateUserToken(accessToken);
-                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-                      function callbackPatchFunc(error, response) {
-                        if (error) {
-                          logger.error(new Error(error));
-                          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                        }
-                      }
+          //console.log('existingUser:', existingUser);
+          // console.log('response.length:', response.length);
+          
+            const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
+            //console.log('passwordsResponse: ', passwordsResponse);
+            if(passwordsResponse){
+              const accessToken = await issueToken(existingUser._id, existingUser.login);
+              //console.log('accessToken: ', accessToken)
+              if(accessToken){
+                updatedToken = updateUserToken(accessToken);
+                _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+                  function callbackPatchFunc(error, response) {
+                    if (error) {
+                      logger.error(new Error(error));
+                      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                    }
+
                     res.json({ accessToken,
                       userId: existingUser.id,
                       user: {
-                        email: existingUser.email,
+                        login: existingUser.login,
                         displayName: existingUser.name
                       }
                     });
+
                   }
-                }else{
-                  res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
-                }
-              }else{
-                res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCustomerTypeMessage(StatusCodes.FORBIDDEN));                
+                
               }
+            }else{
+              res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
             }
-          }
+          
+          
         }else{
           res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));       
         }
@@ -111,6 +99,12 @@ exports.login = async (req, res, next) => {
   }
 };
 
+function isValidCustomer(customer){
+  if (_.isEmpty(customer) || customer.type != 'SP' || customer.isActive == false || customer.isArchived == true){
+    return false;
+  }
+  return true;
+}
 
 exports.logout = async (req, res, next) => {
 
