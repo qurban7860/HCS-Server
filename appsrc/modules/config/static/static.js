@@ -61,7 +61,20 @@ module.exports = {
             const response = {
                 isError: "true", 
                 MessageCode: code,
-                Message: 'Could not log you in, please check your credentials and try again.'
+                Message: 'Could not log you in, please check your credentials and try again'
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
+    recordInvalidCustomerTypeMessage(code){
+        if (code == 403) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: 'Login failed. Only Service Provider (SP) Users are allowed to access'
             };
 
             return response;

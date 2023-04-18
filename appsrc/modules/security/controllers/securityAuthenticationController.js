@@ -49,28 +49,59 @@ exports.login = async (req, res, next) => {
       } else {  
         if(!(_.isEmpty(response))){
           const existingUser = response;
-          const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
-          if(passwordsResponse){
-            const accessToken = await issueToken(existingUser._id, existingUser.email);
-            if(accessToken){
-              updatedToken = updateUserToken(accessToken);
-              _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-                function callbackPatchFunc(error, response) {
-                  if (error) {
-                    logger.error(new Error(error));
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                  }
-                }
-              res.json({ accessToken,
-                userId: existingUser.id,
-                user: {
-                  email: existingUser.email,
-                  displayName: existingUser.name
-                }
-              });
+          var aggregate = [
+            {
+              $lookup: {
+                from: "Customers",
+                localField: "customer",
+                foreignField: "_id",
+                as: "customer"
+              }
+            },
+              {
+              $match: {
+                "customer.type" : "SP",
+                "customer._id": existingUser.customer
+              }
             }
-          }else{
-            res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+          ];
+        
+          var params = {};
+          _this.dbservice.getObjectListWithAggregate(SecurityUser, aggregate, params, callbackFunc);
+        
+          async function callbackFunc(error, response) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            } else {
+              if(response.length > 0){
+                const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
+                if(passwordsResponse){
+                  const accessToken = await issueToken(existingUser._id, existingUser.email);
+                  if(accessToken){
+                    updatedToken = updateUserToken(accessToken);
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+                      function callbackPatchFunc(error, response) {
+                        if (error) {
+                          logger.error(new Error(error));
+                          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                        }
+                      }
+                    res.json({ accessToken,
+                      userId: existingUser.id,
+                      user: {
+                        email: existingUser.email,
+                        displayName: existingUser.name
+                      }
+                    });
+                  }
+                }else{
+                  res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+                }
+              }else{
+                res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCustomerTypeMessage(StatusCodes.FORBIDDEN));                
+              }
+            }
           }
         }else{
           res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));       
