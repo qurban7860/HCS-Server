@@ -13,7 +13,7 @@ const router = express.Router();
 // router.use(checkAuth);
 
 // - /api/1.0.0/security/getToken/
-router.post(`/getToken/`, controller.login);
+// router.post(`/getToken/`, controller.login);
 
 
 module.exports = router;
