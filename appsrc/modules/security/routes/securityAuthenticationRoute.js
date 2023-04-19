@@ -13,12 +13,20 @@ const router = express.Router();
 // - /api/1.0.0/security/users/
 
 // - /api/1.0.0/security/users/:id
-const baseRoute = `/users`;
+// const baseRoute = `/users`;
 
 // router.use(checkAuth);
 
 // - /api/1.0.0/security/getToken/
-router.post(`/getToken/`, controller.login);
+
+router.post(`/getToken`, controller.login);
+
+
+/*
+router.get("/", (req, res) => {
+  res.send("Hello World!... i am testing");
+});
+*/
 
 // - /api/1.0.0/security/logout/:userID
 router.post(`/logout/:userID`, controller.logout);
