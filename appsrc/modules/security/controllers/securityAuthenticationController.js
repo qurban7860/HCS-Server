@@ -49,7 +49,7 @@ exports.login = async (req, res, next) => {
     async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {  
         //console.log('response.customer: ', response.customer);
         //console.log('response.customer.type:', response.customer.type);
@@ -69,21 +69,21 @@ exports.login = async (req, res, next) => {
               if(accessToken){
                 updatedToken = updateUserToken(accessToken);
                 _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-                  function callbackPatchFunc(error, response) {
-                    if (error) {
-                      logger.error(new Error(error));
-                      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                    }
-
-                    res.json({ accessToken,
-                      userId: existingUser.id,
-                      user: {
-                        login: existingUser.login,
-                        displayName: existingUser.name
-                      }
-                    });
-
+                function callbackPatchFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                   }
+
+                  return res.json({ accessToken,
+                    userId: existingUser.id,
+                    user: {
+                      login: existingUser.login,
+                      displayName: existingUser.name
+                    }
+                  });
+
+                }
                 
               }
             }else{

@@ -10,7 +10,7 @@ module.exports = (req, res, next) => {
   try {
     
     const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:''; // Authorization: 'Bearer TOKEN'
-    console.log(`token: ${token}`);
+    //console.log(`token: ${token}`);
     
 
     if (!token || token.length == 0) {
