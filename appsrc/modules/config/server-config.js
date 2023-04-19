@@ -12,8 +12,6 @@ const setHeaders = require('../../middleware/set-header');
 const errorHandler = require('../../middleware/error-handler');
 
 // ROUTES
-const usersRoutes = require('../user/routes/user-route');
-const assetsRoutes = require('../assets/routes/assets-route');
 const machineRoutes  = require ('../machines/routes');
 const securityRoutes  = require ('../security/routes');
 const customerRoutes  = require ('../crm/routes');
@@ -59,12 +57,7 @@ class App {
     this.app.use(errorHandler);
   }
 
-  registerRoutes(){
-    this.app.use(`${ apiPath }/users`, usersRoutes);
-    this.app.use(`${ apiPath }/assets`, assetsRoutes);
-
-
-    
+  registerRoutes(){    
     machineRoutes.registerMachineRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);

@@ -16,7 +16,7 @@ const router = express.Router();
 // - /api/1.0.0/security/users/:id
 const baseRoute = `/users`;
 
-// router.use(checkAuth);
+router.use(checkAuth);
 
 // - /api/1.0.0/security/users/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityUser);
