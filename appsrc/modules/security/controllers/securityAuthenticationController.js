@@ -79,6 +79,7 @@ exports.login = async (req, res, next) => {
                     userId: existingUser.id,
                     user: {
                       login: existingUser.login,
+                      email: existingUser.email,
                       displayName: existingUser.name
                     }
                   });
