@@ -158,8 +158,6 @@ exports.patchSecurityUser = async (req, res, next) => {
       }      
     } else {
     // check if email already exists
-      // let queryString  = { email: req.body.email.toLowerCase()};
-
       let queryString = { email: req.body.email.toLowerCase(), login: req.body.login.toLowerCase() };
       
       this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
