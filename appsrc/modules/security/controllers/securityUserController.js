@@ -95,7 +95,7 @@ exports.postSecurityUser = async (req, res, next) => {
   else {
     // check if email exists
     var _this = this;
-    let queryString  = { email: req.body.email};
+    let queryString  = { email: req.body.email.toLowerCase(), login: req.body.login.toLowerCase() };
     this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
@@ -158,7 +158,8 @@ exports.patchSecurityUser = async (req, res, next) => {
       }      
     } else {
     // check if email already exists
-      let queryString  = { email: req.body.email};
+      let queryString = { email: req.body.email.toLowerCase(), login: req.body.login.toLowerCase() };
+      
       this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
       async function getObjectCallback(error, response) {
         if (error) {
@@ -166,7 +167,7 @@ exports.patchSecurityUser = async (req, res, next) => {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           // check if theres any other user by the same email
-          if(!(_.isEmpty(response)) && (response._id != req.params.id)){
+          if(response && response._id && response._id != req.params.id){
             // return error message
             res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
           }else{
@@ -237,11 +238,11 @@ async function getDocumentFromReq(req, reqType){
   }
 
   if ("login" in req.body){
-    doc.login = login;
+    doc.login = login.toLowerCase();
   }
 
   if ("email" in req.body){
-    doc.email = email;
+    doc.email = email.toLowerCase();
   }
 
   if ("expireAt" in req.body){
