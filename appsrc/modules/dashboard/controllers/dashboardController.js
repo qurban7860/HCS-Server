@@ -36,11 +36,13 @@ exports.getData = async (req, res, next) => {
     ]);
 
     let countryWiseSiteCount = await CustomerSite.aggregate([
-      { $match: { isArchived: false, isActive: true } }, 
-      { $match: { "address.country": { $nin: ["", null] } },},
+      { $match: { isArchived: false, isActive: true, 
+          "address.country": { $nin: ["", null] } 
+        }
+      },
       { $group: { _id: "$address.country", count: { $sum: 1 }}}
     ]);
-    
+
   res.json({customerCount, machineCount, userCount, siteCount, modelWiseMachineCount, countryWiseCustomerCount, countryWiseSiteCount});
 
   }catch(e) {
