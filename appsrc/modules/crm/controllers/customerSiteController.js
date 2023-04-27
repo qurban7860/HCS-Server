@@ -133,7 +133,6 @@ exports.patchCustomerSite = async (req, res, next) => {
                 logger.error(new Error(error));
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
               } else { 
-                console.log('response--->', response);
                 if(_.isEmpty(response)){ 
                   _this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
                   function callbackFunc(error, result) {
