@@ -138,7 +138,9 @@ exports.patchSecurityUser = async (req, res, next) => {
           if(!(_.isEmpty(response))){
             const passwordsResponse = await comparePasswords(req.body.oldPassword, response.password)
             if(passwordsResponse){
+              req.body.password = req.body.newPassword;
               const doc = await getDocumentFromReq(req);
+
               _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
               function callbackFunc(error, result) {
                 if (error) {
