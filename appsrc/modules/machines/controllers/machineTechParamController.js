@@ -126,7 +126,7 @@ exports.patchMachineTechParam = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if(_.isEmpty(response)){
+      if(!_.isEmpty(response)){
         _this.dbservice.patchObject(MachineTechParam, req.params.id, getDocumentFromReq(req), callbackFunc);
         function callbackFunc(error, result) {
           if (error) {
