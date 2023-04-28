@@ -48,6 +48,11 @@ async function checkFileHeader(path) {
   }
 }
 
+async function listBuckets(params) {
+  return await s3.listBuckets(params).promise();
+}
+
+
 async function copyFile(user) {
   let oldFileName = user._id;
   let bucketName = process.env.AWS_S3_BUCKET;
@@ -178,5 +183,6 @@ module.exports = {
   sendEmail,
   uploadFileS3,
   checkFileHeader,
-  copyFile
+  copyFile,
+  listBuckets
 };
