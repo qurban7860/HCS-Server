@@ -136,14 +136,19 @@ exports.patchMachineTechParam = async (req, res, next) => {
               //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
             );
           } else {
-            if(req.body.name == response.name){
-              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Name must be unique!"));          
-            } 
-            if(req.body.code == response.code){
-              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Code must be unique!"));          
-            }
+            res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, response));
+
+            // if(req.body.name == response.name){
+            //   res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Name must be unique!"));          
+            // } 
+            // if(req.body.code == response.code){
+            //   res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Code must be unique!"));          
+            // }
           }
         }      
+      }
+      else {
+        res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessage(StatusCodes.NOT_FOUND, "Record Not found !"));
       }
     }
   }
