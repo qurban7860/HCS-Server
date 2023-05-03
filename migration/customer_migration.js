@@ -1,7 +1,7 @@
 const path = require("path");
 const xlsx = require("xlsx");
 const { Customer, CustomerSite, CustomerContact } = require('../appsrc/modules/crm/models');
-const { Machine, MachineModel } = require('../appsrc/modules/machines/models');
+const { Product, ProductModel } = require('../appsrc/modules/products/models');
 const { SecurityUser } = require('../appsrc/modules/security/models');
 const mongoose = require('../appsrc/modules/db/dbConnection');
 
@@ -243,7 +243,7 @@ async function main() {
       let customerMachines = machines.filter((c)=>c.Account__c==customerId);
       for(let machine of customerMachines) {
 
-        let machine_ = await Machine.findOne({
+        let machine_ = await Product.findOne({
           serialNo:machine.SerialNumber,
         })
         if(!machine_) {
@@ -295,7 +295,7 @@ async function main() {
           }
 
           let query = { "name" : { $regex: machine.Machine_Name__c, $options: 'i' }};
-          let machineModel = await MachineModel.findOne(query);
+          let machineModel = await ProductModel.findOne(query);
 
           if(machineModel) {
             machine_.machineModel = machineModel.id;
@@ -311,20 +311,20 @@ async function main() {
             machine_.parentSerialNo = machine.ParentSerialNumber;
           }
 
-          machine_ = new Machine(machine_);
+          machine_ = new Product(machine_);
           await machine_.save();
 
 
         }
       }
 
-      let dbMachines = await Machine.find({parentSerialNo:{$ne:null}});
+      let dbMachines = await Product.find({parentSerialNo:{$ne:null}});
 
       for(let dbMachine of dbMachines) {
 
         if(dbMachine.parentSerialNo && dbMachine.parentSerialNo!='' && !dbMachine.parentMachine && 
           dbMachine.parentSerialNo.length==5) {
-          let parentMachine = await Machine.findOne({serialNo:dbMachine.parentSerialNo});
+          let parentMachine = await Product.findOne({serialNo:dbMachine.parentSerialNo});
           if(parentMachine) {
             dbMachine.parentMachine = parentMachine.id;    
             await dbMachine.save();

@@ -1,0 +1,16 @@
+'use strict'
+module.exports = {
+    Product: require('./product'),
+    ProductAuditLog: require('./productAuditLog'),
+    ProductCategory: require('./productCategory'),
+    ProductLicense: require('./productLicense'),
+    ProductModel: require('./productModel'),
+    ProductNote: require('./productNote'),
+    ProductStatus: require('./productStatus'),
+    ProductSupplier: require('./productSupplier'),
+    ProductTechParam: require('./productTechParam'),
+    ProductTechParamCategory: require('./productTechParamCategory'),
+    ProductTechParamValue: require('./productTechParamValue'),
+    ProductTool: require('./productTool'),
+    ProductToolInstalled: require('./productToolInstalled')
+}

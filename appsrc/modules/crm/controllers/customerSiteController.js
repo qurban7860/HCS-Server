@@ -13,7 +13,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, Customer } = require('../models');
-const { Machine } = require('../../machines/models');
+const { Product } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -127,7 +127,7 @@ exports.patchCustomerSite = async (req, res, next) => {
                   billingSite: req.params.id
               }]
             };
-            _this.dbservice.getObject(Machine, queryStringMachine, this.populate, getMachineObjectCallback);
+            _this.dbservice.getObject(Product, queryStringMachine, this.populate, getMachineObjectCallback);
             async function getMachineObjectCallback(error, response) {
               if (error) {
                 logger.error(new Error(error));
