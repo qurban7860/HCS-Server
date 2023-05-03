@@ -18,17 +18,13 @@ const router = express.Router();
 // router.use(checkAuth);
 
 // - /api/1.0.0/security/getToken/
-
 router.post(`/getToken`, controller.login);
-
-
-/*
-router.get("/", (req, res) => {
-  res.send("Hello World!... i am testing");
-});
-*/
 
 // - /api/1.0.0/security/logout/:userID
 router.post(`/logout/:userID`, controller.logout);
+
+// - /api/1.0.0/security/forgetPassword
+router.post(`/forgetPassword`,  controller.forgetPassword);
+
 
 module.exports = router;

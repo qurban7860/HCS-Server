@@ -12,7 +12,7 @@ const setHeaders = require('../../middleware/set-header');
 const errorHandler = require('../../middleware/error-handler');
 
 // ROUTES
-const machineRoutes  = require ('../machines/routes');
+const productRoutes  = require ('../products/routes');
 const securityRoutes  = require ('../security/routes');
 const customerRoutes  = require ('../crm/routes');
 const dashboardRoute  = require ('../dashboard/routes');
@@ -58,7 +58,7 @@ class App {
   }
 
   registerRoutes(){    
-    machineRoutes.registerMachineRoutes(this.app, apiPath);
+    productRoutes.registerProductRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
     dashboardRoute.registerDashboardRoutes(this.app, apiPath);

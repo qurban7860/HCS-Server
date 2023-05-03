@@ -1,6 +1,6 @@
 const path = require("path");
 const xlsx = require("xlsx");
-const { Machine, MachineTechParamValue, MachineTechParam } = require('../appsrc/modules/machines/models');
+const { Product, ProductTechParamValue, ProductTechParam } = require('../appsrc/modules/products/models');
 const { SecurityUser } = require('../appsrc/modules/security/models');
 const mongoose = require('../appsrc/modules/db/dbConnection');
 
@@ -17,7 +17,7 @@ async function main() {
 	let validConfigs = [];
 	for(let config of machineConfigs) {
 		config = config.replace('__c','');
-		let conf = await MachineTechParam.findOne({name:{ $regex: config, $options: 'i' }});
+		let conf = await ProductTechParam.findOne({name:{ $regex: config, $options: 'i' }});
 		if(conf) {
 			validConfigs.push({_id:conf.id,name:config+'__c'});
 		}
@@ -26,14 +26,14 @@ async function main() {
 
 	let createdByUser = await SecurityUser.findOne({login:'naveed@terminustech.co.nz'});
 	for(let machine of machines) {
-		let machineDB = await Machine.findOne({serialNo:machine.SerialNumber});
+		let machineDB = await Product.findOne({serialNo:machine.SerialNumber});
 		console.log(machineDB.serialNo,machineDB.id);
 		if(machineDB) {
 			for(let validConfig of validConfigs) {
 				let configValue = machine[validConfig.name];
 				if(configValue && configValue.length>2) {
 					
-					let machineTechParamValue =  await MachineTechParamValue.findOne({
+					let machineTechParamValue =  await ProductTechParamValue.findOne({
 						machine:machineDB.id,
 						techParam:validConfig._id,
 						techParamValue:configValue,
@@ -46,7 +46,7 @@ async function main() {
 							createdBy:createdByUser.id,
 							updatedBy:createdByUser.id,
 						}
-						machineTechParamValue = await MachineTechParamValue.create(machineTechParamValue);
+						machineTechParamValue = await ProductTechParamValue.create(machineTechParamValue);
 					}
 				}
 			}

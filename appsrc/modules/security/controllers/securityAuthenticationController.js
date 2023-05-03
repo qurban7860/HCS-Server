@@ -16,6 +16,8 @@ this.dbservice = new securityDBService();
 const securitySignInLogController = require('./securitySignInLogController');
 const { SecurityUser, SecuritySignInLog } = require('../models');
 
+// const aws = require('../../../base/aws');
+// const controller = aws.securityAuthenticationController;
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -141,6 +143,29 @@ exports.logout = async (req, res, next) => {
       // return res;
 };
 
+exports.forgetPassword = async (req, res, next) => {
+  const errors = validationResult(req);
+  var _this = this;
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    let queryString  = { login: req.body.email };
+
+    this.dbservice.getObject(SecurityUser, queryString, {path: 'customer', select: 'name type isActive isArchived'}, getObjectCallback);
+    async function getObjectCallback(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {          
+        if(!(_.isEmpty(response)) && isValidCustomer(response.customer)  ){
+        // implement 
+        }else{
+          res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));       
+        }
+      }
+    }
+  }
+};
 
 async function comparePasswords(encryptedPass, textPass, next){
   let isValidPassword = false;

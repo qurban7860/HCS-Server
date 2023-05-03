@@ -12,7 +12,7 @@ this.dbservice = new securityDBService();
 
 const { SecurityUser } = require('../models');
 const { Customer } = require('../../crm/models');
-const { Machine } = require('../../machines/models');
+const { Product } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -66,7 +66,7 @@ exports.deleteSecurityUser = async (req, res, next) => {
   if(!(_.isEmpty(user)) && user.isArchived) {
     
     let customer = await Customer.findOne({createdBy:user.id});
-    let machine = await Machine.findOne({createdBy:user.id});
+    let machine = await Product.findOne({createdBy:user.id});
 
     if(!customer && !machine) {
       this.dbservice.deleteObject(SecurityUser, req.params.id, (error, result)=>{
@@ -165,7 +165,7 @@ exports.patchSecurityUser = async (req, res, next) => {
         if(!(_.isEmpty(user))) {
           
           let customer = await Customer.findOne({createdBy:user.id});
-          let machine = await Machine.findOne({createdBy:user.id});
+          let machine = await Product.findOne({createdBy:user.id});
 
           if(!customer && !machine) {
             const doc = await getDocumentFromReq(req);
