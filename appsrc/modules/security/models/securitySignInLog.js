@@ -12,10 +12,10 @@ const docSchema = new Schema({
     loginTime: { type: Date , default: Date.now, required: true },
     // login time of user
     
-    logoutTime: { type: Date , default: Date.now, required: true },
+    logoutTime: { type: Date  },
     // logout time of user
     
-    LoginIP: { type: String }
+    loginIP: { type: String }
     // information of IP address from where action is performed
 
     // information of IP address from where action is performed

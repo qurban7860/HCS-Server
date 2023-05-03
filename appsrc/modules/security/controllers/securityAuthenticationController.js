@@ -34,15 +34,11 @@ this.populateList = [
 
 
 exports.login = async (req, res, next) => {
-  
-  // console.log('req.body :', req.body);
   const errors = validationResult(req);
-  var _this=this;
+  var _this = this;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    // check if email exists
-    //console.log('req.body :', req.body);
     let queryString  = { login: req.body.email };
 
     this.dbservice.getObject(SecurityUser, queryString, {path: 'customer', select: 'name type isActive isArchived'}, getObjectCallback);
@@ -50,42 +46,40 @@ exports.login = async (req, res, next) => {
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {  
-        //console.log('response.customer: ', response.customer);
-        //console.log('response.customer.type:', response.customer.type);
-
-        //&& response.customer.type == 'SP'  && response.customer.isActive && !response.customer.isArchived
-        
+      } else {          
         if(!(_.isEmpty(response)) && isValidCustomer(response.customer)  ){
           const existingUser = response;
-          //console.log('existingUser:', existingUser);
-          // console.log('response.length:', response.length);
-          
-            const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
-            //console.log('passwordsResponse: ', passwordsResponse);
+          const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
             if(passwordsResponse){
               const accessToken = await issueToken(existingUser._id, existingUser.login);
               //console.log('accessToken: ', accessToken)
               if(accessToken){
                 updatedToken = updateUserToken(accessToken);
                 _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-                function callbackPatchFunc(error, response) {
+                async function callbackPatchFunc(error, response) {
                   if (error) {
                     logger.error(new Error(error));
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                   }
-
-                  return res.json({ accessToken,
-                    userId: existingUser.id,
-                    user: {
-                      login: existingUser.login,
-                      email: existingUser.email,
-                      displayName: existingUser.name
+                  const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+                  const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
+                  _this.dbservice.postObject(loginLogResponse, callbackFunc);
+                    function callbackFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                      } else {
+                        return res.json({ accessToken,
+                          userId: existingUser.id,
+                          user: {
+                            login: existingUser.login,
+                            email: existingUser.email,
+                            displayName: existingUser.name
+                          }
+                        });
+                      }
                     }
-                  });
-
                 }
-                
               }
             }else{
               res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
@@ -108,17 +102,43 @@ function isValidCustomer(customer){
 }
 
 exports.logout = async (req, res, next) => {
-
-  const logoutResponse = await addAccessLog('logout', req.params.userID);
-  this.dbservice.postObject(logoutResponse, callbackFunc);
-    function callbackFunc(error, response) {
+  const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+  let existingSignInLog = await SecuritySignInLog.findOne({user: req.params.userID, loginIP: clientIP}).sort({loginTime: -1}).limit(1);
+  if(!existingSignInLog.logoutTime){ 
+    this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date() }, callbackFunc);
+    function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-      } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
-      }
+      } 
     }
+  }
+
+  res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+
+      // const currentTime = Date.now;
+      // var signOutLog = {
+      //   user: userID,
+      //   logOutTime: currentTime,
+      // };
+
+      // const diffInMilliseconds = Math.abs(currentTime - user.loginTime);
+      // const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+
+      // if (diffInHours >= 2) {
+      //   console.log("Time diff is greater than or equal to 2 hours");
+        // var reqSignOutLog = {};
+        // reqSignOutLog.body = signOutLog;
+        // const res = await securitySignInLogController.getDocumentFromReq(reqSignOutLog);
+        
+        
+      // } 
+      // else {
+      //   console.log("time diff < 2 hours");
+      //   var reqSignOutLog = {};
+      //   reqSignOutLog.body = signOutLog;
+      // }
+      // return res;
 };
 
 
@@ -163,32 +183,20 @@ function updateUserToken(accessToken){
   }
   doc.token = token;
   return doc;
-}
+};
+
 
 async function addAccessLog(actionType, userID, ip=null){
-  currentTime = new Date();
-  if(actionType == 'login'){ 
+  if(actionType == 'login'){
     var signInLog = {
       user: userID,
-      loginTime: currentTime,
-      LoginIP: ip,
+      loginIP: ip
     };
     var reqSignInLog = {};
     reqSignInLog.body = signInLog;
     const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
     return res;
   }
-  if(actionType == 'logout'){
-    var signOutLog = {
-      user: userID,
-      logOutTime: currentTime,
-    };
-    var reqSignOutLog = {};
-    reqSignOutLog.body = signOutLog;
-    const res = securitySignInLogController.getDocumentFromReq(reqSignOutLog, 'new');
-    return res;
-  }
-  
 }
 
 function getDocumentFromReq(req, reqType){
