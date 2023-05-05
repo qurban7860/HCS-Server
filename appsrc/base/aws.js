@@ -149,9 +149,9 @@ async function sendEmail(params) {
         Data: params.subject
        }
       },
-    Source: 'no-reply@lushgames.com', /* required */
+    Source: process.env.AWS_SES_FROM_EMAIL, /* required */
     ReplyToAddresses: [
-       'no-reply@lushgames.com',
+      process.env.AWS_SES_FROM_EMAIL,
     ],
   };
 
