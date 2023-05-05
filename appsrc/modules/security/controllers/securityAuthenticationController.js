@@ -150,7 +150,7 @@ exports.forgetPassword = async (req, res, next) => {
     const existingUser = await SecurityUser.findOne({ login: req.body.login });
     if (existingUser) {
       const token = await generateRandomString();
-      const link = `${this.clientURL}updatePassword?token=${token}&id=${existingUser._id}`;
+      const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
       updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
       async function callbackPatchFunc(error, response) {
