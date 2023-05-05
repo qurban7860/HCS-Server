@@ -26,5 +26,7 @@ router.post(`/logout/:userID`, controller.logout);
 // - /api/1.0.0/security/forgetPassword
 router.post(`/forgetPassword`,  controller.forgetPassword);
 
+// - /api/1.0.0/security/forgetPassword/verifyToken
+router.post(`/forgetPassword/verifyToken`,  controller.verifyForgottenPassword);
 
 module.exports = router;

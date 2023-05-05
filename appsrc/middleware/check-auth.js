@@ -4,7 +4,8 @@ const HttpError = require('../modules/config/models/http-error');
 
 module.exports = (req, res, next) => {
 
-  if (req.method === 'OPTIONS' || req.url.toLowerCase() == '/gettoken') {
+  if (req.method === 'OPTIONS' || 
+  (req.url.toLowerCase() == '/gettoken' || '/forgetPassword' ||'/forgetPassword/verifyToken')) {
     return next();
   }
   try {
