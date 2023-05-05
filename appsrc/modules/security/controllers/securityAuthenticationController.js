@@ -168,7 +168,11 @@ exports.forgetPassword = async (req, res, next) => {
           };
 
           let response = await awsService.sendEmail(params);
-          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessage(StatusCodes.ACCEPTED, 'Email sent!'));
+          if(response){
+            res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessage(StatusCodes.OK, 'Email sent successfully!'));
+          }else{
+            res.status(StatusCodes.BAD_GATEWAY).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_GATEWAY, 'Email could not be sent'));       
+          }
         }
       }
     } else {

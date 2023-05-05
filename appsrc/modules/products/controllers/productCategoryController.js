@@ -71,7 +71,8 @@ exports.postProductCategory = async (req, res, next) => {
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
@@ -91,7 +92,7 @@ exports.patchProductCategory = async (req, res, next) => {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
+          error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
