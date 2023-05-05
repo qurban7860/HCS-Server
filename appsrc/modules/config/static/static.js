@@ -8,6 +8,19 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
+    recordCustomMessageJSON(code, message, isError){
+        if (message){
+            const response = {
+                isError: isError, 
+                MessageCode: code,
+                Message: message
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
     recordDelMessage(code, results) {
         if (code == 200) {
             if (results != undefined && results.deletedCount > 0) {
