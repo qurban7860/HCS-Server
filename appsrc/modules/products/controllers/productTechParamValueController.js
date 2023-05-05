@@ -83,15 +83,15 @@ exports.deleteProductTechParamValue = async (req, res, next) => {
 exports.postProductTechParamValue = async (req, res, next) => {
   const errors = validationResult(req);
   
-  if(!_.isEmpty(errors)){
-    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Schema Validation Faliure"));
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
+          error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
@@ -104,15 +104,15 @@ exports.postProductTechParamValue = async (req, res, next) => {
 exports.patchProductTechParamValue = async (req, res, next) => {
   const errors = validationResult(req);
   
-  if(!_.isEmpty(errors)){
-    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Schema Validation Faliure"));
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.patchObject(ProductTechParamValue, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
+          error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {

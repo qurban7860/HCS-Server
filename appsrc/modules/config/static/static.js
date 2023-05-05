@@ -69,6 +69,19 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
+    recordSchemaVaidationFaliureMessage(code, message = ''){
+        if (code == 500) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: `Schema Validation Error ${message}`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
     recordInvalidCustomerTypeMessage(code){
         if (code == 403) {
             const response = {

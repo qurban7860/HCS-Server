@@ -68,37 +68,35 @@ exports.deleteProductTool = async (req, res, next) => {
 
 exports.postProductTool = async (req, res, next) => {
   const errors = validationResult(req);
-  
-  if(!_.isEmpty(errors)){
-    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Schema Validation Faliure"));
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.CREATED).json({ MachineTool: response });
-      }
+  this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+        error._message
+      );
+    } else {
+      res.status(StatusCodes.CREATED).json({ MachineTool: response });
     }
   }
+}
 };
 
 exports.patchProductTool = async (req, res, next) => {
   const errors = validationResult(req);
   
-  if(!_.isEmpty(errors)){
-    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Schema Validation Faliure"));
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.patchObject(ProductTool, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
+          error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
