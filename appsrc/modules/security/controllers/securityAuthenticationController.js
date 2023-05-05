@@ -147,10 +147,10 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const existingUser = await SecurityUser.findOne({ email: req.body.email });
+    const existingUser = await SecurityUser.findOne({ login: req.body.login });
     if (existingUser) {
       const token = await generateRandomString();
-      const link = `${this.clientURL}/updatePassword?token=${token}&id=${existingUser._id}`;
+      const link = `${this.clientURL}updatePassword?token=${token}&id=${existingUser._id}`;
       updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
       async function callbackPatchFunc(error, response) {
