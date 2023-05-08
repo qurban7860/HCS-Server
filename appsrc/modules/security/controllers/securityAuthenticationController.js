@@ -150,9 +150,10 @@ exports.forgetPassword = async (req, res, next) => {
     const existingUser = await SecurityUser.findOne({ login: req.body.login });
     if (existingUser) {
       const token = await generateRandomString();
-      const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
       updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+      const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
+      console.log('link------------->', link);
       async function callbackPatchFunc(error, response) {
         if (error) {
           logger.error(new Error(error));
@@ -173,7 +174,7 @@ exports.forgetPassword = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User not found!'));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found!', true));
     }
   }
 };
@@ -183,6 +184,8 @@ exports.verifyForgottenPassword = async (req, res, next) => {
   try {
     const existingUser = await SecurityUser.findById(req.body.userId);
     if (existingUser) {
+      console.log('existingUser---------->', existingUser);
+      console.log('existingUser---------->', existingUser.token.accessToken);      
       if (existingUser.token && existingUser.token.accessToken == req.body.token) {
         const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
         if (!tokenExpired) {
@@ -193,19 +196,20 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               logger.error(new Error(error));
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessage(StatusCodes.ACCEPTED, 'Password updated successfully!'));
+              console.log('response------>', response);
+              res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!', false));
             }
           }
         } else {
-          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Token Expired!'));
+          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Token Expired!', true));
         }
       }
       else {
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Token Invalid!'));
+        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Token Invalid!', true));
 
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User not found!'));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found!', true));
     }
   }
   catch (error) {
