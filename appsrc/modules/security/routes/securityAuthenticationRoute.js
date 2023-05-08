@@ -17,6 +17,8 @@ const router = express.Router();
 
 // router.use(checkAuth);
 
+const validateIP = require('../../../middleware/validateIP');
+router.use(validateIP);
 // - /api/1.0.0/security/getToken/
 router.post(`/getToken`, controller.login);
 
