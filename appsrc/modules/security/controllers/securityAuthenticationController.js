@@ -87,7 +87,7 @@ exports.login = async (req, res, next) => {
             res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
           }
         } else {
-          res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+          res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Inavlid User/User does not have the rights to access', true));
         }
       }
     }
@@ -153,7 +153,6 @@ exports.forgetPassword = async (req, res, next) => {
       updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
       const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
-      console.log('link------------->', link);
       async function callbackPatchFunc(error, response) {
         if (error) {
           logger.error(new Error(error));
@@ -184,8 +183,6 @@ exports.verifyForgottenPassword = async (req, res, next) => {
   try {
     const existingUser = await SecurityUser.findById(req.body.userId);
     if (existingUser) {
-      console.log('existingUser---------->', existingUser);
-      console.log('existingUser---------->', existingUser.token.accessToken);      
       if (existingUser.token && existingUser.token.accessToken == req.body.token) {
         const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
         if (!tokenExpired) {
@@ -196,7 +193,6 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               logger.error(new Error(error));
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              console.log('response------>', response);
               res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!', false));
             }
           }
