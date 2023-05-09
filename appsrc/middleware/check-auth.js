@@ -5,7 +5,9 @@ const HttpError = require('../modules/config/models/http-error');
 module.exports = (req, res, next) => {
 
   if (req.method === 'OPTIONS' || 
-  (req.url.toLowerCase() == '/gettoken' || '/forgetPassword' ||'/forgetPassword/verifyToken')) {
+  req.url.toLowerCase() === '/gettoken' || 
+  req.url.toLowerCase() === '/forgetpassword' || 
+  req.url.toLowerCase() === '/forgetpassword/verifytoken') {
     return next();
   }
   try {
@@ -26,6 +28,7 @@ module.exports = (req, res, next) => {
     //console.log(`The client's IP Address is: ${clientIP}`);
 
     req.body.loginUser = decodedToken;
+    console.log('decoded token--->', decodedToken);
     next();
   } catch (err) {
     //console.log(err);
