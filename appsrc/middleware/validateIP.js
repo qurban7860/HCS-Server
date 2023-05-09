@@ -3,7 +3,7 @@ const { StatusCodes } = require('http-status-codes');
 const ObjectId = require('mongoose').Types.ObjectId;
 const rtnMsg = require('../modules/config/static/static')
 const ipRangeCheck = require("ip-range-check");
-const configs = require('../modules/config/models/configs');
+const configs = require('../modules/config/models/config');
 
 module.exports = async (req, res, next) => {
 
