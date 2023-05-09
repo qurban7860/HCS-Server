@@ -8,7 +8,9 @@ const configs = require('../modules/config/models/configs');
 module.exports = async (req, res, next) => {
 
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-  let passed = true;
+  let blackIpFlag = true;
+  let whiteIpFlag = true;
+
   const IPs = await configs.find({name:{$in:["blackListIps","whiteListIps"]}});
   const blackListIps = IPs.find((ip)=>ip.name=='blackListIps');
   let blackListIpArr = [];
@@ -22,7 +24,7 @@ module.exports = async (req, res, next) => {
     for(let blackListIp of blackListIpArr) {
       let ipCheck = ipRangeCheck(clientIP, blackListIp);
       if(ipCheck) {
-        passed = false;
+        blackIpFlag = false;
         return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
       }
       
@@ -38,17 +40,20 @@ module.exports = async (req, res, next) => {
     else {
       whiteListIpArr = [whiteListIps.value];
     }
+    whiteIpFlag = false;
     for(let whiteListIp of whiteListIpArr) {
       let ipCheck = ipRangeCheck(clientIP, whiteListIp);
-      if(ipCheck==false) {
-        passed = false;
-        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+      if(ipCheck) {
+        whiteIpFlag = true;
       }
-      
     }
+    
+    if(!whiteIpFlag)
+      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+
   }
 
-  if(passed)
+  if(blackIpFlag && whiteIpFlag)
     next();
   else 
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'ipvalidation failed!'));
