@@ -111,29 +111,16 @@ exports.refreshToken = async (req, res, next) => {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         }
-        const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-
-
-        let existingSignInLog = await SecuritySignInLog.findOne({ user: req.body.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
-        if (!existingSignInLog.logoutTime) {
-          _this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { loginTime: new Date() }, callbackFunc);
-          function callbackFunc(error, result) {
-            if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        else {
+          return res.json({
+            accessToken,
+            userId: existingUser.id,
+            user: {
+              login: existingUser.login,
+              email: existingUser.email,
+              displayName: existingUser.name
             }
-            else {
-              return res.json({
-                accessToken,
-                userId: existingUser.id,
-                user: {
-                  login: existingUser.login,
-                  email: existingUser.email,
-                  displayName: existingUser.name
-                }
-              });
-            }
-          }
+          });
         }
       }
     }
@@ -306,7 +293,7 @@ async function issueToken(userID, userEmail) {
       { userId: userID, email: userEmail },
       //'supersecret_dont_share',
       process.env.JWT_SECRETKEY,
-      { expiresIn: '2h' }
+      { expiresIn: process.env.TOKEN_EXP_TIME }
     );
   } catch (error) {
     logger.error(new Error(error));
