@@ -22,6 +22,9 @@ router.use(validateIP);
 // - /api/1.0.0/security/getToken/
 router.post(`/getToken`, controller.login);
 
+// - /api/1.0.0/security/getToken/
+router.post(`/refreshToken`, controller.refreshToken);
+
 // - /api/1.0.0/security/logout/:userID
 router.post(`/logout/:userID`, controller.logout);
 

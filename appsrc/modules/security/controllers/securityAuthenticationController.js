@@ -94,6 +94,56 @@ exports.login = async (req, res, next) => {
   }
 };
 
+exports.refreshToken = async (req, res, next) => {
+  const errors = validationResult(req);
+  var _this = this;
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
+    if(existingUser){
+    const accessToken = await issueToken(existingUser._id, existingUser.login);
+    if (accessToken) {
+      updatedToken = updateUserToken(accessToken);
+      _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+      async function callbackPatchFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        }
+        const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+
+
+        let existingSignInLog = await SecuritySignInLog.findOne({ user: req.body.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
+        if (!existingSignInLog.logoutTime) {
+          _this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { loginTime: new Date() }, callbackFunc);
+          function callbackFunc(error, result) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            }
+            else {
+              return res.json({
+                accessToken,
+                userId: existingUser.id,
+                user: {
+                  login: existingUser.login,
+                  email: existingUser.email,
+                  displayName: existingUser.name
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+  }
+    else{
+      res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User not found', true));
+    }
+  }
+};
+
 function isValidCustomer(customer) {
   if (_.isEmpty(customer) || customer.type != 'SP' || customer.isActive == false || customer.isArchived == true) {
     return false;
@@ -169,7 +219,7 @@ exports.forgetPassword = async (req, res, next) => {
 
           let response = await awsService.sendEmail(params);
           res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
-          
+
         }
       }
     } else {
@@ -256,7 +306,7 @@ async function issueToken(userID, userEmail) {
       { userId: userID, email: userEmail },
       //'supersecret_dont_share',
       process.env.JWT_SECRETKEY,
-      { expiresIn: '1h' }
+      { expiresIn: '0.333333h' }
     );
   } catch (error) {
     logger.error(new Error(error));
