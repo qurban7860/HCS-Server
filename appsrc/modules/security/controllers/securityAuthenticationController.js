@@ -306,7 +306,7 @@ async function issueToken(userID, userEmail) {
       { userId: userID, email: userEmail },
       //'supersecret_dont_share',
       process.env.JWT_SECRETKEY,
-      { expiresIn: '0.333333h' }
+      { expiresIn: '2h' }
     );
   } catch (error) {
     logger.error(new Error(error));
