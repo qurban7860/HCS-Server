@@ -22,4 +22,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('Configs', docSchema);
+module.exports = mongoose.model('Config', docSchema);
