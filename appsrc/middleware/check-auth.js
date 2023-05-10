@@ -28,7 +28,6 @@ module.exports = (req, res, next) => {
     //console.log(`The client's IP Address is: ${clientIP}`);
 
     req.body.loginUser = decodedToken;
-    console.log('decoded token--->', decodedToken);
     next();
   } catch (err) {
     //console.log(err);

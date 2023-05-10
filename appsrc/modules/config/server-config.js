@@ -16,7 +16,7 @@ const productRoutes  = require ('../products/routes');
 const securityRoutes  = require ('../security/routes');
 const customerRoutes  = require ('../crm/routes');
 const dashboardRoute  = require ('../dashboard/routes');
-
+const fileRoute  = require ('../files/routes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -62,6 +62,7 @@ class App {
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
     dashboardRoute.registerDashboardRoutes(this.app, apiPath);
+    fileRoute.registerFileRoutes(this.app, apiPath);
   }
 
 
