@@ -66,7 +66,7 @@ exports.postDocumentName = async (req, res, next) => {
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ MachineModel: response });
+      res.status(StatusCodes.CREATED).json({ DocumentName: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -91,11 +91,11 @@ exports.patchDocumentName = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description } = req.body;
+  const { name, description, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new CustomerContact({});
+    doc = new DocumentName({});
   }
   if ("name" in req.body) {
     doc.name = name;
@@ -119,7 +119,6 @@ function getDocumentFromReq(req, reqType) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   }
-
 
   return doc;
 

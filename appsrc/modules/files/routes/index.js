@@ -3,6 +3,7 @@
 const apiPath = process.env.API_ROOT;
 const documentNameRoute = require('./documentNameRoute');
 const fileRoute = require('./fileRoute');
+const fileCategoryRoute = require('./fileCategoryRoute');
 
 exports.registerFileRoutes = (app, apiPath) => {
     const rootPathForModule = `${apiPath}/files`
@@ -13,4 +14,6 @@ exports.registerFileRoutes = (app, apiPath) => {
     // localhost://api/1.0.0/files/
     app.use(`${rootPathForModule}`, fileRoute);
 
+   // localhost://api/1.0.0/files/
+   app.use(`${rootPathForModule}`, fileCategoryRoute);
 }
