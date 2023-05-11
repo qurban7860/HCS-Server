@@ -1,13 +1,10 @@
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
-const path = require('path');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose')
-const fs = require('fs');
+const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
-const awsService = require('../../../../appsrc/base/aws');
 
 const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
@@ -17,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 let fileDBService = require('../service/fileDBService')
 this.dbservice = new fileDBService();
 
-const { File } = require('../models');
+const { FileCategory } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -32,9 +29,9 @@ this.populate = [
 
 
 
-exports.getFile = async (req, res, next) => {
+exports.getFileCategory = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(File, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(FileCategory, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -42,9 +39,9 @@ exports.getFile = async (req, res, next) => {
   }
 };
 
-exports.getFiles = async (req, res, next) => {
+exports.getFileCategories = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectList(File, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(FileCategory, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -52,9 +49,9 @@ exports.getFiles = async (req, res, next) => {
   }
 };
 
-exports.deleteFile = async (req, res, next) => {
+exports.deleteFileCategory = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(File, req.params.id);
+    const result = await this.dbservice.deleteObject(FileCategory, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -62,23 +59,14 @@ exports.deleteFile = async (req, res, next) => {
   }
 };
 
-exports.postFile = async (req, res, next) => {
+exports.postFileCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.file !== undefined){
-        const processedFile = await processFile(req.file);
-        console.log('processedFile', processedFile);
-        req.body.path = processedFile.s3FilePath;
-        req.body.type = processedFile.type
-        req.body.extension = processedFile.fileExt;
-      }else{
-        res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ File: response });
+      res.status(StatusCodes.CREATED).json({ FileCategory: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -86,13 +74,13 @@ exports.postFile = async (req, res, next) => {
   }
 };
 
-exports.patchFile = async (req, res, next) => {
+exports.patchFileCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(File, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(FileCategory, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -101,77 +89,28 @@ exports.patchFile = async (req, res, next) => {
   }
 };
 
-async function processFile(file) {
-  const { name, ext } = path.parse(file.originalname);
-  const fileExt = ext.slice(1);
-  
-  const fileData = fs.readFileSync(file.path);
-  const base64Data = fileData.toString('base64');
-  
-  const s3FilePath = await awsService.uploadFileS3(name, '', base64Data, fileExt);
-  
-  return {
-    fileName: name,
-    fileExt,
-    s3FilePath,
-    type: file.mimetype
-  };
-}
 
 function getDocumentFromReq(req, reqType) {
-  const { name, displayName, description, path, type, extension, content, 
-    documentName, documentVersion, category, customer, customerAccess, site,
-    contact, user, machine, isActive, isArchived, loginUser } = req.body;
+  const { name, description, customerAccess,
+    isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new File({});
+    doc = new FileCategory({});
   }
   if ("name" in req.body) {
     doc.name = name;
   }
-  if ("displayName" in req.body) {
-    doc.displayName = displayName;
-  }
   if ("description" in req.body) {
     doc.description = description;
   }
-  if ("path" in req.body) {
-    doc.path = path;
-  }
-  if ("type" in req.body) {
-    doc.type = type;
-  }
-  if ("extension" in req.body) {
-    doc.extension = extension;
-  }
-  if ("documentName" in req.body) {
-    doc.documentName = documentName;
-  }
-  if ("documentVersion" in req.body) {
-    doc.documentVersion = documentVersion;
-  }
-  if ("category" in req.body) {
-    doc.category = category;
-  }
-  if ("customer" in req.body) {
-    doc.customer = customer;
+  if ("s3Url" in req.body) {
+    doc.s3Url = s3Url;
   }
   if ("customerAccess" in req.body) {
     doc.customerAccess = customerAccess;
   }
-  if ("site" in req.body) {
-    doc.site = site;
-  }
-  if ("contact" in req.body) {
-    doc.contact = contact;
-  }
-  if ("user" in req.body) {
-    doc.user = user;
-  }
-  if ("machine" in req.body) {
-    doc.machine = machine;
-  }
+
   if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
@@ -180,6 +119,7 @@ function getDocumentFromReq(req, reqType) {
   }
 
   if (reqType == "new" && "loginUser" in req.body) {
+    console.log('login user---->', loginUser);
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
