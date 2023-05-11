@@ -26,6 +26,9 @@ router.get(`${baseRoute}/:id`,controller.getDocumentName);
 // - /api/1.0.0/files/documentNames/
 router.get(`${baseRoute}/`, controller.getDocumentNames);
 
+// - /api/1.0.0/files/documentNames/:id/files
+router.get(`${baseRoute}/:id/files`, controller.getDocumentFiles);
+
 // - /api/1.0.0/files/documentNames/
 router.post(`${baseRoute}/`,controller.postDocumentName);
 

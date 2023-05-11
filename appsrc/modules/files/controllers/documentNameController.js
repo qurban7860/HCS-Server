@@ -3,8 +3,6 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customer } = require('../models');
-const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
 const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
@@ -14,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let fileDBService = require('../service/fileDBService')
 this.dbservice = new fileDBService();
 
-const { DocumentName } = require('../models');
+const { File, DocumentName } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -46,6 +44,23 @@ exports.getDocumentNames = async (req, res, next) => {
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+exports.getDocumentFiles = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      console.log('dooc---->', req.params.id);
+      const queryString = { documentName: req.params.id };
+      const response = await this.dbservice.getObjectList(File, this.fields, { documentName : req.params.id }, this.orderBy, this.populate);
+      res.json(response);
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }
   }
 };
 

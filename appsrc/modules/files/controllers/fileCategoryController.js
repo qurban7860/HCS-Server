@@ -104,9 +104,6 @@ function getDocumentFromReq(req, reqType) {
   if ("description" in req.body) {
     doc.description = description;
   }
-  if ("s3Url" in req.body) {
-    doc.s3Url = s3Url;
-  }
   if ("customerAccess" in req.body) {
     doc.customerAccess = customerAccess;
   }
