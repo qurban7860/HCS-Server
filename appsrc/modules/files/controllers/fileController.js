@@ -68,9 +68,15 @@ exports.postFile = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.file !== undefined){
+      if(req.file !== undefined && req.body.category && req.body.documentName){
+        const existingFile = await File.findOne({ documentName: req.body.documentName, category: req.body.category }).sort({ createdAt: -1 }).limit(1);
+        if(existingFile){
+          const response = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
+          req.body.documentVersion = existingFile.documentVersion + 1;
+        }else{
+          req.body.documentVersion = 1; 
+        }
         const processedFile = await processFile(req.file);
-        console.log('processedFile', processedFile);
         req.body.path = processedFile.s3FilePath;
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
@@ -104,17 +110,19 @@ exports.patchFile = async (req, res, next) => {
 async function processFile(file) {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
-  
   const fileData = fs.readFileSync(file.path);
   const base64Data = fileData.toString('base64');
   
   const s3FilePath = await awsService.uploadFileS3(name, '', base64Data, fileExt);
   
+  fs.unlinkSync(file.path);
+
   return {
     fileName: name,
     fileExt,
     s3FilePath,
-    type: file.mimetype
+    type: file.mimetype,
+    physicalPath: file.path
   };
 }
 

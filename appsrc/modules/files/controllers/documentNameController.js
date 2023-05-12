@@ -53,7 +53,6 @@ exports.getDocumentFiles = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      console.log('dooc---->', req.params.id);
       const queryString = { documentName: req.params.id };
       const response = await this.dbservice.getObjectList(File, this.fields, { documentName : req.params.id }, this.orderBy, this.populate);
       res.json(response);
