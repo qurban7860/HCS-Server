@@ -115,7 +115,7 @@ function getDocumentFromReq(req, reqType) {
     doc.name = name;
   }
   if ("description" in req.body) {
-    doc.desdirectorycription = description;
+    doc.description = description;
   }
 
   if ("isActive" in req.body) {
