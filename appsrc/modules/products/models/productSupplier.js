@@ -17,7 +17,7 @@ const docSchema = new Schema({
     // title of contact person of suppplier
 },
 {
-    collection: 'MachineSupplliers'
+    collection: 'MachineSuppliers'
 });
 
 docSchema.set('timestamps', true);
