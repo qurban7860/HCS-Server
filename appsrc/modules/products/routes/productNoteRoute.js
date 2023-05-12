@@ -5,6 +5,7 @@ const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Product } = require('../models');
 const checkProductID = require('../../../middleware/check-parentID')('machine', Product);
+const checkCustomer = require('../../../middleware/check-customer');
 
 
 const controllers = require('../controllers');
@@ -21,7 +22,7 @@ const baseRouteForObject = `/machines/:machineId/notes`;
 // localhost://api/1.0.0/products/machines/ 
 //localhost://api/1.0.0/products/search/
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductNote);
 

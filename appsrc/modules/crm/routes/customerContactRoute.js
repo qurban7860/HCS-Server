@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomer = require('../../../middleware/check-customer');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
@@ -19,16 +20,16 @@ const router = express.Router();
 // - /api/1.0.0/crm/customers/:customerId/contacts
 const baseRoute = `/customers/:customerId/contacts`;
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/:id
-router.get(`${baseRoute}/:id`, checkCustomerID,controller.getCustomerContact);
+router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerContact);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/
 router.get(`${baseRoute}/`, checkCustomerID, controller.getCustomerContacts);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/
-router.post(`${baseRoute}/`, checkCustomerID,controller.postCustomerContact);
+router.post(`${baseRoute}/`, checkCustomerID, controller.postCustomerContact);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.patch(`${baseRoute}/:id`, checkCustomerID, controller.patchCustomerContact);

@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomer = require('../../../middleware/check-customer');
 
 
 const controllers = require('../controllers');
@@ -16,22 +17,22 @@ const router = express.Router();
 // - /api/1.0.0/security/roles/:id
 const baseRoute = `/roles`;
 
-// router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/security/roles/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityRole);
 
 // - /api/1.0.0/security/roles
-router.get(`${baseRoute}/`,  controller.getSecurityRoles);
+router.get(`${baseRoute}/`, controller.getSecurityRoles);
 
 // - /api/1.0.0/security/roles
 router.post(`${baseRoute}/`, controller.postSecurityRole);
 
 // - /api/1.0.0/security/roles/:id
-router.patch(`${baseRoute}/:id`,  controller.patchSecurityRole);
+router.patch(`${baseRoute}/:id`, controller.patchSecurityRole);
 
 // - /api/1.0.0/security/roles/:id
-router.delete(`${baseRoute}/:id`,  controller.deleteSecurityRole);
+router.delete(`${baseRoute}/:id`, controller.deleteSecurityRole);
 
 
 

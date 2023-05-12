@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomer = require('../../../middleware/check-customer');
 
 
 const controllers = require('../controllers');
@@ -16,22 +17,22 @@ const router = express.Router();
 // - /api/1.0.0/security/users/:id
 const baseRoute = `/users`;
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/security/users/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityUser);
 
 // - /api/1.0.0/security/users
-router.get(`${baseRoute}/`,  controller.getSecurityUsers);
+router.get(`${baseRoute}/`, controller.getSecurityUsers);
 
 // - /api/1.0.0/security/users
 router.post(`${baseRoute}/`, controller.postSecurityUser);
 
 // - /api/1.0.0/security/users/:id
-router.patch(`${baseRoute}/:id`,  controller.patchSecurityUser);
+router.patch(`${baseRoute}/:id`, controller.patchSecurityUser);
 
 // - /api/1.0.0/security/users/updatePassword/:id
-router.patch(`${baseRoute}/updatePassword/:id`,  controller.patchSecurityUser);
+router.patch(`${baseRoute}/updatePassword/:id`, controller.patchSecurityUser);
 
 // - /api/1.0.0/security/users/:id
 router.delete(`${baseRoute}/:id`,  controller.deleteSecurityUser);

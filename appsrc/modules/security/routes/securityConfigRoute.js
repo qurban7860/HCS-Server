@@ -10,6 +10,7 @@ const checkAuth = require('../../../middleware/check-auth');
 
 const controllers = require('../controllers');
 const controller = controllers.securityConfigController;
+const checkCustomer = require('../../../middleware/check-customer');
 
 const router = express.Router();
 
@@ -19,21 +20,21 @@ const router = express.Router();
 // - /api/1.0.0/security/configs/:id
 const baseRoute = `/configs`;
 
-// router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/security/configs/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityConfig);
 
 // - /api/1.0.0/security/configs
-router.get(`${baseRoute}/`,  controller.getSecurityConfigs);
+router.get(`${baseRoute}/`, controller.getSecurityConfigs);
 
 // - /api/1.0.0/security/configs
 router.post(`${baseRoute}/`, controller.postSecurityConfig);
 
 // - /api/1.0.0/security/configs/:id
-router.patch(`${baseRoute}/:id`,  controller.patchSecurityConfig);
+router.patch(`${baseRoute}/:id`, controller.patchSecurityConfig);
 
 // - /api/1.0.0/security/configs/:id
-router.delete(`${baseRoute}/:id`,  controller.deleteSecurityConfig);
+router.delete(`${baseRoute}/:id`, controller.deleteSecurityConfig);
 
 module.exports = router;
