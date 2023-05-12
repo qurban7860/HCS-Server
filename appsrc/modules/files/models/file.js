@@ -28,6 +28,9 @@ const docSchema = new Schema({
         uri: { type: String  },
         // file content to save in database
 
+        isActiveVersion: {type: Boolean, default: true},
+
+
         documentName: { type: Schema.Types.ObjectId, ref: 'DocumentName' },
         // document name.
 

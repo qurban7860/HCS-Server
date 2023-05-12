@@ -1,5 +1,6 @@
 const multer = require('multer');
 const uuid = require('uuid/v1');
+const fs = require('fs');
 
 const MIME_TYPE_MAP = {
   'image/png': 'png',
@@ -13,7 +14,10 @@ const fileUpload = multer({
   limits: 500000,
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null, '');
+      const uploadPath = 'tmp/uploads';
+      // create the directory if it doesn't already exist
+      fs.mkdirSync(uploadPath, { recursive: true });
+      cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
       const ext = MIME_TYPE_MAP[file.mimetype];
