@@ -37,10 +37,10 @@ const docSchema = new Schema({
         documentVersion: { type: Number },
         // version number. It will be increased based on customer, machine, etc.
 
-        category: { type: Schema.Types.ObjectId, ref: 'FileCategory' },
+        category: { type: Schema.Types.ObjectId, ref: 'FileCategories' },
         // file category.
 
-        customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
         // customer information.
 
         customerAccess: { type: Boolean, default: false },

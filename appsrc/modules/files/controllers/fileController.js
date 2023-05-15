@@ -27,7 +27,9 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
-  { path: 'updatedBy', select: 'name' }
+  { path: 'updatedBy', select: 'name' },
+  { path: 'documentName', select: 'name' },
+  { path: 'category', select: 'name' }
 ];
 
 
@@ -68,20 +70,22 @@ exports.postFile = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.file !== undefined && req.body.category && req.body.documentName){
-        const existingFile = await File.findOne({ documentName: req.body.documentName, category: req.body.category }).sort({ createdAt: -1 }).limit(1);
-        if(existingFile){
-          const response = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
-          req.body.documentVersion = existingFile.documentVersion + 1;
-        }else{
-          req.body.documentVersion = 1; 
+      if(req.file !== undefined){
+        if(req.body.category && req.body.documentName){
+          const existingFile = await File.findOne({ documentName: req.body.documentName, category: req.body.category }).sort({ createdAt: -1 }).limit(1);
+          if(existingFile){
+            const response = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
+            req.body.documentVersion = existingFile.documentVersion + 1;
+          }else{
+            req.body.documentVersion = 1; 
+          }
         }
         const processedFile = await processFile(req.file);
         req.body.path = processedFile.s3FilePath;
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
       }else{
-        res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ File: response });
