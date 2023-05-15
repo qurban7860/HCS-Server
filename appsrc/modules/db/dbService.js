@@ -82,6 +82,20 @@ class dbService {
     }
   }
 
+
+  async deleteObjectAfterVerification(model, req, callback) {
+    if(callback) {
+      model.deleteOne(req.query).then(function (result) {
+        callback(null, result);
+      }).catch(function (err) {
+        callback(err);
+      });
+    }
+    else {
+      return await model.deleteOne(req.query);
+    }
+  }
+
   async postObject(Object, callback) {
     if(callback) {
       Object.save((error, data) => {
