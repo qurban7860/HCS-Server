@@ -28,6 +28,8 @@ module.exports = {
             } else {
                 return "No records deleted!";
             }
+        } else if (code == 409) {
+            return "Cannot delete the record as it has references in child collections.";
         } else {
             return getReasonPhrase(code);
         }
