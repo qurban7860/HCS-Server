@@ -50,8 +50,13 @@ exports.getFileCategories = async (req, res, next) => {
 };
 
 exports.deleteFileCategory = async (req, res, next) => {
+  var obj = {};
+  obj.query = {
+    _id: req.params.id,
+    isArchived: true
+  }
   try {
-    const result = await this.dbservice.deleteObject(FileCategory, req.params.id);
+    const result = await this.dbservice.deleteObjectAfterVerification(FileCategory, obj);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));

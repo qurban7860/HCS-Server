@@ -7,19 +7,19 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        name: { type: String },
+        name: { type: String,required: true, unique: true },
         // name/title of field
-        
+
         description: { type: String },
         // detailed description of field
-        
-        customerAccess: {type: Boolean, default: false},
+
+        customerAccess: { type: Boolean, default: false },
         //can customer access files under this category.},
-        
+
 },
-{
-        collection: 'FileCategories'
-}
+        {
+                collection: 'FileCategories'
+        }
 );
 
 docSchema.set('timestamps', true);
