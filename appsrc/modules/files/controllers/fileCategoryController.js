@@ -51,9 +51,9 @@ exports.getFileCategories = async (req, res, next) => {
 
 exports.deleteFileCategory = async (req, res, next) => {
 
-  const { FileCategory } = require('../models');
+  const { File } = require('../models');
   try {
-    const response = await this.dbservice.getObjectList(FileCategory, this.fields, {category: req.params.id}, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(File, this.fields, {category: req.params.id}, this.orderBy, this.populate);
 
 
     if(response.length == 0) {
