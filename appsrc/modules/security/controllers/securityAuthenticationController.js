@@ -42,13 +42,13 @@ exports.login = async (req, res, next) => {
   } else {
     let queryString = { login: req.body.email };
 
-    this.dbservice.getObject(SecurityUser, queryString, { path: 'customer', select: 'name type isActive isArchived' }, getObjectCallback);
+    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }], getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        if (!(_.isEmpty(response)) && isValidCustomer(response.customer)) {
+        if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact)) {
           const existingUser = response;
           const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
           if (passwordsResponse) {
@@ -133,6 +133,13 @@ exports.refreshToken = async (req, res, next) => {
 
 function isValidCustomer(customer) {
   if (_.isEmpty(customer) || customer.type != 'SP' || customer.isActive == false || customer.isArchived == true) {
+    return false;
+  }
+  return true;
+}
+
+function isValidContact(contact){
+  if (_.isEmpty(contact) || contact.isActive == false || contact.isArchived == true) {
     return false;
   }
   return true;
