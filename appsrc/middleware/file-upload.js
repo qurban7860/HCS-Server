@@ -36,12 +36,13 @@ const fileUpload = multer({
     }
   }),
   fileFilter: (req, file, cb) => {
+    const errorMessage = '';
     const isValid = !!MIME_TYPE_MAP[file.mimetype];
     if (!isValid) {
-      const errorMessage = rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid mime type!', true);
+      errorMessage = rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid mime type!', true);
       return req.res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
     }
-    cb(error, isValid);
+    cb(errorMessage, isValid);
   }
 });
 
