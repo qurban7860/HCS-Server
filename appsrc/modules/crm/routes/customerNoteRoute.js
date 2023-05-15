@@ -5,6 +5,7 @@ const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
+const checkCustomer = require('../../../middleware/check-customer');
 
 
 const controllers = require('../controllers');
@@ -18,7 +19,7 @@ const router = express.Router();
 // - /api/1.0.0/crm/customers/:customerId/notes/
 const baseRouteForObject = `/customers/:customerId/notes`;
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
 router.get(`${baseRouteForObject}/:id`, checkCustomerID, controller.getCustomerNote);

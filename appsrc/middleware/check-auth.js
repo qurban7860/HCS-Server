@@ -26,7 +26,7 @@ module.exports = (req, res, next) => {
     const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
     decodedToken.userIP = clientIP;
     //console.log(`The client's IP Address is: ${clientIP}`);
-
+    // console.log('decoded token ---------->', decodedToken);
     req.body.loginUser = decodedToken;
     next();
   } catch (err) {

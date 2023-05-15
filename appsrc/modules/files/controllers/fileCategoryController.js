@@ -116,7 +116,6 @@ function getDocumentFromReq(req, reqType) {
   }
 
   if (reqType == "new" && "loginUser" in req.body) {
-    console.log('login user---->', loginUser);
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;

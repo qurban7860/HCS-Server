@@ -5,6 +5,7 @@ const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Product } = require('../models');
 const checkProductID = require('../../../middleware/check-parentID')('machine', Product);
+const checkCustomer = require('../../../middleware/check-customer');
 
 
 const controllers = require('../controllers');
@@ -22,15 +23,15 @@ const baseRouteForObject = `/machines/:machineId/licenses`;
 //localhost://api/1.0.0/products/machines/
 
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductLicense);
 
 router.get(`${baseRouteForObject}`, checkProductID, controller.getProductLicenses);
 
-router.post(`${baseRouteForObject}`, checkProductID,  controller.postProductLicense);
+router.post(`${baseRouteForObject}`, checkProductID, controller.postProductLicense);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID,  controller.patchProductLicense);
+router.patch(`${baseRouteForObject}/:id`, checkProductID, controller.patchProductLicense);
 
 router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductLicense);
 

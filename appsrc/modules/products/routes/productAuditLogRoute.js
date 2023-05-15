@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomer = require('../../../middleware/check-customer');
 
 const controllers = require('../controllers');
 const controller = controllers.productAuditLogController;
@@ -14,15 +15,15 @@ const router = express.Router();
 
 const baseRouteForObject = `/auditlogs`; 
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/:id`, controller.getProductAuditLog);
 
 router.get(`${baseRouteForObject}/`, controller.getProductAuditLogs);
 
-router.post(`${baseRouteForObject}/`,  controller.postProductAuditLog);
+router.post(`${baseRouteForObject}/`, controller.postProductAuditLog);
 
-router.patch(`${baseRouteForObject}/:id`,  controller.patchProductAuditLog);
+router.patch(`${baseRouteForObject}/:id`, controller.patchProductAuditLog);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductAuditLog);
 

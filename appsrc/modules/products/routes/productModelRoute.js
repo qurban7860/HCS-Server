@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomer = require('../../../middleware/check-customer');
 
 const controllers = require('../controllers');
 const controller = controllers.productModelController;
@@ -14,15 +15,15 @@ const router = express.Router();
 
 const baseRouteForObject = `/models`; 
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/:id`, controller.getProductModel);
 
 router.get(`${baseRouteForObject}/`, controller.getProductModels);
 
-router.post(`${baseRouteForObject}/`,  controller.postProductModel);
+router.post(`${baseRouteForObject}/`, controller.postProductModel);
 
-router.patch(`${baseRouteForObject}/:id`,  controller.patchProductModel);
+router.patch(`${baseRouteForObject}/:id`, controller.patchProductModel);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductModel);
 

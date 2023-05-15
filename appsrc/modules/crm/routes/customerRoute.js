@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const checkCustomer = require('../../../middleware/check-customer');
 
 const controllers = require('../controllers');
 const controller = controllers.customerController;
@@ -14,7 +15,7 @@ const router = express.Router();
 const baseRouteForObject = `/customers`; 
 
 
-router.use(checkAuth);
+router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/crm/customers/:id
 router.get(`${baseRouteForObject}/:id`, controller.getCustomer);
@@ -23,10 +24,10 @@ router.get(`${baseRouteForObject}/:id`, controller.getCustomer);
 router.get(`${baseRouteForObject}/`, controller.getCustomers);
 
 // - /api/1.0.0/crm/customers/
-router.post(`${baseRouteForObject}/`,  controller.postCustomer);
+router.post(`${baseRouteForObject}/`, controller.postCustomer);
 
 // - /api/1.0.0/crm/customers/:id
-router.patch(`${baseRouteForObject}/:id`,  controller.patchCustomer);
+router.patch(`${baseRouteForObject}/:id`, controller.patchCustomer);
 
 // - /api/1.0.0/crm/customers/:id
 router.delete(`${baseRouteForObject}/:id`, controller.deleteCustomer);
