@@ -15,25 +15,25 @@ const controller = controllers.fileCategoryController;
 const router = express.Router();
 
 //  - base route for module
-// - /api/1.0.0/files/categories
+// - /api/1.0.0/filemanager/categories
 
 const baseRoute = `/categories`;
 
 router.use(checkAuth, checkCustomer);
 
-// - /api/1.0.0/files/categories/:id
+// - /api/1.0.0/filemanager/categories/:id
 router.get(`${baseRoute}/:id`,controller.getFileCategory);
 
-// - /api/1.0.0/files/categories/
+// - /api/1.0.0/filemanager/categories/
 router.get(`${baseRoute}/`, controller.getFileCategories);
 
-// - /api/1.0.0/files/categories/
+// - /api/1.0.0/filemanager/categories/
 router.post(`${baseRoute}/`,controller.postFileCategory);
 
-// - /api/1.0.0/files/categories/:id
+// - /api/1.0.0/filemanager/categories/:id
 router.patch(`${baseRoute}/:id`, controller.patchFileCategory);
 
-// - /api/1.0.0/files/categories/:id
+// - /api/1.0.0/filemanager/categories/:id
 router.delete(`${baseRoute}/:id`, controller.deleteFileCategory);
 
 module.exports = router;
