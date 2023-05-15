@@ -16,22 +16,24 @@ const router = express.Router();
 
 //  - base route for module
 // - /api/1.0.0/files
+const baseRoute = `/files`;
+
 
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/files/:id
-router.get(`/:id`,controller.getFile);
+router.get(`${baseRoute}/:id`,controller.getFile);
 
 // - /api/1.0.0/files/
-router.get(`/`, controller.getFiles);
+router.get(`${baseRoute}/`, controller.getFiles);
 
 // - /api/1.0.0/files/
-router.post(`/`, fileUpload.single('image'), controller.postFile);
+router.post(`${baseRoute}/`, fileUpload.single('image'), controller.postFile);
 
 // - /api/1.0.0/files/:id
-router.patch(`/:id`, fileUpload.single('image'), controller.patchFile);
+router.patch(`${baseRoute}/:id`, controller.patchFile);
 
 // - /api/1.0.0/files/:id
-router.delete(`/:id`, controller.deleteFile);
+router.delete(`${baseRoute}/:id`, controller.deleteFile);
 
 module.exports = router;
