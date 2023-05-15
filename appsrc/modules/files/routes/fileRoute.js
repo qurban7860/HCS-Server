@@ -15,25 +15,25 @@ const controller = controllers.fileController;
 const router = express.Router();
 
 //  - base route for module
-// - /api/1.0.0/files
+// - /api/1.0.0/filemanager/files
 const baseRoute = `/files`;
 
 
 router.use(checkAuth, checkCustomer);
 
-// - /api/1.0.0/files/:id
+// - /api/1.0.0/filemanager/files/:id
 router.get(`${baseRoute}/:id`,controller.getFile);
 
-// - /api/1.0.0/files/
+// - /api/1.0.0/filemanager/files/
 router.get(`${baseRoute}/`, controller.getFiles);
 
-// - /api/1.0.0/files/
+// - /api/1.0.0/filemanager/files/
 router.post(`${baseRoute}/`, fileUpload.single('image'), controller.postFile);
 
-// - /api/1.0.0/files/:id
+// - /api/1.0.0/filemanager/files/:id
 router.patch(`${baseRoute}/:id`, controller.patchFile);
 
-// - /api/1.0.0/files/:id
+// - /api/1.0.0/filemanager/files/:id
 router.delete(`${baseRoute}/:id`, controller.deleteFile);
 
 module.exports = router;

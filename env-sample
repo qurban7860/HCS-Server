@@ -16,6 +16,9 @@ CLIENT_APP_URL=http://localhost:3000/
 
 TOKEN_EXP_TIME = '2h'
 
+MAX_FILESIZE = 
+UPLOAD_PATH = 
+
 LOG_TO_CONSOLE=true
 JWT_SECRETKEY=supersecret_dont_share
 MORGAN_FORMAT=combined
