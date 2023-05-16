@@ -71,8 +71,15 @@ exports.postFile = async (req, res, next) => {
   } else {
     try {
       if(req.file !== undefined){
-        if(req.body.category && req.body.documentName){
-          const existingFile = await File.findOne({ documentName: req.body.documentName, category: req.body.category }).sort({ createdAt: -1 }).limit(1);
+        if(req.body.customer){
+          const queryString = {
+            customer: req.body.customer,
+            ...(req.body.machine && { machine: req.body.machine }),
+            ...(req.body.documentName && { documentName: req.body.documentName })
+          };
+
+          const existingFile = await File.findOne(queryString).sort({ createdAt: -1 }).limit(1);
+          
           if(existingFile){
             const response = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
             req.body.documentVersion = existingFile.documentVersion + 1;
