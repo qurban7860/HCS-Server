@@ -65,16 +65,11 @@ exports.deleteFile = async (req, res, next) => {
 };
 
 exports.postFile = async (req, res, next) => {
-  console.log('postFile enter')
   const errors = validationResult(req);
-  console.log(errors);
   if (!errors.isEmpty()) {
-    console.log('inside bad request');
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      console.log('file ',req.file);
-      console.log('body ',req.body);
       if(req.file !== undefined){
         if(req.body.category && req.body.documentName){
           const existingFile = await File.findOne({ documentName: req.body.documentName, category: req.body.category }).sort({ createdAt: -1 }).limit(1);

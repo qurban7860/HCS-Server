@@ -1,7 +1,9 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-// const fileUpload = require('../../../middleware/file-upload');
+const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+
+const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
@@ -29,7 +31,17 @@ router.get(`${baseRoute}/:id`,controller.getFile);
 router.get(`${baseRoute}/`, controller.getFiles);
 
 // - /api/1.0.0/filemanager/files/
-router.post(`${baseRoute}/`, upload.single('image'), controller.postFile);
+router.post(`${baseRoute}/`, (req, res, next) => {
+    fileUpload.single('image')(req, res, (err) => {
+      if (err instanceof multer.MulterError) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+      } else if (err) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        next();
+      }
+    });
+  }, controller.postFile);
 
 // - /api/1.0.0/filemanager/files/:id
 router.patch(`${baseRoute}/:id`, controller.patchFile);
