@@ -22,7 +22,7 @@ const MIME_TYPE_MAP = {
 };
 
 const fileUpload = multer({
-  limits: process.env.MAX_FILESIZE || 500000,
+  limits: { fileSize: process.env.MAX_FILESIZE || 500000 },
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       console.log("destination");
@@ -37,11 +37,8 @@ const fileUpload = multer({
     }
   }),
   fileFilter: (req, file, cb) => {
-    console.log('fileFilter')
-    const errorMessage = '';
+    let errorMessage = '';
     const isValid = !!MIME_TYPE_MAP[file.mimetype];
-    console.log(isValid);
-    console.log(MIME_TYPE_MAP,file.mimetype);
     if (!isValid) {
       errorMessage = rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid mime type!', true);
       return req.res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
