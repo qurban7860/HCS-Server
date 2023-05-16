@@ -12,8 +12,8 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer } = require('../models');
-
 const { CustomerSite } = require('../models');
+const _ = require('lodash');
 
 
 const customerSiteController = require('./customerSiteController');
@@ -72,14 +72,26 @@ exports.getCustomers = async (req, res, next) => {
 };
 
 exports.deleteCustomer = async (req, res, next) => {
-  this.dbservice.deleteObject(Customer, req.params.id, callbackFunc);
-  function callbackFunc(error, result) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+  let customer = await Customer.findById(req.params.id); 
+  if(!_.isEmpty(customer)){
+    if(customer.isArchived == true && customer.type != 'SP'){
+      this.dbservice.deleteObject(Customer, req.params.id, callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } 
+        else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        }
+      }
     }
+    else {
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'SP Customers cannot be deleted!', true));
+    } 
+  }
+  else {
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer not found!', true));
   }
 };
 
