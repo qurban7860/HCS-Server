@@ -25,6 +25,7 @@ const fileUpload = multer({
   limits: process.env.MAX_FILESIZE || 500000,
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
+      console.log("destination");
       const uploadPath = process.env.UPLOAD_PATH || 'tmp/uploads';
       // create the directory if it doesn't already exist
       fs.mkdirSync(uploadPath, { recursive: true });
@@ -36,8 +37,11 @@ const fileUpload = multer({
     }
   }),
   fileFilter: (req, file, cb) => {
+    console.log('fileFilter')
     const errorMessage = '';
     const isValid = !!MIME_TYPE_MAP[file.mimetype];
+    console.log(isValid);
+    console.log(MIME_TYPE_MAP,file.mimetype);
     if (!isValid) {
       errorMessage = rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid mime type!', true);
       return req.res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
