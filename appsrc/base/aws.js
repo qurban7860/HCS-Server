@@ -78,7 +78,10 @@ async function copyFile(user) {
 }
 
 async function uploadFileS3(filename, folder, content, ext = 'txt') {
+  let bucketName = process.env.AWS_S3_BUCKET;
+
   const uploadFileParams = {
+    Bucket: bucketName,
     Key: `${folder}/${filename}.${ext}`,
     Body: content,
     ACL:'public-read'
