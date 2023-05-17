@@ -88,7 +88,7 @@ exports.login = async (req, res, next) => {
             res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
           }
         } else {
-          res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Inavlid User/User does not have the rights to access', true));
+          res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
         }
       }
     }
@@ -140,8 +140,10 @@ function isValidCustomer(customer) {
 }
 
 function isValidContact(contact){
-  if (_.isEmpty(contact) || contact.isActive == false || contact.isArchived == true) {
-    return false;
+  if (!_.isEmpty(contact)){
+    if(contact.isActive == false || contact.isArchived == true) {
+      return false;
+    }
   }
   return true;
 }
@@ -193,7 +195,7 @@ exports.forgetPassword = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     const existingUser = await SecurityUser.findOne({ login: req.body.login });
-    if (existingUser) {
+    if (existingUser && (existingUser.type == 'SP' || existingUser.isActive == true || existingUser.isArchived == false)) {
       const token = await generateRandomString();
       updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -228,7 +230,7 @@ exports.forgetPassword = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found!', true));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User Invalid/User not found!', true));
     }
   }
 };
@@ -236,9 +238,10 @@ exports.forgetPassword = async (req, res, next) => {
 
 exports.verifyForgottenPassword = async (req, res, next) => {
   try {
+    let _this = this;
     const existingUser = await SecurityUser.findById(req.body.userId);
     if (existingUser) {
-      if (existingUser.token && existingUser.token.accessToken == req.body.token) {
+      if (existingUser.token && existingUser.token.accessToken == req.body.token) {        
         const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
         if (!tokenExpired) {
           const hashedPassword = await bcrypt.hash(req.body.password, 12);
@@ -250,7 +253,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
             } else {
               let params = {
                 to: `${existingUser.email}`,
-                subject: "Reset Password",
+                subject: "Password Reset Successful",
                 html: true,
                 htmlData: `Hi ${existingUser.name},<br><br>Your password has been update successfully.<br>
                               <br>Please sign in to access your account<br>`

@@ -75,8 +75,8 @@ exports.postFile = async (req, res, next) => {
         if(req.body.customer){
           const queryString = {
             customer: req.body.customer,
-            ...(req.body.machine && { machine: req.body.machine }),
-            ...(req.body.documentName && { documentName: req.body.documentName })
+            machine: req.body.machine ? req.body.machine : null,
+            documentName: req.body.documentName ? req.body.documentName : null
           };
 
           const existingFile = await File.findOne(queryString).sort({ createdAt: -1 }).limit(1);
