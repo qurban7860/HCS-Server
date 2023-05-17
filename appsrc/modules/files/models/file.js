@@ -19,6 +19,9 @@ const docSchema = new Schema({
         path: { type: String },
         // file path 
 
+        content: {type: String},
+        // file content to save in database
+
         type: { type: String, required: true },
         // image, video, text, word, excel, pdf , etc. 
 
