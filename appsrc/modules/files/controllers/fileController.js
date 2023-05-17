@@ -1,6 +1,7 @@
 const { body, validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const path = require('path');
+const sharp = require('sharp');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose')
 const fs = require('fs');
@@ -16,7 +17,6 @@ let fileDBService = require('../service/fileDBService')
 this.dbservice = new fileDBService();
 
 const { File } = require('../models');
-const { Email } = require('../../email/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -46,6 +46,7 @@ exports.getFile = async (req, res, next) => {
 
 exports.getFiles = async (req, res, next) => {
   try {
+    this.query = req.query != "undefined" ? req.query : {};  
     const response = await this.dbservice.getObjectList(File, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
@@ -84,13 +85,14 @@ exports.postFile = async (req, res, next) => {
             const response = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
             req.body.documentVersion = existingFile.documentVersion + 1;
           }else{
-            req.body.documentVersion = 1; 
+            req.body.documentName ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
           }
         }
         const processedFile = await processFile(req.file);
         req.body.path = processedFile.s3FilePath;
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
+        req.body.content = processedFile.base64thumbNailData;
       }else{
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
@@ -118,23 +120,64 @@ exports.patchFile = async (req, res, next) => {
   }
 };
 
+async function readFileAsBase64(filePath) {
+  try {
+    const fileData = await fs.promises.readFile(filePath);
+    const base64Data = fileData.toString('base64');
+    return base64Data;
+  } catch (error) {
+    console.log('Error reading file as base64:', error);
+    throw error;
+  }
+}
+
+async function generateThumbnail(filePath) {
+  try {
+    const thumbnailSize = 80;
+    const thumbnailPath = getThumbnailPath(filePath);     
+    await sharp(filePath)
+      .resize(thumbnailSize, null)
+      .toFile(thumbnailPath);
+
+    return thumbnailPath;
+    
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+function getThumbnailPath(filePath) {
+  const thumbnailName = path.basename(filePath, path.extname(filePath)) + '_thumbnail.png';
+  return path.join('tmp/uploads', thumbnailName);
+}
+
 async function processFile(file) {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
-  const fileData = fs.readFileSync(file.path);
-  const base64Data = fileData.toString('base64');
-  
-  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64Data, fileExt);
+
+  const base64fileData = await readFileAsBase64(file.path);
+
+  const thumbnailPath = await generateThumbnail(file.path);
+  const base64thumbNailData = await readFileAsBase64(thumbnailPath);
+
+  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
   
   fs.unlinkSync(file.path);
-
-  return {
-    fileName: name,
-    fileExt,
-    s3FilePath,
-    type: file.mimetype,
-    physicalPath: file.path
-  };
+  fs.unlinkSync(thumbnailPath);
+  
+  if (!s3FilePath || s3FilePath === '') {
+    throw new Error('AWS file saving failed');
+  }
+  else{
+    return {
+      fileName: name,
+      fileExt,
+      s3FilePath,
+      type: file.mimetype,
+      physicalPath: file.path,
+      base64thumbNailData 
+    };
+  }
 }
 
 function getDocumentFromReq(req, reqType) {
@@ -172,6 +215,9 @@ function getDocumentFromReq(req, reqType) {
   }
   if ("category" in req.body) {
     doc.category = category;
+  }
+  if ("content" in req.body) {
+    doc.content = content;
   }
   if ("customer" in req.body) {
     doc.customer = customer;
