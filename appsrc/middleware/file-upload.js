@@ -25,7 +25,6 @@ const fileUpload = multer({
   limits: { fileSize: process.env.MAX_FILESIZE || 500000 },
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
-      console.log("destination");
       const uploadPath = process.env.UPLOAD_PATH || 'tmp/uploads';
       // create the directory if it doesn't already exist
       fs.mkdirSync(uploadPath, { recursive: true });

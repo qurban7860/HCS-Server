@@ -6,10 +6,14 @@ const { SecurityUser } = require('../modules/security/models');
 const _ = require('lodash');
 
 module.exports = (req, res, next) => {
-
+  if (req.method === 'OPTIONS' || 
+  req.url.toLowerCase() === '/gettoken' || 
+  req.url.toLowerCase() === '/forgetpassword' || 
+  req.url.toLowerCase() === '/forgetpassword/verifytoken') {
+    return next();
+  }
   try {    
     const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:''; // Authorization: 'Bearer TOKEN'
-
     if (!token || token.length == 0) {
       next();
     }
