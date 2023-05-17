@@ -84,7 +84,7 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     Bucket: bucketName,
     Key: `${folder}/${filename}.${ext}`,
     Body: content,
-    ACL:'public-read'
+    // ACL:'public-read'
   };
 
   let url = '';
