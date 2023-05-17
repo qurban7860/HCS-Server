@@ -124,7 +124,7 @@ async function processFile(file) {
   const fileData = fs.readFileSync(file.path);
   const base64Data = fileData.toString('base64');
   
-  const s3FilePath = await awsService.uploadFileS3(name, '', base64Data, fileExt);
+  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64Data, fileExt);
   
   fs.unlinkSync(file.path);
 
