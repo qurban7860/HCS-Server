@@ -5,8 +5,6 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose')
 const fs = require('fs');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customer } = require('../models');
-const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const awsService = require('../../../../appsrc/base/aws');
 
 const _ = require('lodash');
@@ -18,6 +16,7 @@ let fileDBService = require('../service/fileDBService')
 this.dbservice = new fileDBService();
 
 const { File } = require('../models');
+const { Email } = require('../../email/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -29,7 +28,8 @@ this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
   { path: 'documentName', select: 'name' },
-  { path: 'category', select: 'name' }
+  { path: 'category', select: 'name' },
+  { path: 'customer', select: 'name' }
 ];
 
 

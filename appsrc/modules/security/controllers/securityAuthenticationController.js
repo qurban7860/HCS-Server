@@ -14,6 +14,7 @@ const awsService = require('../../../../appsrc/base/aws');
 let securityDBService = require('../service/securityDBService');
 this.dbservice = new securityDBService();
 
+const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
 const { SecurityUser, SecuritySignInLog } = require('../models');
 
@@ -212,8 +213,18 @@ exports.forgetPassword = async (req, res, next) => {
           };
 
           let response = await awsService.sendEmail(params);
-          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
-
+          
+          const emailResponse = await addEmail(params.subject, params.htmlData, params.to, existingUser.customer);
+          
+          _this.dbservice.postObject(emailResponse, callbackFunc);
+          function callbackFunc(error, response) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            } else {
+              res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
+            }
+          }
         }
       }
     } else {
@@ -237,7 +248,28 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               logger.error(new Error(error));
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!', false));
+              let params = {
+                to: `${existingUser.email}`,
+                subject: "Reset Password",
+                html: true,
+                htmlData: `Hi ${existingUser.name},<br><br>Your password has been update successfully.<br>
+                              <br>Please sign in to access your account<br>`
+              };
+    
+              let response = await awsService.sendEmail(params);
+
+              const emailResponse = await addEmail(params.subject, params.htmlData, params.to, existingUser.customer);
+          
+              _this.dbservice.postObject(emailResponse, callbackFunc);
+              function callbackFunc(error, response) {
+                if (error) {
+                  logger.error(new Error(error));
+                  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                } else {
+                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!', false));
+                }
+              }
+
             }
           }
         } else {
@@ -334,6 +366,27 @@ async function addAccessLog(actionType, userID, ip = null) {
     const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
     return res;
   }
+}
+
+async function addEmail(subject, body, emailAddresses, customer) {
+  var email = {
+    subject,
+    body,
+    emailAddresses,
+    customer,
+    isArchived: false,
+    isActive: true,
+    // loginIP: ip,
+    createdBy: '',
+    updatedBy: '',
+    createdIP: ''
+  };
+  var reqEmail = {};
+
+  reqEmail.body = email;
+  
+  const res = emailController.getDocumentFromReq(reqEmail, 'new');
+  return res;
 }
 
 function getDocumentFromReq(req, reqType) {
