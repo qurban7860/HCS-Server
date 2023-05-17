@@ -6,14 +6,14 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
-                name: { type: String, required: true},
-                // name of module/task
-                
-                description: { type: String, required: true},
-                // discription of module/task
-                
-                accessForNormalUsers: { type: Boolean, default: false },
-                // is this module for users who are not super admin
+  name: { type: String, required: true},
+  // name of module/task
+
+  description: { type: String, required: true},
+  // discription of module/task
+
+  accessForNormalUsers: { type: Boolean, default: false },
+  // is this module for users who are not super admin
                           
 },
 {
