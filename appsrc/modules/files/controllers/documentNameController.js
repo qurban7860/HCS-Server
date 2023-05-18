@@ -65,7 +65,7 @@ exports.getDocumentFiles = async (req, res, next) => {
 
 exports.deleteDocumentName = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(DocumentName, req.params.id);
+    const result = await this.dbservice.deleteObjectAfterVerification(DocumentName, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));

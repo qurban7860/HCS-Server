@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        name: { type: String },
+        name: { type: String, required: true, unique: true },
         // name/title of field
 
         description: { type: String },
