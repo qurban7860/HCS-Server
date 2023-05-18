@@ -29,7 +29,7 @@ const docSchema = new Schema({
         // file extension.
 
         uri: { type: String  },
-        // file content to save in database
+        // file uri
 
         isActiveVersion: {type: Boolean, default: true},
 
