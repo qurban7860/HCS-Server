@@ -26,7 +26,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'mainSite', select: 'address name phone email'}, 
+  {path: 'mainSite', select: 'address name phone email fax'}, 
   {path: 'primaryBillingContact', select: 'firstName lastName'},
   {path: 'primaryTechnicalContact', select: 'firstName lastName'},
   {path: 'accountManager', select: 'firstName lastName email'},
