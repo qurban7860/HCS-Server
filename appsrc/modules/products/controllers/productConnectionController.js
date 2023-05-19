@@ -26,10 +26,10 @@ this.populate = [
 
 
 exports.connectMachine = async (req, res, next) => {
-  let machine = req.body.machine;
-  let connectedMachine = req.body.connectedMachine;
-  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machine);
-  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachine);
+  let machineId = req.body.machineId;
+  let connectedMachineId = req.body.connectedMachineId;
+  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machineId);
+  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
   
   if(!dbMachine || !connectedMachine) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -57,10 +57,10 @@ exports.connectMachine = async (req, res, next) => {
 };
 
 exports.disconnectMachine = async (req, res, next) => {
-  let machine = req.body.machine;
-  let connectedMachine = req.body.connectedMachine;
-  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machine);
-  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachine);
+  let machineId = req.body.machineId;
+  let connectedMachineId = req.body.connectedMachineId;
+  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machineId);
+  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
   if(!dbMachine || !connectedMachine) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
