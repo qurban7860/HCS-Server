@@ -18,7 +18,7 @@ const baseRouteForObject = `/customers`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/crm/customers/:id
-router.get(`${baseRouteForObject}/:id`, controller.getCustomer);
+router.get(`${baseRouteForObject}/:flag/:id`, controller.getCustomer);
 
 // - /api/1.0.0/crm/customers/
 router.get(`${baseRouteForObject}/`, controller.getCustomers);
