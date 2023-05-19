@@ -43,8 +43,11 @@ this.populateList = [
 
 
 exports.getCustomer = async (req, res, next) => {
-  const validFlags = ['basic', 'extended'];
+  let validFlag = 'basic';
 
+  if(req.params.flag && req.params.flag=='extended') {
+    validFlag = req.params.flag;
+  }
   this.query = req.query != "undefined" ? req.query : {};
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
@@ -53,9 +56,6 @@ exports.getCustomer = async (req, res, next) => {
   let populatedContacts;
   let populatedNotes;
 
-  if (!validFlags.includes(req.params.flag)) {
-      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
-  }
 
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
@@ -65,7 +65,7 @@ exports.getCustomer = async (req, res, next) => {
     } else {
       const customer = response;
       if(customer.isActive == true && customer.isArchived == false){    
-        if(req.params.flag == 'extended'){  
+        if(validFlag == 'extended'){  
           if(!(_.isEmpty(customer))) {
             if(customer.sites.length > 0){
               populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
