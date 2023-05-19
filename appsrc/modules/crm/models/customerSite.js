@@ -19,6 +19,9 @@ const docSchema = new Schema({
     long: { type: String },
     // // longitude coordinates of site
 
+    fax: { type: String },
+    // Fax nuer. There can be multiple comma separated entries
+    
     primaryBillingContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
     // primary Billing Contact for the site
     
