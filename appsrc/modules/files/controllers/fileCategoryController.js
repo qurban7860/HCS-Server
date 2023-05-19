@@ -14,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 let fileDBService = require('../service/fileDBService')
 this.dbservice = new fileDBService();
 
-const { FileCategory } = require('../models');
+const { FileCategory, File } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
