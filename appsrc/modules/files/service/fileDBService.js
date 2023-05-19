@@ -66,8 +66,6 @@ class FileService {
       return error;
     }
   }
-
-
   
 
   async postObject(document){

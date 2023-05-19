@@ -164,6 +164,13 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if ("isArchived" in req.body && req.body.isArchived === true) {
+      let customer = await Customer.findById(req.params.id);
+      if(customer.type == 'SP'){
+        res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'SP Customer cannot be deleted!', true));
+      }
+    }
+
     this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
