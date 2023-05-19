@@ -14,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 let fileDBService = require('../service/fileDBService')
 this.dbservice = new fileDBService();
 
-const { FileCategory } = require('../models');
+const { FileCategory, File } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -49,36 +49,20 @@ exports.getFileCategories = async (req, res, next) => {
   }
 };
 
+
 exports.deleteFileCategory = async (req, res, next) => {
-
-  const { File } = require('../models');
-  try {
-    const response = await this.dbservice.getObjectList(File, this.fields, {category: req.params.id}, this.orderBy, this.populate);
-
-
-    if(response.length == 0) {
-      var obj = {};
-      obj.query = {
-        _id: req.params.id,
-        isArchived: true
-      }
-      try {
-        const result = await this.dbservice.deleteObjectAfterVerification(FileCategory, obj);
-        res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-      } catch (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      }
-    } else {
-      res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
+  const response = await this.dbservice.getObject(File, {category: req.params.id}, "");
+  if(response === null) {
+    try {
+      const result = await this.dbservice.deleteObject(FileCategory, req.params.id);
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     }
-  } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  } else {
+    res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
   }
-
-
-
 };
 
 exports.postFileCategory = async (req, res, next) => {
