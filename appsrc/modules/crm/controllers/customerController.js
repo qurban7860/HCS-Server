@@ -11,8 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { Customer } = require('../models');
-const { CustomerSite } = require('../models');
+const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const _ = require('lodash');
 
 
@@ -44,18 +43,55 @@ this.populateList = [
 
 
 exports.getCustomer = async (req, res, next) => {
+  const validFlags = ['basic', 'extended'];
+
   this.query = req.query != "undefined" ? req.query : {};
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
+
+  let populatedSites;
+  let populatedContacts;
+  let populatedNotes;
+
+  if (!validFlags.includes(req.params.flag)) {
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+  }
+
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      const customer = response;
+      if(customer.isActive == true && customer.isArchived == false){    
+        if(req.params.flag == 'extended'){  
+          if(!(_.isEmpty(customer))) {
+            if(customer.sites.length > 0){
+              populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
+              customer.sites = [];
+              customer.sites = populatedSites;       
+            }
+
+            if(customer.contacts.length > 0){
+              populatedContacts = await CustomerContact.find({ _id: { $in: customer.contacts } }); 
+              customer.contacts = [];
+              customer.contacts = populatedContacts;
+            }
+
+            populatedNotes = await CustomerNote.find({ customer: customer._id, isActive: true, isArchived: false }); 
+            if(populatedNotes.length > 0){
+              customer.notes = populatedNotes;
+            }
+          }
+        }
+        res.json(customer);
+      }
+      else{
+        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer is either inactive or deleted', true));
+      }
     }
-  }
+  } 
 };
 
 exports.getCustomers = async (req, res, next) => {
