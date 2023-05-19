@@ -164,10 +164,11 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if ("isArchived" in req.body && req.body.isArchived === true) {
+    if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
       let customer = await Customer.findById(req.params.id);
-      if(customer.type == 'SP'){
-        res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'SP Customer cannot be deleted!', true));
+      if (customer.type === 'SP') {
+        const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
+        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
       }
     }
 
