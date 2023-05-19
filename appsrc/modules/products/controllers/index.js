@@ -1,6 +1,7 @@
 module.exports = {
     productAuditLogController: require('./productAuditLogController'),
     productCategoryController: require('./productCategoryController'),
+    productConnectionController: require('./productConnectionController'),
     productController: require('./productController'),
     productLicenseController: require('./productLicenseController'),
     productModelController: require('./productModelController'),
