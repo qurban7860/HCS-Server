@@ -57,7 +57,7 @@ exports.getFiles = async (req, res, next) => {
 
 exports.deleteFile = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(File, req.params.id);
+    const result = await this.dbservice.deleteObjectAfterVerification(File, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -163,16 +163,22 @@ function getThumbnailPath(filePath) {
 async function processFile(file) {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
+  let thumbnailPath;
+  let base64thumbNailData;
 
   const base64fileData = await readFileAsBase64(file.path);
 
-  const thumbnailPath = await generateThumbnail(file.path);
-  const base64thumbNailData = await readFileAsBase64(thumbnailPath);
-
-  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
+  if(file.mimetype.includes('image')){
+    thumbnailPath = await generateThumbnail(file.path);
+    base64thumbNailData = await readFileAsBase64(thumbnailPath);
+  }
   
+  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
+
   fs.unlinkSync(file.path);
-  fs.unlinkSync(thumbnailPath);
+  if(thumbnailPath){
+    fs.unlinkSync(thumbnailPath);
+  }
   
   if (!s3FilePath || s3FilePath === '') {
     throw new Error('AWS file saving failed');
@@ -184,7 +190,7 @@ async function processFile(file) {
       s3FilePath,
       type: file.mimetype,
       physicalPath: file.path,
-      base64thumbNailData 
+      base64thumbNailData
     };
   }
 }

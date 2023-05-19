@@ -50,7 +50,7 @@ exports.getEmails = async (req, res, next) => {
 
 exports.deleteEmail = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Email, req.params.id);
+    const result = await this.dbservice.deleteObjectAfterVerification(Email, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));

@@ -57,9 +57,9 @@ class EmailService {
   }
 
 
-  async deleteObjectAfterVerification(model, req){
+  async deleteObjectAfterVerification(model, id){
     try{
-      const response = await this.db.deleteObjectAfterVerification(model, req);
+      const response = await this.db.deleteObjectAfterVerification(model, id);
       return response;  
     }
     catch(error){
