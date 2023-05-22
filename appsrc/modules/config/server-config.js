@@ -4,19 +4,19 @@ const fs         = require('fs');
 const path       = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
+var cors = require('cors')
+
 
 // MIDDLEWARE
 const setHeaders = require('../../middleware/set-header');
 const errorHandler = require('../../middleware/error-handler');
 
 // ROUTES
-const usersRoutes = require('../user/routes/user-route');
-const assetsRoutes = require('../assets/routes/assets-route');
-const machineRoutes  = require ('../machines/routes');
-
-const customerRoutes  = require ('../customers/routes');
-
-
+const productRoutes  = require ('../products/routes');
+const securityRoutes  = require ('../security/routes');
+const customerRoutes  = require ('../crm/routes');
+const dashboardRoute  = require ('../dashboard/routes');
+const fileRoute  = require ('../files/routes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -44,6 +44,11 @@ class App {
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
     this.registerRoutes();
+    this.app.use(cors({
+        origin: '*'
+      }
+    ));
+    // this.app.options('*', cors());
     this.app.use(
       '/api-docs',
       swaggerUi.serve,
@@ -52,14 +57,12 @@ class App {
     this.app.use(errorHandler);
   }
 
-  registerRoutes(){
-    this.app.use(`${ apiPath }/users`, usersRoutes);
-    this.app.use(`${ apiPath }/assets`, assetsRoutes);
-
-
-    
-    machineRoutes.registerMachineRoutes(this.app, apiPath);
+  registerRoutes(){    
+    productRoutes.registerProductRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
+    securityRoutes.registerSecurityRoutes(this.app, apiPath);
+    dashboardRoute.registerDashboardRoutes(this.app, apiPath);
+    fileRoute.registerFileRoutes(this.app, apiPath);
   }
 
 
