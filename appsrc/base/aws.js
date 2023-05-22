@@ -181,11 +181,27 @@ async function sendEmail(params) {
   
 }
 
+async function downloadFileS3(filePath) {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: filePath
+  };
+
+  try {
+    const data = await s3.getObject(params).promise();
+    console.log('data------------>', data);
+    return data.Body;
+  } catch (err) {
+    console.log(err.message);
+    return err;
+  }
+}
 
 module.exports = {
   sendEmail,
   uploadFileS3,
   checkFileHeader,
   copyFile,
-  listBuckets
+  listBuckets,
+  downloadFileS3
 };
