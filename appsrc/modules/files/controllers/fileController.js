@@ -138,7 +138,7 @@ exports.downloadFile = async (req, res, next) => {
       const file = await this.dbservice.getObjectById(File, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
-          const fileContent = await downloadFileS3(file.path);
+          const fileContent = await awsService.downloadFileS3(file.path);
           console.log('fileContent------------>', fileContent);
           return fileContent;
         }else{
@@ -153,27 +153,6 @@ exports.downloadFile = async (req, res, next) => {
     }
   }
 };
-
-const s3 = new awsService.S3({
-  region: process.env.AWS_REGION,
-  params: { Bucket: process.env.AWS_S3_BUCKET },
-});
-
-async function downloadFileS3(filePath) {
-  const params = {
-    Bucket: process.env.AWS_S3_BUCKET,
-    Key: filePath
-  };
-
-  try {
-    const data = await s3.getObject(params).promise();
-    console.log('data------------>', data);
-    return data.Body;
-  } catch (err) {
-    console.log(err.message);
-    return err;
-  }
-}
 
 async function readFileAsBase64(filePath) {
   try {
