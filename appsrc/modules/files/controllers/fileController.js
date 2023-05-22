@@ -102,6 +102,9 @@ exports.postFile = async (req, res, next) => {
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
         req.body.content = processedFile.base64thumbNailData;
+        if(!req.body.loginUser || req.body.loginUser=='undefined'){
+          req.body.loginUser = await getToken(req);
+        }
       }else{
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
@@ -139,7 +142,6 @@ exports.downloadFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
-          console.log('fileContent------------>', fileContent);
           return fileContent;
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
@@ -217,6 +219,18 @@ async function processFile(file) {
       physicalPath: file.path,
       base64thumbNailData
     };
+  }
+}
+
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
   }
 }
 
