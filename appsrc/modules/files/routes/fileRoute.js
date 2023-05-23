@@ -37,8 +37,10 @@ router.get(`${baseRoute}/`, controller.getFiles);
 router.post(`${baseRoute}/`, (req, res, next) => {
     fileUpload.single('image')(req, res, (err) => {
       if (err instanceof multer.MulterError) {
+        console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
       } else if (err) {
+        console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
         next();
