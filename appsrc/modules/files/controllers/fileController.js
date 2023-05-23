@@ -82,16 +82,9 @@ exports.postFile = async (req, res, next) => {
           const existingFile = await File.findOne(queryString).sort({ createdAt: -1 }).limit(1);
           
           if(existingFile && req.body.documentName){
-            await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false }, callbackFunc);
-            function callbackFunc(error, result) {
-              if (error) {
-                logger.error(new Error(error));
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-                  //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-                  );
-              } else {
-                req.body.documentVersion = existingFile.documentVersion + 1;
-              }
+            const result = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
+            if(result){
+              req.body.documentVersion = existingFile.documentVersion + 1;
             }
           }else{
             req.body.documentName ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
@@ -102,6 +95,10 @@ exports.postFile = async (req, res, next) => {
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
         req.body.content = processedFile.base64thumbNailData;
+        req.body.name = processedFile.fileName;
+        if(!req.body.displayName || req.body.displayName == ''){
+          req.body.displayName = processedFile.fileName;
+        }
         if(!req.body.loginUser || req.body.loginUser=='undefined'){
           req.body.loginUser = await getToken(req);
         }
@@ -302,6 +299,7 @@ function getDocumentFromReq(req, reqType) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
