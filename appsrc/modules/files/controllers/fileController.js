@@ -139,8 +139,8 @@ exports.downloadFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
-          return fileContent;
-          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, fileContent));
+          console.log("fileContent",fileContent);
+          return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, fileContent));
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
