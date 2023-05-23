@@ -35,7 +35,11 @@ const docSchema = new Schema({
   
     workOrderRef: { type: String },
     // information about work order, purchase order or quotation ref no
-  
+    
+    machineConnections: [{ type: Schema.Types.ObjectId , ref: 'MachineConnection' }],
+    // list of connections with other machines like decoiler
+
+
     customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
     // customer for this machine
   
