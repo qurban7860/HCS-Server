@@ -82,16 +82,9 @@ exports.postFile = async (req, res, next) => {
           const existingFile = await File.findOne(queryString).sort({ createdAt: -1 }).limit(1);
           
           if(existingFile && req.body.documentName){
-            await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false }, callbackFunc);
-            function callbackFunc(error, result) {
-              if (error) {
-                logger.error(new Error(error));
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-                  //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-                  );
-              } else {
-                req.body.documentVersion = existingFile.documentVersion + 1;
-              }
+            const result = await this.dbservice.patchObject(File, existingFile._id, { isActiveVersion: false });
+            if(result){
+              req.body.documentVersion = existingFile.documentVersion + 1;
             }
           }else{
             req.body.documentName ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
@@ -102,6 +95,13 @@ exports.postFile = async (req, res, next) => {
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
         req.body.content = processedFile.base64thumbNailData;
+        req.body.name = processedFile.fileName;
+        if(!req.body.displayName || req.body.displayName == ''){
+          req.body.displayName = processedFile.fileName;
+        }
+        if(!req.body.loginUser || req.body.loginUser=='undefined'){
+          req.body.loginUser = await getToken(req);
+        }
       }else{
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
@@ -125,6 +125,30 @@ exports.patchFile = async (req, res, next) => {
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
+
+exports.downloadFile = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      const file = await this.dbservice.getObjectById(File, this.fields, req.params.id, this.populate);
+      if(file){
+        if (file.path && file.path !== '') {
+          const fileContent = await awsService.downloadFileS3(file.path);
+          return fileContent;
+        }else{
+          res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
+        }
+      }else{
+        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
+      }
+    }
+    catch(err){
+      return err;
     }
   }
 };
@@ -163,16 +187,22 @@ function getThumbnailPath(filePath) {
 async function processFile(file) {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
+  let thumbnailPath;
+  let base64thumbNailData;
 
   const base64fileData = await readFileAsBase64(file.path);
 
-  const thumbnailPath = await generateThumbnail(file.path);
-  const base64thumbNailData = await readFileAsBase64(thumbnailPath);
-
-  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
+  if(file.mimetype.includes('image')){
+    thumbnailPath = await generateThumbnail(file.path);
+    base64thumbNailData = await readFileAsBase64(thumbnailPath);
+  }
   
+  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
+  console.log(s3FilePath);
   fs.unlinkSync(file.path);
-  fs.unlinkSync(thumbnailPath);
+  if(thumbnailPath){
+    fs.unlinkSync(thumbnailPath);
+  }
   
   if (!s3FilePath || s3FilePath === '') {
     throw new Error('AWS file saving failed');
@@ -184,8 +214,20 @@ async function processFile(file) {
       s3FilePath,
       type: file.mimetype,
       physicalPath: file.path,
-      base64thumbNailData 
+      base64thumbNailData
     };
+  }
+}
+
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
   }
 }
 
@@ -257,6 +299,7 @@ function getDocumentFromReq(req, reqType) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
