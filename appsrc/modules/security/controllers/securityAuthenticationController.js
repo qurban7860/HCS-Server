@@ -232,7 +232,7 @@ exports.forgetPassword = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User must have a valid SP Customer!', true));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User is not authorized to login', true));
     }
   }
 };
