@@ -70,6 +70,11 @@ exports.postFile = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+    if(!req.body.loginUser || req.body.loginUser=='undefined'){
+      req.body.loginUser = await getToken(req);
+    }
+
     try {
       if(req.file !== undefined){
         if(req.body.customer){
@@ -90,19 +95,20 @@ exports.postFile = async (req, res, next) => {
             req.body.documentName ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
           }
         }
-        const processedFile = await processFile(req.file);
+
+        const processedFile = await processFile(req.file, req.body.loginUser.userId);
         req.body.path = processedFile.s3FilePath;
         req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
         req.body.content = processedFile.base64thumbNailData;
+        
         req.body.name = processedFile.fileName;
+        console.log("fileName", processedFile.fileName);
         if(!req.body.displayName || req.body.displayName == ''){
-          req.body.displayName = processedFile.fileName;
+          req.body.displayName = processedFile.name;
         }
-        if(!req.body.loginUser || req.body.loginUser=='undefined'){
-          req.body.loginUser = await getToken(req);
-        }
-      }else{
+
+      } else{
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
@@ -185,7 +191,7 @@ function getThumbnailPath(filePath) {
   return path.join('tmp/uploads', thumbnailName);
 }
 
-async function processFile(file) {
+async function processFile(file, userId) {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
   let thumbnailPath;
@@ -198,7 +204,8 @@ async function processFile(file) {
     base64thumbNailData = await readFileAsBase64(thumbnailPath);
   }
   
-  const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
+  const fileName = userId+"-"+new Date().getTime();
+  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
@@ -210,7 +217,8 @@ async function processFile(file) {
   }
   else{
     return {
-      fileName: name,
+      fileName,
+      name,
       fileExt,
       s3FilePath,
       type: file.mimetype,
