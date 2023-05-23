@@ -103,7 +103,7 @@ exports.postFile = async (req, res, next) => {
           req.body.loginUser = await getToken(req);
         }
       }else{
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        return res.status(StatusCodes.BAD_REQUEST).json({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
       }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ File: response });
@@ -120,8 +120,12 @@ exports.patchFile = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(File, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      if("documentVersion" in req.body){
+        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Document Version cannot be updated', true));
+      }else{
+        const result = await this.dbservice.patchObject(File, req.params.id, getDocumentFromReq(req));
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      }
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
