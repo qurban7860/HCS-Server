@@ -24,6 +24,9 @@ const baseRoute = `/files`;
 
 router.use(checkAuth, checkCustomer);
 
+// - /api/1.0.0/filemanager/files/download/:id
+router.get(`${baseRoute}/download/:id`, controller.downloadFile);
+
 // - /api/1.0.0/filemanager/files/:id
 router.get(`${baseRoute}/:id`,controller.getFile);
 

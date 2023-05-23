@@ -194,8 +194,10 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const existingUser = await SecurityUser.findOne({ login: req.body.login });
-    if (existingUser && (existingUser.type == 'SP' || existingUser.isActive == true || existingUser.isArchived == false)) {
+    const existingUser = await SecurityUser.findOne({ login: req.body.login })
+        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
+                  { path: 'contact', select: 'name isActive isArchived' }]);
+    if (existingUser && isValidCustomer(existingUser.customer)) {
       const token = await generateRandomString();
       updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -230,7 +232,7 @@ exports.forgetPassword = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User Invalid/User not found!', true));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User must have a valid SP Customer!', true));
     }
   }
 };

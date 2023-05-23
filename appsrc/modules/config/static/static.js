@@ -58,6 +58,19 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
+    recordInvalidParamsMessage(code) {
+        if (code == 400) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: `Invalid params received!`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
     recordDuplicateRecordMessage(code) {
         if (code == 400) {
             const response = {

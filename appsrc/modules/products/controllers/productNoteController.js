@@ -54,6 +54,7 @@ exports.getProductNotes = async (req, res, next) => {
 };
 
 exports.searchProductNotes = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
   this.dbservice.getObjectList(ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -66,15 +67,17 @@ exports.searchProductNotes = async (req, res, next) => {
 };
 
 exports.deleteProductNote = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductNote, req.params.id, callbackFunc);
-  //console.log(req.params.id);
-  function callbackFunc(error, result) {
-    if (error) {
+  const response = await ProductNote.findById(req.params.id);
+  if(response === null) {
+    try {
+      const result = await this.dbservice.deleteObject(ProductNote, req.params.id, callbackFunc);
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
+  } else {
+    res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
   }
 };
 

@@ -11,8 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { Customer } = require('../models');
-const { CustomerSite } = require('../models');
+const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const _ = require('lodash');
 
 
@@ -27,7 +26,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'mainSite', select: 'address name phone email'}, 
+  {path: 'mainSite', select: 'address name phone email fax'}, 
   {path: 'primaryBillingContact', select: 'firstName lastName'},
   {path: 'primaryTechnicalContact', select: 'firstName lastName'},
   {path: 'accountManager', select: 'firstName lastName email'},
@@ -44,18 +43,55 @@ this.populateList = [
 
 
 exports.getCustomer = async (req, res, next) => {
+  let validFlag = 'basic';
+
+  if(req.params.flag && req.params.flag=='extended') {
+    validFlag = req.params.flag;
+  }
   this.query = req.query != "undefined" ? req.query : {};
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
+
+  let populatedSites;
+  let populatedContacts;
+  let populatedNotes;
+
+
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      const customer = response;
+      if(customer.isActive == true && customer.isArchived == false){    
+        if(validFlag == 'extended'){  
+          if(!(_.isEmpty(customer))) {
+            if(customer.sites.length > 0){
+              populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
+              customer.sites = [];
+              customer.sites = populatedSites;       
+            }
+
+            if(customer.contacts.length > 0){
+              populatedContacts = await CustomerContact.find({ _id: { $in: customer.contacts } }); 
+              customer.contacts = [];
+              customer.contacts = populatedContacts;
+            }
+
+            populatedNotes = await CustomerNote.find({ customer: customer._id, isActive: true, isArchived: false }); 
+            if(populatedNotes.length > 0){
+              customer.notes = populatedNotes;
+            }
+          }
+        }
+        res.json(customer);
+      }
+      else{
+        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer is either inactive or deleted', true));
+      }
     }
-  }
+  } 
 };
 
 exports.getCustomers = async (req, res, next) => {
@@ -128,6 +164,14 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
+      let customer = await Customer.findById(req.params.id);
+      if (customer.type === 'SP') {
+        const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
+        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
+      }
+    }
+
     this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {

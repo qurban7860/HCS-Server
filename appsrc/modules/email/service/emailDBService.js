@@ -56,20 +56,6 @@ class EmailService {
     }
   }
 
-
-  async deleteObjectAfterVerification(model, req){
-    try{
-      const response = await this.db.deleteObjectAfterVerification(model, req);
-      return response;  
-    }
-    catch(error){
-      return error;
-    }
-  }
-
-
-  
-
   async postObject(document){
     try{
       const response = await this.db.postObject(document);

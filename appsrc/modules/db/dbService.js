@@ -70,20 +70,6 @@ class dbService {
   }
 
   async deleteObject(model, id, callback) {
-    if(callback) {
-      model.deleteOne({ _id: id }).then(function (result) {
-        callback(null, result);
-      }).catch(function (err) {
-        callback(err);
-      });
-    }
-    else {
-      return await model.deleteOne({ _id: id });
-    }
-  }
-
-
-  async deleteObjectAfterVerification(model, id, callback) {
     let existingRecord = await model.findById(id);
     if (!existingRecord.isArchived) {
       throw new Error("Record cannot be deleted");
@@ -99,8 +85,7 @@ class dbService {
       else {
         return await model.deleteOne({ _id: id });
       }
-    }
-    catch (err) {
+    } catch (err) {
       if (callback) {
         callback(err);
       } else {
@@ -108,6 +93,7 @@ class dbService {
       }
     }
   }
+
 
   async postObject(Object, callback) {
     if(callback) {

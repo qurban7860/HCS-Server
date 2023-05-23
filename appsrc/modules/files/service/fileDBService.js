@@ -56,20 +56,6 @@ class FileService {
     }
   }
 
-
-  async deleteObjectAfterVerification(model, id){
-    try{
-      const response = await this.db.deleteObjectAfterVerification(model, id);
-      return response;  
-    }
-    catch(error){
-      return error;
-    }
-  }
-
-
-  
-
   async postObject(document){
     try{
       const response = await this.db.postObject(document);

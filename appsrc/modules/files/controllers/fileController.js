@@ -198,7 +198,7 @@ async function processFile(file) {
   }
   
   const s3FilePath = await awsService.uploadFileS3(name, 'uploads', base64fileData, fileExt);
-  console.log(s3FilePath);
+
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);

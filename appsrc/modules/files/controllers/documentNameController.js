@@ -64,14 +64,20 @@ exports.getDocumentFiles = async (req, res, next) => {
 };
 
 exports.deleteDocumentName = async (req, res, next) => {
-  try {
-    const result = await this.dbservice.deleteObjectAfterVerification(DocumentName, req.params.id);
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-  } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  const response = await this.dbservice.getObject(File, {documentname: req.params.id}, "");
+  if(response === null) {
+    try {
+      const result = await this.dbservice.deleteObject(DocumentName, req.params.id);
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+  } else {
+    res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
   }
 };
+
 
 exports.postDocumentName = async (req, res, next) => {
   const errors = validationResult(req);
