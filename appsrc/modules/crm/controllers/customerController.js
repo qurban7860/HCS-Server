@@ -63,8 +63,7 @@ exports.getCustomer = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      const customer = response;
-      if(customer.isActive == true && customer.isArchived == false){    
+      const customer = response;    
         if(validFlag == 'extended'){  
           if(!(_.isEmpty(customer))) {
             if(customer.sites.length > 0){
@@ -86,10 +85,6 @@ exports.getCustomer = async (req, res, next) => {
           }
         }
         res.json(customer);
-      }
-      else{
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer is either inactive or deleted', true));
-      }
     }
   } 
 };
