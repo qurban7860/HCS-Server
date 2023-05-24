@@ -38,6 +38,7 @@ const environment = require('./environment');
 const env = new environment();
 const moduleName = '/crm/customers/';
 const URL = env.getHost_Url() + moduleName;
+const ID = "63ee30dba87ccbc1a138a624";
 // const URL_Update = `${env.getHost_Url()}${moduleName}/${Id}`;
 const headers = env.getHeaders();
 
@@ -289,7 +290,7 @@ describe('Customer API', () => {
 },10000);
 //updating a customer
 describe('Customer API', () => {
-  it('should create a new customer', async () => {
+  it('should update a customer', async () => {
     try {
       this.spContacts = await this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, null);
       this.spContact = this.spContacts.length > 0 ? this.spContacts[0]._id : null;
@@ -303,9 +304,9 @@ describe('Customer API', () => {
         delete customerMaxObject.supportManager;  
       }
 
-      const response = await axios.post(URL, customerMaxObject, { headers });
+      const response = await axios.patch(URL, customerMaxObject, { headers });
       const customer = response.data.Customer._id;
-      console.log(customer, '@1')
+      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(customerMaxObject.name);
