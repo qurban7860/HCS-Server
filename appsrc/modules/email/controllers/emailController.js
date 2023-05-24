@@ -90,7 +90,7 @@ exports.patchEmail = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { subject, body, emailAddresses, customer, isActive, isArchived } = req.body;
+  const { subject, body, toEmails, customer, isActive, isArchived, ccEmails, bccEmails } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -103,8 +103,16 @@ function getDocumentFromReq(req, reqType) {
     doc.body = body;
   }
 
-  if ("emailAddresses" in req.body) {
-    doc.emailAddresses = emailAddresses;
+  if ("toEmails" in req.body) {
+    doc.toEmails = toEmails;
+  }
+
+  if ("ccEmails" in req.body) {
+    doc.ccEmails = ccEmails;
+  }
+
+  if ("bccEmails" in req.body) {
+    doc.bccEmails = bccEmails;
   }
 
   if ("customer" in req.body) {

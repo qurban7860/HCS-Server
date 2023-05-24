@@ -13,7 +13,7 @@ const docSchema = new Schema({
         body: { type: String },
         //body of a email
     
-        emailAddresses:[ {type: String } ],
+        // emailAddresses:[ {type: String } ],
         // array of email addresses.
 
         fromEmail: {type: String, required: true },
