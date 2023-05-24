@@ -218,7 +218,7 @@ exports.forgetPassword = async (req, res, next) => {
 
           let response = await awsService.sendEmail(params);
           
-          const emailResponse = await addEmail(params.subject, params.htmlData, params.to, existingUser.customer);
+          const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           
           _this.dbservice.postObject(emailResponse, callbackFunc);
           function callbackFunc(error, response) {
@@ -263,7 +263,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
     
               let response = await awsService.sendEmail(params);
 
-              const emailResponse = await addEmail(params.subject, params.htmlData, params.to, existingUser.customer);
+              const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           
               _this.dbservice.postObject(emailResponse, callbackFunc);
               function callbackFunc(error, response) {
@@ -373,12 +373,17 @@ async function addAccessLog(actionType, userID, ip = null) {
   }
 }
 
-async function addEmail(subject, body, emailAddresses, customer) {
+async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
   var email = {
     subject,
     body,
-    emailAddresses,
-    customer,
+    toEmails:emailAddresses,
+    fromEmail:process.env.AWS_SES_FROM_EMAIL,
+    customer:[customer.toUser],
+    toContacts:[customer.contact],
+    toUsers:[customer.contact],
+    ccEmails,
+    bccEmails,
     isArchived: false,
     isActive: true,
     // loginIP: ip,
