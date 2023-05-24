@@ -4,7 +4,7 @@ const mongoose = require('../../../../appsrc/modules/db/dbConnection');
 class environment {
     constructor() {
       this.host_Url = "http://"+process.env.HOST_NAME+':'+process.env.PORT+process.env.API_ROOT;
-      this.accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDE3NjA3M2ZjMzMwNjc5NGY2ZTI3ZjQiLCJlbWFpbCI6ImhhcmlzYWhtYWFkQGdtYWlsLmNvbSIsImlhdCI6MTY4NDkxOTAzMCwiZXhwIjoxNjg0OTI2MjMwfQ.Hf6dmH2uXuJLKtPIdafOs9Ihd7S_YeUdoSjV5HOnMz8";
+      this.accessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2NDM4YmJiZTU4MGYwYzQ0MGQyNWQyMzMiLCJlbWFpbCI6Im11em5hZmFyb29xMjFAZ21haWwuY29tIiwiaWF0IjoxNjg0OTI2MDEwLCJleHAiOjE2ODQ5MzMyMTB9.24bYY7EVIS6rflVVt8vYhs6wl5iI937dR_GcQRLrb40";
     }
   
     getHost_Url() {
