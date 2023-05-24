@@ -27,55 +27,117 @@ this.populate = [
 
 exports.connectMachine = async (req, res, next) => {
   let machineId = req.body.machineId;
-  let connectedMachineId = req.body.connectedMachineId;
-  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machineId);
-  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
+  let machineConnections = req.body.connectedMachineId;
+  let machineConnectionData = getDocumentFromReq(req, 'new');
   
-  if(!dbMachine || !connectedMachine) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
-
-  let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
-  if(!machineConnection) {
-    let machineConnection = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-    
-    if(machineConnection && machineConnection.id) {
-      
-      let machine = await this.dbservice.patchObject(Product, dbMachine.id, { $addToSet:{machineConnections:connectedMachine} });
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, machine));
-
-    }
-    else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));    
-    }
+  let connectMachineResponse = await connectMachines(machineId, machineConnections, machineConnectionData)
+  
+  if(connectMachineResponse && connectMachineResponse.id) {
+    res.status(StatusCodes.OK).json(connectMachineResponse);
   }
   else {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));    
-
   }
 
 };
+
+async function connectMachines(machineId, connectedMachines = [], machineConnectionData) {
+  try{
+    
+    if(!mongoose.Types.ObjectId.isValid(machineId))
+      return false;
+
+    let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machineId);
+    
+    if(!dbMachine)
+      return false;
+
+    let connectedMachinesIds = []
+    for(let connectedMachineId of connectedMachines) {
+      
+      if(!mongoose.Types.ObjectId.isValid(connectedMachineId))
+        continue;
+      
+      let decoilerMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
+      if(decoilerMachine && decoilerMachine.id) {
+        
+        let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
+        if(!machineConnection) {
+          machineConnection = await this.dbservice.postObject(machineConnectionData);
+
+          connectedMachinesIds.push(machineConnection.id);
+        }
+      }
+    }
+
+    if(connectedMachinesIds && Array.isArray(connectedMachinesIds) && connectedMachinesIds.length>0) {
+      let machineConnectionsDB = dbMachine.machineConnections;
+      let machineConnectionsUnique = machineConnectionsDB.concat(connectedMachinesIds).unique();
+      if(machineConnectionsUnique && machineConnectionsUnique.length>0) {
+        dbMachine.machineConnections = machineConnectionsUnique;
+        dbMachine = await dbMachine.save();
+      }
+      
+      return dbMachine;
+    }
+    else {
+      return false;
+    }
+  }catch(e) {
+    console.log(e);
+    return false;
+  }
+}
+
+
+exports.connectMachines = connectMachines;
+
 
 exports.disconnectMachine = async (req, res, next) => {
   let machineId = req.body.machineId;
   let connectedMachineId = req.body.connectedMachineId;
-  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machineId);
-  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
-  if(!dbMachine || !connectedMachine) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
-
-  let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
-  if(machineConnection && machineConnection.id) {
-    machineConnection.disconnectionDate = new Date();
-    machineConnection = await this.dbservice.patchObject(machineConnection);
-    await this.dbservice.patchObject(Product, dbMachine.id, { $pull:{machineConnections:connectedMachine} });
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, machine));
+  let disconnectMachineResponse = await disconnectMachine_(machineId, connectedMachineId)
+  if(disconnectMachineResponse && disconnectMachineResponse.id) {
+    res.status(StatusCodes.OK).json(disconnectMachineResponse);
   }
   else {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));    
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));    
   }
 };
+
+async function disconnectMachine_(machineId, connectedMachineId) {
+
+  if(!mongoose.Types.ObjectId.isValid(machineId) || !mongoose.Types.ObjectId.isValid(connectedMachineId))
+    return false;
+
+  let dbMachine = await this.dbservice.getObjectById(Product, this.fields, machineId);
+  let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
+
+  if(!dbMachine || !connectedMachine) 
+    return false;
+
+  let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
+
+  if(machineConnection && machineConnection.id) {
+    machineConnection.disconnectionDate = new Date();
+    machineConnection = await machineConnection.save();
+      
+    let machineConnections = dbMachine.machineConnections;
+    let index = machineConnections.indexOf(machineConnection.id);
+    if(index>-1) {
+      machineConnections.splice(index, 1)
+    }
+
+    dbMachine.machineConnections = machineConnections;
+    return await dbMachine.save();
+  }
+  else {
+    return false;
+  }
+
+}
+
+exports.disconnectMachine_ = disconnectMachine_;
 
 function getDocumentFromReq(req, reqType){
   const { machine, connectedMachine, note, isActive, isArchived, loginUser } = req.body;
