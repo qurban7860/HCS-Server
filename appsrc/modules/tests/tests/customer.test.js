@@ -37,8 +37,10 @@ const axios = require('axios');
 const environment = require('./environment');
 const env = new environment();
 const moduleName = '/crm/customers/';
-const URL = env.getHost_Url() + moduleName;
 const ID = "63ee30dba87ccbc1a138a624";
+const URL = env.getHost_Url() + moduleName;
+const URL_update = env.getHost_Url() + moduleName + ID;
+console.log(URL_update, "@1")
 // const URL_Update = `${env.getHost_Url()}${moduleName}/${Id}`;
 const headers = env.getHeaders();
 
@@ -295,48 +297,48 @@ describe('Customer API', () => {
       this.spContacts = await this.dbservice.getObjectListWithAggregate(CustomerContact, aggregate, null);
       this.spContact = this.spContacts.length > 0 ? this.spContacts[0]._id : null;
       if(this.spContact) {
-        customerMaxObject.accountManager = this.spContact.toString();
-        customerMaxObject.projectManager = this.spContact.toString();
-        customerMaxObject.supportManager = this.spContact.toString();
+        updateObject.accountManager = this.spContact.toString();
+        updateObject.projectManager = this.spContact.toString();
+        updateObject.supportManager = this.spContact.toString();
       } else {
-        delete customerMaxObject.accountManager;
-        delete customerMaxObject.projectManager;
-        delete customerMaxObject.supportManager;  
+        delete updateObject.accountManager;
+        delete updateObject.projectManager;
+        delete updateObject.supportManager;  
       }
 
-      const response = await axios.patch(URL, customerMaxObject, { headers });
+      const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
       // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
-      expect(dbCustomer.name).toEqual(customerMaxObject.name);
-      expect(dbCustomer.tradingName).toEqual(customerMaxObject.tradingName);
+      expect(dbCustomer.name).toEqual(updateObject.name);
+      expect(dbCustomer.tradingName).toEqual(updateObject.tradingName);
       expect(dbCustomer.type).toEqual("customer");
-      expect(dbCustomer.mainSite.name).toEqual(customerMaxObject.mainSite.name);
-      expect(dbCustomer.mainSite.phone).toEqual(customerMaxObject.mainSite.phone);
-      expect(dbCustomer.mainSite.email).toEqual(customerMaxObject.mainSite.email);
-      expect(dbCustomer.mainSite.fax).toEqual(customerMaxObject.mainSite.fax);
-      expect(dbCustomer.mainSite.website).toEqual(customerMaxObject.mainSite.website);
-      expect(dbCustomer.mainSite.address.street).toEqual(customerMaxObject.mainSite.address.street);
-      expect(dbCustomer.mainSite.address.suburb).toEqual(customerMaxObject.mainSite.address.suburb);
-      expect(dbCustomer.mainSite.address.city).toEqual(customerMaxObject.mainSite.address.city);
-      expect(dbCustomer.mainSite.address.region).toEqual(customerMaxObject.mainSite.address.region);
-      expect(dbCustomer.mainSite.address.postcode).toEqual(customerMaxObject.mainSite.address.postcode);
-      expect(dbCustomer.mainSite.address.country).toEqual(customerMaxObject.mainSite.address.country);
-      expect(dbCustomer.mainSite.address.latitude).toEqual(customerMaxObject.mainSite.address.latitude);
-      expect(dbCustomer.mainSite.address.longitude).toEqual(customerMaxObject.mainSite.address.longitude);
-      expect(dbCustomer.primaryBillingContact.firstName).toEqual(customerMaxObject.billingContact.firstName);
-      expect(dbCustomer.primaryBillingContact.lastName).toEqual(customerMaxObject.billingContact.lastName);
-      expect(dbCustomer.primaryBillingContact.title).toEqual(customerMaxObject.billingContact.title);
-      expect(dbCustomer.primaryBillingContact.contactTypes).toEqual(expect.arrayContaining(customerMaxObject.billingContact.contactTypes));
-      expect(dbCustomer.primaryBillingContact.phone).toEqual(customerMaxObject.billingContact.phone);
-      expect(dbCustomer.primaryBillingContact.email).toEqual(customerMaxObject.billingContact.email);
-      expect(dbCustomer.primaryTechnicalContact.firstName).toEqual(customerMaxObject.technicalContact.firstName);
-      expect(dbCustomer.primaryTechnicalContact.lastName).toEqual(customerMaxObject.technicalContact.lastName);
-      expect(dbCustomer.primaryTechnicalContact.title).toEqual(customerMaxObject.technicalContact.title);
-      expect(dbCustomer.primaryTechnicalContact.contactTypes).toEqual(expect.arrayContaining(customerMaxObject.technicalContact.contactTypes));
-      expect(dbCustomer.primaryTechnicalContact.phone).toEqual(customerMaxObject.technicalContact.phone);
-      expect(dbCustomer.primaryTechnicalContact.email).toEqual(customerMaxObject.technicalContact.email);
+      expect(dbCustomer.mainSite.name).toEqual(updateObject.mainSite.name);
+      expect(dbCustomer.mainSite.phone).toEqual(updateObject.mainSite.phone);
+      expect(dbCustomer.mainSite.email).toEqual(updateObject.mainSite.email);
+      expect(dbCustomer.mainSite.fax).toEqual(updateObject.mainSite.fax);
+      expect(dbCustomer.mainSite.website).toEqual(updateObject.mainSite.website);
+      expect(dbCustomer.mainSite.address.street).toEqual(updateObject.mainSite.address.street);
+      expect(dbCustomer.mainSite.address.suburb).toEqual(updateObject.mainSite.address.suburb);
+      expect(dbCustomer.mainSite.address.city).toEqual(updateObject.mainSite.address.city);
+      expect(dbCustomer.mainSite.address.region).toEqual(updateObject.mainSite.address.region);
+      expect(dbCustomer.mainSite.address.postcode).toEqual(updateObject.mainSite.address.postcode);
+      expect(dbCustomer.mainSite.address.country).toEqual(updateObject.mainSite.address.country);
+      expect(dbCustomer.mainSite.address.latitude).toEqual(updateObject.mainSite.address.latitude);
+      expect(dbCustomer.mainSite.address.longitude).toEqual(updateObject.mainSite.address.longitude);
+      expect(dbCustomer.primaryBillingContact.firstName).toEqual(updateObject.billingContact.firstName);
+      expect(dbCustomer.primaryBillingContact.lastName).toEqual(updateObject.billingContact.lastName);
+      expect(dbCustomer.primaryBillingContact.title).toEqual(updateObject.billingContact.title);
+      expect(dbCustomer.primaryBillingContact.contactTypes).toEqual(expect.arrayContaining(updateObject.billingContact.contactTypes));
+      expect(dbCustomer.primaryBillingContact.phone).toEqual(updateObject.billingContact.phone);
+      expect(dbCustomer.primaryBillingContact.email).toEqual(updateObject.billingContact.email);
+      expect(dbCustomer.primaryTechnicalContact.firstName).toEqual(updateObject.technicalContact.firstName);
+      expect(dbCustomer.primaryTechnicalContact.lastName).toEqual(updateObject.technicalContact.lastName);
+      expect(dbCustomer.primaryTechnicalContact.title).toEqual(updateObject.technicalContact.title);
+      expect(dbCustomer.primaryTechnicalContact.contactTypes).toEqual(expect.arrayContaining(updateObject.technicalContact.contactTypes));
+      expect(dbCustomer.primaryTechnicalContact.phone).toEqual(updateObject.technicalContact.phone);
+      expect(dbCustomer.primaryTechnicalContact.email).toEqual(updateObject.technicalContact.email);
 
       if(this.spContact) {
         expect(dbCustomer.accountManager).toEqual(this.spContact);
