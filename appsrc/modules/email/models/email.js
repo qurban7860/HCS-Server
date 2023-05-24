@@ -13,10 +13,28 @@ const docSchema = new Schema({
         body: { type: String },
         //body of a email
     
-        emailAddresses:[ {type: String } ],
+        // emailAddresses:[ {type: String } ],
         // array of email addresses.
 
+        fromEmail: {type: String, required: true },
+        // from email address.
+        
+        toEmails:[ {type: String } ],
+        // array of email addresses in to.
+        
+        ccEmails:[ {type: String } ],
+        // array of email addresses in cc.
+        
+        bccEmails:[ {type: String } ],
+        // array of email addresses in bcc.
+        
         customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
+        // customer information.
+        
+        toContacts: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+        // customer information.
+        
+        toUsers: [{ type: Schema.Types.ObjectId , ref: 'SecurityUser' }],
         // customer information.
 },
 {
