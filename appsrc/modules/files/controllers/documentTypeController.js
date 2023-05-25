@@ -9,10 +9,10 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let fileDBService = require('../service/fileDBService')
-this.dbservice = new fileDBService();
+let documentDBService = require('../service/documentDBService')
+this.dbservice = new documentDBService();
 
-const { File, DocumentName } = require('../models');
+const { Document, DocumentType } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -27,9 +27,9 @@ this.populate = [
 
 
 
-exports.getDocumentName = async (req, res, next) => {
+exports.getDocumentType = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(DocumentName, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(DocumentType, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -37,9 +37,9 @@ exports.getDocumentName = async (req, res, next) => {
   }
 };
 
-exports.getDocumentNames = async (req, res, next) => {
+exports.getDocumentTypes = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectList(DocumentName, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -47,14 +47,14 @@ exports.getDocumentNames = async (req, res, next) => {
   }
 };
 
-exports.getDocumentFiles = async (req, res, next) => {
+exports.getDocumentTypeFiles = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const queryString = { documentName: req.params.id };
-      const response = await this.dbservice.getObjectList(File, this.fields, { documentName : req.params.id }, this.orderBy, this.populate);
+      const queryString = { documentType: req.params.id };
+      const response = await this.dbservice.getObjectList(Document, this.fields, { documentType : req.params.id }, this.orderBy, this.populate);
       res.json(response);
     } catch (error) {
       logger.error(new Error(error));
@@ -63,11 +63,11 @@ exports.getDocumentFiles = async (req, res, next) => {
   }
 };
 
-exports.deleteDocumentName = async (req, res, next) => {
-  const response = await this.dbservice.getObject(File, {documentname: req.params.id}, "");
+exports.deleteDocumentType = async (req, res, next) => {
+  const response = await this.dbservice.getObject(Document, {documentType: req.params.id}, "");
   if(response === null) {
     try {
-      const result = await this.dbservice.deleteObject(DocumentName, req.params.id);
+      const result = await this.dbservice.deleteObject(DocumentType, req.params.id);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -79,14 +79,14 @@ exports.deleteDocumentName = async (req, res, next) => {
 };
 
 
-exports.postDocumentName = async (req, res, next) => {
+exports.postDocumentType = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ DocumentName: response });
+      res.status(StatusCodes.CREATED).json({ DocumentType: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -94,13 +94,13 @@ exports.postDocumentName = async (req, res, next) => {
   }
 };
 
-exports.patchDocumentName = async (req, res, next) => {
+exports.patchDocumentType = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(DocumentName, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(DocumentType, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -111,11 +111,11 @@ exports.patchDocumentName = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, isActive, isArchived, loginUser } = req.body;
+  const { name, description, customerAccess, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new DocumentName({});
+    doc = new DocumentType({});
   }
   if ("name" in req.body) {
     doc.name = name;
@@ -129,6 +129,10 @@ function getDocumentFromReq(req, reqType) {
   }
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
+  }
+
+  if ("customerAccess" in req.body) {
+    doc.customerAccess = customerAccess;
   }
 
   if (reqType == "new" && "loginUser" in req.body) {

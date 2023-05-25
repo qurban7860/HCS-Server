@@ -12,9 +12,12 @@ const docSchema = new Schema({
 
         description: { type: String },
         // detailed description of field
+
+        customerAccess: {type: Boolean, default: false},
+        //can customer access documents and files under this type.
 },
 {
-        collection: 'DocumentNames'
+        collection: 'DocumentTypes'
 });
 
 docSchema.set('timestamps', true);
@@ -23,4 +26,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('DocumentName', docSchema);
+module.exports = mongoose.model('DocumentType', docSchema);

@@ -1,6 +1,8 @@
 'use strict'
 module.exports = {
-    DocumentName: require('./documentName'),
-    File: require('./file'),
-    FileCategory: require('./fileCategory'),
+    DocumentType: require('./documentType'),
+    DocumentCategory: require('./documentCategory'),
+    FileCategory: require('./documentCategory'),
+    DocumentVersion: require('./documentVersion'),
+    DocumentFile: require('./documentFile'),
 }

@@ -10,7 +10,7 @@ const checkCustomer = require('../../../middleware/check-customer');
 
 
 const controllers = require('../controllers');
-const controller = controllers.fileCategoryController;
+const controller = controllers.documentCategoryController;
 
 const router = express.Router();
 
@@ -22,18 +22,18 @@ const baseRoute = `/categories`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/filemanager/categories/:id
-router.get(`${baseRoute}/:id`,controller.getFileCategory);
+router.get(`${baseRoute}/:id`,controller.getDocumentCategory);
 
 // - /api/1.0.0/filemanager/categories/
-router.get(`${baseRoute}/`, controller.getFileCategories);
+router.get(`${baseRoute}/`, controller.getDocumentCategories);
 
 // - /api/1.0.0/filemanager/categories/
-router.post(`${baseRoute}/`,controller.postFileCategory);
+router.post(`${baseRoute}/`,controller.posDocumentCategory);
 
 // - /api/1.0.0/filemanager/categories/:id
-router.patch(`${baseRoute}/:id`, controller.patchFileCategory);
+router.patch(`${baseRoute}/:id`, controller.patDocumentCategory);
 
 // - /api/1.0.0/filemanager/categories/:id
-router.delete(`${baseRoute}/:id`, controller.deleteFileCategory);
+router.delete(`${baseRoute}/:id`, controller.delDocumentCategory);
 
 module.exports = router;
