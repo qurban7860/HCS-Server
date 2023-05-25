@@ -184,7 +184,7 @@ const objects = {
         "tradingName": "Airbrush Artist",
         "type": "SP",
         "mainSite": {
-            "name": "Site Y",
+            "name": "Site123",
             "phone": "+64 21 23433242323",
             "email": "test@gmail.com",
             "fax": "+64 22 34543543345",
