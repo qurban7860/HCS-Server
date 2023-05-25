@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { Product } = require('../models');
+const { Product, ProductCategory, ProductModel } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -61,6 +61,34 @@ exports.getProducts = async (req, res, next) => {
     }
   }
 };
+
+exports.getDecoilerProducts = async (req, res, next) => {
+  this.query = { name : { $regex: 'decoiler', $options: 'i' } };
+  let machines = [];
+  let machienCategories = await this.dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
+  if(machienCategories && machienCategories.length>0) {
+
+    let categoryIds = machienCategories.map(c => c.id);
+    let modelQuery = { category:{$in:categoryIds} };
+    let machineModels = await this.dbservice.getObjectList(ProductModel, this.fields, modelQuery, this.orderBy, this.populate);
+    if(machineModels && machineModels.length>0) {
+
+      let modelsIds = machineModels.map(m => m.id);
+      let machineQuery = { machineModel : {$in:modelsIds} };
+      this.orderBy = {createdAt : -1};
+      machines = await this.dbservice.getObjectList(Product, this.fields, machineQuery, this.orderBy, this.populate);
+      res.status(StatusCodes.OK).json(machines);
+    }
+    else {
+      res.status(StatusCodes.OK).json(machines);
+    }
+  }
+  else {
+    res.status(StatusCodes.OK).json(machines);
+  }
+  
+};
+
 
 exports.deleteProduct = async (req, res, next) => {
   this.dbservice.deleteObject(Product, req.params.id, callbackFunc);
