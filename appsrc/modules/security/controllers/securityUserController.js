@@ -147,7 +147,7 @@ exports.patchSecurityUser = async (req, res, next) => {
                   logger.error(new Error(error));
                   res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                 } else {
-                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "passwordChange"));
                 }
               }  
             }else{
