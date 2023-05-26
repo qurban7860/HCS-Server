@@ -20,6 +20,6 @@ const router = express.Router();
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/emails//:id/
-router.get(`${baseRoute}/:id`, controller.getEmails);
+router.get(`${baseRoute}/`, controller.getEmails);
 
 module.exports = router;
