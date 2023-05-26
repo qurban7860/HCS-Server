@@ -50,23 +50,25 @@ async function connectMachines(machineId, connectedMachines = []) {
       return false;
 
     let connectedMachinesIds = []
-    for(let connectedMachineId of connectedMachines) {
-      
-      if(!mongoose.Types.ObjectId.isValid(connectedMachineId))
-        continue;
-      
-      let decoilerMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
-      if(decoilerMachine && decoilerMachine.id) {
+    if(Array.isArray(connectedMachines) && connectedMachines.length>0) {
+      for(let connectedMachineId of connectedMachines) {
         
-        let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
-        if(!machineConnection) {
-          let machineConnectionData = {
-            machine:dbMachine.id,
-            connectedMachine:decoilerMachine.id
-          }
-          machineConnection = await this.dbservice.postObject(machineConnectionData);
+        if(!mongoose.Types.ObjectId.isValid(connectedMachineId))
+          continue;
+        
+        let decoilerMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
+        if(decoilerMachine && decoilerMachine.id) {
+          
+          let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
+          if(!machineConnection) {
+            let machineConnectionData = {
+              machine:dbMachine.id,
+              connectedMachine:decoilerMachine.id
+            }
+            machineConnection = await this.dbservice.postObject(machineConnectionData);
 
-          connectedMachinesIds.push(machineConnection.id);
+            connectedMachinesIds.push(machineConnection.id);
+          }
         }
       }
     }
@@ -106,7 +108,7 @@ exports.disconnectMachine = async (req, res, next) => {
   }
 };
 
-async function disconnectMachine_(machineId, connectedMachineIds) {
+async function disconnectMachine_(machineId, machineConnections) {
 
   if(!mongoose.Types.ObjectId.isValid(machineId))
     return false;
@@ -115,22 +117,10 @@ async function disconnectMachine_(machineId, connectedMachineIds) {
 
   if(!dbMachine) 
     return false;
-
-  for(let connectedMachineId of connectedMachineIds) {
   
-    if(!mongoose.Types.ObjectId.isValid(connectedMachineId))
-      continue;
+  if(Array.isArray(machineConnections) && machineConnections.length>0) {
+    for(let machineConnectionId of machineConnections) {
 
-    let connectedMachine = await this.dbservice.getObjectById(Product, this.fields, connectedMachineId);
-    if(!connectedMachine)
-      continue;
-
-    let machineConnection = await this.dbservice.getObject(ProductConnection, { machine:machine.id, connectedMachine : connectedMachine.id});
-
-    if(machineConnection && machineConnection.id) {
-      machineConnection.disconnectionDate = new Date();
-      machineConnection = await machineConnection.save();
-        
       let machineConnections = dbMachine.machineConnections;
       let index = machineConnections.indexOf(machineConnection.id);
       
@@ -139,10 +129,17 @@ async function disconnectMachine_(machineId, connectedMachineIds) {
       }
 
       dbMachine.machineConnections = machineConnections;
+
+      if(!mongoose.Types.ObjectId.isValid(machineConnectionId))
+        continue;
+
+      let updateValue = { disconnectionDate: new Date() };
+      await this.dbservice.patchObject(ProductConnection, machineConnectionId, updateValue );
+      
     }
-    else {
-      return false;
-    }
+  }
+  else {
+    return false;
   }
   
   return await dbMachine.save();
