@@ -18,12 +18,17 @@ class CustomerService {
     }
   }
 
-  getObjectById(model, fields, id, populate, callback) {
-    this.db.getObjectById(model, fields, id, populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObjectById(model, fields, id, populate, callback) {
+    if(callback) {
+      this.db.getObjectById(model, fields, id, populate, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    } else {
+      return await this.db.getObjectById(model, fields, id, populate); 
     }
+
   }
 
   getObjectList(model, fields, query, orderBy, populate, callback) {
@@ -34,12 +39,17 @@ class CustomerService {
     }
   };
 
-  getObjectListWithAggregate(model, aggregate, params, callback) {
-    this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObjectListWithAggregate(model, aggregate, params, callback) {
+    if(callback) {
+      this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    } else {
+      return await this.db.getObjectListWithAggregate(model, aggregate, params);
     }
+
   };
 
   deleteObject(model, id, callback) {
