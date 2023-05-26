@@ -34,10 +34,16 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordUpdateMessage(code, results) {
+    recordUpdateMessage(code, results, action) {
         if (code == 200) {
             if (results != undefined && results.nModified > 0) {
                 return results.nModified + " records successfully updated!"
+            } else {
+                return "No records updated!";
+            }
+        } else if (code == 202 && action == 'passwordChange') {
+            if (results != undefined && results.nModified > 0) {
+                return "Your password has been updated successfully."
             } else {
                 return "No records updated!";
             }

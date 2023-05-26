@@ -23,9 +23,9 @@ const baseRouteForObject = `/machines/connections`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/connect`, controller.connectMachine);
+router.post(`${baseRouteForObject}/:id/connect`, controller.connectMachine);
 
-router.get(`${baseRouteForObject}/disconnect`, controller.disconnectMachine);
+router.post(`${baseRouteForObject}/:id/disconnect`, controller.disconnectMachine);
 
 
 module.exports = router;
