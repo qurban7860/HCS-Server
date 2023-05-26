@@ -39,6 +39,10 @@ exports.getProductCategory = async (req, res, next) => {
 };
 
 exports.getProductCategories = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
+  if(this.query && this.query.name) {
+    this.query.name = { $regex: this.query.name, $options: 'i' };
+  }
   this.dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

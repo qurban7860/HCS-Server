@@ -25,6 +25,8 @@ router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
 router.get(`${baseRouteForObject}/`, controller.getProducts);
 
+router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getDecoilerProducts);
+
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
 router.patch(`${baseRouteForObject}/:id`, controller.patchProduct);
