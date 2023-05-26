@@ -9,7 +9,6 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
-const upload = multer({ dest: `${process.env.UPLOAD_PATH}` });
 
 
 const controllers = require('../controllers');
@@ -35,7 +34,8 @@ router.get(`${baseRoute}/`, controller.getDocuments);
 
 // - /api/1.0.0/filemanager/files/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.single('image')(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+
       if (err instanceof multer.MulterError) {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);

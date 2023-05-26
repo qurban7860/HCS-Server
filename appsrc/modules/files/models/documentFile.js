@@ -31,7 +31,7 @@ const docSchema = new Schema({
         extension: {type: String},
         // file extension.
 
-        thumbnail: {type: binData(0)},
+        thumbnail: {type: String},
         // thumbnail generated and saved in db
 
         customer: { type: Schema.Types.ObjectId , ref: 'Customer' },

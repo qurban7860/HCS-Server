@@ -16,7 +16,9 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 this.dbservice = new documentDBService();
 
-const { Document } = require('../models');
+const { Document, DocumentType, DocumentCategory } = require('../models');
+const { Customer } = require('../../crm/models');
+const { Machine } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -74,59 +76,113 @@ exports.deleteDocument = async (req, res, next) => {
 exports.postDocument = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
 
     if(!req.body.loginUser){
       req.body.loginUser = await getToken(req);
     }
 
-    try {
-      if(req.file !== undefined){
-        if(req.body.customer){
-          const queryString = {
-            customer: req.body.customer,
-            machine: req.body.machine ? req.body.machine : null,
-            documentType: req.body.documentType ? req.body.documentType : null
-          };
+    let files = req.files;
+    let name = req.body.name;
+    let customer = req.body.customer;
+    let machine = req.body.machine;
+    let documentType = req.body.documentType;
+    let documentCategory = req.body.documentCategory;
 
-          const existingFile = await this.dbservice.getObject(Document, queryString, this.populate) File.findOne(queryString).sort({ createdAt: -1 }).limit(1);
-          
-          if(existingFile && req.body.documentType){
-            const result = await this.dbservice.patchObject(Document, existingFile._id, { isActiveVersion: false });
-            if(result){
-              req.body.documentVersion = existingFile.documentVersion + 1;
-            }
-          }else{
-            req.body.documentType ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
-          }
-        }
+    if(name && mongoose.Types.ObjectId.isValid(customer) && 
+      mongoose.Types.ObjectId.isValid(documentType) && 
+      mongoose.Types.ObjectId.isValid(documentCategory) || 
+      mongoose.Types.ObjectId.isValid(machine)) {
 
-        const processedFile = await processFile(req.file, req.body.loginUser.userId);
-        req.body.path = processedFile.s3FilePath;
-        req.body.type = processedFile.type
-        req.body.extension = processedFile.fileExt;
-        req.body.content = processedFile.base64thumbNailData;
-        
-        req.body.name = processedFile.fileName;
-        console.log("fileName", processedFile.fileName);
-        if(!req.body.displayName || req.body.displayName == ''){
-          req.body.displayName = processedFile.name;
-        }
+      let docType = await this.dbservice.getObjectById(DocumentType,this.fields,documentType);
+            
+      if(!docType) 
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      
+      let cust = await this.dbservice.getObjectById(Customer,this.fields,customer);
 
-      } else{
-        return res.status(StatusCodes.BAD_REQUEST).json({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
-      }
-      const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ Document: response });
-    } catch (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      if(!cust) 
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
+      let mach = await this.dbservice.getObjectById(Machine,this.fields,machine);
+
+      if(!mach) 
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
+      let docCat = await this.dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+
+      if(!docCat) 
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+
+    if(Array.isArray(files) && files.length>0) {
+      
+      for(let file of files) {
+        
+        if(file && file.fieldname) {
+
+          const processedFile = await processFile(file, req.body.loginUser.userId);
+          req.body.path = processedFile.s3FilePath;
+          req.body.type = processedFile.type
+          req.body.extension = processedFile.fileExt;
+          req.body.content = processedFile.base64thumbNailData;
+          
+          const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+
+        }
+        else {
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+      }
+      res.status(StatusCodes.CREATED).json({ Document: response });
+    }
+    // try {
+    //   if(req.file && req.body.customer){
+    //     if(req.body.customer){
+    //       const queryString = {
+    //         customer: req.body.customer,
+    //         machine: req.body.machine ? req.body.machine : null,
+    //         documentType: req.body.documentType ? req.body.documentType : null
+    //       };
+
+    //       const existingFile = await this.dbservice.getObject(Document, queryString, this.populate) ;
+          
+    //       if(existingFile && req.body.documentType){
+    //         const result = await this.dbservice.patchObject(Document, existingFile._id, { isActiveVersion: false });
+    //         if(result){
+    //           req.body.documentVersion = existingFile.documentVersion + 1;
+    //         }
+    //       }else{
+    //         req.body.documentType ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
+    //       }
+    //     }
+
+    //     const processedFile = await processFile(req.file, req.body.loginUser.userId);
+    //     req.body.path = processedFile.s3FilePath;
+    //     req.body.type = processedFile.type
+    //     req.body.extension = processedFile.fileExt;
+    //     req.body.content = processedFile.base64thumbNailData;
+        
+    //     req.body.name = processedFile.fileName;
+    //     console.log("fileName", processedFile.fileName);
+    //     if(!req.body.displayName || req.body.displayName == ''){
+    //       req.body.displayName = processedFile.name;
+    //     }
+
+    //   } else{
+    //     return res.status(StatusCodes.BAD_REQUEST).json({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
+    //   }
+    //   const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+    //   res.status(StatusCodes.CREATED).json({ Document: response });
+    // } catch (error) {
+    //   logger.error(new Error(error));
+    //   res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    // }
   }
 };
 
-exports.patchFile = async (req, res, next) => {
+exports.patchDocument = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -145,7 +201,7 @@ exports.patchFile = async (req, res, next) => {
   }
 };
 
-exports.downloadFile = async (req, res, next) => {
+exports.downloadDocument = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));

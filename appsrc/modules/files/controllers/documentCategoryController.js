@@ -11,8 +11,8 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let fileDBService = require('../service/fileDBService')
-this.dbservice = new fileDBService();
+let documentDBService = require('../service/documentDBService')
+this.dbservice = new documentDBService();
 
 const { FileCategory, File } = require('../models');
 
@@ -29,7 +29,7 @@ this.populate = [
 
 
 
-exports.getFileCategory = async (req, res, next) => {
+exports.getDocumentCategory = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(FileCategory, this.fields, req.params.id, this.populate);
     res.json(response);
@@ -39,7 +39,7 @@ exports.getFileCategory = async (req, res, next) => {
   }
 };
 
-exports.getFileCategories = async (req, res, next) => {
+exports.getDocumentCategories = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectList(FileCategory, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
@@ -50,7 +50,7 @@ exports.getFileCategories = async (req, res, next) => {
 };
 
 
-exports.deleteFileCategory = async (req, res, next) => {
+exports.deleteDocumentCategory = async (req, res, next) => {
   const response = await this.dbservice.getObject(File, {category: req.params.id}, "");
   if(response === null) {
     try {
@@ -65,7 +65,7 @@ exports.deleteFileCategory = async (req, res, next) => {
   }
 };
 
-exports.postFileCategory = async (req, res, next) => {
+exports.postDocumentCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -80,7 +80,7 @@ exports.postFileCategory = async (req, res, next) => {
   }
 };
 
-exports.patchFileCategory = async (req, res, next) => {
+exports.patchDocumentCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));

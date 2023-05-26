@@ -86,7 +86,9 @@ const fileUpload = multer({
     filename: (req, file, cb) => {
       // const ext = validExtensions[file.mimetype];
       const { ext } = path.parse(file.originalname);
-      const fileExt = ext.slice(1);
+      let fileExt = ext.slice(1);
+      if(fileExt)
+        fileExt = fileExt.toLowerCase()
       cb(null, uuid() + '.' + fileExt);
     }
   }),
@@ -94,7 +96,11 @@ const fileUpload = multer({
     let errorMessage = '';
     // const isValid = !!validExtensions[file.mimetype];
     const { ext } = path.parse(file.originalname);
-    const fileExt = ext.slice(1);
+    let fileExt = ext.slice(1);
+
+    if(fileExt)
+      fileExt = fileExt.toLowerCase()
+    
     const isValid = (validExtensions.indexOf(fileExt.trim())) != -1 ? true : false;
     if (!isValid) {
       errorMessage = rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid mime type!', true);

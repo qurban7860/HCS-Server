@@ -28,12 +28,12 @@ router.get(`${baseRoute}/:id`,controller.getDocumentCategory);
 router.get(`${baseRoute}/`, controller.getDocumentCategories);
 
 // - /api/1.0.0/filemanager/categories/
-router.post(`${baseRoute}/`,controller.posDocumentCategory);
+router.post(`${baseRoute}/`,controller.postDocumentCategory);
 
 // - /api/1.0.0/filemanager/categories/:id
-router.patch(`${baseRoute}/:id`, controller.patDocumentCategory);
+router.patch(`${baseRoute}/:id`, controller.patchDocumentCategory);
 
 // - /api/1.0.0/filemanager/categories/:id
-router.delete(`${baseRoute}/:id`, controller.delDocumentCategory);
+router.delete(`${baseRoute}/:id`, controller.deleteDocumentCategory);
 
 module.exports = router;

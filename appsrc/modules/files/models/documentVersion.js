@@ -10,7 +10,7 @@ const docSchema = new Schema({
         document: { type: Schema.Types.ObjectId , ref: 'Document' },
         // document.
     
-        versionNo: { type: Numer },
+        versionNo: { type: Number },
         // version number like 0.1, 0.2, 1.0, 1.1 etc 
 
         files: [{ type: Schema.Types.ObjectId , ref: 'DocumentFile' }],
