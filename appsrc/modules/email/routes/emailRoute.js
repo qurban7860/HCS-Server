@@ -19,7 +19,8 @@ const router = express.Router();
 
 router.use(checkAuth, checkCustomer);
 
+
 // - /api/1.0.0/emails//:id/
-router.get(`${baseRoute}/`, controller.getEmails);
+router.get(`/`, controller.getEmails);
 
 module.exports = router;
