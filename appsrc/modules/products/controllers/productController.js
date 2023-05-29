@@ -111,7 +111,7 @@ exports.postProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
+    function callbackFunc(error, machine) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
@@ -119,7 +119,10 @@ exports.postProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.CREATED).json({ Machine: response });
+        if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) 
+          machine = await connectMachines(machine.id, machine.machineConnections);
+        
+        res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
     }
   }
