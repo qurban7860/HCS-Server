@@ -3,7 +3,7 @@
 const apiPath = process.env.API_ROOT;
 const emailRoute = require('./emailRoute');
 
-exports.registerFileRoutes = (app, apiPath) => {
+exports.registerEmailRoutes = (app, apiPath) => {
     const rootPathForModule = `${apiPath}/emails`
 
     // localhost://api/1.0.0/emails/

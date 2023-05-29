@@ -52,7 +52,7 @@ async function connectMachines(machineId, connectedMachines = []) {
     if(Array.isArray(connectedMachines) && connectedMachines.length>0) {
       for(let connectedMachineId of connectedMachines) {
         
-        if(!mongoose.Types.ObjectId.isValid(connectedMachineId))
+        if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId)
           continue;
         
         let decoilerMachine = await dbservice.getObjectById(Product, this.fields, connectedMachineId);
@@ -123,6 +123,9 @@ async function disconnectMachine_(machineId, machineConnections) {
   if(Array.isArray(machineConnections) && machineConnections.length>0) {
     for(let machineConnectionId of machineConnections) {
 
+      if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId)
+        continue;
+        
       let machineConnections = dbMachine.machineConnections;
       let index = machineConnections.indexOf(machineConnectionId);
       
