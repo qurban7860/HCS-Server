@@ -14,9 +14,9 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let documentDBService = require('../service/documentDBService')
-this.dbservice = new documentDBService();
+const dbservice = new documentDBService();
 
-const { Document, DocumentType, DocumentCategory } = require('../models');
+const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Machine } = require('../../products/models');
 
@@ -38,7 +38,7 @@ this.populate = [
 
 exports.getDocument = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+    const response = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -49,7 +49,7 @@ exports.getDocument = async (req, res, next) => {
 exports.getDocuments = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await this.dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    const response = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -59,9 +59,9 @@ exports.getDocuments = async (req, res, next) => {
 
 exports.deleteDocument = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+    const response = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
     if(response && response.id && response.isArchived==true) {
-      const result = await this.dbservice.deleteObject(Document, req.params.id);
+      const result = await dbservice.deleteObject(Document, req.params.id);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
     else {
@@ -95,32 +95,62 @@ exports.postDocument = async (req, res, next) => {
       mongoose.Types.ObjectId.isValid(documentCategory) || 
       mongoose.Types.ObjectId.isValid(machine)) {
 
-      let docType = await this.dbservice.getObjectById(DocumentType,this.fields,documentType);
+      let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
             
       if(!docType) 
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       
-      let cust = await this.dbservice.getObjectById(Customer,this.fields,customer);
+      let cust = await dbservice.getObjectById(Customer,this.fields,customer);
 
       if(!cust) 
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
-      let mach = await this.dbservice.getObjectById(Machine,this.fields,machine);
+      let mach = await dbservice.getObjectById(Machine,this.fields,machine);
 
       if(!mach) 
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
-      let docCat = await this.dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+      let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
 
       if(!docCat) 
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
     if(Array.isArray(files) && files.length>0) {
+      const document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
       
+      let docuemntVersion = new DocumentVersion({
+        document :document_.id,
+        versionNo:1,
+        customer:req.body.customer,
+        isActive:req.body.isActive,
+        isArchived:req.body.isArchived,
+        createdBy : req.body.loginUser.userId,
+        updatedBy : req.body.loginUser.userId,
+        createdIP : req.body.loginUser.userIP,
+        updatedIP : req.body.loginUser.userIP,
+      });
+
+      if(req.body.site && mongoose.Types.ObjectId.isValid(req.body.site)) {
+        docuemntVersion.site = req.body.site;
+      }
+
+      if(req.body.contact && mongoose.Types.ObjectId.isValid(req.body.contact)) {
+        docuemntVersion.contact = req.body.contact;
+      }
+
+      if(req.body.user && mongoose.Types.ObjectId.isValid(req.body.user)) {
+        docuemntVersion.user = req.body.user;
+      }
+
+      if(req.body.machine && mongoose.Types.ObjectId.isValid(req.body.machine)) {
+        docuemntVersion.machine = req.body.machine;
+      }
+
+
       for(let file of files) {
         
-        if(file && file.fieldname) {
+        if(file && file.originalname) {
 
           const processedFile = await processFile(file, req.body.loginUser.userId);
           req.body.path = processedFile.s3FilePath;
@@ -128,13 +158,58 @@ exports.postDocument = async (req, res, next) => {
           req.body.extension = processedFile.fileExt;
           req.body.content = processedFile.base64thumbNailData;
           
-          const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+
+
+          if(document_ && document_.id) {
+
+            let documentFile = new DocumentFile({
+              document :document_.id,
+              name:file.originalname,
+              displayName:name,
+              description:req.body.description,
+              path:req.body.path,
+              fileType:req.body.type,
+              extension:req.body.extension,
+              thumbnail:req.body.content,
+              customer:req.body.customer,
+              isActive:req.body.isActive,
+              isArchived:req.body.isArchived,
+              createdBy : req.body.loginUser.userId,
+              updatedBy : req.body.loginUser.userId,
+              createdIP : req.body.loginUser.userIP,
+              updatedIP : req.body.loginUser.userIP,
+            });
+
+            if(req.body.site && mongoose.Types.ObjectId.isValid(req.body.site)) {
+              documentFile.site = req.body.site;
+            }
+
+            if(req.body.contact && mongoose.Types.ObjectId.isValid(req.body.contact)) {
+              documentFile.contact = req.body.contact;
+            }
+
+            if(req.body.user && mongoose.Types.ObjectId.isValid(req.body.user)) {
+              documentFile.user = req.body.user;
+            }
+
+            if(req.body.machine && mongoose.Types.ObjectId.isValid(req.body.machine)) {
+              documentFile.machine = req.body.machine;
+            }
+
+            documentFile = await documentFile.save();
+
+            if(documentFile && documentFile.id)
+              docuemntVersion.files.push(documentFile.id);
+          }
+
 
         }
         else {
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
       }
+
+      docuemntVersion = await docuemntVersion.save();
       res.status(StatusCodes.CREATED).json({ Document: response });
     }
     // try {
@@ -146,10 +221,10 @@ exports.postDocument = async (req, res, next) => {
     //         documentType: req.body.documentType ? req.body.documentType : null
     //       };
 
-    //       const existingFile = await this.dbservice.getObject(Document, queryString, this.populate) ;
+    //       const existingFile = await dbservice.getObject(Document, queryString, this.populate) ;
           
     //       if(existingFile && req.body.documentType){
-    //         const result = await this.dbservice.patchObject(Document, existingFile._id, { isActiveVersion: false });
+    //         const result = await dbservice.patchObject(Document, existingFile._id, { isActiveVersion: false });
     //         if(result){
     //           req.body.documentVersion = existingFile.documentVersion + 1;
     //         }
@@ -173,7 +248,7 @@ exports.postDocument = async (req, res, next) => {
     //   } else{
     //     return res.status(StatusCodes.BAD_REQUEST).json({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
     //   }
-    //   const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+    //   const response = await dbservice.postObject(getDocumentFromReq(req, 'new'));
     //   res.status(StatusCodes.CREATED).json({ Document: response });
     // } catch (error) {
     //   logger.error(new Error(error));
@@ -191,7 +266,7 @@ exports.patchDocument = async (req, res, next) => {
       if("documentVersion" in req.body){
         res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Document Version cannot be updated', true));
       }else{
-        const result = await this.dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
+        const result = await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     } catch (error) {
@@ -207,7 +282,7 @@ exports.downloadDocument = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const file = await this.dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+      const file = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
@@ -313,7 +388,7 @@ function getDocumentFromReq(req, reqType) {
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new File({});
+    doc = new Document({});
   }
   if ("name" in req.body) {
     doc.name = name;
