@@ -118,35 +118,8 @@ exports.postDocument = async (req, res, next) => {
 
     if(Array.isArray(files) && files.length>0) {
       const document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-      
-      let docuemntVersion = new DocumentVersion({
-        document :document_.id,
-        versionNo:1,
-        customer:req.body.customer,
-        isActive:req.body.isActive,
-        isArchived:req.body.isArchived,
-        createdBy : req.body.loginUser.userId,
-        updatedBy : req.body.loginUser.userId,
-        createdIP : req.body.loginUser.userIP,
-        updatedIP : req.body.loginUser.userIP,
-      });
 
-      if(req.body.site && mongoose.Types.ObjectId.isValid(req.body.site)) {
-        docuemntVersion.site = req.body.site;
-      }
-
-      if(req.body.contact && mongoose.Types.ObjectId.isValid(req.body.contact)) {
-        docuemntVersion.contact = req.body.contact;
-      }
-
-      if(req.body.user && mongoose.Types.ObjectId.isValid(req.body.user)) {
-        docuemntVersion.user = req.body.user;
-      }
-
-      if(req.body.machine && mongoose.Types.ObjectId.isValid(req.body.machine)) {
-        docuemntVersion.machine = req.body.machine;
-      }
-
+      let docuemntVersion = createDocumentVersionObj(document_,file);
 
       for(let file of files) {
         
@@ -157,60 +130,26 @@ exports.postDocument = async (req, res, next) => {
           req.body.type = processedFile.type
           req.body.extension = processedFile.fileExt;
           req.body.content = processedFile.base64thumbNailData;
-          
-
+          req.body.originalname = processedFile.name;
 
           if(document_ && document_.id) {
 
-            let documentFile = new DocumentFile({
-              document :document_.id,
-              name:file.originalname,
-              displayName:name,
-              description:req.body.description,
-              path:req.body.path,
-              fileType:req.body.type,
-              extension:req.body.extension,
-              thumbnail:req.body.content,
-              customer:req.body.customer,
-              isActive:req.body.isActive,
-              isArchived:req.body.isArchived,
-              createdBy : req.body.loginUser.userId,
-              updatedBy : req.body.loginUser.userId,
-              createdIP : req.body.loginUser.userIP,
-              updatedIP : req.body.loginUser.userIP,
-            });
-
-            if(req.body.site && mongoose.Types.ObjectId.isValid(req.body.site)) {
-              documentFile.site = req.body.site;
-            }
-
-            if(req.body.contact && mongoose.Types.ObjectId.isValid(req.body.contact)) {
-              documentFile.contact = req.body.contact;
-            }
-
-            if(req.body.user && mongoose.Types.ObjectId.isValid(req.body.user)) {
-              documentFile.user = req.body.user;
-            }
-
-            if(req.body.machine && mongoose.Types.ObjectId.isValid(req.body.machine)) {
-              documentFile.machine = req.body.machine;
-            }
-
-            documentFile = await documentFile.save();
+            let documentFile = await saveDocumentFile(document_,req.body);
 
             if(documentFile && documentFile.id)
               docuemntVersion.files.push(documentFile.id);
           }
-
-
         }
         else {
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
+        docuemntVersion = await docuemntVersion.save();
+        return res.status(StatusCodes.CREATED).json({ Document: response });
       }
 
-      docuemntVersion = await docuemntVersion.save();
-      res.status(StatusCodes.CREATED).json({ Document: response });
+    }
+    else {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     // try {
     //   if(req.file && req.body.customer){
@@ -256,6 +195,76 @@ exports.postDocument = async (req, res, next) => {
     // }
   }
 };
+
+function createDocumentVersionObj(document_,file) {
+  let docuemntVersion = new DocumentVersion({
+    document :document_.id,
+    versionNo:1,
+    customer:file.customer,
+    isActive:file.isActive,
+    isArchived:file.isArchived,
+    createdBy : file.loginUser.userId,
+    updatedBy : file.loginUser.userId,
+    createdIP : file.loginUser.userIP,
+    updatedIP : file.loginUser.userIP,
+  });
+
+  if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
+    docuemntVersion.site = file.site;
+  }
+
+  if(file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
+    docuemntVersion.contact = file.contact;
+  }
+
+  if(file.user && mongoose.Types.ObjectId.isValid(file.user)) {
+    docuemntVersion.user = file.user;
+  }
+
+  if(file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
+    docuemntVersion.machine = file.machine;
+  }
+  return docuemntVersion;
+}
+
+async function saveDocumentFile(document_,file) {
+
+  let documentFile = new DocumentFile({
+    document:document_.id,
+    name:file.originalname,
+    displayName:file.name,
+    description:file.description,
+    path:file.path,
+    fileType:file.type,
+    extension:file.extension,
+    thumbnail:file.content,
+    customer:file.customer,
+    isActive:file.isActive,
+    isArchived:file.isArchived,
+    createdBy : file.loginUser.userId,
+    updatedBy : file.loginUser.userId,
+    createdIP : file.loginUser.userIP,
+    updatedIP : file.loginUser.userIP,
+  });
+
+  if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
+    documentFile.site = file.site;
+  }
+
+  if(file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
+    documentFile.contact = file.contact;
+  }
+
+  if(file.user && mongoose.Types.ObjectId.isValid(file.user)) {
+    documentFile.user = file.user;
+  }
+
+  if(file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
+    documentFile.machine = file.machine;
+  }
+
+  return await documentFile.save();
+} 
 
 exports.patchDocument = async (req, res, next) => {
   const errors = validationResult(req);
