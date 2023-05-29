@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const _ = require('lodash');
 
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -12,6 +13,7 @@ let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
 const { Product, ProductCategory, ProductModel } = require('../models');
+const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -109,7 +111,7 @@ exports.postProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
+    async function callbackFunc(error, machine) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
@@ -117,7 +119,10 @@ exports.postProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.CREATED).json({ Machine: response });
+        if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) 
+          machine = await connectMachines(machine.id, machine.machineConnections);
+        
+        res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
     }
   }
@@ -125,10 +130,35 @@ exports.postProduct = async (req, res, next) => {
 
 exports.patchProduct = async (req, res, next) => {
   const errors = validationResult(req);
-  console.log('calling patchProduct',req.body);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let machine = await this.dbservice.getObjectById(Product, this.fields, req.params.id);
+
+    if(machine && Array.isArray(machine.machineConnections) && 
+      Array.isArray(req.body.machineConnections)) {
+      
+      let oldMachineConnections = machine.machineConnections;
+      let newMachineConnections = req.body.machineConnections;
+      let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
+
+      if(!isSame) {
+        let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
+        
+        if(toBeConnected.length>0) 
+          machine = await connectMachines(machine.id, toBeConnected);
+        
+
+        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x));
+
+        if(toBeDisconnected.length>0) 
+          machine = await disconnectMachine_(machine.id, toBeDisconnected);
+        
+        req.body.machineConnections = machine.machineConnections;
+
+      }
+    }
+    
     this.dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {

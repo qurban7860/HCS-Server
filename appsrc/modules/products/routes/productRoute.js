@@ -21,11 +21,13 @@ const baseRouteForObject = `/machines`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProduct);
-
 router.get(`${baseRouteForObject}/`, controller.getProducts);
 
-router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getDecoilerProducts);
+router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getDecoilerProducts); 
+
+router.get(`${baseRouteForObject}/:id`, controller.getProduct);
+
+
 
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
