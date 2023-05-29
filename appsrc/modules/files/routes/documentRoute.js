@@ -49,7 +49,20 @@ router.post(`${baseRoute}/`, (req, res, next) => {
   }, controller.postDocument);
 
 // - /api/1.0.0/filemanager/files/:id
-router.patch(`${baseRoute}/:id`, controller.patchDocument);
+router.patch(`${baseRoute}/:id`,(req, res, next) => {
+    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+
+      if (err instanceof multer.MulterError) {
+        console.log(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+      } else if (err) {
+        console.log(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        next();
+      }
+    });
+  }, controller.patchDocument);
 
 // - /api/1.0.0/filemanager/files/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocument);

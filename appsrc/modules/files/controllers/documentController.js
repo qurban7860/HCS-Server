@@ -117,9 +117,13 @@ exports.postDocument = async (req, res, next) => {
     }
 
     if(Array.isArray(files) && files.length>0) {
-      const document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+      let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
-      let docuemntVersion = createDocumentVersionObj(document_,file);
+      if(!document_) 
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+      
+      req.body.versionNo = 1;
+      let docuemntVersion = createDocumentVersionObj(document_,req.body);
 
       for(let file of files) {
         
@@ -136,70 +140,37 @@ exports.postDocument = async (req, res, next) => {
 
             let documentFile = await saveDocumentFile(document_,req.body);
 
-            if(documentFile && documentFile.id)
+            if(docuemntVersion && documentFile && documentFile.id && 
+              Array.isArray(docuemntVersion.files)) {
+
               docuemntVersion.files.push(documentFile.id);
+              docuemntVersion = await docuemntVersion.save();
+              documentFile.version = docuemntVersion.id;
+
+            }
           }
         }
-        else {
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-        }
-        docuemntVersion = await docuemntVersion.save();
-        return res.status(StatusCodes.CREATED).json({ Document: response });
+        
       }
+
+      if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
+        document_.documentVersions.push(docuemntVersion.id);
+        document_ = await document_.save();
+      }
+
+      return res.status(StatusCodes.CREATED).json({ Document: response });
 
     }
     else {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    // try {
-    //   if(req.file && req.body.customer){
-    //     if(req.body.customer){
-    //       const queryString = {
-    //         customer: req.body.customer,
-    //         machine: req.body.machine ? req.body.machine : null,
-    //         documentType: req.body.documentType ? req.body.documentType : null
-    //       };
-
-    //       const existingFile = await dbservice.getObject(Document, queryString, this.populate) ;
-          
-    //       if(existingFile && req.body.documentType){
-    //         const result = await dbservice.patchObject(Document, existingFile._id, { isActiveVersion: false });
-    //         if(result){
-    //           req.body.documentVersion = existingFile.documentVersion + 1;
-    //         }
-    //       }else{
-    //         req.body.documentType ? req.body.documentVersion = 1 : req.body.documentVersion = 0;
-    //       }
-    //     }
-
-    //     const processedFile = await processFile(req.file, req.body.loginUser.userId);
-    //     req.body.path = processedFile.s3FilePath;
-    //     req.body.type = processedFile.type
-    //     req.body.extension = processedFile.fileExt;
-    //     req.body.content = processedFile.base64thumbNailData;
-        
-    //     req.body.name = processedFile.fileName;
-    //     console.log("fileName", processedFile.fileName);
-    //     if(!req.body.displayName || req.body.displayName == ''){
-    //       req.body.displayName = processedFile.name;
-    //     }
-
-    //   } else{
-    //     return res.status(StatusCodes.BAD_REQUEST).json({ error: getReasonPhrase(StatusCodes.BAD_REQUEST) });
-    //   }
-    //   const response = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-    //   res.status(StatusCodes.CREATED).json({ Document: response });
-    // } catch (error) {
-    //   logger.error(new Error(error));
-    //   res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
-    // }
   }
 };
 
 function createDocumentVersionObj(document_,file) {
   let docuemntVersion = new DocumentVersion({
     document :document_.id,
-    versionNo:1,
+    versionNo:file.versionNo,
     customer:file.customer,
     isActive:file.isActive,
     isArchived:file.isArchived,
@@ -268,15 +239,74 @@ async function saveDocumentFile(document_,file) {
 
 exports.patchDocument = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if("documentVersion" in req.body){
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Document Version cannot be updated', true));
-      }else{
-        const result = await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      
+      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id);
+      
+      if(!document_)
+        return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
+
+      let newVersion = req.body.newVersion;
+      
+      if(newVersion) {
+
+        let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:-1})
+        .sort({ versionNo:-1 });
+        
+        if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
+        req.body.versionNo = parseInt(documentVersion.versionNo) + 1;
+
+        let docuemntVersion = createDocumentVersionObj(document_,req.body);
+
+        for(let file of files) {
+          
+          if(file && file.originalname) {
+
+            const processedFile = await processFile(file, req.body.loginUser.userId);
+            req.body.path = processedFile.s3FilePath;
+            req.body.type = processedFile.type
+            req.body.extension = processedFile.fileExt;
+            req.body.content = processedFile.base64thumbNailData;
+            req.body.originalname = processedFile.name;
+
+            if(document_ && document_.id) {
+
+              let documentFile = await saveDocumentFile(document_,req.body);
+
+              if(docuemntVersion && documentFile && documentFile.id && 
+                Array.isArray(docuemntVersion.files)) {
+
+                docuemntVersion.files.push(documentFile.id);
+                docuemntVersion = await docuemntVersion.save();
+                documentFile.version = docuemntVersion.id;
+
+              }
+            }
+          }
+          
+        }
+
+        if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
+          document_.documentVersions.push(docuemntVersion.id);
+          document_ = await document_.save();
+        }
+
+
+        return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
+      }
+      else {
+        document_ = await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
+        
+        if(!document_)
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+
+        return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
+
       }
     } catch (error) {
       logger.error(new Error(error));
@@ -392,8 +422,8 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { name, displayName, description, path, type, extension, content, 
-    documentType, documentVersion, category, customer, customerAccess, site,
-    contact, user, machine, isActive, isArchived, loginUser } = req.body;
+    docType, documentVersions, docCategory, customer, customerAccess, site,
+    contact, user, machine, isActive, isArchived, loginUser, versionPrefix, machineModel } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -452,6 +482,17 @@ function getDocumentFromReq(req, reqType) {
   }
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
+  }
+
+  if ("machineModel" in req.body) {
+    doc.machineModel = machineModel;
+  }
+
+  if('versionPrefix' in req.body) {
+    doc.versionPrefix = versionPrefix;
+  }
+  else {
+    doc.versionPrefix = 'v';
   }
 
   if (reqType == "new" && "loginUser" in req.body) {
