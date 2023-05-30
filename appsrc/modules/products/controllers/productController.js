@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { Product, ProductCategory, ProductModel } = require('../models');
+const { Product, ProductCategory, ProductModel, ProductConnection } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 
 
@@ -40,12 +40,21 @@ this.populate = [
 
 exports.getProduct = async (req, res, next) => {
   this.dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  function callbackFunc(error, machine) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+
+      if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
+        let query_ = { _id : { $in:machine.machineConnections } };
+        let machineConnections = await this.dbservice.getObjectList(ProductConnection,this.fields, query_);
+        if(Array.isArray(machineConnections) && machineConnections.length>0) {
+          machine.machineConnections = machineConnections;
+        }
+      }
+
+      res.json(machine);
     }
   }
 
