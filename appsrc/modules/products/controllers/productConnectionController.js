@@ -123,7 +123,7 @@ async function disconnectMachine_(machineId, machineConnections) {
   if(Array.isArray(machineConnections) && machineConnections.length>0) {
     for(let machineConnectionId of machineConnections) {
 
-      if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId)
+      if(!mongoose.Types.ObjectId.isValid(machineConnectionId) || machineId==machineConnectionId)
         continue;
         
       let machineConnections = dbMachine.machineConnections;
