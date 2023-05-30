@@ -18,7 +18,7 @@ const docSchema = new Schema({
 
 },
         {
-                collection: 'FileCategories'
+                collection: 'DocumentCategories'
         }
 );
 
@@ -28,4 +28,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('FileCategory', docSchema);
+module.exports = mongoose.model('DocumentCategory', docSchema);

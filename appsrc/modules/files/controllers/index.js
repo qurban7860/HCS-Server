@@ -1,5 +1,5 @@
 module.exports = {
-    documentNameController: require('./documentNameController'),
-    fileController: require('./fileController'),
-    fileCategoryController: require('./fileCategoryController'),
+    documentTypeController: require('./documentTypeController'),
+    documentController: require('./documentController'),
+    documentCategoryController: require('./documentCategoryController'),
 }

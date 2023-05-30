@@ -9,11 +9,10 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
 
 
 const controllers = require('../controllers');
-const controller = controllers.fileController;
+const controller = controllers.documentController;
 
 const router = express.Router();
 
@@ -25,17 +24,18 @@ const baseRoute = `/files`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/filemanager/files/download/:id
-router.get(`${baseRoute}/download/:id`, controller.downloadFile);
+router.get(`${baseRoute}/download/:id`, controller.downloadDocument);
 
 // - /api/1.0.0/filemanager/files/:id
-router.get(`${baseRoute}/:id`,controller.getFile);
+router.get(`${baseRoute}/:id`,controller.getDocument);
 
 // - /api/1.0.0/filemanager/files/
-router.get(`${baseRoute}/`, controller.getFiles);
+router.get(`${baseRoute}/`, controller.getDocuments);
 
 // - /api/1.0.0/filemanager/files/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.single('image')(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+
       if (err instanceof multer.MulterError) {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
@@ -46,12 +46,25 @@ router.post(`${baseRoute}/`, (req, res, next) => {
         next();
       }
     });
-  }, controller.postFile);
+  }, controller.postDocument);
 
 // - /api/1.0.0/filemanager/files/:id
-router.patch(`${baseRoute}/:id`, controller.patchFile);
+router.patch(`${baseRoute}/:id`,(req, res, next) => {
+    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+
+      if (err instanceof multer.MulterError) {
+        console.log(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+      } else if (err) {
+        console.log(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        next();
+      }
+    });
+  }, controller.patchDocument);
 
 // - /api/1.0.0/filemanager/files/:id
-router.delete(`${baseRoute}/:id`, controller.deleteFile);
+router.delete(`${baseRoute}/:id`, controller.deleteDocument);
 
 module.exports = router;

@@ -16,32 +16,17 @@ const docSchema = new Schema({
         description: { type: String },
         // detailed description of field
 
-        path: { type: String },
-        // file path 
-
-        content: {type: String},
-        // file content to save in database
-
-        type: { type: String, required: true },
-        // image, video, text, word, excel, pdf , etc. 
-
-        extension: { type: String },
-        // file extension.
-
-        uri: { type: String  },
-        // file uri
-
-        isActiveVersion: {type: Boolean, default: true},
-
-
-        documentName: { type: Schema.Types.ObjectId, ref: 'DocumentName' },
+        docType: { type: Schema.Types.ObjectId , ref: 'DocumentType' },
         // document name.
 
-        documentVersion: { type: Number },
-        // version number. It will be increased based on customer, machine, etc.
+        docCategory: { type: Schema.Types.ObjectId , ref: 'DocumentCategory' },
+        // document category.
 
-        category: { type: Schema.Types.ObjectId, ref: 'FileCategory' },
-        // file category.
+        versionPrefix: { type: String },
+        //prefix of version like v.
+
+        documentVersions: [{ type: Schema.Types.ObjectId , ref: 'DocumentVersion' }],
+        // list of versions. 
 
         customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
         // customer information.
@@ -61,9 +46,12 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
         // machine information.
 
+        machineModel: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
+        // machine information.
+
 },
 {
-        collection: 'Files'
+        collection: 'Documents'
 });
 
 docSchema.set('timestamps', true);
@@ -72,4 +60,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('File', docSchema);
+module.exports = mongoose.model('Document', docSchema);
