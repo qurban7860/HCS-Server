@@ -49,6 +49,8 @@ exports.getProduct = async (req, res, next) => {
       if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
         let query_ = { _id : { $in:machine.machineConnections }, isActive : true, isArchived : false };
         let populate = {path: 'connectedMachine', select: '_id name serialNo'}
+        machine = JSON.parse(JSON.stringify(machine));
+
 
         let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
         console.log(machineConnections);
