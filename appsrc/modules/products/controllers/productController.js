@@ -51,17 +51,18 @@ exports.getProduct = async (req, res, next) => {
         let populate = {path: 'connectedMachine', select: '_id name serialNo'}
 
         let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
+        console.log(machineConnections);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
           machineConnections = JSON.parse(JSON.stringify(machineConnections));
-          
-          machineConnections.forEach((machineConnection)=>{
-            
+          let index = 0;
+          for(let machineConnection of machineConnections) {
             if(machineConnection && machineConnection.connectedMachine) {
-              machineConnection.name = machineConnection.connectedMachine.name;
+              machineConnections[index].name = machineConnection.connectedMachine.name;
             }
+            index++
 
-          })
-
+          }
+         
           machine.machineConnections = machineConnections;
         }
         else {
