@@ -136,6 +136,8 @@ exports.postProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let machineConnections = req.body.machineConnections;
+    req.body.machineConnections = [];
     dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     async function callbackFunc(error, machine) {
       if (error) {
@@ -145,8 +147,8 @@ exports.postProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) 
-          machine = await connectMachines(machine.id, machine.machineConnections);
+        if(machine && Array.isArray(machineConnections) && machineConnections.length>0) 
+          machine = await connectMachines(machine.id, machineConnections);
         
         res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
@@ -209,7 +211,7 @@ function getDocumentFromReq(req, reqType){
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags,
-    isActive, isArchived, loginUser } = req.body;
+    isActive, isArchived, loginUser, machineConnections } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -243,6 +245,10 @@ function getDocumentFromReq(req, reqType){
   }
   if ("customer" in req.body){
     doc.customer = customer;
+  }
+
+  if ("machineConnections" in req.body){
+    doc.machineConnections = machineConnections;
   }
   if ("instalationSite" in req.body){
     doc.instalationSite = instalationSite;
