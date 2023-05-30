@@ -192,11 +192,12 @@ function createDocumentVersionObj(document_,file) {
     customer:file.customer,
     isActive:file.isActive,
     isArchived:file.isArchived,
-    createdBy : file.loginUser.userId,
-    updatedBy : file.loginUser.userId,
-    createdIP : file.loginUser.userIP,
-    updatedIP : file.loginUser.userIP,
   });
+
+  if(file.loginUser) {
+    docuemntVersion.createdBy = docuemntVersion.updatedBy = file.loginUser.userId
+    docuemntVersion.createdIP = docuemntVersion.updatedIP = file.loginUser.userIP
+  }
 
   if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
     docuemntVersion.site = file.site;
@@ -229,12 +230,13 @@ async function saveDocumentFile(document_,file) {
     thumbnail:file.content,
     customer:file.customer,
     isActive:file.isActive,
-    isArchived:file.isArchived,
-    createdBy : file.loginUser.userId,
-    updatedBy : file.loginUser.userId,
-    createdIP : file.loginUser.userIP,
-    updatedIP : file.loginUser.userIP,
+    isArchived:file.isArchived
   });
+
+  if(file.loginUser) {
+    documentFile.createdBy = documentFile.updatedBy = file.loginUser.userId
+    documentFile.createdIP = documentFile.updatedIP = file.loginUser.userIP
+  }
 
   if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
     documentFile.site = file.site;
@@ -262,6 +264,12 @@ exports.patchDocument = async (req, res, next) => {
   } else {
     try {
       
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+
+      let files = req.files.images;
+
       let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id);
       
       if(!document_)
@@ -271,53 +279,56 @@ exports.patchDocument = async (req, res, next) => {
       
       if(newVersion) {
 
-        let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:-1})
-        .sort({ versionNo:-1 });
-        
-        if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        if(Array.isArray(files) && files.length>0) {
 
-        req.body.versionNo = parseInt(documentVersion.versionNo) + 1;
-
-        let docuemntVersion = createDocumentVersionObj(document_,req.body);
-
-        let files = req.files.images;
-
-        for(let file of files) {
+          let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:-1})
+          .sort({ versionNo:-1 });
           
-          if(file && file.originalname) {
+          if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
-            const processedFile = await processFile(file, req.body.loginUser.userId);
-            req.body.path = processedFile.s3FilePath;
-            req.body.type = processedFile.type
-            req.body.extension = processedFile.fileExt;
-            req.body.content = processedFile.base64thumbNailData;
-            req.body.originalname = processedFile.name;
+          req.body.versionNo = parseInt(documentVersion.versionNo) + 1;
 
-            if(document_ && document_.id) {
+          let docuemntVersion = createDocumentVersionObj(document_,req.body);
 
-              let documentFile = await saveDocumentFile(document_,req.body);
 
-              if(docuemntVersion && documentFile && documentFile.id && 
-                Array.isArray(docuemntVersion.files)) {
+          for(let file of files) {
+              
+            if(file && file.originalname) {
 
-                docuemntVersion.files.push(documentFile.id);
-                docuemntVersion = await docuemntVersion.save();
-                documentFile.version = docuemntVersion.id;
+              const processedFile = await processFile(file, req.body.loginUser.userId);
+              req.body.path = processedFile.s3FilePath;
+              req.body.type = processedFile.type
+              req.body.extension = processedFile.fileExt;
+              req.body.content = processedFile.base64thumbNailData;
+              req.body.originalname = processedFile.name;
 
+              if(document_ && document_.id) {
+
+                let documentFile = await saveDocumentFile(document_,req.body);
+
+                if(docuemntVersion && documentFile && documentFile.id && 
+                  Array.isArray(docuemntVersion.files)) {
+
+                  docuemntVersion.files.push(documentFile.id);
+                  docuemntVersion = await docuemntVersion.save();
+                  documentFile.version = docuemntVersion.id;
+
+                }
               }
             }
           }
-          
+          if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
+            document_.documentVersions.push(docuemntVersion.id);
+            document_ = await document_.save();
+          }
+
+
+          return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
         }
-
-        if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
-          document_.documentVersions.push(docuemntVersion.id);
-          document_ = await document_.save();
-        }
-
-
-        return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
+        else 
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      
       }
       else {
         document_ = await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
