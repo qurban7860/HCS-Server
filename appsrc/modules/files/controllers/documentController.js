@@ -76,6 +76,7 @@ exports.deleteDocument = async (req, res, next) => {
 exports.postDocument = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log(errors);
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
 
@@ -83,7 +84,8 @@ exports.postDocument = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
     }
 
-    let files = req.files;
+    let files = req.files.images;
+
     let name = req.body.name;
     let customer = req.body.customer;
     let machine = req.body.machine;
@@ -97,30 +99,44 @@ exports.postDocument = async (req, res, next) => {
 
       let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
             
-      if(!docType) 
+      if(!docType) {
+        console.error("Document Type Not Found");
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
       
       let cust = await dbservice.getObjectById(Customer,this.fields,customer);
 
-      if(!cust) 
+      if(!cust) {
+        console.error("Customer Not Found");
+
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
 
       let mach = await dbservice.getObjectById(Machine,this.fields,machine);
 
-      if(!mach) 
+      if(!mach) {
+        console.error("Machine Not Found");
+
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
 
       let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
 
-      if(!docCat) 
+      if(!docCat) {
+        console.error("Category Not Found");
+
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
     }
 
     if(Array.isArray(files) && files.length>0) {
       let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
-      if(!document_) 
+      if(!document_) {
+        console.error("Unable to save document");
+
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+      }
       
       req.body.versionNo = 1;
       let docuemntVersion = createDocumentVersionObj(document_,req.body);
@@ -158,10 +174,12 @@ exports.postDocument = async (req, res, next) => {
         document_ = await document_.save();
       }
 
-      return res.status(StatusCodes.CREATED).json({ Document: response });
+      return res.status(StatusCodes.CREATED).json({ Document: document_ });
 
     }
     else {
+      console.error("Files Not Found");
+
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
   }
@@ -262,6 +280,8 @@ exports.patchDocument = async (req, res, next) => {
         req.body.versionNo = parseInt(documentVersion.versionNo) + 1;
 
         let docuemntVersion = createDocumentVersionObj(document_,req.body);
+
+        let files = req.files.images;
 
         for(let file of files) {
           
@@ -368,7 +388,7 @@ async function generateThumbnail(filePath) {
 
 function getThumbnailPath(filePath) {
   const thumbnailName = path.basename(filePath, path.extname(filePath)) + '_thumbnail.png';
-  return path.join('tmp/uploads', thumbnailName);
+  return path.join(process.env.UPLOAD_PATH, thumbnailName);
 }
 
 async function processFile(file, userId) {
@@ -422,8 +442,9 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { name, displayName, description, path, type, extension, content, 
-    docType, documentVersions, docCategory, customer, customerAccess, site,
-    contact, user, machine, isActive, isArchived, loginUser, versionPrefix, machineModel } = req.body;
+    documentVersions, documentCategory, customer, customerAccess, site,
+    contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
+    machineModel, documentType } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -448,13 +469,13 @@ function getDocumentFromReq(req, reqType) {
     doc.extension = extension;
   }
   if ("documentType" in req.body) {
-    doc.documentType = documentType;
+    doc.docType = documentType;
   }
   if ("documentVersion" in req.body) {
     doc.documentVersion = documentVersion;
   }
-  if ("category" in req.body) {
-    doc.category = category;
+  if ("documentCategory" in req.body) {
+    doc.docCategory = documentCategory;
   }
   if ("content" in req.body) {
     doc.content = content;

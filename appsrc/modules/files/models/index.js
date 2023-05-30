@@ -2,7 +2,7 @@
 module.exports = {
     DocumentType: require('./documentType'),
     DocumentCategory: require('./documentCategory'),
-    FileCategory: require('./documentCategory'),
+    Document: require('./document'),
     DocumentVersion: require('./documentVersion'),
     DocumentFile: require('./documentFile'),
 }

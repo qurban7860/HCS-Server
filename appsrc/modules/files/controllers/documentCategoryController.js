@@ -14,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 this.dbservice = new documentDBService();
 
-const { FileCategory, File } = require('../models');
+const { DocumentCategory, Document } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -31,7 +31,7 @@ this.populate = [
 
 exports.getDocumentCategory = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(FileCategory, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(DocumentCategory, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -41,7 +41,7 @@ exports.getDocumentCategory = async (req, res, next) => {
 
 exports.getDocumentCategories = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectList(FileCategory, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(DocumentCategory, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -51,10 +51,10 @@ exports.getDocumentCategories = async (req, res, next) => {
 
 
 exports.deleteDocumentCategory = async (req, res, next) => {
-  const response = await this.dbservice.getObject(File, {category: req.params.id}, "");
+  const response = await this.dbservice.getObject(Document, {category: req.params.id}, "");
   if(response === null) {
     try {
-      const result = await this.dbservice.deleteObject(FileCategory, req.params.id);
+      const result = await this.dbservice.deleteObject(DocumentCategory, req.params.id);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -72,7 +72,7 @@ exports.postDocumentCategory = async (req, res, next) => {
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ FileCategory: response });
+      res.status(StatusCodes.CREATED).json({ DocumentCategory: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -86,7 +86,7 @@ exports.patchDocumentCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(FileCategory, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(DocumentCategory, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -102,7 +102,7 @@ function getDocumentFromReq(req, reqType) {
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new FileCategory({});
+    doc = new DocumentCategory({});
   }
   if ("name" in req.body) {
     doc.name = name;
