@@ -175,7 +175,7 @@ exports.patchProduct = async (req, res, next) => {
           machine = await connectMachines(machine.id, toBeConnected);
         
 
-        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x));
+        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
 
         if(toBeDisconnected.length>0) 
           machine = await disconnectMachine_(machine.id, toBeDisconnected);
