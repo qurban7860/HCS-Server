@@ -90,18 +90,18 @@ exports.getProducts = async (req, res, next) => {
 };
 
 exports.getDecoilerProducts = async (req, res, next) => {
-  this.query = { name : { $regex: 'decoiler', $options: 'i' } };
+  this.query = { name : { $regex: 'decoiler', $options: 'i' },isActive:true, isArchived:false };
   let machines = [];
   let machienCategories = await dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
   if(machienCategories && machienCategories.length>0) {
 
     let categoryIds = machienCategories.map(c => c.id);
-    let modelQuery = { category:{$in:categoryIds} };
+    let modelQuery = { category:{$in:categoryIds} ,isActive:true, isArchived:false };
     let machineModels = await dbservice.getObjectList(ProductModel, this.fields, modelQuery, this.orderBy, this.populate);
     if(machineModels && machineModels.length>0) {
 
       let modelsIds = machineModels.map(m => m.id);
-      let machineQuery = { machineModel : {$in:modelsIds} };
+      let machineQuery = { machineModel : {$in:modelsIds} ,isActive:true, isArchived:false};
       this.orderBy = {createdAt : -1};
       machines = await dbservice.getObjectList(Product, this.fields, machineQuery, this.orderBy, this.populate);
       res.status(StatusCodes.OK).json(machines);
