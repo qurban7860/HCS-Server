@@ -162,7 +162,7 @@ exports.postDocument = async (req, res, next) => {
               docuemntVersion.files.push(documentFile.id);
               docuemntVersion = await docuemntVersion.save();
               documentFile.version = docuemntVersion.id;
-
+              documentFile = await documentFile.save();
             }
           }
         }
@@ -281,15 +281,18 @@ exports.patchDocument = async (req, res, next) => {
 
         if(Array.isArray(files) && files.length>0) {
 
-          let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:-1})
+          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:-1})
           .sort({ versionNo:-1 });
-          
+          let version = 0;
+
           if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            version = 1;
+          else 
+            version = parseInt(documentVersion.versionNo) + 1;
 
-          req.body.versionNo = parseInt(documentVersion.versionNo) + 1;
+          req.body.versionNo = version;
 
-          let docuemntVersion = createDocumentVersionObj(document_,req.body);
+          documentVersion = createDocumentVersionObj(document_,req.body);
 
 
           for(let file of files) {
@@ -307,19 +310,20 @@ exports.patchDocument = async (req, res, next) => {
 
                 let documentFile = await saveDocumentFile(document_,req.body);
 
-                if(docuemntVersion && documentFile && documentFile.id && 
-                  Array.isArray(docuemntVersion.files)) {
+                if(documentVersion && documentFile && documentFile.id && 
+                  Array.isArray(documentVersion.files)) {
 
-                  docuemntVersion.files.push(documentFile.id);
-                  docuemntVersion = await docuemntVersion.save();
-                  documentFile.version = docuemntVersion.id;
+                  documentVersion.files.push(documentFile.id);
+                  documentVersion = await documentVersion.save();
+                  documentFile.version = documentVersion.id;
+                  documentFile = await documentFile.save();
 
                 }
               }
             }
           }
-          if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
-            document_.documentVersions.push(docuemntVersion.id);
+          if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+            document_.documentVersions.push(documentVersion.id);
             document_ = await document_.save();
           }
 
@@ -331,11 +335,42 @@ exports.patchDocument = async (req, res, next) => {
       
       }
       else {
-        document_ = await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
         
-        if(!document_)
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        if(Array.isArray(files) && files.length>0) {
+          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
+          .sort({ versionNo:-1 });
+          
+          if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
+          for(let file of files) {
+              
+            if(file && file.originalname) {
+
+              const processedFile = await processFile(file, req.body.loginUser.userId);
+              req.body.path = processedFile.s3FilePath;
+              req.body.type = processedFile.type
+              req.body.extension = processedFile.fileExt;
+              req.body.content = processedFile.base64thumbNailData;
+              req.body.originalname = processedFile.name;
+
+              if(document_ && document_.id) {
+
+                let documentFile = await saveDocumentFile(document_,req.body);
+                if(documentVersion && documentFile && documentFile.id && 
+                  Array.isArray(documentVersion.files)) {
+                  documentVersion.files.push(documentFile.id);
+                  documentVersion = await documentVersion.save();
+                  documentFile.version = documentVersion.id;
+                  documentFile = await documentFile.save();
+                }
+              }
+            }
+          }
+
+        }
+
+        await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
         return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
 
       }
@@ -356,7 +391,6 @@ exports.downloadDocument = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
-          console.log("fileContent",fileContent);
           return res.status(StatusCodes.ACCEPTED).send(fileContent);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
