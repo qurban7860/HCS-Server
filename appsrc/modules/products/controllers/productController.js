@@ -12,8 +12,9 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductCategory, ProductModel, ProductConnection } = require('../models');
+const { Product, ProductCategory, ProductModel, ProductConnection, ProductStatus } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
+const ObjectId = require('mongoose').Types.ObjectId;
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -205,13 +206,82 @@ exports.patchProduct = async (req, res, next) => {
   }
 };
 
+exports.transferOwnership = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      console.log('req body======>', req.body);
+      if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
+        // validate if an entry already exists with the same customer and parentMachineID
+        let existingMachine = await Product.findOne({ customer: req.body.customer, parentMachineID: req.body.machine});
+        if(existingMachine){
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
+        }
+        
+        let customer = await Customer.findById(req.body.customer);
+        let parentMachine = await Product.findById(req.body.machine);
+
+        if (!customer) {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
+        }
+        if (!parentMachine) {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
+        }
+
+        if (parentMachine && customer) {
+          
+          req.body.serialNo = parentMachine.serialNo;
+          req.body.machineModel = parentMachine.machineModel;
+          req.body.parentMachine = parentMachine.parentMachine;
+          req.body.parentSerialNo = parentMachine.parentSerialNo;
+          req.body.parentMachineID = parentMachine._id;
+          req.body.machineConnections = parentMachine.machineConnections;
+
+          // if (customer.mainSite) {
+          //   req.body.instalationSite = customer.mainSite;
+          //   req.body.billingSite = customer.mainSite;
+          // }
+
+          let status = await ProductStatus.findOne({ name: { $regex: /sold\/transferred/i } });
+          if (!status) {
+            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, this.ProductStatus));
+          } else {
+            const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+            if (transferredMachine) {
+              // update old machine ownsership status
+              let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
+                transferredMachine: transferredMachine._id,
+                transferredDate: new Date(),
+                isActive: false,
+                status: status._id
+              });
+              if(parentMachineUpdated){
+                res.status(StatusCodes.CREATED).json({ Machine: transferredMachine });
+              }
+            }
+          }
+        }
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+      }
+    }
+    catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
+
+
 
 function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags,
-    isActive, isArchived, loginUser, machineConnections } = req.body;
+    isActive, isArchived, loginUser, machineConnections, parentMachineID } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -227,6 +297,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("parentMachine" in req.body){
     doc.parentMachine = parentMachine;
+  }
+  if ("parentMachineID" in req.body){
+    doc.parentMachineID = parentMachineID;
   }
   if ("parentSerialNo" in req.body){
     doc.parentSerialNo =  parentSerialNo;

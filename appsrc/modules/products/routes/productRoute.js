@@ -27,12 +27,13 @@ router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getDecoilerP
 
 router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
-
-
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
 router.patch(`${baseRouteForObject}/:id`, controller.patchProduct);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProduct);
+
+router.post(`${baseRouteForObject}/transferMachine/`, controller.transferOwnership);
+
 
 module.exports = router;
