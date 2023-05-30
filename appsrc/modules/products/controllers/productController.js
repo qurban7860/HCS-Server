@@ -64,6 +64,9 @@ exports.getProduct = async (req, res, next) => {
 
           machine.machineConnections = machineConnections;
         }
+        else {
+          machine.machineConnections = []; 
+        }
       }
 
       res.json(machine);
