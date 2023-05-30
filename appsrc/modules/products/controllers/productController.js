@@ -49,19 +49,21 @@ exports.getProduct = async (req, res, next) => {
       if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
         let query_ = { _id : { $in:machine.machineConnections }, isActive : true, isArchived : false };
         let populate = {path: 'connectedMachine', select: '_id name serialNo'}
+        machine = JSON.parse(JSON.stringify(machine));
+
 
         let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
           machineConnections = JSON.parse(JSON.stringify(machineConnections));
-          
-          machineConnections.forEach((machineConnection)=>{
-            
+          let index = 0;
+          for(let machineConnection of machineConnections) {
             if(machineConnection && machineConnection.connectedMachine) {
-              machineConnection.name = machineConnection.connectedMachine.name;
+              machineConnections[index].name = machineConnection.connectedMachine.name;
             }
+            index++
 
-          })
-
+          }
+         
           machine.machineConnections = machineConnections;
         }
         else {
@@ -89,18 +91,18 @@ exports.getProducts = async (req, res, next) => {
 };
 
 exports.getDecoilerProducts = async (req, res, next) => {
-  this.query = { name : { $regex: 'decoiler', $options: 'i' } };
+  this.query = { name : { $regex: 'decoiler', $options: 'i' },isActive:true, isArchived:false };
   let machines = [];
   let machienCategories = await dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
   if(machienCategories && machienCategories.length>0) {
 
     let categoryIds = machienCategories.map(c => c.id);
-    let modelQuery = { category:{$in:categoryIds} };
+    let modelQuery = { category:{$in:categoryIds} ,isActive:true, isArchived:false };
     let machineModels = await dbservice.getObjectList(ProductModel, this.fields, modelQuery, this.orderBy, this.populate);
     if(machineModels && machineModels.length>0) {
 
       let modelsIds = machineModels.map(m => m.id);
-      let machineQuery = { machineModel : {$in:modelsIds} };
+      let machineQuery = { machineModel : {$in:modelsIds} ,isActive:true, isArchived:false};
       this.orderBy = {createdAt : -1};
       machines = await dbservice.getObjectList(Product, this.fields, machineQuery, this.orderBy, this.populate);
       res.status(StatusCodes.OK).json(machines);
@@ -134,6 +136,8 @@ exports.postProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let machineConnections = req.body.machineConnections;
+    req.body.machineConnections = [];
     dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     async function callbackFunc(error, machine) {
       if (error) {
@@ -143,8 +147,8 @@ exports.postProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) 
-          machine = await connectMachines(machine.id, machine.machineConnections);
+        if(machine && Array.isArray(machineConnections) && machineConnections.length>0) 
+          machine = await connectMachines(machine.id, machineConnections);
         
         res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
@@ -173,7 +177,7 @@ exports.patchProduct = async (req, res, next) => {
           machine = await connectMachines(machine.id, toBeConnected);
         
 
-        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x));
+        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
 
         if(toBeDisconnected.length>0) 
           machine = await disconnectMachine_(machine.id, toBeDisconnected);
@@ -181,6 +185,9 @@ exports.patchProduct = async (req, res, next) => {
         req.body.machineConnections = machine.machineConnections;
 
       }
+    }
+    else {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
@@ -204,7 +211,7 @@ function getDocumentFromReq(req, reqType){
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags,
-    isActive, isArchived, loginUser } = req.body;
+    isActive, isArchived, loginUser, machineConnections } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -238,6 +245,10 @@ function getDocumentFromReq(req, reqType){
   }
   if ("customer" in req.body){
     doc.customer = customer;
+  }
+
+  if ("machineConnections" in req.body){
+    doc.machineConnections = machineConnections;
   }
   if ("instalationSite" in req.body){
     doc.instalationSite = instalationSite;

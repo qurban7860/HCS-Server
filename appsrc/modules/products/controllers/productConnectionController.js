@@ -47,7 +47,6 @@ async function connectMachines(machineId, connectedMachines = []) {
     
     if(!dbMachine || dbMachine.isActive==false || dbMachine.isArchived==true)
       return false;
-
     let connectedMachinesIds = []
     if(Array.isArray(connectedMachines) && connectedMachines.length>0) {
       for(let connectedMachineId of connectedMachines) {
@@ -56,8 +55,9 @@ async function connectMachines(machineId, connectedMachines = []) {
           continue;
         
         let decoilerMachine = await dbservice.getObjectById(Product, this.fields, connectedMachineId);
+        
         if(decoilerMachine && decoilerMachine.id && decoilerMachine.isActive && !decoilerMachine.isArchived) {
-          let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId});
+          let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId, isActive:true});
           
           if(!machineConnection) {
             let machineConnectionData = {
@@ -123,7 +123,7 @@ async function disconnectMachine_(machineId, machineConnections) {
   if(Array.isArray(machineConnections) && machineConnections.length>0) {
     for(let machineConnectionId of machineConnections) {
 
-      if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId)
+      if(!mongoose.Types.ObjectId.isValid(machineConnectionId) || machineId==machineConnectionId)
         continue;
         
       let machineConnections = dbMachine.machineConnections;
@@ -138,7 +138,7 @@ async function disconnectMachine_(machineId, machineConnections) {
       if(!mongoose.Types.ObjectId.isValid(machineConnectionId))
         continue;
 
-      let updateValue = { disconnectionDate: new Date() };
+      let updateValue = { disconnectionDate: new Date(),isActive:false };
       await dbservice.patchObject(ProductConnection, machineConnectionId, updateValue );
       
     }
