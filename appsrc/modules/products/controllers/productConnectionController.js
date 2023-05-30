@@ -45,7 +45,7 @@ async function connectMachines(machineId, connectedMachines = []) {
 
     let dbMachine = await dbservice.getObjectById(Product, this.fields, machineId);
     
-    if(!dbMachine)
+    if(!dbMachine || dbMachine.isActive==false || dbMachine.isArchived==true)
       return false;
 
     let connectedMachinesIds = []
@@ -56,7 +56,7 @@ async function connectMachines(machineId, connectedMachines = []) {
           continue;
         
         let decoilerMachine = await dbservice.getObjectById(Product, this.fields, connectedMachineId);
-        if(decoilerMachine && decoilerMachine.id) {
+        if(decoilerMachine && decoilerMachine.id && decoilerMachine.isActive && !decoilerMachine.isArchived) {
           let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId});
           
           if(!machineConnection) {
@@ -117,7 +117,7 @@ async function disconnectMachine_(machineId, machineConnections) {
 
   let dbMachine = await dbservice.getObjectById(Product, this.fields, machineId);
 
-  if(!dbMachine) 
+  if(!dbMachine || dbMachine.isActive==false || dbMachine.isArchived==true)
     return false;
   
   if(Array.isArray(machineConnections) && machineConnections.length>0) {

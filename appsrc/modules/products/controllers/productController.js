@@ -10,9 +10,9 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let productDBService = require('../service/productDBService')
-this.dbservice = new productDBService();
+const dbservice = new productDBService();
 
-const { Product, ProductCategory, ProductModel } = require('../models');
+const { Product, ProductCategory, ProductModel, ProductConnection } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 
 
@@ -39,13 +39,24 @@ this.populate = [
 
 
 exports.getProduct = async (req, res, next) => {
-  this.dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
+  async function callbackFunc(error, machine) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+
+      if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
+        let query_ = { _id : { $in:machine.machineConnections }, isActive : true, isArchived : false };
+        let populate = {path: 'connectedMachine', select: '_id name serialNo'}
+
+        let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
+        if(Array.isArray(machineConnections) && machineConnections.length>0) {
+          machine.machineConnections = machineConnections;
+        }
+      }
+
+      res.json(machine);
     }
   }
 
@@ -53,7 +64,7 @@ exports.getProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -67,18 +78,18 @@ exports.getProducts = async (req, res, next) => {
 exports.getDecoilerProducts = async (req, res, next) => {
   this.query = { name : { $regex: 'decoiler', $options: 'i' } };
   let machines = [];
-  let machienCategories = await this.dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
+  let machienCategories = await dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
   if(machienCategories && machienCategories.length>0) {
 
     let categoryIds = machienCategories.map(c => c.id);
     let modelQuery = { category:{$in:categoryIds} };
-    let machineModels = await this.dbservice.getObjectList(ProductModel, this.fields, modelQuery, this.orderBy, this.populate);
+    let machineModels = await dbservice.getObjectList(ProductModel, this.fields, modelQuery, this.orderBy, this.populate);
     if(machineModels && machineModels.length>0) {
 
       let modelsIds = machineModels.map(m => m.id);
       let machineQuery = { machineModel : {$in:modelsIds} };
       this.orderBy = {createdAt : -1};
-      machines = await this.dbservice.getObjectList(Product, this.fields, machineQuery, this.orderBy, this.populate);
+      machines = await dbservice.getObjectList(Product, this.fields, machineQuery, this.orderBy, this.populate);
       res.status(StatusCodes.OK).json(machines);
     }
     else {
@@ -93,7 +104,7 @@ exports.getDecoilerProducts = async (req, res, next) => {
 
 
 exports.deleteProduct = async (req, res, next) => {
-  this.dbservice.deleteObject(Product, req.params.id, callbackFunc);
+  dbservice.deleteObject(Product, req.params.id, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -110,7 +121,7 @@ exports.postProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     async function callbackFunc(error, machine) {
       if (error) {
         logger.error(new Error(error));
@@ -133,7 +144,7 @@ exports.patchProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let machine = await this.dbservice.getObjectById(Product, this.fields, req.params.id);
+    let machine = await dbservice.getObjectById(Product, this.fields, req.params.id);
 
     if(machine && Array.isArray(machine.machineConnections) && 
       Array.isArray(req.body.machineConnections)) {
@@ -159,7 +170,7 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
     
-    this.dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
+    dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
