@@ -40,7 +40,7 @@ this.populate = [
 
 exports.getProduct = async (req, res, next) => {
   this.dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, machine) {
+  async function callbackFunc(error, machine) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
