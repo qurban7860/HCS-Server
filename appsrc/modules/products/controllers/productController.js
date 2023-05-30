@@ -52,6 +52,16 @@ exports.getProduct = async (req, res, next) => {
 
         let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
+          machineConnections = JSON.parse(JSON.stringify(machineConnections));
+          
+          machineConnections.forEach((machineConnection)=>{
+            
+            if(machineConnection && machineConnection.connectedMachine) {
+              machineConnection.name = machineConnection.connectedMachine.name;
+            }
+
+          })
+
           machine.machineConnections = machineConnections;
         }
       }
