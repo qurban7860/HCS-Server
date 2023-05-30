@@ -53,7 +53,6 @@ exports.getProduct = async (req, res, next) => {
 
 
         let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
-        console.log(machineConnections);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
           machineConnections = JSON.parse(JSON.stringify(machineConnections));
           let index = 0;
@@ -184,6 +183,9 @@ exports.patchProduct = async (req, res, next) => {
         req.body.machineConnections = machine.machineConnections;
 
       }
+    }
+    else {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
