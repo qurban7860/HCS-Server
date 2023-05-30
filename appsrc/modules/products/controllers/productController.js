@@ -48,7 +48,9 @@ exports.getProduct = async (req, res, next) => {
 
       if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
         let query_ = { _id : { $in:machine.machineConnections } };
-        let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_);
+        let populate = {path: 'connectedMachine', select: '_id name serialNo'}
+
+        let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
           machine.machineConnections = machineConnections;
         }
