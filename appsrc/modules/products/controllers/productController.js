@@ -164,32 +164,40 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id);
-
-    if(machine && Array.isArray(machine.machineConnections) && 
-      Array.isArray(req.body.machineConnections)) {
-      
-      let oldMachineConnections = machine.machineConnections;
-      let newMachineConnections = req.body.machineConnections;
-      let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
-
-      if(!isSame) {
-        let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
-        
-        if(toBeConnected.length>0) 
-          machine = await connectMachines(machine.id, toBeConnected);
-        
-
-        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
-
-        if(toBeDisconnected.length>0) 
-          machine = await disconnectMachine_(machine.id, toBeDisconnected);
-        
-        req.body.machineConnections = machine.machineConnections;
-
+    if(machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus){ 
+      let queryString = { slug: 'intransfer'}
+      let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
+      if(machineStatus){
+        req.body.status = machineStatus._id;
       }
     }
-    else {
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    else{
+      if(machine && Array.isArray(machine.machineConnections) && 
+        Array.isArray(req.body.machineConnections)) {
+        
+        let oldMachineConnections = machine.machineConnections;
+        let newMachineConnections = req.body.machineConnections;
+        let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
+
+        if(!isSame) {
+          let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
+          
+          if(toBeConnected.length>0) 
+            machine = await connectMachines(machine.id, toBeConnected);
+          
+
+          let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
+
+          if(toBeDisconnected.length>0) 
+            machine = await disconnectMachine_(machine.id, toBeDisconnected);
+          
+          req.body.machineConnections = machine.machineConnections;
+
+        }
+      }
+      else {
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
     }
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
