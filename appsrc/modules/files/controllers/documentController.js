@@ -89,8 +89,8 @@ exports.postDocument = async (req, res, next) => {
     let name = req.body.name;
     let customer = req.body.customer;
     let machine = req.body.machine;
-    let documentType = req.body.documentType;
-    let documentCategory = req.body.documentCategory;
+    let documentType = req.body.docType;
+    let documentCategory = req.body.docCategory;
 
     if(name && mongoose.Types.ObjectId.isValid(customer) && 
       mongoose.Types.ObjectId.isValid(documentType) && 
