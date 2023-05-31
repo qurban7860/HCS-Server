@@ -29,8 +29,8 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'documentType', select: 'name' },
-  { path: 'category', select: 'name' },
+  { path: 'docType', select: 'name' },
+  { path: 'docCategory', select: 'name' },
   { path: 'customer', select: 'name' }
 ];
 
@@ -103,6 +103,14 @@ exports.postDocument = async (req, res, next) => {
         console.error("Document Type Not Found");
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
+
+      let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+            
+      if(!docCategory) {
+        console.error("Document Category Not Found");
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
+
       
       let cust = await dbservice.getObjectById(Customer,this.fields,customer);
 
@@ -140,7 +148,7 @@ exports.postDocument = async (req, res, next) => {
       
       req.body.versionNo = 1;
       let docuemntVersion = createDocumentVersionObj(document_,req.body);
-
+      let documentFiles = [];
       for(let file of files) {
         
         if(file && file.originalname) {
@@ -163,6 +171,7 @@ exports.postDocument = async (req, res, next) => {
               docuemntVersion = await docuemntVersion.save();
               documentFile.version = docuemntVersion.id;
               documentFile = await documentFile.save();
+              docuemntVersion.files = [documentFile];
             }
           }
         }
@@ -173,6 +182,10 @@ exports.postDocument = async (req, res, next) => {
         document_.documentVersions.push(docuemntVersion.id);
         document_ = await document_.save();
       }
+      document_.docType = docType;
+      document_.docCategory = docCategory;
+      document_.docuemntVersions = [docuemntVersion];
+      document_.customer = cust;
 
       return res.status(StatusCodes.CREATED).json({ Document: document_ });
 
