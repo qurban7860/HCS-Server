@@ -29,8 +29,8 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'documentType', select: 'name' },
-  { path: 'category', select: 'name' },
+  { path: 'docType', select: 'name' },
+  { path: 'docCategory', select: 'name' },
   { path: 'customer', select: 'name' }
 ];
 
