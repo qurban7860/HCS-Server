@@ -8,7 +8,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
     
-    serialNo: { type: String , required: true, unique: true},
+    serialNo: { type: String , required: true },
     // Serial No of machine
   //
 
@@ -23,6 +23,15 @@ const docSchema = new Schema({
   
     description: { type: String },
     // detailed description of machine
+
+    transferredDate: { type: Date },
+    // date of transfer
+
+    transferredMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    // transferred machine having new/updated customer data
+
+    parentMachineID: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    // parent machine ID(ownership transfer)
 
     status: { type: Schema.Types.ObjectId , ref: 'MachineStatus' },
     // Status information of machine
