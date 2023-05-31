@@ -14,6 +14,7 @@ const dbservice = new productDBService();
 
 const { Product, ProductCategory, ProductModel, ProductConnection, ProductStatus } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
+const { Customer } = require('../../crm/models')
 const ObjectId = require('mongoose').Types.ObjectId;
 
 
@@ -212,14 +213,18 @@ exports.transferOwnership = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      console.log('req body======>', req.body);
       if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
         // validate if an entry already exists with the same customer and parentMachineID
-        let existingMachine = await Product.findOne({ customer: req.body.customer, parentMachineID: req.body.machine});
-        if(existingMachine){
+        let existingParentMachine = await Product.findOne({ customer: req.body.customer, parentMachineID: req.body.machine});
+        if(existingParentMachine){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
         
+        let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine});
+        if(existingMachine){
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine cannot be transferred to the same customer', true));          
+        }
+
         let customer = await Customer.findById(req.body.customer);
         let parentMachine = await Product.findById(req.body.machine);
 
