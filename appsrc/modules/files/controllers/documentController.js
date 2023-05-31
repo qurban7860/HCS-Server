@@ -84,7 +84,10 @@ exports.postDocument = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
     }
 
-    let files = req.files.images;
+    let files = [];
+      
+    if(req.files && req.files.images)
+      files = req.files.images;
 
     let name = req.body.name;
     let customer = req.body.customer;
@@ -286,7 +289,10 @@ exports.patchDocument = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
-      let files = req.files.images;
+      let files = [];
+      
+      if(req.files && req.files.images)
+        files = req.files.images;
 
       let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id);
       
