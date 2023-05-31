@@ -25,7 +25,7 @@ router.use(checkAuth, checkCustomer);
 router.get(`${baseRoute}/:id`,controller.getDocumentType);
 
 // - /api/1.0.0/filemanager/documentType/
-router.get(`${baseRoute}/`, controller.getDocumentType);
+router.get(`${baseRoute}/`, controller.getDocumentTypes);
 
 // - /api/1.0.0/filemanager/documentType/:id/files
 router.get(`${baseRoute}/:id/files`, controller.getDocumentTypeFiles);
