@@ -135,66 +135,71 @@ exports.postDocument = async (req, res, next) => {
 
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
-    }
+      if(Array.isArray(files) && files.length>0) {
+        let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
-    if(Array.isArray(files) && files.length>0) {
-      let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+        if(!document_) {
+          console.error("Unable to save document");
 
-      if(!document_) {
-        console.error("Unable to save document");
-
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
-      }
-      
-      req.body.versionNo = 1;
-      let docuemntVersion = createDocumentVersionObj(document_,req.body);
-      let documentFiles = [];
-      for(let file of files) {
-        
-        if(file && file.originalname) {
-
-          const processedFile = await processFile(file, req.body.loginUser.userId);
-          req.body.path = processedFile.s3FilePath;
-          req.body.type = processedFile.type
-          req.body.extension = processedFile.fileExt;
-          req.body.content = processedFile.base64thumbNailData;
-          req.body.originalname = processedFile.name;
-
-          if(document_ && document_.id) {
-
-            let documentFile = await saveDocumentFile(document_,req.body);
-
-            if(docuemntVersion && documentFile && documentFile.id && 
-              Array.isArray(docuemntVersion.files)) {
-
-              docuemntVersion.files.push(documentFile.id);
-              docuemntVersion = await docuemntVersion.save();
-              documentFile.version = docuemntVersion.id;
-              documentFile = await documentFile.save();
-              docuemntVersion.files = [documentFile];
-            }
-          }
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
         }
         
+        req.body.versionNo = 1;
+        let docuemntVersion = createDocumentVersionObj(document_,req.body);
+        let documentFiles = [];
+        for(let file of files) {
+          
+          if(file && file.originalname) {
+
+            const processedFile = await processFile(file, req.body.loginUser.userId);
+            req.body.path = processedFile.s3FilePath;
+            req.body.type = processedFile.type
+            req.body.extension = processedFile.fileExt;
+            req.body.content = processedFile.base64thumbNailData;
+            req.body.originalname = processedFile.name;
+
+            if(document_ && document_.id) {
+
+              let documentFile = await saveDocumentFile(document_,req.body);
+
+              if(docuemntVersion && documentFile && documentFile.id && 
+                Array.isArray(docuemntVersion.files)) {
+
+                docuemntVersion.files.push(documentFile.id);
+                docuemntVersion = await docuemntVersion.save();
+                documentFile.version = docuemntVersion.id;
+                documentFile = await documentFile.save();
+                docuemntVersion.files = [documentFile];
+              }
+            }
+          }
+          
+        }
+
+        if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
+          document_.documentVersions.push(docuemntVersion.id);
+          document_ = await document_.save();
+        }
+        document_.docType = docType;
+        document_.docCategory = docCategory;
+        document_.docuemntVersions = [docuemntVersion];
+        document_.customer = cust;
+
+        return res.status(StatusCodes.CREATED).json({ Document: document_ });
+
       }
+      else {
+        console.error("Files Not Found");
 
-      if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
-        document_.documentVersions.push(docuemntVersion.id);
-        document_ = await document_.save();
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
-      document_.docType = docType;
-      document_.docCategory = docCategory;
-      document_.docuemntVersions = [docuemntVersion];
-      document_.customer = cust;
-
-      return res.status(StatusCodes.CREATED).json({ Document: document_ });
-
     }
     else {
-      console.error("Files Not Found");
+      console.error("Invalid Data");
 
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+
   }
 };
 
