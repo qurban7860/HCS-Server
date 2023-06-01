@@ -44,14 +44,14 @@ exports.getDocument = async (req, res, next) => {
       document_ = JSON.parse(JSON.stringify(document_));
 
       let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
-      let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo');
+      let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
       if(Array.isArray(documentVersions) && documentVersions.length>0) {
         documentVersions = JSON.parse(JSON.stringify(documentVersions));
 
         for(let documentVersion of documentVersions) {
           if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
             let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
-            let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType');
+            let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
             documentVersion.files = documentFiles;
           }
         }
@@ -79,14 +79,14 @@ exports.getDocuments = async (req, res, next) => {
           document_ = JSON.parse(JSON.stringify(document_));
 
           let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
-          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo');
+          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
           if(Array.isArray(documentVersions) && documentVersions.length>0) {
             documentVersions = JSON.parse(JSON.stringify(documentVersions));
 
             for(let documentVersion of documentVersions) {
               if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
                 let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
-                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType');
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 documentVersion.files = documentFiles;
               }
             }
