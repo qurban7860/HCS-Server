@@ -196,8 +196,9 @@ exports.postDocument = async (req, res, next) => {
         }
         
         req.body.versionNo = 1;
-        let docuemntVersion = createDocumentVersionObj(document_,req.body);
+        let documentVersion = createDocumentVersionObj(document_,req.body);
         let documentFiles = [];
+        let dbFiles = []
         for(let file of files) {
           
           if(file && file.originalname) {
@@ -213,27 +214,30 @@ exports.postDocument = async (req, res, next) => {
 
               let documentFile = await saveDocumentFile(document_,req.body);
 
-              if(docuemntVersion && documentFile && documentFile.id && 
-                Array.isArray(docuemntVersion.files)) {
+              if(documentVersion && documentFile && documentFile.id && 
+                Array.isArray(documentVersion.files)) {
 
-                docuemntVersion.files.push(documentFile.id);
-                docuemntVersion = await docuemntVersion.save();
-                documentFile.version = docuemntVersion.id;
+                documentVersion.files.push(documentFile.id);
+                dbFiles.push(documentFile);
+                documentVersion = await documentVersion.save();
+                documentFile.version = documentVersion.id;
                 documentFile = await documentFile.save();
-                docuemntVersion.files = [documentFile];
               }
             }
           }
           
         }
 
-        if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
-          document_.documentVersions.push(docuemntVersion.id);
+        if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+          document_.documentVersions.push(documentVersion.id);
           document_ = await document_.save();
         }
+        documentVersion = JSON.parse(JSON.stringify(documentVersion));
+        documentVersion.files = dbFiles;
+        document_ = JSON.parse(JSON.stringify(document_));
         document_.docType = docType;
         document_.docCategory = docCategory;
-        document_.documentVersions = [docuemntVersion];
+        document_.documentVersions = [documentVersion];
         document_.customer = cust;
 
         return res.status(StatusCodes.CREATED).json({ Document: document_ });
@@ -255,7 +259,7 @@ exports.postDocument = async (req, res, next) => {
 };
 
 function createDocumentVersionObj(document_,file) {
-  let docuemntVersion = new DocumentVersion({
+  let documentVersion = new DocumentVersion({
     document :document_.id,
     versionNo:file.versionNo,
     customer:file.customer,
@@ -264,26 +268,26 @@ function createDocumentVersionObj(document_,file) {
   });
 
   if(file.loginUser) {
-    docuemntVersion.createdBy = docuemntVersion.updatedBy = file.loginUser.userId
-    docuemntVersion.createdIP = docuemntVersion.updatedIP = file.loginUser.userIP
+    documentVersion.createdBy = documentVersion.updatedBy = file.loginUser.userId
+    documentVersion.createdIP = documentVersion.updatedIP = file.loginUser.userIP
   }
 
   if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
-    docuemntVersion.site = file.site;
+    documentVersion.site = file.site;
   }
 
   if(file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
-    docuemntVersion.contact = file.contact;
+    documentVersion.contact = file.contact;
   }
 
   if(file.user && mongoose.Types.ObjectId.isValid(file.user)) {
-    docuemntVersion.user = file.user;
+    documentVersion.user = file.user;
   }
 
   if(file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
-    docuemntVersion.machine = file.machine;
+    documentVersion.machine = file.machine;
   }
-  return docuemntVersion;
+  return documentVersion;
 }
 
 async function saveDocumentFile(document_,file) {
@@ -342,7 +346,7 @@ exports.patchDocument = async (req, res, next) => {
       if(req.files && req.files.images)
         files = req.files.images;
 
-      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id);
+      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
       
       if(!document_)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
@@ -353,7 +357,7 @@ exports.patchDocument = async (req, res, next) => {
 
         if(Array.isArray(files) && files.length>0) {
 
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:-1})
+          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
           .sort({ versionNo:-1 });
           let version = 0;
 
@@ -366,7 +370,7 @@ exports.patchDocument = async (req, res, next) => {
 
           documentVersion = createDocumentVersionObj(document_,req.body);
 
-
+          let dbFiles = []
           for(let file of files) {
               
             if(file && file.originalname) {
@@ -386,9 +390,12 @@ exports.patchDocument = async (req, res, next) => {
                   Array.isArray(documentVersion.files)) {
 
                   documentVersion.files.push(documentFile.id);
+                  dbFiles.push(documentFile);
                   documentVersion = await documentVersion.save();
+
                   documentFile.version = documentVersion.id;
                   documentFile = await documentFile.save();
+
 
                 }
               }
@@ -398,7 +405,12 @@ exports.patchDocument = async (req, res, next) => {
             document_.documentVersions.push(documentVersion.id);
             document_ = await document_.save();
           }
-
+          await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
+          document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
+          document_ = JSON.parse(JSON.stringify(document_));
+          documentVersion = JSON.parse(JSON.stringify(documentVersion));
+          documentVersion.files = dbFiles;
+          document_.documentVersions = [documentVersion];
 
           return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
         }
@@ -443,6 +455,12 @@ exports.patchDocument = async (req, res, next) => {
         }
 
         await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
+        document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
+
+        document_ = JSON.parse(JSON.stringify(document_));
+        documentVersion = JSON.parse(JSON.stringify(documentVersion));
+        documentVersion.files = dbFiles;
+        document_.documentVersions = [documentVersion]; 
         return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
 
       }
