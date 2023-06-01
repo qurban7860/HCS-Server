@@ -412,7 +412,7 @@ exports.patchDocument = async (req, res, next) => {
           documentVersion.files = dbFiles;
           document_.documentVersions = [documentVersion];
 
-          return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
+          return res.status(StatusCodes.ACCEPTED).json(document_);
         }
         else 
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -461,8 +461,7 @@ exports.patchDocument = async (req, res, next) => {
         documentVersion = JSON.parse(JSON.stringify(documentVersion));
         documentVersion.files = dbFiles;
         document_.documentVersions = [documentVersion]; 
-        return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
-
+        return res.status(StatusCodes.ACCEPTED).json(document_);
       }
     } catch (error) {
       logger.error(new Error(error));
