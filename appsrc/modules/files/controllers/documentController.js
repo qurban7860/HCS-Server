@@ -422,7 +422,8 @@ exports.patchDocument = async (req, res, next) => {
         
         let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
         .sort({ versionNo:-1 });
-        
+        let dbFiles = []
+
         if(Array.isArray(files) && files.length>0) {
           if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -443,6 +444,7 @@ exports.patchDocument = async (req, res, next) => {
                 let documentFile = await saveDocumentFile(document_,req.body);
                 if(documentVersion && documentFile && documentFile.id && 
                   Array.isArray(documentVersion.files)) {
+                  dbFiles.push(documentFile);
                   documentVersion.files.push(documentFile.id);
                   documentVersion = await documentVersion.save();
                   documentFile.version = documentVersion.id;
