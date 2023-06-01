@@ -420,10 +420,10 @@ exports.patchDocument = async (req, res, next) => {
       }
       else {
         
+        let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
+        .sort({ versionNo:-1 });
+        
         if(Array.isArray(files) && files.length>0) {
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
-          .sort({ versionNo:-1 });
-          
           if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
