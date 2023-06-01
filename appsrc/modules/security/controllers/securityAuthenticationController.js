@@ -401,6 +401,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
 
     if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
       email.toContacts.push(toUser.contact.id);
+    }
   }
   
   var reqEmail = {};
