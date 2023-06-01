@@ -379,8 +379,8 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     body,
     toEmails:emailAddresses,
     fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer:[toUser.customer],
-    toContacts:[toUser.contact],
+    customer:[toUser.customer.id],
+    toContacts:[toUser.contact.id],
     toUsers:[toUser.id],
     ccEmails,
     bccEmails,
@@ -391,6 +391,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
+  console.log("email",email,process.env);
   var reqEmail = {};
 
   reqEmail.body = email;

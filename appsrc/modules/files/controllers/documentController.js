@@ -38,8 +38,27 @@ this.populate = [
 
 exports.getDocument = async (req, res, next) => {
   try {
-    const response = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
-    res.json(response);
+    let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+    if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+      
+      document_ = JSON.parse(JSON.stringify(document_));
+
+      let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
+      let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo');
+      if(Array.isArray(documentVersions) && documentVersions.length>0) {
+        documentVersions = JSON.parse(JSON.stringify(documentVersions));
+
+        for(let documentVersion of documentVersions) {
+          if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+            let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
+            let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType');
+            documentVersion.files = documentFiles;
+          }
+        }
+      }
+      document_.documentVersions = documentVersions;
+    }
+    res.json(document_);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -49,8 +68,37 @@ exports.getDocument = async (req, res, next) => {
 exports.getDocuments = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
-    res.json(response);
+    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    if(documents && Array.isArray(documents) && documents.length>0) {
+      documents = JSON.parse(JSON.stringify(documents));
+      let documentIndex = 0;
+      for(let document_ of documents) {
+
+        if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+          
+          document_ = JSON.parse(JSON.stringify(document_));
+
+          let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
+          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo');
+          if(Array.isArray(documentVersions) && documentVersions.length>0) {
+            documentVersions = JSON.parse(JSON.stringify(documentVersions));
+
+            for(let documentVersion of documentVersions) {
+              if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+                let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType');
+                documentVersion.files = documentFiles;
+              }
+            }
+          }
+          document_.documentVersions = documentVersions;
+        }
+        documents[documentIndex] = document_;
+        documentIndex++;
+      }
+    }
+    
+    res.json(documents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -185,7 +233,7 @@ exports.postDocument = async (req, res, next) => {
         }
         document_.docType = docType;
         document_.docCategory = docCategory;
-        document_.docuemntVersions = [docuemntVersion];
+        document_.documentVersions = [docuemntVersion];
         document_.customer = cust;
 
         return res.status(StatusCodes.CREATED).json({ Document: document_ });
