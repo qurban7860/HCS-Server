@@ -241,7 +241,9 @@ exports.forgetPassword = async (req, res, next) => {
 exports.verifyForgottenPassword = async (req, res, next) => {
   try {
     let _this = this;
-    const existingUser = await SecurityUser.findById(req.body.userId);
+    const existingUser = await SecurityUser.findById(req.body.userId)
+        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
+                  { path: 'contact', select: 'name isActive isArchived' }]);
     if (existingUser) {
       if (existingUser.token && existingUser.token.accessToken == req.body.token) {        
         const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
@@ -379,9 +381,9 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     body,
     toEmails:emailAddresses,
     fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer:[toUser.customer.id],
-    toContacts:[toUser.contact.id],
-    toUsers:[toUser.id],
+    customer:'',
+    toContacts:[],
+    toUsers:[],
     ccEmails,
     bccEmails,
     isArchived: false,
@@ -391,7 +393,16 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
-  console.log("email",email,process.env);
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+  }
+  
   var reqEmail = {};
 
   reqEmail.body = email;
