@@ -154,5 +154,18 @@ module.exports = {
         } else {
             return getReasonPhrase(code);
         }
-    }
+    },
+    recordTransferInvalidMessage(code) {
+        if (code == 400) {
+            const response = {
+                isError: "true", 
+                MessageCode: code,
+                Message: `In-transfer machines cannot be transferred!`
+            };
+
+            return response;
+        } else {
+            return getReasonPhrase(code);
+        }
+    },
 };
