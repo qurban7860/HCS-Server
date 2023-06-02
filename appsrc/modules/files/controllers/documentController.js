@@ -142,7 +142,6 @@ exports.postDocument = async (req, res, next) => {
     let machine = req.body.machine;
     let documentType = req.body.documentType;
     let documentCategory = req.body.documentCategory;
-
     if(name && mongoose.Types.ObjectId.isValid(customer) && 
       mongoose.Types.ObjectId.isValid(documentType) && 
       mongoose.Types.ObjectId.isValid(documentCategory) || 
@@ -348,9 +347,35 @@ exports.patchDocument = async (req, res, next) => {
 
       let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
       
+
       if(!document_)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
+       let name = req.body.name;
+      let customer = req.body.customer;
+      let machine = req.body.machine;
+      let documentType = req.body.documentType;
+      let documentCategory = req.body.documentCategory;
+      if(name && mongoose.Types.ObjectId.isValid(customer) && 
+        mongoose.Types.ObjectId.isValid(documentType) && 
+        mongoose.Types.ObjectId.isValid(documentCategory) || 
+        mongoose.Types.ObjectId.isValid(machine)) {
+
+        let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
+              
+        if(!docType) {
+          console.error("Document Type Not Found");
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+        let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+              
+        if(!docCategory) {
+          console.error("Document Category Not Found");
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+      }
+      
       let newVersion = req.body.newVersion;
       
       if(req.body.customerAccess=='true' || req.body.customerAccess===true)
