@@ -21,6 +21,9 @@ const docSchema = new Schema({
     */
     description: { type: String },
     // description of Status
+
+    slug: { type: String },
+    // unique identification for different statuses
     
     displayOrderNo: { type: Number },
     // order to display in dropdown lists
