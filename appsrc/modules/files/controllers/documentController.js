@@ -142,10 +142,9 @@ exports.postDocument = async (req, res, next) => {
     let machine = req.body.machine;
     let documentType = req.body.documentType;
     let documentCategory = req.body.documentCategory;
-    if(name && mongoose.Types.ObjectId.isValid(customer) && 
-      mongoose.Types.ObjectId.isValid(documentType) && 
-      mongoose.Types.ObjectId.isValid(documentCategory) || 
-      mongoose.Types.ObjectId.isValid(machine)) {
+    if(name && mongoose.Types.ObjectId.isValid(documentType) && 
+      (mongoose.Types.ObjectId.isValid(customer)|| mongoose.Types.ObjectId.isValid(machine)) && 
+      mongoose.Types.ObjectId.isValid(documentCategory)) {
 
       let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
             
@@ -161,21 +160,27 @@ exports.postDocument = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
 
-      
-      let cust = await dbservice.getObjectById(Customer,this.fields,customer);
+      let cust = {}
 
-      if(!cust) {
-        console.error("Customer Not Found");
+      if(mongoose.Types.ObjectId.isValid(customer)) {
+        cust = await dbservice.getObjectById(Customer,this.fields,customer);
+        if(!cust) {
+          console.error("Customer Not Found");
 
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
       }
 
-      let mach = await dbservice.getObjectById(Machine,this.fields,machine);
+      let mach = {};
+      if(mongoose.Types.ObjectId.isValid(machine)){
 
-      if(!mach) {
-        console.error("Machine Not Found");
+        mach = await dbservice.getObjectById(Machine,this.fields,machine);
 
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        if(!mach) {
+          console.error("Machine Not Found");
+
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
       }
 
       let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
@@ -356,10 +361,9 @@ exports.patchDocument = async (req, res, next) => {
       let machine = req.body.machine;
       let documentType = req.body.documentType;
       let documentCategory = req.body.documentCategory;
-      if(name && mongoose.Types.ObjectId.isValid(customer) && 
-        mongoose.Types.ObjectId.isValid(documentType) && 
-        mongoose.Types.ObjectId.isValid(documentCategory) || 
-        mongoose.Types.ObjectId.isValid(machine)) {
+      if(name && mongoose.Types.ObjectId.isValid(documentType) && 
+        (mongoose.Types.ObjectId.isValid(customer) || mongoose.Types.ObjectId.isValid(machine)) && 
+        mongoose.Types.ObjectId.isValid(documentCategory) ) {
 
         let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
               
