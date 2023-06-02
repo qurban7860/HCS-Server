@@ -30,8 +30,8 @@ this.populate = [
       {path: 'supplier', select: '_id name'},
       {path: 'status', select: '_id name'},
       {path: 'customer', select: '_id name'},
-      {path: 'billingSite', select: '_id name'},
-      {path: 'instalationSite', select: '_id name address'},
+      {path: 'billingSite', select: '_id name lat long'},
+      {path: 'instalationSite', select: '_id name address lat long'},
       {path: 'accountManager', select: '_id firstName lastName'},
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
@@ -163,33 +163,41 @@ exports.patchProduct = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let machine = await dbservice.getObjectById(Product, this.fields, req.params.id);
-
-    if(machine && Array.isArray(machine.machineConnections) && 
-      Array.isArray(req.body.machineConnections)) {
-      
-      let oldMachineConnections = machine.machineConnections;
-      let newMachineConnections = req.body.machineConnections;
-      let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
-
-      if(!isSame) {
-        let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
-        
-        if(toBeConnected.length>0) 
-          machine = await connectMachines(machine.id, toBeConnected);
-        
-
-        let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
-
-        if(toBeDisconnected.length>0) 
-          machine = await disconnectMachine_(machine.id, toBeDisconnected);
-        
-        req.body.machineConnections = machine.machineConnections;
-
+    let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
+    if(machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus){ 
+      let queryString = { slug: 'intransfer'}
+      let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
+      if(machineStatus){
+        req.body.status = machineStatus._id;
       }
     }
-    else {
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    else{
+      if(machine && Array.isArray(machine.machineConnections) && 
+        Array.isArray(req.body.machineConnections)) {
+        
+        let oldMachineConnections = machine.machineConnections;
+        let newMachineConnections = req.body.machineConnections;
+        let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
+
+        if(!isSame) {
+          let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
+          
+          if(toBeConnected.length>0) 
+            machine = await connectMachines(machine.id, toBeConnected);
+          
+
+          let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
+
+          if(toBeDisconnected.length>0) 
+            machine = await disconnectMachine_(machine.id, toBeDisconnected);
+          
+          req.body.machineConnections = machine.machineConnections;
+
+        }
+      }
+      else {
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
     }
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
@@ -213,29 +221,27 @@ exports.transferOwnership = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
+      if (ObjectId.isValid(req.body.machine)) {
+        // validate if machine is already in-transfer or not
+        let machineInTransfer = await dbservice.getObjectById(Product, this.fields, req.body.machine, {path: 'status', select: ''});
+        console.log('transferred machine----->', machineInTransfer);
+        if(machineInTransfer.status.slug == 'intransfer' && !(machineInTransfer.customer)){
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordTransferInvalidMessage(StatusCodes.BAD_REQUEST));          
+        }
+        
         // validate if an entry already exists with the same customer and parentMachineID
-        let existingParentMachine = await Product.findOne({ customer: req.body.customer, parentMachineID: req.body.machine});
+        let existingParentMachine = await Product.findOne({ customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false });
         if(existingParentMachine){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
-        
-        let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine});
-        if(existingMachine){
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine cannot be transferred to the same customer', true));          
-        }
 
-        let customer = await Customer.findById(req.body.customer);
         let parentMachine = await Product.findById(req.body.machine);
 
-        if (!customer) {
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
-        }
         if (!parentMachine) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
         }
 
-        if (parentMachine && customer) {
+        if (parentMachine) {
           
           req.body.serialNo = parentMachine.serialNo;
           req.body.machineModel = parentMachine.machineModel;
@@ -244,11 +250,13 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachineID = parentMachine._id;
           req.body.machineConnections = parentMachine.machineConnections;
 
-          // if (customer.mainSite) {
-          //   req.body.instalationSite = customer.mainSite;
-          //   req.body.billingSite = customer.mainSite;
-          // }
-
+          // change status
+          let queryString = { slug: 'intransfer'}
+          let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
+          if(machineStatus){
+            req.body.status = machineStatus._id;
+          }
+          
           let status = await ProductStatus.findOne({ name: { $regex: /sold\/transferred/i } });
           if (!status) {
             return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, this.ProductStatus));
@@ -278,6 +286,79 @@ exports.transferOwnership = async (req, res, next) => {
     }
   }
 };
+
+
+// exports.transferOwnership = async (req, res, next) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) {
+//     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+//   } else {
+//     try {
+//       if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
+//         // validate if an entry already exists with the same customer and parentMachineID
+//         let existingParentMachine = await Product.findOne({ customer: req.body.customer, parentMachineID: req.body.machine, isActive: true, isArchived: false });
+//         if(existingParentMachine){
+//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
+//         }
+        
+//         let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine, isActive: true, isArchived: false});
+//         if(existingMachine){
+//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine cannot be transferred to the same customer', true));          
+//         }
+
+//         let customer = await Customer.findById(req.body.customer);
+//         let parentMachine = await Product.findById(req.body.machine);
+
+//         if (!customer) {
+//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
+//         }
+//         if (!parentMachine) {
+//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
+//         }
+
+//         if (parentMachine && customer) {
+          
+//           req.body.serialNo = parentMachine.serialNo;
+//           req.body.machineModel = parentMachine.machineModel;
+//           req.body.parentMachine = parentMachine.parentMachine;
+//           req.body.parentSerialNo = parentMachine.parentSerialNo;
+//           req.body.parentMachineID = parentMachine._id;
+//           req.body.machineConnections = parentMachine.machineConnections;
+
+//           // if (customer.mainSite) {
+//           //   req.body.instalationSite = customer.mainSite;
+//           //   req.body.billingSite = customer.mainSite;
+//           // }
+
+//           let status = await ProductStatus.findOne({ name: { $regex: /sold\/transferred/i } });
+//           if (!status) {
+//             return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, this.ProductStatus));
+//           } else {
+//             const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+//             if (transferredMachine) {
+//               // update old machine ownsership status
+//               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
+//                 transferredMachine: transferredMachine._id,
+//                 transferredDate: new Date(),
+//                 isActive: false,
+//                 status: status._id
+//               });
+//               if(parentMachineUpdated){
+//                 res.status(StatusCodes.CREATED).json({ Machine: transferredMachine });
+//               }
+//             }
+//           }
+//         }
+//       } else {
+//         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+//       }
+//     }
+//     catch (error) {
+//       logger.error(new Error(error));
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+//     }
+//   }
+// };
 
 
 
