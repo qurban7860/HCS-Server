@@ -38,8 +38,27 @@ this.populate = [
 
 exports.getDocument = async (req, res, next) => {
   try {
-    const response = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
-    res.json(response);
+    let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+    if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+      
+      document_ = JSON.parse(JSON.stringify(document_));
+
+      let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
+      let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
+      if(Array.isArray(documentVersions) && documentVersions.length>0) {
+        documentVersions = JSON.parse(JSON.stringify(documentVersions));
+
+        for(let documentVersion of documentVersions) {
+          if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+            let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
+            let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+            documentVersion.files = documentFiles;
+          }
+        }
+      }
+      document_.documentVersions = documentVersions;
+    }
+    res.json(document_);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -49,8 +68,37 @@ exports.getDocument = async (req, res, next) => {
 exports.getDocuments = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
-    res.json(response);
+    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    if(documents && Array.isArray(documents) && documents.length>0) {
+      documents = JSON.parse(JSON.stringify(documents));
+      let documentIndex = 0;
+      for(let document_ of documents) {
+
+        if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+          
+          document_ = JSON.parse(JSON.stringify(document_));
+
+          let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
+          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
+          if(Array.isArray(documentVersions) && documentVersions.length>0) {
+            documentVersions = JSON.parse(JSON.stringify(documentVersions));
+
+            for(let documentVersion of documentVersions) {
+              if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+                let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                documentVersion.files = documentFiles;
+              }
+            }
+          }
+          document_.documentVersions = documentVersions;
+        }
+        documents[documentIndex] = document_;
+        documentIndex++;
+      }
+    }
+    
+    res.json(documents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -84,14 +132,16 @@ exports.postDocument = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
     }
 
-    let files = req.files.images;
+    let files = [];
+      
+    if(req.files && req.files.images)
+      files = req.files.images;
 
     let name = req.body.name;
     let customer = req.body.customer;
     let machine = req.body.machine;
     let documentType = req.body.documentType;
     let documentCategory = req.body.documentCategory;
-
     if(name && mongoose.Types.ObjectId.isValid(customer) && 
       mongoose.Types.ObjectId.isValid(documentType) && 
       mongoose.Types.ObjectId.isValid(documentCategory) || 
@@ -145,8 +195,9 @@ exports.postDocument = async (req, res, next) => {
         }
         
         req.body.versionNo = 1;
-        let docuemntVersion = createDocumentVersionObj(document_,req.body);
+        let documentVersion = createDocumentVersionObj(document_,req.body);
         let documentFiles = [];
+        let dbFiles = []
         for(let file of files) {
           
           if(file && file.originalname) {
@@ -162,27 +213,30 @@ exports.postDocument = async (req, res, next) => {
 
               let documentFile = await saveDocumentFile(document_,req.body);
 
-              if(docuemntVersion && documentFile && documentFile.id && 
-                Array.isArray(docuemntVersion.files)) {
+              if(documentVersion && documentFile && documentFile.id && 
+                Array.isArray(documentVersion.files)) {
 
-                docuemntVersion.files.push(documentFile.id);
-                docuemntVersion = await docuemntVersion.save();
-                documentFile.version = docuemntVersion.id;
+                documentVersion.files.push(documentFile.id);
+                dbFiles.push(documentFile);
+                documentVersion = await documentVersion.save();
+                documentFile.version = documentVersion.id;
                 documentFile = await documentFile.save();
-                docuemntVersion.files = [documentFile];
               }
             }
           }
           
         }
 
-        if(docuemntVersion && docuemntVersion.id && Array.isArray(document_.documentVersions)) {
-          document_.documentVersions.push(docuemntVersion.id);
+        if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+          document_.documentVersions.push(documentVersion.id);
           document_ = await document_.save();
         }
+        documentVersion = JSON.parse(JSON.stringify(documentVersion));
+        documentVersion.files = dbFiles;
+        document_ = JSON.parse(JSON.stringify(document_));
         document_.docType = docType;
         document_.docCategory = docCategory;
-        document_.docuemntVersions = [docuemntVersion];
+        document_.documentVersions = [documentVersion];
         document_.customer = cust;
 
         return res.status(StatusCodes.CREATED).json({ Document: document_ });
@@ -204,7 +258,7 @@ exports.postDocument = async (req, res, next) => {
 };
 
 function createDocumentVersionObj(document_,file) {
-  let docuemntVersion = new DocumentVersion({
+  let documentVersion = new DocumentVersion({
     document :document_.id,
     versionNo:file.versionNo,
     customer:file.customer,
@@ -213,26 +267,26 @@ function createDocumentVersionObj(document_,file) {
   });
 
   if(file.loginUser) {
-    docuemntVersion.createdBy = docuemntVersion.updatedBy = file.loginUser.userId
-    docuemntVersion.createdIP = docuemntVersion.updatedIP = file.loginUser.userIP
+    documentVersion.createdBy = documentVersion.updatedBy = file.loginUser.userId
+    documentVersion.createdIP = documentVersion.updatedIP = file.loginUser.userIP
   }
 
   if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
-    docuemntVersion.site = file.site;
+    documentVersion.site = file.site;
   }
 
   if(file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
-    docuemntVersion.contact = file.contact;
+    documentVersion.contact = file.contact;
   }
 
   if(file.user && mongoose.Types.ObjectId.isValid(file.user)) {
-    docuemntVersion.user = file.user;
+    documentVersion.user = file.user;
   }
 
   if(file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
-    docuemntVersion.machine = file.machine;
+    documentVersion.machine = file.machine;
   }
-  return docuemntVersion;
+  return documentVersion;
 }
 
 async function saveDocumentFile(document_,file) {
@@ -286,20 +340,67 @@ exports.patchDocument = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
-      let files = req.files.images;
-
-      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id);
+      let files = [];
       
+      if(req.files && req.files.images)
+        files = req.files.images;
+
+      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
+      
+
       if(!document_)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
+       let name = req.body.name;
+      let customer = req.body.customer;
+      let machine = req.body.machine;
+      let documentType = req.body.documentType;
+      let documentCategory = req.body.documentCategory;
+      if(name && mongoose.Types.ObjectId.isValid(customer) && 
+        mongoose.Types.ObjectId.isValid(documentType) && 
+        mongoose.Types.ObjectId.isValid(documentCategory) || 
+        mongoose.Types.ObjectId.isValid(machine)) {
+
+        let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
+              
+        if(!docType) {
+          console.error("Document Type Not Found");
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+        let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+              
+        if(!docCategory) {
+          console.error("Document Category Not Found");
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+      }
+      
       let newVersion = req.body.newVersion;
       
+      if(req.body.customerAccess=='true' || req.body.customerAccess===true)
+        req.body.customerAccess = true;
+
+      if(req.body.customerAccess=='false' || req.body.customerAccess===false)
+        req.body.customerAccess = false;
+
+      if(req.body.isActive=='true' || req.body.isActive===true)
+        req.body.isActive = true;
+
+      if(req.body.isActive=='false' || req.body.isActive===false)
+        req.body.isActive = false;
+      
+      if(req.body.isArchived=='true' || req.body.isArchived===true)
+        req.body.isArchived = true;
+
+      if(req.body.isArchived=='false' || req.body.isArchived===false)
+        req.body.isArchived = false;
+
       if(newVersion) {
 
         if(Array.isArray(files) && files.length>0) {
 
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:-1})
+          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
           .sort({ versionNo:-1 });
           let version = 0;
 
@@ -312,7 +413,7 @@ exports.patchDocument = async (req, res, next) => {
 
           documentVersion = createDocumentVersionObj(document_,req.body);
 
-
+          let dbFiles = []
           for(let file of files) {
               
             if(file && file.originalname) {
@@ -332,9 +433,12 @@ exports.patchDocument = async (req, res, next) => {
                   Array.isArray(documentVersion.files)) {
 
                   documentVersion.files.push(documentFile.id);
+                  dbFiles.push(documentFile);
                   documentVersion = await documentVersion.save();
+
                   documentFile.version = documentVersion.id;
                   documentFile = await documentFile.save();
+
 
                 }
               }
@@ -344,9 +448,14 @@ exports.patchDocument = async (req, res, next) => {
             document_.documentVersions.push(documentVersion.id);
             document_ = await document_.save();
           }
+          await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
+          document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
+          document_ = JSON.parse(JSON.stringify(document_));
+          documentVersion = JSON.parse(JSON.stringify(documentVersion));
+          documentVersion.files = dbFiles;
+          document_.documentVersions = [documentVersion];
 
-
-          return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
+          return res.status(StatusCodes.ACCEPTED).json(document_);
         }
         else 
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -354,10 +463,11 @@ exports.patchDocument = async (req, res, next) => {
       }
       else {
         
+        let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
+        .sort({ versionNo:-1 });
+        let dbFiles = []
+
         if(Array.isArray(files) && files.length>0) {
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
-          .sort({ versionNo:-1 });
-          
           if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
@@ -377,6 +487,7 @@ exports.patchDocument = async (req, res, next) => {
                 let documentFile = await saveDocumentFile(document_,req.body);
                 if(documentVersion && documentFile && documentFile.id && 
                   Array.isArray(documentVersion.files)) {
+                  dbFiles.push(documentFile);
                   documentVersion.files.push(documentFile.id);
                   documentVersion = await documentVersion.save();
                   documentFile.version = documentVersion.id;
@@ -389,8 +500,13 @@ exports.patchDocument = async (req, res, next) => {
         }
 
         await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
-        return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, document_));
+        document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
 
+        document_ = JSON.parse(JSON.stringify(document_));
+        documentVersion = JSON.parse(JSON.stringify(documentVersion));
+        documentVersion.files = dbFiles;
+        document_.documentVersions = [documentVersion]; 
+        return res.status(StatusCodes.ACCEPTED).json(document_);
       }
     } catch (error) {
       logger.error(new Error(error));
