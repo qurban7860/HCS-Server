@@ -353,6 +353,24 @@ exports.patchDocument = async (req, res, next) => {
 
       let newVersion = req.body.newVersion;
       
+      if(req.body.customerAccess=='true' || req.body.customerAccess===true)
+        req.body.customerAccess = true;
+
+      if(req.body.customerAccess=='false' || req.body.customerAccess===false)
+        req.body.customerAccess = false;
+
+      if(req.body.isActive=='true' || req.body.isActive===true)
+        req.body.isActive = true;
+
+      if(req.body.isActive=='false' || req.body.isActive===false)
+        req.body.isActive = false;
+      
+      if(req.body.isArchived=='true' || req.body.isArchived===true)
+        req.body.isArchived = true;
+
+      if(req.body.isArchived=='false' || req.body.isArchived===false)
+        req.body.isArchived = false;
+
       if(newVersion) {
 
         if(Array.isArray(files) && files.length>0) {
