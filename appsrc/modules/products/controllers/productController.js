@@ -234,10 +234,9 @@ exports.transferOwnership = async (req, res, next) => {
         }
 
 
-        console.log('mahcinestatus----->', isTransferrableMachineStatus(parentMachine.status));
-        // if(isTransferrableMachineStatus(parentMachine.status)){
-        //   return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid macine status'));
-        // } 
+        if(isTransferrableMachineStatus(parentMachine.status)){
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine status invalid for transfer'));
+        } 
 
         // validate if an entry already exists with the same customer and parentMachineID
         let existingParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false }, this.populate);
@@ -293,10 +292,10 @@ exports.transferOwnership = async (req, res, next) => {
 };
 
 function isTransferrableMachineStatus(status) {
-  if (!_.isEmpty(status) && status.slug === 'intransfer') {
-    return false;
+  if (!_.isEmpty(status) && status.slug === 'transferred') {
+    return true;
   }
-  return true;
+  return false;
 }
 
 
