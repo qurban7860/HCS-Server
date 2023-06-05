@@ -39,6 +39,7 @@ exports.getDocumentType = async (req, res, next) => {
 
 exports.getDocumentTypes = async (req, res, next) => {
   try {
+    this.query = req.query != "undefined" ? req.query : {};
     const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
