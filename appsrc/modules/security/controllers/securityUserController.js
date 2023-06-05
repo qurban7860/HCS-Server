@@ -25,13 +25,13 @@ this.populate = [
   {path: 'updatedBy', select: 'name'},
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
-  {path: 'roles', select: 'name'},
+  {path: 'roles', select: ''},
 ];
 
 this.populateList = [
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
-  {path: 'roles', select: 'name'},
+  {path: 'roles', select: ''},
 ];
 
 
@@ -136,6 +136,9 @@ exports.patchSecurityUser = async (req, res, next) => {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           if(!(_.isEmpty(response))){
+            // re write for the logged in user
+            const hasSuperAdminRole = response.roles.some(role => role.roleType === 'SuperAdmin');
+            if(hasSuperAdminRole){
             const passwordsResponse = await comparePasswords(req.body.oldPassword, response.password)
             if(passwordsResponse){
               req.body.password = req.body.newPassword;
@@ -152,7 +155,10 @@ exports.patchSecurityUser = async (req, res, next) => {
               }  
             }else{
               res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Wrong password entered"));  
-            }            
+            }         
+          }else{
+            res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessage(StatusCodes.FORBIDDEN, "Only superadmin(s) is allowed to access this feature "));      
+          }   
           }else{
             res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "User not found!"));
           }

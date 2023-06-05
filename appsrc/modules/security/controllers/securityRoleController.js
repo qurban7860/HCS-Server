@@ -102,7 +102,8 @@ exports.patchSecurityRole = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, allModules, allWriteAccess, modules, isActive, isArchived} = req.body;
+  const { name, description, allModules, allWriteAccess,
+        roleType, modules, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -114,6 +115,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("description" in req.body){
     doc.description = description;
+  }
+  if ("roleType" in req.body){
+    doc.roleType = roleType;
   }
   if ("allModules" in req.body){
     doc.mainSite = allModules;
