@@ -5,4 +5,5 @@ module.exports = {
     Document: require('./document'),
     DocumentVersion: require('./documentVersion'),
     DocumentFile: require('./documentFile'),
+    DocumentAuditLog: require('./documentAuditLog'),
 }
