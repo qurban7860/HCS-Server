@@ -16,7 +16,7 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
-const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion } = require('../models');
+const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Machine } = require('../../products/models');
 
@@ -122,145 +122,175 @@ exports.deleteDocument = async (req, res, next) => {
 };
 
 exports.postDocument = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    console.log(errors);
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
 
-    if(!req.body.loginUser){
-      req.body.loginUser = await getToken(req);
-    }
+  try{
 
-    let files = [];
-      
-    if(req.files && req.files.images)
-      files = req.files.images;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors);
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
 
-    let name = req.body.name;
-    let customer = req.body.customer;
-    let machine = req.body.machine;
-    let documentType = req.body.documentType;
-    let documentCategory = req.body.documentCategory;
-    if(name && mongoose.Types.ObjectId.isValid(documentType) && 
-      (mongoose.Types.ObjectId.isValid(customer)|| mongoose.Types.ObjectId.isValid(machine)) && 
-      mongoose.Types.ObjectId.isValid(documentCategory)) {
-
-      let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
-            
-      if(!docType) {
-        console.error("Document Type Not Found");
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
       }
 
-      let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-            
-      if(!docCategory) {
-        console.error("Document Category Not Found");
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      }
-
-      let cust = {}
-
-      if(mongoose.Types.ObjectId.isValid(customer)) {
-        cust = await dbservice.getObjectById(Customer,this.fields,customer);
-        if(!cust) {
-          console.error("Customer Not Found");
-
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-        }
-      }
-
-      let mach = {};
-      if(mongoose.Types.ObjectId.isValid(machine)){
-
-        mach = await dbservice.getObjectById(Machine,this.fields,machine);
-
-        if(!mach) {
-          console.error("Machine Not Found");
-
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-        }
-      }
-
-      let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-
-      if(!docCat) {
-        console.error("Category Not Found");
-
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      }
-      if(Array.isArray(files) && files.length>0) {
-        let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-
-        if(!document_) {
-          console.error("Unable to save document");
-
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
-        }
+      let files = [];
         
-        req.body.versionNo = 1;
-        let documentVersion = createDocumentVersionObj(document_,req.body);
-        let documentFiles = [];
-        let dbFiles = []
-        for(let file of files) {
-          
-          if(file && file.originalname) {
+      if(req.files && req.files.images)
+        files = req.files.images;
 
-            const processedFile = await processFile(file, req.body.loginUser.userId);
-            req.body.path = processedFile.s3FilePath;
-            req.body.type = processedFile.type
-            req.body.extension = processedFile.fileExt;
-            req.body.content = processedFile.base64thumbNailData;
-            req.body.originalname = processedFile.name;
+      let name = req.body.name;
+      let customer = req.body.customer;
+      let machine = req.body.machine;
+      let documentType = req.body.documentType;
+      let documentCategory = req.body.documentCategory;
+      if(name && mongoose.Types.ObjectId.isValid(documentType) && 
+        (mongoose.Types.ObjectId.isValid(customer)|| mongoose.Types.ObjectId.isValid(machine)) && 
+        mongoose.Types.ObjectId.isValid(documentCategory)) {
 
-            if(document_ && document_.id) {
+        let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
+              
+        if(!docType) {
+          console.error("Document Type Not Found");
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
 
-              let documentFile = await saveDocumentFile(document_,req.body);
+        let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+              
+        if(!docCategory) {
+          console.error("Document Category Not Found");
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
 
-              if(documentVersion && documentFile && documentFile.id && 
-                Array.isArray(documentVersion.files)) {
+        let cust = {}
 
-                documentVersion.files.push(documentFile.id);
-                dbFiles.push(documentFile);
-                documentVersion = await documentVersion.save();
-                documentFile.version = documentVersion.id;
-                documentFile = await documentFile.save();
-              }
-            }
+        if(mongoose.Types.ObjectId.isValid(customer)) {
+          cust = await dbservice.getObjectById(Customer,this.fields,customer);
+          if(!cust) {
+            console.error("Customer Not Found");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+        }
+
+        let mach = {};
+        if(mongoose.Types.ObjectId.isValid(machine)){
+
+          mach = await dbservice.getObjectById(Machine,this.fields,machine);
+
+          if(!mach) {
+            console.error("Machine Not Found");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+        }
+
+        let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+
+        if(!docCat) {
+          console.error("Category Not Found");
+
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+        if(Array.isArray(files) && files.length>0) {
+          let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+
+          if(!document_) {
+            console.error("Unable to save document");
+
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
           }
           
+          req.body.versionNo = 1;
+          let documentVersion = createDocumentVersionObj(document_,req.body);
+          let documentFiles = [];
+          let dbFiles = []
+          for(let file of files) {
+            
+            if(file && file.originalname) {
+
+              const processedFile = await processFile(file, req.body.loginUser.userId);
+              req.body.path = processedFile.s3FilePath;
+              req.body.type = processedFile.type
+              req.body.extension = processedFile.fileExt;
+              req.body.content = processedFile.base64thumbNailData;
+              req.body.originalname = processedFile.name;
+
+              if(document_ && document_.id) {
+
+                let documentFile = await saveDocumentFile(document_,req.body);
+
+                if(documentVersion && documentFile && documentFile.id && 
+                  Array.isArray(documentVersion.files)) {
+
+                  documentVersion.files.push(documentFile.id);
+                  dbFiles.push(documentFile);
+                  documentVersion = await documentVersion.save();
+                  documentFile.version = documentVersion.id;
+                  documentFile = await documentFile.save();
+                }
+              }
+            }
+            
+          }
+
+          if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+            document_.documentVersions.push(documentVersion.id);
+            document_ = await document_.save();
+          }
+          documentVersion = JSON.parse(JSON.stringify(documentVersion));
+          documentVersion.files = dbFiles;
+          document_ = JSON.parse(JSON.stringify(document_));
+          document_.docType = docType;
+          document_.docCategory = docCategory;
+          document_.documentVersions = [documentVersion];
+          document_.customer = cust;
+          let documentAuditLogObj = {
+            document : document_._id,
+            activityType : "Create",
+            activitySummary : "Create Document",
+            activityDetail : "Document created successfully",
+          }
+
+          await createAuditLog(documentAuditLogObj,req);
+          return res.status(StatusCodes.CREATED).json({ Document: document_ });
+
         }
+        else {
+          console.error("Files Not Found");
 
-        if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
-          document_.documentVersions.push(documentVersion.id);
-          document_ = await document_.save();
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
-        documentVersion = JSON.parse(JSON.stringify(documentVersion));
-        documentVersion.files = dbFiles;
-        document_ = JSON.parse(JSON.stringify(document_));
-        document_.docType = docType;
-        document_.docCategory = docCategory;
-        document_.documentVersions = [documentVersion];
-        document_.customer = cust;
-
-        return res.status(StatusCodes.CREATED).json({ Document: document_ });
-
       }
       else {
-        console.error("Files Not Found");
+        console.error("Invalid Data");
 
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
-    }
-    else {
-      console.error("Invalid Data");
 
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+  }catch(e) {
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
 
   }
 };
+
+async function createAuditLog(documentAuditLogObj,req) {
+  
+  if(!req.body.loginUser)
+    req.body.loginUser = await getToken(req);
+
+  documentAuditLogObj.isActive = true;
+  documentAuditLogObj.isArchived = false;
+  if(req.body.loginUser) {
+    documentAuditLogObj.createdBy = documentAuditLogObj.updatedBy = req.body.loginUser.userId
+    documentAuditLogObj.createdIP = documentAuditLogObj.updatedIP = req.body.loginUser.userIP
+  }
+  documentAuditLogObj = new DocumentAuditLog(documentAuditLogObj);
+  await documentAuditLogObj.save();
+}
 
 function createDocumentVersionObj(document_,file) {
   let documentVersion = new DocumentVersion({
@@ -459,6 +489,14 @@ exports.patchDocument = async (req, res, next) => {
           documentVersion.files = dbFiles;
           document_.documentVersions = [documentVersion];
 
+          let documentAuditLogObj = {
+            document : document_._id,
+            activityType : "Update",
+            activitySummary : "Update Document",
+            activityDetail : "New Version Created",
+          }
+
+          await createAuditLog(documentAuditLogObj,req);
           return res.status(StatusCodes.ACCEPTED).json(document_);
         }
         else 
@@ -509,7 +547,17 @@ exports.patchDocument = async (req, res, next) => {
         document_ = JSON.parse(JSON.stringify(document_));
         documentVersion = JSON.parse(JSON.stringify(documentVersion));
         documentVersion.files = dbFiles;
-        document_.documentVersions = [documentVersion]; 
+        document_.documentVersions = [documentVersion];
+        
+        let documentAuditLogObj = {
+          document : document_._id,
+          activityType : "Update",
+          activitySummary : "Update Document",
+          activityDetail : "Update Existing version",
+        }
+
+        await createAuditLog(documentAuditLogObj,req);
+
         return res.status(StatusCodes.ACCEPTED).json(document_);
       }
     } catch (error) {
@@ -530,6 +578,14 @@ exports.downloadDocument = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
+          let documentAuditLogObj = {
+            document : file.document,
+            activityType : "Download",
+            activitySummary : "Download Document",
+            activityDetail : "Download Document",
+          }
+
+          await createAuditLog(documentAuditLogObj,req);
           return res.status(StatusCodes.ACCEPTED).send(fileContent);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
