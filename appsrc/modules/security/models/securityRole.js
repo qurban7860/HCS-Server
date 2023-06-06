@@ -11,7 +11,10 @@ const docSchema = new Schema({
   // name of role
   
   description: { type: String, required: true},
-  // discription of role
+  // description of role
+  
+  roleType : { type: String, required: true},
+  // SuperAdmin/Developer/Normal
   
   allModules: { type: Boolean, default: false},
   //will be used to assign all module , like Administrator
