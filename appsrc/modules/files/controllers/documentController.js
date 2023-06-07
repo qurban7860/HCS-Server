@@ -17,7 +17,7 @@ let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
 const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
-const { Customer } = require('../../crm/models');
+const { Customer, CustomerSite } = require('../../crm/models');
 const { Machine } = require('../../products/models');
 
 
@@ -144,6 +144,7 @@ exports.postDocument = async (req, res, next) => {
       let customer = req.body.customer;
       let machine = req.body.machine;
       let documentType = req.body.documentType;
+      let site = req.body.site;
       let documentCategory = req.body.documentCategory;
       if(name && mongoose.Types.ObjectId.isValid(documentType) && 
         (mongoose.Types.ObjectId.isValid(customer)|| mongoose.Types.ObjectId.isValid(machine)) && 
@@ -169,6 +170,17 @@ exports.postDocument = async (req, res, next) => {
           cust = await dbservice.getObjectById(Customer,this.fields,customer);
           if(!cust) {
             console.error("Customer Not Found");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+        }
+
+        let site_ = {}
+
+        if(mongoose.Types.ObjectId.isValid(site)) {
+          site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
+          if(!site_) {
+            console.error("Site Not Found");
 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
@@ -390,6 +402,7 @@ exports.patchDocument = async (req, res, next) => {
       let customer = req.body.customer;
       let machine = req.body.machine;
       let documentType = req.body.documentType;
+      let site = req.body.site;
       let documentCategory = req.body.documentCategory;
       if(name && mongoose.Types.ObjectId.isValid(documentType) && 
         (mongoose.Types.ObjectId.isValid(customer) || mongoose.Types.ObjectId.isValid(machine)) && 
@@ -400,6 +413,16 @@ exports.patchDocument = async (req, res, next) => {
         if(!docType) {
           console.error("Document Type Not Found");
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+        let site_ = {}
+        if(mongoose.Types.ObjectId.isValid(site)) {
+          site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
+          if(!site_) {
+            console.error("Site Not Found");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
         }
 
         let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
