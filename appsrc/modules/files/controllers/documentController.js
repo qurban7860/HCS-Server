@@ -31,7 +31,9 @@ this.populate = [
   { path: 'updatedBy', select: 'name' },
   { path: 'docType', select: 'name' },
   { path: 'docCategory', select: 'name' },
-  { path: 'customer', select: 'name' }
+  { path: 'customer', select: 'name' },
+  { path: 'machine', select: 'name' },
+  { path: 'site', select: 'name' },
 ];
 
 
