@@ -28,7 +28,7 @@ const docSchema = new Schema({
         documentVersions: [{ type: Schema.Types.ObjectId , ref: 'DocumentVersion' }],
         // list of versions. 
 
-        customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
         // customer information.
 
         customerAccess: { type: Boolean, default: false },
