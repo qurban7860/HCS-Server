@@ -290,10 +290,11 @@ exports.postDocument = async (req, res, next) => {
 };
 
 async function createAuditLog(documentAuditLogObj,req) {
+  if(!documentAuditLogObj.document)
+    return console.log('Document id not found');
   
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-
   documentAuditLogObj.isActive = true;
   documentAuditLogObj.isArchived = false;
   if(req.body.loginUser) {
