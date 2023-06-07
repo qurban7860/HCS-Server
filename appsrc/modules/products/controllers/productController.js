@@ -233,13 +233,16 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine without a customer cannot be transferred'));
         }
 
-        if(isTransferrableMachineStatus(parentMachine.status)){
+        if(isNonTransferrableMachine(parentMachine.status)){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine status invalid for transfer'));
         } 
 
+        if(!parentMachine.isActive || parentMachine.isArchived){
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Inactive or archived machines cannot be transferred'));
+        }
         // validate if an entry already exists with the same customer and parentMachineID
-        let existingParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false }, this.populate);
-        if(existingParentMachine){
+        let alreadyTransferredParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false }, this.populate);
+        if(alreadyTransferredParentMachine){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
 
@@ -290,7 +293,7 @@ exports.transferOwnership = async (req, res, next) => {
   }
 };
 
-function isTransferrableMachineStatus(status) {
+function isNonTransferrableMachine(status) {
   if (!_.isEmpty(status) && status.slug === 'transferred') {
     return true;
   }

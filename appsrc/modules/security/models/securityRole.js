@@ -13,7 +13,7 @@ const docSchema = new Schema({
   description: { type: String, required: true},
   // description of role
   
-  roleType : { type: String, required: true},
+  roleType : { type: String, required: true, default: 'normal'},
   // SuperAdmin/Developer/Normal
   
   allModules: { type: Boolean, default: false},
