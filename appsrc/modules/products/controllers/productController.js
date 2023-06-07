@@ -233,7 +233,6 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine without a customer cannot be transferred'));
         }
 
-
         if(isTransferrableMachineStatus(parentMachine.status)){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine status invalid for transfer'));
         } 

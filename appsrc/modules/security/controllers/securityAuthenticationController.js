@@ -26,7 +26,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  { path: '', select: '' }
+  {path: 'roles', select: ''},
 ];
 
 
@@ -43,7 +43,7 @@ exports.login = async (req, res, next) => {
   } else {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}]  };
 
-    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }], getObjectCallback);
+    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -77,7 +77,8 @@ exports.login = async (req, res, next) => {
                       user: {
                         login: existingUser.login,
                         email: existingUser.email,
-                        displayName: existingUser.name
+                        displayName: existingUser.name,
+                        roles: existingUser.roles
                       }
                     });
                   }
@@ -119,7 +120,8 @@ exports.refreshToken = async (req, res, next) => {
             user: {
               login: existingUser.login,
               email: existingUser.email,
-              displayName: existingUser.name
+              displayName: existingUser.name,
+              roles: existingUser.roles
             }
           });
         }
