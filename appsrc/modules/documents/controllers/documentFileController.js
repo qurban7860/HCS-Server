@@ -221,6 +221,7 @@ exports.patchDocumentFile = async (req, res, next) => {
         
       let documentFile = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id,this.populate);
 
+      let documentVersion = {};
       if(!documentFile)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
@@ -238,7 +239,7 @@ exports.patchDocumentFile = async (req, res, next) => {
           }
         }
 
-        let documentVersion = await dbservice.getObjectById(DocumentVersion, this.fields, versionID,this.populate);
+        documentVersion = await dbservice.getObjectById(DocumentVersion, this.fields, versionID,this.populate);
         
         if(!documentVersion || documentVersion.isActive==false || documentVersion.isArchived) {
           console.error("Invalid document for documentVersion");
