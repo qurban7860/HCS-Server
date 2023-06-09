@@ -214,16 +214,6 @@ exports.patchDocumentFile = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
-      let file = {};
-        
-      if(req.files && req.files.images)
-        file = req.files.images[0];
-
-      if(!file || !file.originalname) {
-        console.log('No File present for uploading')
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      }
-
       let archiveStatus = req.body.isArchived;
       let name = req.body.name;
       let customer = req.body.customer;
@@ -257,24 +247,6 @@ exports.patchDocumentFile = async (req, res, next) => {
 
       }
       
-      if(req.body.customerAccess=='true' || req.body.customerAccess===true)
-        req.body.customerAccess = true;
-
-      if(req.body.customerAccess=='false' || req.body.customerAccess===false)
-        req.body.customerAccess = false;
-
-      if(req.body.isActive=='true' || req.body.isActive===true)
-        req.body.isActive = true;
-
-      if(req.body.isActive=='false' || req.body.isActive===false)
-        req.body.isActive = false;
-      
-      if(req.body.isArchived=='true' || req.body.isArchived===true)
-        req.body.isArchived = true;
-
-      if(req.body.isArchived=='false' || req.body.isArchived===false)
-        req.body.isArchived = false;
-
       await dbservice.patchObject(DocumentFile, req.params.id, getDocumentFromReq(req));
       documentFile = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id,this.populate);
 

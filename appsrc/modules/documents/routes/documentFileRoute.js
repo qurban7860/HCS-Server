@@ -26,7 +26,7 @@ router.use(checkAuth, checkCustomer);
 // - /api/1.0.0/documents/documentFile/:id
 router.get(`${baseRoute}/:documentid/versions/:versionid/files/:id`,controller.getDocumentFile);
 
-// - /api/1.0.0/documents/download/:id
+// - /api/1.0.0/documents/documentFile/:id
 router.get(`${baseRoute}/:documentid/versions/:versionid/files/:id/download/`, controller.downloadDocumentFile);
 
 // - /api/1.0.0/documents/documentFile/
@@ -49,20 +49,7 @@ router.post(`${baseRoute}/:documentid/versions/:versionid/files/`, (req, res, ne
   }, controller.postDocumentFile);
 
 // - /api/1.0.0/documents/documentFile/:id
-router.patch(`${baseRoute}/:documentid/versions/:versionid/files/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:1}])(req, res, (err) => {
-
-      if (err instanceof multer.MulterError) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
-      } else if (err) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-        next();
-      }
-    });
-  }, controller.patchDocumentFile);
+router.patch(`${baseRoute}/:documentid/versions/:versionid/files/:id`, controller.patchDocumentFile);
 
 // - /api/1.0.0/documents/documentFile/:id
 router.delete(`${baseRoute}/:documentid/versions/:versionid/files/:id`, controller.deleteDocumentFile);
