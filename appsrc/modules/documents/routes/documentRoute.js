@@ -17,22 +17,19 @@ const controller = controllers.documentController;
 const router = express.Router();
 
 //  - base route for module
-// - /api/1.0.0/filemanager/files
-const baseRoute = `/files`;
+// - /api/1.0.0/documents/
+const baseRoute = `/document`;
 
 
 router.use(checkAuth, checkCustomer);
 
-// - /api/1.0.0/filemanager/files/download/:id
-router.get(`${baseRoute}/download/:id`, controller.downloadDocument);
-
-// - /api/1.0.0/filemanager/files/:id
+// - /api/1.0.0/documents/:id
 router.get(`${baseRoute}/:id`,controller.getDocument);
 
-// - /api/1.0.0/filemanager/files/
+// - /api/1.0.0/documents/
 router.get(`${baseRoute}/`, controller.getDocuments);
 
-// - /api/1.0.0/filemanager/files/
+// - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
     fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
 
@@ -48,7 +45,7 @@ router.post(`${baseRoute}/`, (req, res, next) => {
     });
   }, controller.postDocument);
 
-// - /api/1.0.0/filemanager/files/:id
+// - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
     fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
 
@@ -64,7 +61,7 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
     });
   }, controller.patchDocument);
 
-// - /api/1.0.0/filemanager/files/:id
+// - /api/1.0.0/documents/files/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocument);
 
 module.exports = router;

@@ -46,9 +46,19 @@ exports.getDocument = async (req, res, next) => {
       document_ = JSON.parse(JSON.stringify(document_));
 
       let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
-      let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
+      let documentVersions = [];
+      let historical = req.body.historical;
+      
+      if(historical) 
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
+      else 
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1}).limit(1);
+      
+      
+
       if(Array.isArray(documentVersions) && documentVersions.length>0) {
         documentVersions = JSON.parse(JSON.stringify(documentVersions));
+
 
         for(let documentVersion of documentVersions) {
           if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
@@ -109,9 +119,18 @@ exports.getDocuments = async (req, res, next) => {
 
 exports.deleteDocument = async (req, res, next) => {
   try {
-    const response = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
-    if(response && response.id && response.isArchived==true) {
+    const document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+    if(document_ && document_.id && document_.isArchived==true) {
       const result = await dbservice.deleteObject(Document, req.params.id);
+      let documentAuditLogObj = {
+        document : document_._id,
+        activityType : "Delete",
+        activitySummary : "Delete Document",
+        activityDetail : "Delete Document permanently",
+      }
+
+      await createAuditLog(documentAuditLogObj,req);
+
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
     else {
@@ -170,7 +189,7 @@ exports.postDocument = async (req, res, next) => {
 
         if(mongoose.Types.ObjectId.isValid(customer)) {
           cust = await dbservice.getObjectById(Customer,this.fields,customer);
-          if(!cust) {
+          if(!cust || cust.isActive==false || cust.isArchived==true) {
             console.error("Customer Not Found");
 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -297,12 +316,15 @@ async function createAuditLog(documentAuditLogObj,req) {
   
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
+  
   documentAuditLogObj.isActive = true;
   documentAuditLogObj.isArchived = false;
+
   if(req.body.loginUser) {
     documentAuditLogObj.createdBy = documentAuditLogObj.updatedBy = req.body.loginUser.userId
     documentAuditLogObj.createdIP = documentAuditLogObj.updatedIP = req.body.loginUser.userIP
   }
+  
   documentAuditLogObj = new DocumentAuditLog(documentAuditLogObj);
   await documentAuditLogObj.save();
 }
@@ -407,6 +429,8 @@ exports.patchDocument = async (req, res, next) => {
       let documentType = req.body.documentType;
       let site = req.body.site;
       let documentCategory = req.body.documentCategory;
+      let archiveStatus = req.body.isArchived;
+
       if(name && mongoose.Types.ObjectId.isValid(documentType) && 
         (mongoose.Types.ObjectId.isValid(customer) || mongoose.Types.ObjectId.isValid(machine)) && 
         mongoose.Types.ObjectId.isValid(documentCategory) ) {
@@ -522,6 +546,13 @@ exports.patchDocument = async (req, res, next) => {
             activityDetail : "New Version Created",
           }
 
+          if(archiveStatus && archiveStatus!=document_.isArchived && 
+            document_.isArchived==true) {
+            documentAuditLogObj.activityType = 'SoftDelete';
+            documentAuditLogObj.activitySummary = 'Document Archived';
+            documentAuditLogObj.activityDetail = 'Document Archived';
+          }
+
           await createAuditLog(documentAuditLogObj,req);
           return res.status(StatusCodes.ACCEPTED).json(document_);
         }
@@ -593,38 +624,6 @@ exports.patchDocument = async (req, res, next) => {
   }
 };
 
-exports.downloadDocument = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    console.log(errors)
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    try {
-      const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
-      if(file){
-        if (file.path && file.path !== '') {
-          const fileContent = await awsService.downloadFileS3(file.path);
-          let documentAuditLogObj = {
-            document : file.document,
-            activityType : "Download",
-            activitySummary : "Download Document",
-            activityDetail : "Download Document",
-          }
-
-          await createAuditLog(documentAuditLogObj,req);
-          return res.status(StatusCodes.ACCEPTED).send(fileContent);
-        }else{
-          res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
-        }
-      }else{
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
-      }
-    }
-    catch(err){
-      return err;
-    }
-  }
-};
 
 async function readFileAsBase64(filePath) {
   try {
