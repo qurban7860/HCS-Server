@@ -138,12 +138,9 @@ exports.postDocumentFile = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
           
-        getDocumentFromReq(req, reqType)
-
-
         const processedFile = await processFile(file, req.body.loginUser.userId);
         req.body.path = processedFile.s3FilePath;
-        req.body.type = processedFile.type
+        req.body.fileType =req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
         req.body.content = processedFile.base64thumbNailData;
         req.body.originalname = processedFile.name;
@@ -191,8 +188,8 @@ exports.postDocumentFile = async (req, res, next) => {
 };
 
 async function createAuditLog(documentAuditLogObj,req) {
-  if(!documentAuditLogObj.document)
-    return console.log('Document id not found');
+  if(!documentAuditLogObj.documentFile)
+    return console.log('DocumentFile id not found');
   
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
@@ -282,7 +279,7 @@ exports.patchDocumentFile = async (req, res, next) => {
       documentFile = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id,this.populate);
 
       let documentAuditLogObj = {
-        document : document_._id,
+        documentFile : documentFile._id,
         activityType : "Update",
         activitySummary : "Update Document File",
         activityDetail : "Document File Updated",
@@ -319,7 +316,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
           let documentAuditLogObj = {
-            document : file.document,
+            documentFile : file.id,
             activityType : "Download",
             activitySummary : "Download DocumentFile",
             activityDetail : "Download DocumentFile",
@@ -423,7 +420,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { customer, isActive, isArchived, loginUser, documentVersion , description,
-  name, displayName, user, site, contact, machine } = req.body;
+  name, displayName, user, site, contact, machine, fileType } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -435,6 +432,11 @@ function getDocumentFromReq(req, reqType) {
   if ("displayName" in req.body) {
     doc.displayName = displayName;
   }
+
+  if ("fileType" in req.body) {
+    doc.fileType = fileType;
+  }
+
   if ("description" in req.body) {
     doc.description = description;
   }

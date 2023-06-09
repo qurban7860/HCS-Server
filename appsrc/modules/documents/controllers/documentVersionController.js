@@ -260,8 +260,8 @@ exports.postDocumentVersion = async (req, res, next) => {
 };
 
 async function createAuditLog(documentAuditLogObj,req) {
-  if(!documentAuditLogObj.document)
-    return console.log('Document id not found');
+  if(!documentAuditLogObj.documentVersion)
+    return console.log('DocumentVersion id not found');
   
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
@@ -335,7 +335,8 @@ exports.patchDocumentVersion = async (req, res, next) => {
       let name = req.body.name;
       let customer = req.body.customer;
       let documentID = req.params.documentid;
-        
+      
+      let document_ = {};
       let documentVersion = await dbservice.getObjectById(DocumentVersion, this.fields, req.params.id,this.populate);
 
       if(!documentVersion)
@@ -355,7 +356,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
           }
         }
 
-        let document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
+        document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
         
         if(!document_ || document_.isActive==false || document_.isArchived) {
           console.error("Invalid document for documentVersion");
