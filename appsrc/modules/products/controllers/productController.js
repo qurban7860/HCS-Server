@@ -82,12 +82,12 @@ exports.getProduct = async (req, res, next) => {
 exports.getProducts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  function callbackFunc(error, products) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      res.json(products);
     }
   }
 };

@@ -9,8 +9,20 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-    document: { type: Schema.Types.ObjectId, required:true, ref: 'Document' },
+    document: { type: Schema.Types.ObjectId, ref: 'Document' },
     // document information 
+
+    documentVersion: { type: Schema.Types.ObjectId, ref: 'DocumentVersion' },
+    // document information 
+
+    documentFile: { type: Schema.Types.ObjectId, ref: 'DocumentFile' },
+    // document information 
+
+    documentCategory: { type: Schema.Types.ObjectId, ref: 'DocumentCategory' },
+    // document information 
+
+    documentType: { type: Schema.Types.ObjectId, ref: 'DocumentType' },
+    // document information
 
     activityType: { type: String },
     // action Type (Create, Update, Delete)
