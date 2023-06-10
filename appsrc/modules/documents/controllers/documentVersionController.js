@@ -154,12 +154,12 @@ exports.postDocumentVersion = async (req, res, next) => {
       if(req.files && req.files.images)
         files = req.files.images;
 
-      let name = req.body.name;
       let customer = req.body.customer;
+      let machine = req.body.machine;
       let documentID = req.params.documentid;
 
-      if(name && mongoose.Types.ObjectId.isValid(customer) && 
-        mongoose.Types.ObjectId.isValid(documentID)) {
+      if(mongoose.Types.ObjectId.isValid(documentID) &&
+        (mongoose.Types.ObjectId.isValid(machine)|| mongoose.Types.ObjectId.isValid(customer))) {
 
         let cust = {}
 
@@ -167,6 +167,17 @@ exports.postDocumentVersion = async (req, res, next) => {
           cust = await dbservice.getObjectById(Customer,this.fields,customer);
           if(!cust || cust.isActive==false || cust.isArchived==true) {
             console.error("Customer Not Found");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+        }
+
+        let mach = {}
+
+        if(mongoose.Types.ObjectId.isValid(machine)) {
+          mach = await dbservice.getObjectById(Machine, this.fields, machine);
+          if(!mach || mach.isActive==false || mach.isArchived==true) {
+            console.error("Invalid machine for documentVersion");
 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
@@ -181,7 +192,19 @@ exports.postDocumentVersion = async (req, res, next) => {
         }
 
         if(Array.isArray(files) && files.length>0) {
-          let documentVersion = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
+          .sort({ versionNo:-1 });
+          let version = 0;
+
+          if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+            version = 1;
+          else 
+            version = parseInt(documentVersion.versionNo) + 1;
+
+          req.body.versionNo = version;
+
+
+          documentVersion = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
           if(!documentVersion) {
             console.error("Unable to save document");
@@ -189,7 +212,6 @@ exports.postDocumentVersion = async (req, res, next) => {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
           }
           
-          req.body.versionNo = 1;
           let documentFiles = [];
           let dbFiles = [];
 
@@ -386,15 +408,6 @@ exports.patchDocumentVersion = async (req, res, next) => {
 
       if(Array.isArray(files) && files.length>0) {
 
-        let version = 0;
-
-        if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
-          version = 1;
-        else 
-          version = parseInt(documentVersion.versionNo) + 1;
-
-        req.body.versionNo = version;
-
         let dbFiles = []
         for(let file of files) {
             
@@ -544,7 +557,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { customer, isActive, isArchived, loginUser, versionPrefix, document, description,
-  name, displayName, user, site, contact, machine } = req.body;
+  name, displayName, user, site, contact, machine, versionNo } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -559,7 +572,13 @@ function getDocumentFromReq(req, reqType) {
   if ("description" in req.body) {
     doc.description = description;
   }
+
+  if ("versionNo" in req.body) {
+    doc.versionNo = versionNo;
+  }
   
+  
+
   if ("customer" in req.body) {
     doc.customer = customer;
   }

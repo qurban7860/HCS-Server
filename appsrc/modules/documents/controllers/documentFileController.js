@@ -115,6 +115,7 @@ exports.postDocumentFile = async (req, res, next) => {
       let name = req.body.name;
       let customer = req.body.customer;
       let versionID = req.params.versionid;
+      let machine = req.body.machine;
 
       if(name && mongoose.Types.ObjectId.isValid(customer) && 
         mongoose.Types.ObjectId.isValid(versionID)) {
@@ -129,6 +130,18 @@ exports.postDocumentFile = async (req, res, next) => {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
+
+        let mach = {}
+
+        if(mongoose.Types.ObjectId.isValid(machine)) {
+          mach = await dbservice.getObjectById(Machine, this.fields, machine);
+          if(!mach || mach.isActive==false || mach.isArchived==true) {
+            console.error("Invalid machine for documentFile");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+        }
+        
 
         let documentVersion = await dbservice.getObjectById(DocumentVersion, this.fields, versionID,this.populate);
         
