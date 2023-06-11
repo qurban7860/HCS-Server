@@ -10,6 +10,7 @@ const docSchema = new Schema({
     name: { type: String, required: true, unique: true },
     // name of model 
 
+    connections: { type: Boolean, default:false },
     description: { type: String, },
     // description of model
     },

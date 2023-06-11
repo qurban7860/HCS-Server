@@ -23,7 +23,7 @@ router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/`, controller.getProducts);
 
-router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getDecoilerProducts); 
+router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getConnectionProducts); 
 
 router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
