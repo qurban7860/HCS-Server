@@ -47,7 +47,7 @@ exports.getDocument = async (req, res, next) => {
 
       let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
       let documentVersions = [];
-      let historical = req.body.historical;
+      let historical = req.query.historical;
       
       if(historical) 
         documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});

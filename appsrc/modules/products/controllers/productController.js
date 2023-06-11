@@ -25,7 +25,9 @@ this.query = {};
 this.orderBy = { createdAt: -1 };  
 //this.populate = 'category';
 this.populate = [
-      {path: 'machineModel', select: '_id name'},
+      {path: 'machineModel', select: '_id name category', 
+        populate: { path:"category" , select:"name description connections" }
+      },
       {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
       {path: 'supplier', select: '_id name'},
       {path: 'status', select: '_id name'},
@@ -87,13 +89,29 @@ exports.getProducts = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(products);
+      if(req.query.getConnectedMachine) {
+        let index = 0;
+        let filteredProducts = [];
+        for(let product of products) {
+
+          if(product && product.machineModel && product.machineModel.category && 
+            product.machineModel.category.connections) {
+            filteredProducts.push(product);
+          }
+
+        }
+        res.json(filteredProducts);
+
+      }
+      else {
+        res.json(products);
+      }
     }
   }
 };
 
-exports.getDecoilerProducts = async (req, res, next) => {
-  this.query = { name : { $regex: 'decoiler', $options: 'i' },isActive:true, isArchived:false };
+exports.getConnectionProducts = async (req, res, next) => {
+  this.query = { connections:true, isActive:true, isArchived:false };
   let machines = [];
   let machienCategories = await dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
   if(machienCategories && machienCategories.length>0) {
