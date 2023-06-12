@@ -19,7 +19,7 @@ const docSchema = new Schema({
   allModules: { type: Boolean, default: false},
   //will be used to assign all module , like Administrator
   
-  deleteAny: { type: Boolean, default: false},
+  disableDelete: { type: Boolean, default: false},
   //if true, nothing can be deleted in system
 
   allWriteAccess: { type: Boolean, default: false},
