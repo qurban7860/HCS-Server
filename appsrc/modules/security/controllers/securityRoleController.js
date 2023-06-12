@@ -91,7 +91,7 @@ exports.patchSecurityRole = async (req, res, next) => {
     if("isArchived" in req.body){
       let existingRole = await this.dbservice.getObjectById(SecurityRole, this.fields, req.params.id, this.populate); 
       if(!(_.isEmpty(existingRole))) {
-        if(existingRole.deleteAny){
+        if(existingRole.disableDelete){
           return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Selected role cannot be deleted!", true));
         } else{
           let queryString = { roles: req.params.id };
@@ -121,7 +121,7 @@ exports.patchSecurityRole = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, allModules, allWriteAccess, deleteAny,
+  const { name, description, allModules, allWriteAccess, disableDelete,
         roleType, modules, loginUser, isActive, isArchived} = req.body;
 
 
@@ -146,8 +146,8 @@ function getDocumentFromReq(req, reqType){
     doc.allWriteAccess = allWriteAccess;
   }
 
-  if ("deleteAny" in req.body){
-    doc.deleteAny = deleteAny;
+  if ("disableDelete" in req.body){
+    doc.disableDelete = disableDelete;
   }
 
   if ("modules" in req.body){
