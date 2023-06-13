@@ -197,7 +197,9 @@ exports.patchSecurityUser = async (req, res, next) => {
 
         else{
           // check if email already exists
-          let queryString = { $or: [
+          let queryString = { 
+            isArchived: false,
+            $or: [
             { email: req.body.email?.toLowerCase()  }, 
             { login: req.body.login?.toLowerCase()  }
           ]};
@@ -210,6 +212,7 @@ exports.patchSecurityUser = async (req, res, next) => {
             } else {
               // check if theres any other user by the same email
               if(response && response._id && response._id != req.params.id){
+                console.log('response------->', response);
                 // return error message
                 return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
               }else{
@@ -312,6 +315,7 @@ async function getDocumentFromReq(req, reqType){
     doc.createdBy = req.body.loginUser.userId;
     doc.updatedBy = req.body.loginUser.userId;
     doc.createdIP = req.body.loginUser.userIP;
+    doc.updatedIP = req.body.loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = req.body.loginUser.userId;
     doc.updatedIP = req.body.loginUser.userIP;
