@@ -30,7 +30,7 @@ this.populate = [
       },
       {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
       {path: 'supplier', select: '_id name'},
-      {path: 'status', select: '_id name'},
+      {path: 'status', select: '_id name slug'},
       {path: 'customer', select: '_id name'},
       {path: 'billingSite', select: ''},
       {path: 'instalationSite', select: ''},
@@ -182,6 +182,9 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
+    if(machine.status?.slug && machine.status.slug === 'transferred'){
+      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
+    }
     if(machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus){ 
       let queryString = { slug: 'intransfer'}
       let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
@@ -398,7 +401,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags,
+    tools, description, internalTags, customerTags, installationDate, shippingDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID } = req.body;
   
   let doc = {};
@@ -446,6 +449,12 @@ function getDocumentFromReq(req, reqType){
   }
   if ("billingSite" in req.body){
     doc.billingSite = billingSite;
+  }
+  if ("installationDate" in req.body){
+    doc.installationDate = installationDate;
+  }
+  if ("shippingDate" in req.body){
+    doc.shippingDate = shippingDate;
   }
   if ("operators" in req.body){
     doc.operators = operators;
