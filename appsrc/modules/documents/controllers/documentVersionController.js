@@ -202,6 +202,7 @@ exports.postDocumentVersion = async (req, res, next) => {
             version = parseInt(documentVersion.versionNo) + 1;
 
           req.body.versionNo = version;
+          req.body.document = document_.id;
 
 
           documentVersion = await dbservice.postObject(getDocumentFromReq(req, 'new'));
