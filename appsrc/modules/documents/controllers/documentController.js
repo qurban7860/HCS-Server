@@ -50,9 +50,9 @@ exports.getDocument = async (req, res, next) => {
       let historical = req.query.historical;
       
       if(historical) 
-        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
       else 
-        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1}).limit(1);
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1}).limit(1);
       
       
 
@@ -91,7 +91,7 @@ exports.getDocuments = async (req, res, next) => {
           document_ = JSON.parse(JSON.stringify(document_));
 
           let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
-          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo').sort({createdAt:-1});
+          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
           if(Array.isArray(documentVersions) && documentVersions.length>0) {
             documentVersions = JSON.parse(JSON.stringify(documentVersions));
 
