@@ -32,7 +32,7 @@ this.populate = [
   { path: 'docType', select: 'name' },
   { path: 'docCategory', select: 'name' },
   { path: 'customer', select: 'name' },
-  { path: 'machine', select: 'name' },
+  { path: 'machine', select: 'name serialNo' },
   { path: 'site', select: 'name' },
 ];
 
