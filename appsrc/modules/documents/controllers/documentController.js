@@ -725,7 +725,7 @@ function getDocumentFromReq(req, reqType) {
   const { name, displayName, description, path, type, extension, content, 
     documentVersions, documentCategory, customer, customerAccess, site,
     contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
-    machineModel, documentType } = req.body;
+    machineModel, documentType, shippingDate, installationDate } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -748,6 +748,12 @@ function getDocumentFromReq(req, reqType) {
   }
   if ("extension" in req.body) {
     doc.extension = extension;
+  }
+  if ("installationDate" in req.body){
+    doc.installationDate = installationDate;
+  }
+  if ("shippingDate" in req.body){
+    doc.shippingDate = shippingDate;
   }
   if ("documentType" in req.body) {
     doc.docType = documentType;

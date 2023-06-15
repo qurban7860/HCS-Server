@@ -49,6 +49,11 @@ const docSchema = new Schema({
         machineModel: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
         // machine information.
 
+        shippingDate: { type: Date },
+        // lshipping date
+
+        installationDate: { type: Date },
+        // installation date
 },
 {
         collection: 'Documents'
