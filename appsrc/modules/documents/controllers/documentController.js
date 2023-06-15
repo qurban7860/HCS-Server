@@ -18,7 +18,7 @@ const dbservice = new documentDBService();
 
 const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
 const { Customer, CustomerSite } = require('../../crm/models');
-const { Machine } = require('../../products/models');
+const { Machine, MachineModel } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -31,6 +31,7 @@ this.populate = [
   { path: 'updatedBy', select: 'name' },
   { path: 'docType', select: 'name' },
   { path: 'docCategory', select: 'name' },
+  { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
   { path: 'site', select: 'name' },
@@ -167,8 +168,10 @@ exports.postDocument = async (req, res, next) => {
       let documentType = req.body.documentType;
       let site = req.body.site;
       let documentCategory = req.body.documentCategory;
+      let machineModel = req.body.machineModel;
       if(name && mongoose.Types.ObjectId.isValid(documentType) && 
-        (mongoose.Types.ObjectId.isValid(customer)|| mongoose.Types.ObjectId.isValid(machine)) && 
+        (mongoose.Types.ObjectId.isValid(customer) || 
+          mongoose.Types.ObjectId.isValid(machine) || mongoose.Types.ObjectId.isValid(machineModel)) && 
         mongoose.Types.ObjectId.isValid(documentCategory)) {
 
         let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
@@ -214,6 +217,19 @@ exports.postDocument = async (req, res, next) => {
 
           if(!mach) {
             console.error("Machine Not Found");
+
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+        }
+
+
+        let mModel = {};
+        if(mongoose.Types.ObjectId.isValid(machineModel)){
+
+          mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
+
+          if(!mModel) {
+            console.error("Machine Model Not Found");
 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
