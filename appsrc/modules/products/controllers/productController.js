@@ -193,6 +193,10 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
     else{
+      if(!req.body.installationSite && (machine.installationDate || machine.shippingDate)){
+        req.body.installationDate = null;
+        req.body.shippingDate = null;
+      } 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
         
