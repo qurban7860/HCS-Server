@@ -224,6 +224,17 @@ exports.patchProduct = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
     }
+  
+    if(machine && req.body.isVerified){ 
+      machine.verifications.push({
+        verifiedBy: req.loginUser.userId,
+        verifiedDate: new Date()
+      })
+      machine = await machine.save();
+      res.status(StatusCodes.ACCEPTED).json(machine);
+
+    }
+
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {

@@ -91,6 +91,11 @@ const docSchema = new Schema({
     // list of tags used for reporting by customer
 
     siteMilestone: { type: String }
+
+    verifications : [{
+        verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+        verifiedDate: { type: Date }
+    }]
 },
 {
     collection: 'Machines'
