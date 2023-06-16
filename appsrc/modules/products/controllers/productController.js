@@ -188,6 +188,7 @@ exports.patchProduct = async (req, res, next) => {
       return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
     }
 
+    console.log("req.body",req.body);
     if(machine && req.body.isVerified){ 
       machine.verifications.push({
         verifiedBy: req.loginUser.userId,
@@ -195,7 +196,6 @@ exports.patchProduct = async (req, res, next) => {
       })
       machine = await machine.save();
       return res.status(StatusCodes.ACCEPTED).json(machine);
-
     }
 
 
