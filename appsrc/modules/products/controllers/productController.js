@@ -154,6 +154,7 @@ exports.deleteProduct = async (req, res, next) => {
 exports.postProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machineConnections = req.body.machineConnections;
@@ -179,6 +180,7 @@ exports.postProduct = async (req, res, next) => {
 exports.patchProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
@@ -221,6 +223,8 @@ exports.patchProduct = async (req, res, next) => {
         }
       }
       else {
+        console.log("machine patch request machine connections provided but empty");
+
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
       }
     }
