@@ -187,6 +187,19 @@ exports.patchProduct = async (req, res, next) => {
     if(machine.status?.slug && machine.status.slug === 'transferred'){
       return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
     }
+
+    if(machine && req.body.isVerified){ 
+      machine.verifications.push({
+        verifiedBy: req.loginUser.userId,
+        verifiedDate: new Date()
+      })
+      machine = await machine.save();
+      return res.status(StatusCodes.ACCEPTED).json(machine);
+
+    }
+
+
+
     if(machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus){ 
       let queryString = { slug: 'intransfer'}
       let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
@@ -229,16 +242,7 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
   
-    if(machine && req.body.isVerified){ 
-      machine.verifications.push({
-        verifiedBy: req.loginUser.userId,
-        verifiedDate: new Date()
-      })
-      machine = await machine.save();
-      res.status(StatusCodes.ACCEPTED).json(machine);
-
-    }
-
+    
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
