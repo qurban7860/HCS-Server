@@ -6,6 +6,7 @@ const checkAuth = require('../../../middleware/check-auth');
 const { Product } = require('../models');
 const checkProductID = require('../../../middleware/check-parentID')('machine', Product);
 const checkCustomer = require('../../../middleware/check-customer');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 
 const controllers = require('../controllers');
@@ -30,7 +31,7 @@ router.get(`${baseRouteForObject}`, checkProductID, controller.getProductNotes);
 
 router.post(`${baseRouteForObject}`, checkProductID, controller.postProductNote);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID, controller.patchProductNote);
+router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.patchProductNote);
 
 router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductNote);
 
