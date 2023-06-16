@@ -90,7 +90,7 @@ const docSchema = new Schema({
     customerTags: [{ type: String }],
     // list of tags used for reporting by customer
 
-    siteMilestone: { type: String }
+    siteMilestone: { type: String },
 
     verifications : [{
         verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
