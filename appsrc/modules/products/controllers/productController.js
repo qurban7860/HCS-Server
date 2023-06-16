@@ -189,13 +189,21 @@ exports.patchProduct = async (req, res, next) => {
     }
 
     if(machine && req.body.isVerified){ 
+      
+      if(!Array.isArray(machine.verifications))
+        machine.verifications = [];
+
+      for(let verif of machine.verifications) {
+        if(verif.verifiedBy == req.body.loginUser.userId)
+          res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+
+      }
       machine.verifications.push({
-        verifiedBy: req.loginUser.userId,
+        verifiedBy: req.body.loginUser.userId,
         verifiedDate: new Date()
       })
       machine = await machine.save();
       return res.status(StatusCodes.ACCEPTED).json(machine);
-
     }
 
 
