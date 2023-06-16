@@ -4,6 +4,7 @@ const { check } = require('express-validator');
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 const controllers = require('../controllers');
 const controller = controllers.productTechParamCategoryController;
@@ -23,7 +24,7 @@ router.get(`${baseRouteForObject}/`, controller.getProductTechParamCategories);
 
 router.post(`${baseRouteForObject}/`,  controller.postProductTechParamCategory);
 
-router.patch(`${baseRouteForObject}/:id`,  controller.patchProductTechParamCategory);
+router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductTechParamCategory);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductTechParamCategory);
 

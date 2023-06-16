@@ -6,6 +6,7 @@ const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 const controllers = require('../controllers');
 const controller = controllers.customerSiteController;
@@ -35,7 +36,7 @@ router.get(`${baseRouteForObject}/`, checkCustomerID, controller.getCustomerSite
 router.post(`${baseRouteForObject}/`, checkCustomerID, controller.postCustomerSite);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
-router.patch(`${baseRouteForObject}/:id`, checkCustomerID, controller.patchCustomerSite);
+router.patch(`${baseRouteForObject}/:id`, checkCustomerID, verifyDelete, controller.patchCustomerSite);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.delete(`${baseRouteForObject}/:id`, checkCustomerID, controller.deleteCustomerSite);
