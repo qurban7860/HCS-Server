@@ -30,10 +30,10 @@ this.populate = [
       },
       {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
       {path: 'supplier', select: '_id name'},
-      {path: 'status', select: '_id name'},
+      {path: 'status', select: '_id name slug'},
       {path: 'customer', select: '_id name'},
-      {path: 'billingSite', select: '_id name lat long'},
-      {path: 'instalationSite', select: '_id name address lat long'},
+      {path: 'billingSite', select: ''},
+      {path: 'instalationSite', select: ''},
       {path: 'accountManager', select: '_id firstName lastName'},
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
@@ -182,6 +182,9 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
+    if(machine.status?.slug && machine.status.slug === 'transferred'){
+      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
+    }
     if(machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus){ 
       let queryString = { slug: 'intransfer'}
       let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
@@ -190,6 +193,10 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
     else{
+      if(!req.body.installationSite && (machine.installationDate || machine.shippingDate)){
+        req.body.installationDate = null;
+        req.body.shippingDate = null;
+      } 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
         
@@ -251,13 +258,16 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine without a customer cannot be transferred'));
         }
 
-        if(isTransferrableMachineStatus(parentMachine.status)){
+        if(isNonTransferrableMachine(parentMachine.status)){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine status invalid for transfer'));
         } 
 
+        if(!parentMachine.isActive || parentMachine.isArchived){
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Inactive or archived machines cannot be transferred'));
+        }
         // validate if an entry already exists with the same customer and parentMachineID
-        let existingParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false }, this.populate);
-        if(existingParentMachine){
+        let alreadyTransferredParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false }, this.populate);
+        if(alreadyTransferredParentMachine){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
 
@@ -308,7 +318,7 @@ exports.transferOwnership = async (req, res, next) => {
   }
 };
 
-function isTransferrableMachineStatus(status) {
+function isNonTransferrableMachine(status) {
   if (!_.isEmpty(status) && status.slug === 'transferred') {
     return true;
   }
@@ -395,7 +405,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags,
+    tools, description, internalTags, customerTags, installationDate, shippingDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID } = req.body;
   
   let doc = {};
@@ -443,6 +453,12 @@ function getDocumentFromReq(req, reqType){
   }
   if ("billingSite" in req.body){
     doc.billingSite = billingSite;
+  }
+  if ("installationDate" in req.body){
+    doc.installationDate = installationDate;
+  }
+  if ("shippingDate" in req.body){
+    doc.shippingDate = shippingDate;
   }
   if ("operators" in req.body){
     doc.operators = operators;

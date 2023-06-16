@@ -130,15 +130,15 @@ exports.patchSecurityUser = async (req, res, next) => {
     if (ObjectId.isValid(req.params.id)) {
       if (req.url.includes("updatePassword")) {
         // if admin is updating password
-        if(req.body.isAdmin){
+        if(req.body.isAdmin){ 
           if(req.body.loginUser.userId){
-            let loginUser =  await this.dbservice.getObject(SecurityUser, { _id: req.body.loginUser.userId}, this.populate);
+            let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
             const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
             if(!hasSuperAdminRole){
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Only superadmins are allowed to access this feature ", true));
             }
           }else{
-            res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }else{
           // if the user is updating their password
@@ -146,11 +146,11 @@ exports.patchSecurityUser = async (req, res, next) => {
           let existingUser = await this.dbservice.getObject(SecurityUser, queryString, this.populate);
           if(existingUser){
             const passwordsResponse = await comparePasswords(req.body.oldPassword, existingUser.password)
-            if(!passwordsResponse){
-              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Wrong password entered", true));  
-            }                   
+            if(!passwordsResponse){ 
+              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Wrong password entered", true));  
+            }   
           }else{
-            res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "User not found!", true));
+            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "User not found!", true));
           }  
         }
         req.body.password = req.body.newPassword;
@@ -159,9 +159,9 @@ exports.patchSecurityUser = async (req, res, next) => {
         function callbackFunc(error, result) {
           if (error) {
             logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
           } else {
-            res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "passwordChange"));
+            return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "passwordChange"));
           }
         }   
       } else {
@@ -179,25 +179,27 @@ exports.patchSecurityUser = async (req, res, next) => {
                 function callbackFunc(error, result) {
                   if (error) {
                     logger.error(new Error(error));
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                   } else {
-                    res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
                   }
                 }
             }
             else {
-              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User assigned to a Customer/Machine cannot be deleted!'));
+              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User assigned to a Customer/Machine cannot be deleted!'));
             }
           }
           else {
-            res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
 
         }
 
         else{
-      // check if email already exists
-          let queryString = { $or: [
+          // check if email already exists
+          let queryString = { 
+            isArchived: false,
+            $or: [
             { email: req.body.email?.toLowerCase()  }, 
             { login: req.body.login?.toLowerCase()  }
           ]};
@@ -210,17 +212,18 @@ exports.patchSecurityUser = async (req, res, next) => {
             } else {
               // check if theres any other user by the same email
               if(response && response._id && response._id != req.params.id){
+                console.log('response------->', response);
                 // return error message
-                res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
+                return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
               }else{
                 const doc = await getDocumentFromReq(req);
                 _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
                 function callbackFunc(error, result) {
                   if (error) {
-                    logger.error(new Error(error));
+                    return logger.error(new Error(error));
                     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                   } else {
-                    res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
                   }
                 }     
               }
@@ -312,6 +315,7 @@ async function getDocumentFromReq(req, reqType){
     doc.createdBy = req.body.loginUser.userId;
     doc.updatedBy = req.body.loginUser.userId;
     doc.createdIP = req.body.loginUser.userIP;
+    doc.updatedIP = req.body.loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = req.body.loginUser.userId;
     doc.updatedIP = req.body.loginUser.userIP;

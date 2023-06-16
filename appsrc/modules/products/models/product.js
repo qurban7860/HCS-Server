@@ -80,6 +80,12 @@ const docSchema = new Schema({
     
     internalTags: [{ type: String }],
     // list of tags used for reporting internally (Howick)
+
+    shippingDate: { type: Date },
+    // shipping date
+
+    installationDate: { type: Date },
+    // installation date
   
     customerTags: [{ type: String }],
     // list of tags used for reporting by customer

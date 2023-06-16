@@ -32,7 +32,8 @@ exports.getData = async (req, res, next) => {
       { $lookup: { from: "CustomerSites", localField: "mainSite", foreignField: "_id", as: "mainSite" } },
       { $unwind: "$mainSite" },
       { $match: { "mainSite.address.country": { $nin: ["", null] } } },
-      { $group: { _id: "$mainSite.address.country", count: { $sum: 1 } } }
+      { $group: { _id: "$mainSite.address.country", count: { $sum: 1 } } },
+      { $limit: 20 }
     ]);
 
     let countryWiseSiteCount = await CustomerSite.aggregate([

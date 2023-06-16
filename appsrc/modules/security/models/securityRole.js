@@ -13,12 +13,15 @@ const docSchema = new Schema({
   description: { type: String, required: true},
   // description of role
   
-  roleType : { type: String, required: true},
+  roleType : { type: String, required: true, default: 'normal'},
   // SuperAdmin/Developer/Normal
   
   allModules: { type: Boolean, default: false},
   //will be used to assign all module , like Administrator
   
+  disableDelete: { type: Boolean, default: false},
+  //if true, nothing can be deleted in system
+
   allWriteAccess: { type: Boolean, default: false},
   //enable write access for all module , like for Administrator
   

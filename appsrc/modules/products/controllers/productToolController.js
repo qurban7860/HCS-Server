@@ -134,6 +134,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
