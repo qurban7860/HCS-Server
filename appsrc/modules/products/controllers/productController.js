@@ -195,7 +195,7 @@ exports.patchProduct = async (req, res, next) => {
 
       for(let verif of machine.verifications) {
         if(verif.verifiedBy == req.body.loginUser.userId)
-          res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
 
       }
       machine.verifications.push({
