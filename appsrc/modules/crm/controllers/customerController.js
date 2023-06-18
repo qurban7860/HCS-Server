@@ -167,6 +167,29 @@ exports.patchCustomer = async (req, res, next) => {
       }
     }
 
+    // ToDo correct spell mistake from front end
+    if(req.body.isVerified ||req.body.isVarified){ 
+      let customer = await Customer.findById(req.params.id); 
+      if(!customer) {
+        return res.status(StatusCodes.BAD_REQUEST).json({message:"Customer Not Found"});
+      }
+  
+      if(!Array.isArray(customer.verifications))
+        customer.verifications = [];
+
+      for(let verif of customer.verifications) {
+        if(verif.verifiedBy == req.body.loginUser.userId)
+          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+
+      }
+      customer.verifications.push({
+        verifiedBy: req.body.loginUser.userId,
+        verifiedDate: new Date()
+      })
+      customer = await customer.save();
+      return res.status(StatusCodes.ACCEPTED).json(customer);
+    }
+
     this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {

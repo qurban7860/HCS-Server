@@ -43,6 +43,11 @@ const docSchema = new Schema({
         
         supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
         // support project manager for this customer from Howick Side
+
+        verifications : [{
+                verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+                verifiedDate: { type: Date }
+        }]
 },
 {
         collection: 'Customers'
