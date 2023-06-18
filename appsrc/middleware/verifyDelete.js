@@ -27,7 +27,9 @@ module.exports = (req, res, next) => {
         }
       });
     }else{
-      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User not found!', true));      
+      next();
+      
+      // return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User not found!', true));      
     }
   } catch (err) {
     console.log(err);
