@@ -6,7 +6,7 @@ const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
-
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 
 const controllers = require('../controllers');
@@ -31,7 +31,7 @@ router.get(`${baseRoute}/`, controller.getDocumentCategories);
 router.post(`${baseRoute}/`,controller.postDocumentCategory);
 
 // - /api/1.0.0/documents/categories/:id
-router.patch(`${baseRoute}/:id`, controller.patchDocumentCategory);
+router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchDocumentCategory);
 
 // - /api/1.0.0/documents/categories/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocumentCategory);

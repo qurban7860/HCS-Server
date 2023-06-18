@@ -3,6 +3,7 @@ const { check } = require('express-validator');
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 
 const controllers = require('../controllers');
@@ -30,7 +31,7 @@ router.get(`${baseRoute}/`,  controller.getSecuritySignInLogs);
 router.post(`${baseRoute}/`, controller.postSignInLog);
 
 // - /api/1.0.0/users/:userId/signinlogs/:id
-router.patch(`${baseRoute}/:id`,  controller.patchSignInLog);
+router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSignInLog);
 
 // - /api/1.0.0/users/:userId/signinlogs/:id
 router.delete(`${baseRoute}/:id`,  controller.deleteSignInLog);
