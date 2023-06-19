@@ -350,6 +350,7 @@ function createDocumentVersionObj(document_,file) {
     document :document_.id,
     versionNo:file.versionNo,
     customer:file.customer,
+    description:file.description,
     isActive:file.isActive,
     isArchived:file.isArchived,
   });
