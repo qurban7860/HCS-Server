@@ -21,14 +21,15 @@ const baseRoute = `/users/:userId/signinlogs`;
 
 
 
+// - /api/1.0.0/users/:userId/signinlogs/search
+router.get(`${baseRoute}/search`, controller.searchSignInLogs);
+
 // - /api/1.0.0/users/:userId/signinlogs/:id
 router.get(`${baseRoute}/:id`, controller.getSecuritySignInLog);
 
 // - /api/1.0.0/users/:userId/signinlogs/
 router.get(`${baseRoute}/`,  controller.getSecuritySignInLogs);
 
-// - /api/1.0.0/users/:userId/signinlogs/search
-router.get(`${baseRoute}/search`, controller.searchSignInLogs);
 
 // - /api/1.0.0/users/:userId/signinlogs/
 router.post(`${baseRoute}/`, controller.postSignInLog);

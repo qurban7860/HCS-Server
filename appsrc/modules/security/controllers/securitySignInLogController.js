@@ -72,27 +72,29 @@ exports.searchSignInLogs = async (req, res, next) => {
   } else {
 
     this.query = req.query != "undefined" ? req.query : {};
-  
+    let searchName = this.query.name;
+    delete this.query.name;
     this.dbservice.getObjectList(SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
     
     function callbackFunc(error, signInLogs) {
+
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        if(this.query.name) {
+
+        if(searchName) {
           let filterSignInLogs = [];
-        
+          
           for(let signInLog of signInLogs) {
             let name = signInLog.user.name.toLowerCase();
-            if(name.search(this.query.name.toLowerCase())>-1) {
+            console.log(name,searchName,name.search(searchName.toLowerCase()));
+            if(name.search(searchName.toLowerCase())>-1) {
               filterSignInLogs.push(signInLog);
             }
           }
 
-          if(Array.isArray(filterSignInLogs) && filterSignInLogs.length>0) {
-            signInLogs = filterSignInLogs;
-          }
+          signInLogs = filterSignInLogs;
 
         } 
         
