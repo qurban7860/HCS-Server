@@ -15,7 +15,7 @@ const router = express.Router();
 // - /api/1.0.0/users/:userId/signinlogs/
 
 // - /api/1.0.0/users/:userId/signinlogs/
-const baseRoute = `/security/users/:userId/signinlogs/`;
+const baseRoute = `/users/:userId/signinlogs`;
 
 // router.use(checkAuth);
 
@@ -28,7 +28,7 @@ router.get(`${baseRoute}/:id`, controller.getSecuritySignInLog);
 router.get(`${baseRoute}/`,  controller.getSecuritySignInLogs);
 
 // - /api/1.0.0/users/:userId/signinlogs/search
-router.get(`/search`, controller.searchSignInLogs);
+router.get(`${baseRoute}/search`, controller.searchSignInLogs);
 
 // - /api/1.0.0/users/:userId/signinlogs/
 router.post(`${baseRoute}/`, controller.postSignInLog);
