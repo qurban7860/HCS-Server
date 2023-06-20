@@ -243,11 +243,11 @@ exports.patchProduct = async (req, res, next) => {
 
         }
       }
-      else {
-        console.log("machine patch request machine connections provided but empty");
+      // else {
+      //   console.log("machine patch request machine connections provided but empty");
 
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      }
+      //   return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      // }
     }
   
     
