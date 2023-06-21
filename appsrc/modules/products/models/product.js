@@ -103,6 +103,19 @@ const docSchema = new Schema({
 
 docSchema.set('timestamps', true);
 
+docSchema.index({"name":1})
+docSchema.index({"serialNo":1})
+docSchema.index({"parentMachine":1})
+docSchema.index({"parentSerialNo":1})
+docSchema.index({"transferredMachine":1})
+docSchema.index({"parentMachineID":1})
+docSchema.index({"status":1})
+docSchema.index({"supplier":1})
+docSchema.index({"machineModel":1})
+docSchema.index({"customer":1})
+docSchema.index({"instalationSite":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);

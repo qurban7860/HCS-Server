@@ -45,6 +45,12 @@ docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
+docSchema.index({"fromEmail":1})
+docSchema.index({"customer":1})
+docSchema.index({"subject":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
 docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('Email', docSchema);

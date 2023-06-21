@@ -57,4 +57,11 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
+docSchema.index({"name":1})
+docSchema.index({"customer":1})
+docSchema.index({"contact":1})
+docSchema.index({"email":1})
+docSchema.index({"login":1})
+docSchema.index({"token.accessToken":1})
+
 module.exports = mongoose.model('SecurityUser', docSchema);

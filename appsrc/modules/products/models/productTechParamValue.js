@@ -29,4 +29,9 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
+docSchema.index({"machine":1})
+docSchema.index({"techParam":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
 module.exports = mongoose.model('MachineTechParamValue', docSchema);

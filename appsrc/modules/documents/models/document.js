@@ -63,6 +63,17 @@ docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
+docSchema.index({"name":1})
+docSchema.index({"customer":1})
+docSchema.index({"docType":1})
+docSchema.index({"docCategory":1})
+docSchema.index({"site":1})
+docSchema.index({"machine":1})
+docSchema.index({"machineModel":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
+
 docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('Document', docSchema);
