@@ -24,4 +24,8 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
+docSchema.index({"name":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
 module.exports = mongoose.model('MachineTool', docSchema);

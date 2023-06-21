@@ -38,6 +38,11 @@ docSchema.add(baseSchema.docAddressSchema);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
+docSchema.index({"name":1})
+docSchema.index({"customer":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
 docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('CustomerSite', docSchema);
