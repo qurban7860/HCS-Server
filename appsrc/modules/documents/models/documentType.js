@@ -13,6 +13,9 @@ const docSchema = new Schema({
         description: { type: String },
         // detailed description of field
 
+        docCategory: { type: Schema.Types.ObjectId , ref: 'DocumentCategory' },
+        // document category.
+        
         customerAccess: {type: Boolean, default: false},
         //can customer access documents and files under this type.
 },

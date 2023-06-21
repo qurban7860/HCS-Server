@@ -22,7 +22,9 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
-  { path: 'updatedBy', select: 'name' }
+  { path: 'updatedBy', select: 'name' },
+  { path: 'docCategory', select: 'name' },
+  
 ];
 
 
@@ -112,7 +114,7 @@ exports.patchDocumentType = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, customerAccess, isActive, isArchived, loginUser } = req.body;
+  const { name, description, customerAccess, isActive, isArchived, loginUser, docCategory } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -132,8 +134,12 @@ function getDocumentFromReq(req, reqType) {
     doc.isArchived = isArchived;
   }
 
-  if ("customerAccess" in req.body) {
-    doc.customerAccess = customerAccess;
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
+  }
+
+  if ("docCategory" in req.body) {
+    doc.docCategory = docCategory;
   }
 
   if (reqType == "new" && "loginUser" in req.body) {
