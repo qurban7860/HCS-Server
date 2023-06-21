@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+
 
 class dbService {
   
@@ -69,30 +71,41 @@ class dbService {
     }
   }
 
-  async deleteObject(model, id, callback) {
-    let existingRecord = await model.findById(id);
-    if (!existingRecord.isArchived) {
-      throw new Error("Record cannot be deleted");
-    }
-    try{
-      if(callback) {
+  async deleteObject(model, id, callback, res) {
+    try {
+      let existingRecord = await model.findById(id);
+      if (!existingRecord.isArchived) {
+        const error = new Error("Record cannot be deleted");
+        error.statusCode = StatusCodes.BAD_REQUEST;
+        throw error;
+      }
+  
+      if (callback) {
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
-          callback(err);
+          throw err;
         });
-      }
-      else {
+      } else {
         return await model.deleteOne({ _id: id });
       }
-    } catch (err) {
-      if (callback) {
-        callback(err);
+    } catch (error) {
+      if (error.statusCode) {
+        if (res) {
+          res.status(error.statusCode).send(error.message);
+        } else {
+          console.error('Res is missing');
+        }
       } else {
-        throw err;
+        if (res) {
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          console.error('Res is missing');
+        }
       }
     }
   }
+  
 
 
   async postObject(Object, callback) {

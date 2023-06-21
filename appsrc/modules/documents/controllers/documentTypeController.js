@@ -127,6 +127,10 @@ function getDocumentFromReq(req, reqType) {
     doc.description = description;
   }
 
+  if ("customerAccess" in req.body) {
+    doc.customerAccess = customerAccess;
+  }
+
   if ("isActive" in req.body) {
     doc.isActive = isActive;
   }

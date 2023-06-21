@@ -51,12 +51,20 @@ exports.getSecurityRoles = async (req, res, next) => {
 };
 
 exports.deleteSecurityRole = async (req, res, next) => {
-  await this.dbservice.deleteObject(SecurityRole, req.params.id, callbackFunc);
+  await this.dbservice.deleteObject(SecurityRole, req.params.id, callbackFunc, res);
   function callbackFunc(error, result) {
     if (error) {
+      console.log('error------>', error);
+
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
+      if (error.statusCode) {
+        // If the error has a statusCode property, return it with that status code
+        console.log('error------>', error);
+        res.status(error.statusCode).send(getReasonPhrase(error.statusCode));
+      } else {
+        // If the error doesn't have a statusCode property, return it as an internal server error
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      }} else {
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
