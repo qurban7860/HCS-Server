@@ -15,6 +15,7 @@ const dbservice = new productDBService();
 const { Product, ProductCategory, ProductModel, ProductConnection, ProductStatus } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 const { Customer } = require('../../crm/models')
+const { SecurityUser } = require('../../security/models')
 const ObjectId = require('mongoose').Types.ObjectId;
 
 
@@ -72,6 +73,24 @@ exports.getProduct = async (req, res, next) => {
         }
         else {
           machine.machineConnections = []; 
+        }
+      }
+
+      if(Array.isArray(machine.verifications) && machine.verifications.length>0 ) {
+        let index = 0;
+        for(let verification of machine.verifications) {
+
+          console.log("index",index);
+
+          let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
+          console.log("user",user);
+          if(user) {
+            machine.verifications[index].verifiedBy = user;
+          }
+          else {
+            delete machine.verifications[index];
+          }
+          index++;                
         }
       }
 

@@ -12,6 +12,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
+const { SecurityUser } = require('../../security/models');
 const _ = require('lodash');
 
 
@@ -55,6 +56,7 @@ exports.getCustomer = async (req, res, next) => {
   let populatedSites;
   let populatedContacts;
   let populatedNotes;
+  let populatedVerfications;
 
 
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
@@ -63,28 +65,47 @@ exports.getCustomer = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      const customer = response;    
-        if(validFlag == 'extended'){  
-          if(!(_.isEmpty(customer))) {
-            if(customer.sites.length > 0){
-              populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
-              customer.sites = [];
-              customer.sites = populatedSites;       
-            }
-
-            if(customer.contacts.length > 0){
-              populatedContacts = await CustomerContact.find({ _id: { $in: customer.contacts } }); 
-              customer.contacts = [];
-              customer.contacts = populatedContacts;
-            }
-
-            populatedNotes = await CustomerNote.find({ customer: customer._id, isActive: true, isArchived: false }); 
-            if(populatedNotes.length > 0){
-              customer.notes = populatedNotes;
-            }
+      const customer = JSON.parse(JSON.stringify(response));    
+      if(validFlag == 'extended'){  
+        if(!(_.isEmpty(customer))) {
+          if(customer.sites.length > 0){
+            populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
+            customer.sites = [];
+            customer.sites = populatedSites;       
           }
+
+          if(customer.contacts.length > 0){
+            populatedContacts = await CustomerContact.find({ _id: { $in: customer.contacts } }); 
+            customer.contacts = [];
+            customer.contacts = populatedContacts;
+          }
+
+          populatedNotes = await CustomerNote.find({ customer: customer._id, isActive: true, isArchived: false }); 
+          if(populatedNotes.length > 0){
+            customer.notes = populatedNotes;
+          }
+
         }
-        res.json(customer);
+      }
+      console.log("customer.verifications",customer.verifications);
+      if(Array.isArray(customer.verifications) && customer.verifications.length>0 ) {
+        let index = 0;
+        for(let verification of customer.verifications) {
+
+          console.log("index",index);
+
+          let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
+          console.log("user",user);
+          if(user) {
+            customer.verifications[index].verifiedBy = user;
+          }
+          else {
+            delete customer.verifications[index];
+          }
+          index++;                
+        }
+      }
+      res.json(customer);
     }
   } 
 };
