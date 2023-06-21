@@ -49,7 +49,7 @@ exports.login = async (req, res, next) => {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact) && response.roles.length > 0) {
+        if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact) && isValidRole(response.roles)) {
           const existingUser = response;
           const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
           if (passwordsResponse) {
@@ -149,6 +149,15 @@ function isValidContact(contact){
     if(contact.isActive == false || contact.isArchived == true) {
       return false;
     }
+  }
+  return true;
+}
+
+function isValidRole(roles) {
+  const isValidRole = roles.some(role => role.isActive === true && role.isArchived === false);
+
+  if (_.isEmpty(roles) || !isValidRole) {
+    return false;
   }
   return true;
 }
