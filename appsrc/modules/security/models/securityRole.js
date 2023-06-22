@@ -10,7 +10,7 @@ const docSchema = new Schema({
   name: { type: String, required: true},
   // name of role
   
-  description: { type: String, required: true},
+  description: { type: String },
   // description of role
   
   roleType : { type: String, required: true, default: 'normal'},

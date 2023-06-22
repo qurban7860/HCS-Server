@@ -127,7 +127,7 @@ exports.deleteCustomer = async (req, res, next) => {
   let customer = await Customer.findById(req.params.id); 
   if(!_.isEmpty(customer)){
     if(customer.isArchived == true && customer.type != 'SP'){
-      this.dbservice.deleteObject(Customer, req.params.id, callbackFunc);
+      this.dbservice.deleteObject(Customer, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));

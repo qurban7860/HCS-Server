@@ -71,7 +71,7 @@ class dbService {
     }
   }
 
-  async deleteObject(model, id, callback, res) {
+  async deleteObject(model, id, res, callback) {
     try {
       let existingRecord = await model.findById(id);
       if (!existingRecord.isArchived) {
@@ -84,24 +84,16 @@ class dbService {
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
-          throw err;
+          callback(err);
         });
       } else {
         return await model.deleteOne({ _id: id });
       }
     } catch (error) {
       if (error.statusCode) {
-        if (res) {
-          res.status(error.statusCode).send(error.message);
-        } else {
-          console.error('Res is missing');
-        }
+        res.status(error.statusCode).send(error.message);
       } else {
-        if (res) {
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-        } else {
-          console.error('Res is missing');
-        }
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       }
     }
   }

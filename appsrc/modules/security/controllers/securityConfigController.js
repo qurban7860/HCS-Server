@@ -55,7 +55,7 @@ exports.getSecurityConfigs = async (req, res, next) => {
 };
 
 exports.deleteSecurityConfig = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityConfig, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(SecurityConfig, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

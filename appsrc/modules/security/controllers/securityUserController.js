@@ -69,7 +69,7 @@ exports.deleteSecurityUser = async (req, res, next) => {
     let machine = await Product.findOne({createdBy:user.id});
 
     if(!customer && !machine) {
-      this.dbservice.deleteObject(SecurityUser, req.params.id, (error, result)=>{
+      this.dbservice.deleteObject(SecurityUser, req.params.id, res, (error, result)=>{
         if (error) {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));

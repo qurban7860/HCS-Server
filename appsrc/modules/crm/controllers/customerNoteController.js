@@ -75,7 +75,7 @@ exports.deleteCustomerNote = async (req, res, next) => {
     let customerNote = await CustomerNote.findOne({_id:req.params.id, customer:req.params.customerId});
     
     if(customerNote) {
-      this.dbservice.deleteObject(CustomerNote, req.params.id, callbackFunc);
+      this.dbservice.deleteObject(CustomerNote, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));

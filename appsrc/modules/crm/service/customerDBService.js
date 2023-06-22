@@ -52,8 +52,8 @@ class CustomerService {
 
   };
 
-  deleteObject(model, id, callback) {
-    this.db.deleteObject(model, id, callbackFunc);
+  deleteObject(model, id, res, callback) {
+    this.db.deleteObject(model, id, res, callbackFunc);
     function callbackFunc(error, response) {
       if (error) callback(error, {});
       else callback(null, response);

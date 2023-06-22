@@ -71,7 +71,7 @@ exports.searchCustomerSites = async (req, res, next) => {
 };
 
 exports.deleteCustomerSite = async (req, res, next) => {
-  this.dbservice.deleteObject(CustomerSite, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(CustomerSite, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
