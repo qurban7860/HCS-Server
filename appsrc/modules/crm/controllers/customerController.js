@@ -88,31 +88,46 @@ exports.getCustomer = async (req, res, next) => {
         }
       }
       console.log("customer.verifications",customer.verifications);
-      if(Array.isArray(customer.verifications) && customer.verifications.length>0 ) {
-        let index = 0;
-        for(let verification of customer.verifications) {
+      // if(Array.isArray(customer.verifications) && customer.verifications.length>0 ) {
+      //   let index = 0;
+      //   for(let verification of customer.verifications) {
 
-          console.log("index",index);
+      //     console.log("index",index);
 
-          let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
-          console.log("user",user);
+      //     let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
+      //     console.log("user",user);
+      //     if(user) {
+      //       customer.verifications[index].verifiedBy = user;
+      //     }
+      //     else {
+      //       delete customer.verifications[index];
+      //     }
+      //     index++;                
+      //   }
+      // }
+      if(customer.verifications) {
+        for(let index = 0; index < customer.verifications.length; index++) {
+          // Check if the `verifiedBy` property for each verification is null
+          let user = await SecurityUser.findOne({ _id: customer.verifications[index].verifiedBy, isActive: true, isArchived: false }).select('name');
           if(user) {
             customer.verifications[index].verifiedBy = user;
           }
           else {
-            delete customer.verifications[index];
+            // Remove the verification from the array if the `verifiedBy` property is null
+            customer.verifications.splice(index, 1);
           }
-          index++;                
         }
       }
+
       res.json(customer);
     }
   } 
 };
 
+
+
 exports.getCustomers = async (req, res, next) => {
-  // this.query = req.query != "undefined" ? req.query : {}; 
-  this.query = req.query !== undefined ? req.query : {};
+  this.query = req.query != "undefined" ? req.query : {}; 
   this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -124,11 +139,10 @@ exports.getCustomers = async (req, res, next) => {
   }
 };
 
-
 exports.deleteCustomer = async (req, res, next) => {
   let customer = await Customer.findById(req.params.id); 
-  if (customer !== null && !_.isEmpty(customer)){
-    if (customer.isArchived === true && customer.type !== 'SP'){
+  if(!_.isEmpty(customer)){
+    if(customer.isArchived == true && customer.type != 'SP'){
       this.dbservice.deleteObject(Customer, req.params.id, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
