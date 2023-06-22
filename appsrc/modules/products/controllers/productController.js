@@ -63,14 +63,7 @@ exports.getProduct = async (req, res, next) => {
           let index = 0;
           for(let machineConnection of machineConnections) {
             if(machineConnection && machineConnection.connectedMachine) {
-              // Check if the `connectedMachine` property for each machineConnection is null
-              if(machineConnection.connectedMachine) {
-                machineConnections[index].name = machineConnection.connectedMachine.name;
-              }
-              else {
-                // Remove the machineConnection from the array if the `connectedMachine` property is null
-                machineConnections.splice(index, 1);
-              }
+              machineConnections[index].name = machineConnection.connectedMachine.name;
             }
             index++
 
@@ -82,32 +75,8 @@ exports.getProduct = async (req, res, next) => {
           machine.machineConnections = []; 
         }
       }
-      else {
-        console.log("machine.machineConnections is null");
-      }
 
-    //   if(Array.isArray(machine.verifications) && machine.verifications.length>0 ) {
-    //     let index = 0;
-    //     for(let verification of machine.verifications) {
-
-    //       console.log("index",index);
-
-    //       let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
-    //       console.log("user",user);
-    //       if(user) {
-    //         machine.verifications[index].verifiedBy = user;
-    //       }
-    //       else {
-    //         delete machine.verifications[index];
-    //       }
-    //       index++;                
-    //     }
-    //   }
-
-    //   res.json(machine);
-    // }
-    // Check if the `machine.verifications` array is null
-      if(machine && machine.verifications) {
+      if(Array.isArray(machine.verifications) && machine.verifications.length>0 ) {
         let index = 0;
         for(let verification of machine.verifications) {
 
@@ -119,14 +88,10 @@ exports.getProduct = async (req, res, next) => {
             machine.verifications[index].verifiedBy = user;
           }
           else {
-            // Delete the verification from the array if the `verifiedBy` property is null
-            delete machine.verifications[index];
+            machine.verifications.splice(index, 1);
           }
           index++;                
         }
-      }
-      else {
-        console.log("machine.verifications is null");
       }
 
       res.json(machine);
