@@ -34,4 +34,6 @@ const docSchema = new Schema({
 
 docSchema.plugin(uniqueValidator);
 
+docSchema.index({"user":1})
+
 module.exports = mongoose.model('SecurityAuditLog', docSchema);

@@ -14,7 +14,7 @@ const { SecurityUser } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
-
+const ObjectId = require('mongoose').Types.ObjectId;
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
@@ -25,13 +25,13 @@ this.populate = [
   {path: 'updatedBy', select: 'name'},
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
-  {path: 'roles', select: 'name'},
+  {path: 'roles', select: ''},
 ];
 
 this.populateList = [
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
-  {path: 'roles', select: 'name'},
+  {path: 'roles', select: ''},
 ];
 
 
@@ -127,100 +127,112 @@ exports.patchSecurityUser = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if (req.url.includes("updatePassword")) {
-      let queryString  = { _id: req.params.id };
-      this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
-      async function getObjectCallback(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-        } else {
-          if(!(_.isEmpty(response))){
-            const passwordsResponse = await comparePasswords(req.body.oldPassword, response.password)
-            if(passwordsResponse){
-              req.body.password = req.body.newPassword;
-              const doc = await getDocumentFromReq(req);
-
-              _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
-              function callbackFunc(error, result) {
-                if (error) {
-                  logger.error(new Error(error));
-                  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                } else {
-                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "passwordChange"));
-                }
-              }  
-            }else{
-              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Wrong password entered"));  
-            }            
+    if (ObjectId.isValid(req.params.id)) {
+      if (req.url.includes("updatePassword")) {
+        // if admin is updating password
+        if(req.body.isAdmin){ 
+          if(req.body.loginUser.userId){
+            let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
+            const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+            if(!hasSuperAdminRole){
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Only superadmins are allowed to access this feature ", true));
+            }
           }else{
-            res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "User not found!"));
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
+        }else{
+          // if the user is updating their password
+          let queryString  = { _id: req.params.id };
+          let existingUser = await this.dbservice.getObject(SecurityUser, queryString, this.populate);
+          if(existingUser){
+            const passwordsResponse = await comparePasswords(req.body.oldPassword, existingUser.password)
+            if(!passwordsResponse){ 
+              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Wrong password entered", true));  
+            }   
+          }else{
+            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "User not found!", true));
+          }  
         }
-      }      
-    } else {
-      // delete user
-      if("isArchived" in req.body){
-        let user = await SecurityUser.findById(req.params.id); 
-        if(!(_.isEmpty(user))) {
-          
-          let customer = await Customer.findOne({createdBy:user.id});
-          let machine = await Product.findOne({createdBy:user.id});
-
-          if(!customer && !machine) {
-            const doc = await getDocumentFromReq(req);
-            _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
-              function callbackFunc(error, result) {
-                if (error) {
-                  logger.error(new Error(error));
-                  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                } else {
-                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-                }
-              }
-          }
-          else {
-            res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User assigned to a Customer/Machine cannot be deleted!'));
-          }
-        }
-        else {
-          res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-        }
-
-      }
-
-      else{
-     // check if email already exists
-        let queryString = { $or: [
-          { email: req.body.email?.toLowerCase()  }, 
-          { login: req.body.login?.toLowerCase()  }
-        ]};
-        
-        this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
-        async function getObjectCallback(error, response) {
+        req.body.password = req.body.newPassword;
+        const doc = await getDocumentFromReq(req);
+        _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+        function callbackFunc(error, result) {
           if (error) {
             logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
           } else {
-            // check if theres any other user by the same email
-            if(response && response._id && response._id != req.params.id){
-              // return error message
-              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
-            }else{
+            return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "passwordChange"));
+          }
+        }   
+      } else {
+        // delete user
+        if("isArchived" in req.body){
+          let user = await SecurityUser.findById(req.params.id); 
+          if(!(_.isEmpty(user))) {
+            
+            let customer = await Customer.findOne({createdBy:user.id});
+            let machine = await Product.findOne({createdBy:user.id});
+
+            if(!customer && !machine) {
               const doc = await getDocumentFromReq(req);
               _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
-              function callbackFunc(error, result) {
-                if (error) {
-                  logger.error(new Error(error));
-                  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                } else {
-                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                function callbackFunc(error, result) {
+                  if (error) {
+                    logger.error(new Error(error));
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                  } else {
+                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                  }
                 }
-              }     
+            }
+            else {
+              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User assigned to a Customer/Machine cannot be deleted!'));
+            }
+          }
+          else {
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          }
+
+        }
+
+        else{
+          // check if email already exists
+          let queryString = { 
+            isArchived: false,
+            $or: [
+            { email: req.body.email?.toLowerCase()  }, 
+            { login: req.body.login?.toLowerCase()  }
+          ]};
+          
+          this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
+          async function getObjectCallback(error, response) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            } else {
+              // check if theres any other user by the same email
+              if(response && response._id && response._id != req.params.id){
+                console.log('response------->', response);
+                // return error message
+                return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
+              }else{
+                const doc = await getDocumentFromReq(req);
+                _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+                function callbackFunc(error, result) {
+                  if (error) {
+                    return logger.error(new Error(error));
+                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                  } else {
+                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                  }
+                }     
+              }
             }
           }
         }
       }
+    }else{
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
     }
   }
 };
@@ -230,13 +242,12 @@ async function comparePasswords(encryptedPass, textPass, next){
   let isValidPassword = false;
   try {
     isValidPassword = await bcrypt.compare(encryptedPass, textPass);
+    return isValidPassword;
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     return next(error);
   }
-
-  return isValidPassword;
 };
 
 
@@ -304,6 +315,7 @@ async function getDocumentFromReq(req, reqType){
     doc.createdBy = req.body.loginUser.userId;
     doc.updatedBy = req.body.loginUser.userId;
     doc.createdIP = req.body.loginUser.userIP;
+    doc.updatedIP = req.body.loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = req.body.loginUser.userId;
     doc.updatedIP = req.body.loginUser.userIP;

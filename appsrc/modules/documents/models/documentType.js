@@ -7,25 +7,31 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        name: { type: String,required: true, unique: true },
+        name: { type: String, required: true, unique: true },
         // name/title of field
 
         description: { type: String },
         // detailed description of field
 
-        customerAccess: { type: Boolean, default: false },
-        //can customer access files under this category.},
+        docCategory: { type: Schema.Types.ObjectId , ref: 'DocumentCategory' },
+        // document category.
 
+        customerAccess: {type: Boolean, default: false},
+        //can customer access documents and files under this type.
 },
-        {
-                collection: 'FileCategories'
-        }
-);
+{
+        collection: 'DocumentTypes'
+});
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
+docSchema.index({"name":1})
+docSchema.index({"docCategory":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('FileCategory', docSchema);
+module.exports = mongoose.model('DocumentType', docSchema);

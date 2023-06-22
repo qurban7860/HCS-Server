@@ -109,7 +109,7 @@ exports.patchProductStatus = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, displayOrderNo, isActive, isArchived, loginUser } = req.body;
+  const { name, description, displayOrderNo, isActive, isArchived, loginUser, slug } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -126,6 +126,10 @@ function getDocumentFromReq(req, reqType){
   if ("displayOrderNo" in req.body){
     doc.displayOrderNo = displayOrderNo;
   }
+
+  if ("slug" in req.body){
+    doc.slug = req.body.slug.toLowerCase();
+  }
   
   if ("isActive" in req.body){
     doc.isActive = isActive;
@@ -138,6 +142,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

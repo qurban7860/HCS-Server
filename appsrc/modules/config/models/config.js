@@ -15,10 +15,10 @@ const docSchema = new Schema({
 {
         collection: 'Configs'
 });
-
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
+docSchema.index({"name":1})
 
 docSchema.plugin(uniqueValidator);
 

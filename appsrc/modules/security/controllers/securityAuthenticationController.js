@@ -26,7 +26,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  { path: '', select: '' }
+  {path: 'roles', select: ''},
 ];
 
 
@@ -41,15 +41,15 @@ exports.login = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let queryString = { login: req.body.email };
+    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}]  };
 
-    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }], getObjectCallback);
+    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact)) {
+        if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact) && isValidRole(response.roles)) {
           const existingUser = response;
           const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
           if (passwordsResponse) {
@@ -77,7 +77,8 @@ exports.login = async (req, res, next) => {
                       user: {
                         login: existingUser.login,
                         email: existingUser.email,
-                        displayName: existingUser.name
+                        displayName: existingUser.name,
+                        roles: existingUser.roles
                       }
                     });
                   }
@@ -119,7 +120,8 @@ exports.refreshToken = async (req, res, next) => {
             user: {
               login: existingUser.login,
               email: existingUser.email,
-              displayName: existingUser.name
+              displayName: existingUser.name,
+              roles: existingUser.roles
             }
           });
         }
@@ -133,7 +135,10 @@ exports.refreshToken = async (req, res, next) => {
 };
 
 function isValidCustomer(customer) {
-  if (_.isEmpty(customer) || customer.type != 'SP' || customer.isActive == false || customer.isArchived == true) {
+  if (_.isEmpty(customer) || 
+  customer.type != 'SP' || 
+  customer.isActive == false || 
+  customer.isArchived == true) {
     return false;
   }
   return true;
@@ -144,6 +149,15 @@ function isValidContact(contact){
     if(contact.isActive == false || contact.isArchived == true) {
       return false;
     }
+  }
+  return true;
+}
+
+function isValidRole(roles) {
+  const isValidRole = roles.some(role => role.isActive === true && role.isArchived === false);
+
+  if (_.isEmpty(roles) || !isValidRole) {
+    return false;
   }
   return true;
 }
@@ -241,7 +255,9 @@ exports.forgetPassword = async (req, res, next) => {
 exports.verifyForgottenPassword = async (req, res, next) => {
   try {
     let _this = this;
-    const existingUser = await SecurityUser.findById(req.body.userId);
+    const existingUser = await SecurityUser.findById(req.body.userId)
+        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
+                  { path: 'contact', select: 'name isActive isArchived' }]);
     if (existingUser) {
       if (existingUser.token && existingUser.token.accessToken == req.body.token) {        
         const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
@@ -379,9 +395,9 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     body,
     toEmails:emailAddresses,
     fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer:[customer.toUser],
-    toContacts:[customer.contact],
-    toUsers:[customer.contact],
+    customer:'',
+    toContacts:[],
+    toUsers:[],
     ccEmails,
     bccEmails,
     isArchived: false,
@@ -391,6 +407,17 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+    }
+  }
+  
   var reqEmail = {};
 
   reqEmail.body = email;

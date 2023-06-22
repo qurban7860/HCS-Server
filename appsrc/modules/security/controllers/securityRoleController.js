@@ -5,8 +5,9 @@ let rtnMsg = require('../../config/static/static')
 
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
+const _ = require('lodash');
 
-const { SecurityRole } = require('../models');
+const { SecurityRole, SecurityUser } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -37,6 +38,7 @@ exports.getSecurityRole = async (req, res, next) => {
 };
 
 exports.getSecurityRoles = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
   this.dbservice.getObjectList(SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -49,12 +51,20 @@ exports.getSecurityRoles = async (req, res, next) => {
 };
 
 exports.deleteSecurityRole = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityRole, req.params.id, callbackFunc);
+  await this.dbservice.deleteObject(SecurityRole, req.params.id, callbackFunc, res);
   function callbackFunc(error, result) {
     if (error) {
+      console.log('error------>', error);
+
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
+      if (error.statusCode) {
+        // If the error has a statusCode property, return it with that status code
+        console.log('error------>', error);
+        res.status(error.statusCode).send(getReasonPhrase(error.statusCode));
+      } else {
+        // If the error doesn't have a statusCode property, return it as an internal server error
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      }} else {
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -86,6 +96,23 @@ exports.patchSecurityRole = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if("isArchived" in req.body){
+      let existingRole = await this.dbservice.getObjectById(SecurityRole, this.fields, req.params.id, this.populate); 
+      if(!(_.isEmpty(existingRole))) {
+        if(existingRole.disableDelete){
+          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Selected role cannot be deleted!", true));
+        } else{
+          let queryString = { roles: req.params.id };
+          let existingRoleInUse = await this.dbservice.getObject(SecurityUser, queryString, this.populate);
+          if(existingRoleInUse){
+            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Roles assigned to user(s) cannot be deleted!", true));
+          }
+        }
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
+    }
+    
     this.dbservice.patchObject(SecurityRole, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
@@ -102,7 +129,8 @@ exports.patchSecurityRole = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, allModules, allWriteAccess, modules, isActive, isArchived} = req.body;
+  const { name, description, allModules, allWriteAccess, disableDelete,
+        roleType, modules, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -115,16 +143,22 @@ function getDocumentFromReq(req, reqType){
   if ("description" in req.body){
     doc.description = description;
   }
+  if ("roleType" in req.body){
+    doc.roleType = roleType;
+  }
   if ("allModules" in req.body){
-    doc.mainSite = allModules;
+    doc.allModules = allModules;
   }
 
   if ("allWriteAccess" in req.body){
-    doc.siteObj = allWriteAccess;
+    doc.allWriteAccess = allWriteAccess;
+  }
+
+  if ("disableDelete" in req.body){
+    doc.disableDelete = disableDelete;
   }
 
   if ("modules" in req.body){
-    
     doc.modules = modules;
   }
 
@@ -143,6 +177,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

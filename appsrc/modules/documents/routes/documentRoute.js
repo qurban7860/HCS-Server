@@ -9,33 +9,30 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
-const upload = multer({ dest: "uploads/" });
 
 
 const controllers = require('../controllers');
-const controller = controllers.fileController;
+const controller = controllers.documentController;
 
 const router = express.Router();
 
 //  - base route for module
-// - /api/1.0.0/filemanager/files
-const baseRoute = `/files`;
+// - /api/1.0.0/documents/
+const baseRoute = `/document`;
 
 
 router.use(checkAuth, checkCustomer);
 
-// - /api/1.0.0/filemanager/files/download/:id
-router.get(`${baseRoute}/download/:id`, controller.downloadFile);
+// - /api/1.0.0/documents/:id
+router.get(`${baseRoute}/:id`,controller.getDocument);
 
-// - /api/1.0.0/filemanager/files/:id
-router.get(`${baseRoute}/:id`,controller.getFile);
+// - /api/1.0.0/documents/
+router.get(`${baseRoute}/`, controller.getDocuments);
 
-// - /api/1.0.0/filemanager/files/
-router.get(`${baseRoute}/`, controller.getFiles);
-
-// - /api/1.0.0/filemanager/files/
+// - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.single('image')(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+
       if (err instanceof multer.MulterError) {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
@@ -46,12 +43,25 @@ router.post(`${baseRoute}/`, (req, res, next) => {
         next();
       }
     });
-  }, controller.postFile);
+  }, controller.postDocument);
 
-// - /api/1.0.0/filemanager/files/:id
-router.patch(`${baseRoute}/:id`, controller.patchFile);
+// - /api/1.0.0/documents/:id
+router.patch(`${baseRoute}/:id`,(req, res, next) => {
+    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
 
-// - /api/1.0.0/filemanager/files/:id
-router.delete(`${baseRoute}/:id`, controller.deleteFile);
+      if (err instanceof multer.MulterError) {
+        console.log(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+      } else if (err) {
+        console.log(err);
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        next();
+      }
+    });
+  }, controller.patchDocument);
+
+// - /api/1.0.0/documents/files/:id
+router.delete(`${baseRoute}/:id`, controller.deleteDocument);
 
 module.exports = router;

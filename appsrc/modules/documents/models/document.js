@@ -16,34 +16,19 @@ const docSchema = new Schema({
         description: { type: String },
         // detailed description of field
 
-        path: { type: String },
-        // file path 
-
-        content: {type: String},
-        // file content to save in database
-
-        type: { type: String, required: true },
-        // image, video, text, word, excel, pdf , etc. 
-
-        extension: { type: String },
-        // file extension.
-
-        uri: { type: String  },
-        // file uri
-
-        isActiveVersion: {type: Boolean, default: true},
-
-
-        documentName: { type: Schema.Types.ObjectId, ref: 'DocumentName' },
+        docType: { type: Schema.Types.ObjectId , ref: 'DocumentType' },
         // document name.
 
-        documentVersion: { type: Number },
-        // version number. It will be increased based on customer, machine, etc.
+        docCategory: { type: Schema.Types.ObjectId , ref: 'DocumentCategory' },
+        // document category.
 
-        category: { type: Schema.Types.ObjectId, ref: 'FileCategory' },
-        // file category.
+        versionPrefix: { type: String },
+        //prefix of version like v.
 
-        customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
+        documentVersions: [{ type: Schema.Types.ObjectId , ref: 'DocumentVersion' }],
+        // list of versions. 
+
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
         // customer information.
 
         customerAccess: { type: Boolean, default: false },
@@ -61,15 +46,34 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
         // machine information.
 
+        machineModel: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
+        // machine information.
+
+        shippingDate: { type: Date },
+        // lshipping date
+
+        installationDate: { type: Date },
+        // installation date
 },
 {
-        collection: 'Files'
+        collection: 'Documents'
 });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
+docSchema.index({"name":1})
+docSchema.index({"customer":1})
+docSchema.index({"docType":1})
+docSchema.index({"docCategory":1})
+docSchema.index({"site":1})
+docSchema.index({"machine":1})
+docSchema.index({"machineModel":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
+
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('File', docSchema);
+module.exports = mongoose.model('Document', docSchema);

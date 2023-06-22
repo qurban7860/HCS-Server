@@ -26,4 +26,7 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
+docSchema.index({"name":1})
+
+
 module.exports = mongoose.model('SecurityModule', docSchema);

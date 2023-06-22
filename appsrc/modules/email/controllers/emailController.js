@@ -22,6 +22,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
+  { path: 'customer', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
 
@@ -90,7 +91,8 @@ exports.patchEmail = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { subject, body, toEmails, customer, isActive, isArchived, ccEmails, bccEmails } = req.body;
+  const { subject, body, toEmails, fromEmail, toContacts, toUsers, customer, 
+  isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -105,6 +107,18 @@ function getDocumentFromReq(req, reqType) {
 
   if ("toEmails" in req.body) {
     doc.toEmails = toEmails;
+  }
+
+  if ("fromEmail" in req.body) {
+    doc.fromEmail = fromEmail;
+  }
+
+  if ("toContacts" in req.body) {
+    doc.toContacts = toContacts;
+  }
+
+  if ("toUsers" in req.body) {
+    doc.toUsers = toUsers;
   }
 
   if ("ccEmails" in req.body) {
@@ -130,6 +144,7 @@ function getDocumentFromReq(req, reqType) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

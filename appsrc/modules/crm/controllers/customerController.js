@@ -104,6 +104,7 @@ exports.getCustomer = async (req, res, next) => {
         }
         customer.verifications = customerVerifications;
       }
+      
       res.json(customer);
     }
   } 
