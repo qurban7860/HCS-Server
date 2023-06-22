@@ -78,21 +78,18 @@ exports.getProduct = async (req, res, next) => {
 
       if(Array.isArray(machine.verifications) && machine.verifications.length>0 ) {
         machine = JSON.parse(JSON.stringify(machine));
-        let index = 0;
+        let machineVerifications = [];
+
         for(let verification of machine.verifications) {
-
-          console.log("index",index);
-
           let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
-          console.log("user",user);
+          
           if(user) {
-            machine.verifications[index].verifiedBy = user;
+            verification.verifiedBy = user;
+            machineVerifications.push(verification);
           }
-          else {
-            machine.verifications.splice(index, 1);
-          }
-          index++;                
+
         }
+        machine.verifications = machineVerifications;
       }
 
       res.json(machine);

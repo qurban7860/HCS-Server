@@ -87,24 +87,24 @@ exports.getCustomer = async (req, res, next) => {
 
         }
       }
-      console.log("customer.verifications",customer.verifications);
+
       if(Array.isArray(customer.verifications) && customer.verifications.length>0 ) {
-        let index = 0;
+        let customerVerifications = [];
+
         for(let verification of customer.verifications) {
 
-          console.log("index",index);
 
           let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
-          console.log("user",user);
+
           if(user) {
-            customer.verifications[index].verifiedBy = user;
+            verification.verifiedBy = user;
+            customerVerifications.push(verification);
           }
-          else {
-            customer.verifications.splice(index, 1);
-          }
-          index++;                
+
         }
+        customer.verifications = customerVerifications;
       }
+      
       res.json(customer);
     }
   } 
