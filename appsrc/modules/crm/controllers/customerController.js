@@ -111,7 +111,8 @@ exports.getCustomer = async (req, res, next) => {
 };
 
 exports.getCustomers = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {}; 
+  // this.query = req.query != "undefined" ? req.query : {}; 
+  this.query = req.query !== undefined ? req.query : {};
   this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -123,10 +124,11 @@ exports.getCustomers = async (req, res, next) => {
   }
 };
 
+
 exports.deleteCustomer = async (req, res, next) => {
   let customer = await Customer.findById(req.params.id); 
-  if(!_.isEmpty(customer)){
-    if(customer.isArchived == true && customer.type != 'SP'){
+  if (customer !== null && !_.isEmpty(customer)){
+    if (customer.isArchived === true && customer.type !== 'SP'){
       this.dbservice.deleteObject(Customer, req.params.id, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
