@@ -12,6 +12,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
+const { SecurityUser } = require('../../security/models');
 const _ = require('lodash');
 
 
@@ -55,6 +56,7 @@ exports.getCustomer = async (req, res, next) => {
   let populatedSites;
   let populatedContacts;
   let populatedNotes;
+  let populatedVerfications;
 
 
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
@@ -63,28 +65,46 @@ exports.getCustomer = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      const customer = response;    
-        if(validFlag == 'extended'){  
-          if(!(_.isEmpty(customer))) {
-            if(customer.sites.length > 0){
-              populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
-              customer.sites = [];
-              customer.sites = populatedSites;       
-            }
-
-            if(customer.contacts.length > 0){
-              populatedContacts = await CustomerContact.find({ _id: { $in: customer.contacts } }); 
-              customer.contacts = [];
-              customer.contacts = populatedContacts;
-            }
-
-            populatedNotes = await CustomerNote.find({ customer: customer._id, isActive: true, isArchived: false }); 
-            if(populatedNotes.length > 0){
-              customer.notes = populatedNotes;
-            }
+      const customer = JSON.parse(JSON.stringify(response));    
+      if(validFlag == 'extended'){  
+        if(!(_.isEmpty(customer))) {
+          if(customer.sites.length > 0){
+            populatedSites = await CustomerSite.find({ _id: { $in: customer.sites } }); 
+            customer.sites = [];
+            customer.sites = populatedSites;       
           }
+
+          if(customer.contacts.length > 0){
+            populatedContacts = await CustomerContact.find({ _id: { $in: customer.contacts } }); 
+            customer.contacts = [];
+            customer.contacts = populatedContacts;
+          }
+
+          populatedNotes = await CustomerNote.find({ customer: customer._id, isActive: true, isArchived: false }); 
+          if(populatedNotes.length > 0){
+            customer.notes = populatedNotes;
+          }
+
         }
-        res.json(customer);
+      }
+
+      if(Array.isArray(customer.verifications) && customer.verifications.length>0 ) {
+        let customerVerifications = [];
+
+        for(let verification of customer.verifications) {
+
+
+          let user = await SecurityUser.findOne({ _id: verification.verifiedBy, isActive: true, isArchived: false }).select('name');
+
+          if(user) {
+            verification.verifiedBy = user;
+            customerVerifications.push(verification);
+          }
+
+        }
+        customer.verifications = customerVerifications;
+      }
+      res.json(customer);
     }
   } 
 };
@@ -165,6 +185,29 @@ exports.patchCustomer = async (req, res, next) => {
         const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
         return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
       }
+    }
+
+    // ToDo correct spell mistake from front end
+    if(req.body.isVerified ||req.body.isVarified){ 
+      let customer = await Customer.findById(req.params.id); 
+      if(!customer) {
+        return res.status(StatusCodes.BAD_REQUEST).json({message:"Customer Not Found"});
+      }
+  
+      if(!Array.isArray(customer.verifications))
+        customer.verifications = [];
+
+      for(let verif of customer.verifications) {
+        if(verif.verifiedBy == req.body.loginUser.userId)
+          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+
+      }
+      customer.verifications.push({
+        verifiedBy: req.body.loginUser.userId,
+        verifiedDate: new Date()
+      })
+      customer = await customer.save();
+      return res.status(StatusCodes.ACCEPTED).json(customer);
     }
 
     this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
@@ -293,6 +336,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
