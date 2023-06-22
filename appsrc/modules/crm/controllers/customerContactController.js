@@ -150,7 +150,7 @@ exports.deleteCustomerContact = async (req, res, next) => {
     
     if(customerContact) {
 
-      this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
+      this.dbservice.deleteObject(CustomerContact, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));

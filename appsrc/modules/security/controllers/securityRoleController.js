@@ -6,7 +6,6 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 const _ = require('lodash');
-
 const { SecurityRole, SecurityUser } = require('../models');
 
 
@@ -51,15 +50,11 @@ exports.getSecurityRoles = async (req, res, next) => {
 };
 
 exports.deleteSecurityRole = async (req, res, next) => {
-  await this.dbservice.deleteObject(SecurityRole, req.params.id, callbackFunc, res);
+  await this.dbservice.deleteObject(SecurityRole, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
-      console.log('error------>', error);
-
       logger.error(new Error(error));
       if (error.statusCode) {
-        // If the error has a statusCode property, return it with that status code
-        console.log('error------>', error);
         res.status(error.statusCode).send(getReasonPhrase(error.statusCode));
       } else {
         // If the error doesn't have a statusCode property, return it as an internal server error
@@ -127,6 +122,46 @@ exports.patchSecurityRole = async (req, res, next) => {
   }
 };
 
+exports.searchRoles = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+
+    this.query = req.query != "undefined" ? req.query : {};
+    let searchName = this.query.name;
+    delete this.query.name;
+    this.dbservice.getObjectList(SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    
+    function callbackFunc(error, roles) {
+
+      if (error) {
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+
+        if(searchName) {
+          let filteredRoles = [];
+          
+          for(let role of roles) {
+            let name = role.name.toLowerCase();
+            console.log(name,searchName,name.search(searchName.toLowerCase()));
+            if(name.search(searchName.toLowerCase())>-1) {
+              filteredRoles.push(role);
+            }
+          }
+
+          roles = filteredRoles;
+
+        } 
+        
+        return res.status(StatusCodes.OK).json(roles);
+      }
+    }
+
+  }
+};
 
 function getDocumentFromReq(req, reqType){
   const { name, description, allModules, allWriteAccess, disableDelete,

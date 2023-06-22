@@ -104,7 +104,7 @@ exports.searchSecurityModules = async (req, res, next) => {
 };
 
 exports.deleteSecurityModule = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityModule, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(SecurityModule, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
