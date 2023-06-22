@@ -100,7 +100,7 @@ exports.getCustomer = async (req, res, next) => {
             customer.verifications[index].verifiedBy = user;
           }
           else {
-            delete customer.verifications[index];
+            customer.verifications.splice(index, 1);
           }
           index++;                
         }

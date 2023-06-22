@@ -88,7 +88,7 @@ exports.getProduct = async (req, res, next) => {
             machine.verifications[index].verifiedBy = user;
           }
           else {
-            delete machine.verifications[index];
+            machine.verifications.splice(index, 1);
           }
           index++;                
         }
