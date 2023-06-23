@@ -10,11 +10,15 @@ class CustomerService {
     this.db = new dbService();
   }
 
-  getObject(model, query, populate, callback) {
-    this.db.getObject(model, query, populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObject(model, query, populate, callback) {
+    if(callback){
+      this.db.getObject(model, query, populate, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    } else {
+      return await this.db.getObject(model, query, populate);
     }
   }
 
@@ -31,11 +35,15 @@ class CustomerService {
 
   }
 
-  getObjectList(model, fields, query, orderBy, populate, callback) {
-    this.db.getObjectList(model, fields, query, orderBy, populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObjectList(model, fields, query, orderBy, populate, callback) {
+    if(callback){
+      this.db.getObjectList(model, fields, query, orderBy, populate, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    } else {
+      return await this.db.getObjectList(model, fields, query, orderBy, populate);
     }
   };
 
@@ -52,11 +60,15 @@ class CustomerService {
 
   };
 
-  deleteObject(model, id, res, callback) {
-    this.db.deleteObject(model, id, res, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async deleteObject(model, id, res, callback) {
+    if(callback){
+      this.db.deleteObject(model, id, res, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    } else {
+      return await this.db.deleteObject(model, id, res);
     }
   };
 
@@ -123,12 +135,16 @@ class CustomerService {
 
 
 
-  patchObject(model, id, newValues, callback) {
-    this.db.patchObject(model, id, newValues, callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) callback(error, {});
-      else callback(null, result);
-    }
+  async patchObject(model, id, newValues, callback) {
+    if(callback){
+      this.db.patchObject(model, id, newValues, callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) callback(error, {});
+        else callback(null, result);
+      }
+    } else {
+      return await this.db.patchObject(model, id, newValues);
+    }    
   };
 }
 
