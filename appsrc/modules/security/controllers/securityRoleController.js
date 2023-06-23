@@ -57,9 +57,9 @@ exports.deleteSecurityRole = async (req, res, next) => {
       if (error.statusCode) {
         res.status(error.statusCode).send(getReasonPhrase(error.statusCode));
       } else {
-        // If the error doesn't have a statusCode property, return it as an internal server error
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      }} else {
+      }
+    } else {
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -112,9 +112,7 @@ exports.patchSecurityRole = async (req, res, next) => {
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
       } else {
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
