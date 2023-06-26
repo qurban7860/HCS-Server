@@ -52,7 +52,7 @@ exports.getProductTechParamCategories = async (req, res, next) => {
 };
 
 exports.deleteProductTechParamCategory = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductTechParamCategory, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductTechParamCategory, req.params.id, res, callbackFunc);
   console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {

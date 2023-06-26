@@ -126,7 +126,7 @@ exports.getCustomers = async (req, res, next) => {
 exports.deleteCustomer = async (req, res, next) => {
   let customer = await Customer.findById(req.params.id); 
   if(!_.isEmpty(customer)){
-    if(customer.isArchived == true && customer.type != 'SP'){
+    if(customer.type != 'SP'){
       this.dbservice.deleteObject(Customer, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
@@ -269,6 +269,7 @@ function getDocumentFromReq(req, reqType){
     if(mainSite != undefined && typeof mainSite !== "string") {
       var reqMainSite = {};
       reqMainSite.body = mainSite;
+      reqMainSite.body.loginUser = req.body.loginUser;
       doc.mainSite = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
       doc.mainSite.customer = doc._id;
     }
@@ -276,6 +277,7 @@ function getDocumentFromReq(req, reqType){
     if(technicalContact != undefined && typeof technicalContact !== "string") {
       var reqprimaryTechnicalContact = {};
       reqprimaryTechnicalContact.body = technicalContact;
+      reqprimaryTechnicalContact.body.loginUser = req.body.loginUser;
       doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
       doc.technicalContact.customer = doc._id;
     }
@@ -283,6 +285,7 @@ function getDocumentFromReq(req, reqType){
     if(billingContact != undefined && typeof billingContact !== "string") {
       var reqPrimarybillingContact = {};
       reqPrimarybillingContact.body = billingContact;
+      reqPrimarybillingContact.body.loginUser = req.body.loginUser;
       doc.billingContact = customerContactController.getDocumentFromReq(reqPrimarybillingContact, 'new');
       doc.billingContact.customer = doc._id;
     }

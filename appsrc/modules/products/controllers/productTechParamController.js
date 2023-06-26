@@ -56,7 +56,7 @@ exports.getProductTechParams = async (req, res, next) => {
 };
 
 exports.deleteProductTechParam = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductTechParam, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductTechParam, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {

@@ -65,7 +65,7 @@ exports.searchProductLicenses = async (req, res, next) => {
 };
 
 exports.deleteProductLicense = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductLicense, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductLicense, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
