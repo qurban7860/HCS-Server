@@ -55,7 +55,7 @@ exports.getProductModels = async (req, res, next) => {
 };
 
 exports.deleteProductModel = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductModel, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductModel, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {

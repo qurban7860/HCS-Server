@@ -66,7 +66,7 @@ exports.searchProductToolInstalled = async (req, res, next) => {
 };
 
 exports.deleteProductToolInstalled = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductToolInstalled, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductToolInstalled, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

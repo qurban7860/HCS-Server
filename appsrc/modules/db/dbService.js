@@ -75,7 +75,7 @@ class dbService {
     try {
       let existingRecord = await model.findById(id);
       if (!existingRecord.isArchived) {
-        const error = new Error("Record cannot be deleted");
+        const error = new Error("Record cannot be deleted. It should be archived first!");
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }

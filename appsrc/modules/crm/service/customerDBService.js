@@ -61,18 +61,19 @@ class CustomerService {
   };
 
   async deleteObject(model, id, res, callback) {
-    if(callback){
+    if(callback) {
       this.db.deleteObject(model, id, res, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
         else callback(null, response);
       }
-    } else {
+    }
+    else {
       return await this.db.deleteObject(model, id, res);
     }
   };
 
-  postObject(newdocument, callback) {
+  async postObject(newdocument, callback) {
     const db = this.db;
     async.waterfall([
       function (callback) {
@@ -141,10 +142,10 @@ class CustomerService {
       function callbackFunc(error, result) {
         if (error) callback(error, {});
         else callback(null, result);
-      }
+      }  
     } else {
       return await this.db.patchObject(model, id, newValues);
-    }    
+    }
   };
 }
 

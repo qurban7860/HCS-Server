@@ -46,12 +46,18 @@ class EmailService {
     }
   }
 
-  async deleteObject(model, id){
+  async deleteObject(model, id, res, callback){
     try{
-      const response = await this.db.deleteObject(model, id);
-      return response;  
-    }
-    catch(error){
+      if(callback){
+        this.db.deleteObject(model, id, res, callbackFunc);
+        function callbackFunc(error, response) {
+          if (error) callback(error, {});
+          else callback(null, response);
+        }
+      }else{
+        return await this.db.deleteObject(model, id, res);
+      }
+    } catch(error) {
       return error;
     }
   }

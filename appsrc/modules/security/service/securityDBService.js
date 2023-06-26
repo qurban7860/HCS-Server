@@ -66,7 +66,7 @@ class SecurityService {
         else callback(null, response);
       }
     }else{
-      return await this.db.deleteObject(model, id);
+      return await this.db.deleteObject(model, id, res);
     }
   };
 

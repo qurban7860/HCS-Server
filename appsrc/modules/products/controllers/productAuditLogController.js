@@ -55,7 +55,7 @@ exports.getProductAuditLogs = async (req, res, next) => {
 };
 
 exports.deleteProductAuditLog = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductAuditLog, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductAuditLog, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {

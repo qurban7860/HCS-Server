@@ -156,7 +156,7 @@ exports.getConnectionProducts = async (req, res, next) => {
 
 
 exports.deleteProduct = async (req, res, next) => {
-  dbservice.deleteObject(Product, req.params.id, callbackFunc);
+  dbservice.deleteObject(Product, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
