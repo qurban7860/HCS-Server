@@ -114,7 +114,7 @@ exports.postSecurityUser = async (req, res, next) => {
             }
           }  
         }else{
-          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));              
+          return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email/Login already exists!', true));
         }
       }
     }
