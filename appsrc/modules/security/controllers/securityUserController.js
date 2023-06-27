@@ -168,26 +168,17 @@ exports.patchSecurityUser = async (req, res, next) => {
         // delete(archive) user
         if("isArchived" in req.body){
           let user = await SecurityUser.findById(req.params.id); 
-          if(!(_.isEmpty(user))) {
-            
-            let customer = await Customer.findOne({createdBy:user.id});
-            let machine = await Product.findOne({createdBy:user.id});
-
-            if(!customer && !machine) {
-              const doc = await getDocumentFromReq(req);
-              _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
-                function callbackFunc(error, result) {
-                  if (error) {
-                    logger.error(new Error(error));
-                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                  } else {
-                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-                  }
+          if(!(_.isEmpty(user))) {            
+            const doc = await getDocumentFromReq(req);
+            _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+              function callbackFunc(error, result) {
+                if (error) {
+                  logger.error(new Error(error));
+                  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                } else {
+                  return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
                 }
-            }
-            else {
-              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User assigned to a Customer/Machine cannot be deleted!'));
-            }
+              }
           }
           else {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
