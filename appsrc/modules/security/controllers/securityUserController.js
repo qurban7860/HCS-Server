@@ -165,7 +165,7 @@ exports.patchSecurityUser = async (req, res, next) => {
           }
         }   
       } else {
-        // delete user
+        // delete(archive) user
         if("isArchived" in req.body){
           let user = await SecurityUser.findById(req.params.id); 
           if(!(_.isEmpty(user))) {
@@ -212,9 +212,17 @@ exports.patchSecurityUser = async (req, res, next) => {
             } else {
               // check if theres any other user by the same email
               if(response && response._id && response._id != req.params.id){
-                console.log('response------->', response);
                 // return error message
-                return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
+                if (req.body.login && req.body.email) {
+                  return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email/Login already exists!', true));
+                } else if (req.body.login) {
+                  return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Login already exists!', true));
+                } else if (req.body.email) {
+                  return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email already exists!', true));
+                } else {
+                  return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+                }
+                // return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
               }else{
                 const doc = await getDocumentFromReq(req);
                 _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
