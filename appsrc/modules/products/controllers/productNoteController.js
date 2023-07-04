@@ -70,7 +70,7 @@ exports.deleteProductNote = async (req, res, next) => {
   const response = await ProductNote.findById(req.params.id);
   if(response === null) {
     try {
-      const result = await this.dbservice.deleteObject(ProductNote, req.params.id, callbackFunc);
+      const result = await this.dbservice.deleteObject(ProductNote, req.params.id, res, callbackFunc);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     } catch (error) {
       logger.error(new Error(error));

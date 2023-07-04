@@ -19,6 +19,9 @@ const baseRoute = `/roles`;
 
 router.use(checkAuth, checkCustomer);
 
+// - /api/1.0.0/security/roles/search
+router.get(`${baseRoute}/search`, controller.searchRoles);
+
 // - /api/1.0.0/security/roles/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityRole);
 

@@ -17,7 +17,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { loginTime: -1 };  
 this.populate = [
   {path: '', select: ''}
 ];
@@ -53,7 +53,7 @@ exports.getSecuritySignInLogs = async (req, res, next) => {
 };
 
 exports.deleteSignInLog = async (req, res, next) => {
-  this.dbservice.deleteObject(SecuritySignInLog, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(SecuritySignInLog, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

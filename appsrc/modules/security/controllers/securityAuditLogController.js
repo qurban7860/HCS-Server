@@ -53,7 +53,7 @@ exports.getSecurityAuditLogs = async (req, res, next) => {
 };
 
 exports.deleteSecurityAuditLog = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityAuditLog, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(SecurityAuditLog, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

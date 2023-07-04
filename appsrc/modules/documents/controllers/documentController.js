@@ -81,8 +81,15 @@ exports.getDocument = async (req, res, next) => {
 exports.getDocuments = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
+    let basicInfo = false;
+
+    if(this.query && (this.query.basic==true || this.query.basic=='true')) {
+      basicInfo = true;
+      delete this.query.basic;
+    }
+
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
-    if(documents && Array.isArray(documents) && documents.length>0) {
+    if(documents && Array.isArray(documents) && documents.length>0 && basicInfo===false) {
       documents = JSON.parse(JSON.stringify(documents));
       let documentIndex = 0;
       for(let document_ of documents) {

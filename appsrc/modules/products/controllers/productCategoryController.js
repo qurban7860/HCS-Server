@@ -55,7 +55,7 @@ exports.getProductCategories = async (req, res, next) => {
 };
 
 exports.deleteProductCategory = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductCategory, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductCategory, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));

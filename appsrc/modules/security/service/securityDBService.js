@@ -58,15 +58,15 @@ class SecurityService {
     }
   };
 
-  async deleteObject(model, id, callback, res) {
+  async deleteObject(model, id, res, callback) {
     if(callback){
-      this.db.deleteObject(model, id, callbackFunc, res);
+      this.db.deleteObject(model, id, res, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
         else callback(null, response);
       }
     }else{
-      return await this.db.deleteObject(model, id);
+      return await this.db.deleteObject(model, id, res);
     }
   };
 

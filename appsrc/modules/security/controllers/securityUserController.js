@@ -69,7 +69,7 @@ exports.deleteSecurityUser = async (req, res, next) => {
     let machine = await Product.findOne({createdBy:user.id});
 
     if(!customer && !machine) {
-      this.dbservice.deleteObject(SecurityUser, req.params.id, (error, result)=>{
+      this.dbservice.deleteObject(SecurityUser, req.params.id, res, (error, result)=>{
         if (error) {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -95,7 +95,11 @@ exports.postSecurityUser = async (req, res, next) => {
   else {
     // check if email exists
     var _this = this;
-    let queryString  = { email: req.body.email.toLowerCase(), login: req.body.login.toLowerCase() };
+    let queryString = { 
+      isArchived: false, 
+      email: req.body.email.toLowerCase(), 
+      login: req.body.login.toLowerCase()
+    };
     this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
@@ -114,7 +118,7 @@ exports.postSecurityUser = async (req, res, next) => {
             }
           }  
         }else{
-          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));              
+          return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email/Login already exists!', true));
         }
       }
     }
@@ -128,12 +132,15 @@ exports.patchSecurityUser = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if (ObjectId.isValid(req.params.id)) {
+      let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
+      const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+
       if (req.url.includes("updatePassword")) {
         // if admin is updating password
         if(req.body.isAdmin){ 
           if(req.body.loginUser.userId){
-            let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
-            const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+            // let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
+            // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
             if(!hasSuperAdminRole){
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Only superadmins are allowed to access this feature ", true));
             }
@@ -165,73 +172,80 @@ exports.patchSecurityUser = async (req, res, next) => {
           }
         }   
       } else {
-        // delete user
+        // delete(archive) user
         if("isArchived" in req.body){
           let user = await SecurityUser.findById(req.params.id); 
-          if(!(_.isEmpty(user))) {
-            
-            let customer = await Customer.findOne({createdBy:user.id});
-            let machine = await Product.findOne({createdBy:user.id});
-
-            if(!customer && !machine) {
-              const doc = await getDocumentFromReq(req);
-              _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
-                function callbackFunc(error, result) {
-                  if (error) {
-                    logger.error(new Error(error));
-                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                  } else {
-                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-                  }
-                }
-            }
+          if(!(_.isEmpty(user))) {        
+            if(req.body.loginUser?.userId == user._id || !hasSuperAdminRole){
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
+            } 
             else {
-              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'User assigned to a Customer/Machine cannot be deleted!'));
+            const doc = await getDocumentFromReq(req);
+            _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+              function callbackFunc(error, result) {
+                if (error) {
+                  logger.error(new Error(error));
+                  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                } else {
+                  return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                }
+              }
             }
-          }
-          else {
+
+          } else {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
 
-        }
-
-        else{
-          // check if email already exists
-          let queryString = { 
-            isArchived: false,
-            $or: [
-            { email: req.body.email?.toLowerCase()  }, 
-            { login: req.body.login?.toLowerCase()  }
-          ]};
-          
-          this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
-          async function getObjectCallback(error, response) {
-            if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-            } else {
-              // check if theres any other user by the same email
-              if(response && response._id && response._id != req.params.id){
-                console.log('response------->', response);
-                // return error message
-                return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
-              }else{
-                const doc = await getDocumentFromReq(req);
-                _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
-                function callbackFunc(error, result) {
-                  if (error) {
-                    return logger.error(new Error(error));
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        } else {
+          // Only superadmin/logged in user can update
+          if(hasSuperAdminRole || req.body.loginUser.userId == req.params.id){
+            // check if email already exists
+            let queryString = { 
+              isArchived: false,
+              $or: [
+              { email: req.body.email?.toLowerCase()  }, 
+              { login: req.body.login?.toLowerCase()  }
+            ]};
+            
+            this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
+            async function getObjectCallback(error, response) {
+              if (error) {
+                logger.error(new Error(error));
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+              } else {
+                // check if theres any other user by the same email
+                if(response && response._id && response._id != req.params.id){
+                  // return error message
+                  if (req.body.login && req.body.email) {
+                    return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email/Login already exists!', true));
+                  } else if (req.body.login) {
+                    return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Login already exists!', true));
+                  } else if (req.body.email) {
+                    return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email already exists!', true));
                   } else {
-                    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
                   }
-                }     
+                  // return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST))       
+                } else {
+                  const doc = await getDocumentFromReq(req);
+                  _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+                  function callbackFunc(error, result) {
+                    if (error) {
+                      return logger.error(new Error(error));
+                      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                    } else {
+                      return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                    }
+                  }     
+                }
               }
-            }
+            } 
+          }else{
+            return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
           }
         }
       }
-    }else{
+    } else {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
     }
   }
