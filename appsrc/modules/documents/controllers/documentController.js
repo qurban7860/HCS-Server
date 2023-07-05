@@ -689,8 +689,11 @@ async function processFile(file, userId) {
   const base64fileData = await readFileAsBase64(file.path);
 
   if(file.mimetype.includes('image')){
+
     thumbnailPath = await generateThumbnail(file.path);
-    base64thumbNailData = await readFileAsBase64(thumbnailPath);
+    if(thumbnailPath) {
+      base64thumbNailData = await readFileAsBase64(thumbnailPath);
+    }
   }
   
   const fileName = userId+"-"+new Date().getTime();
