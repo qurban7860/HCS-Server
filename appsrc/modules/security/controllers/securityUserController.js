@@ -97,8 +97,10 @@ exports.postSecurityUser = async (req, res, next) => {
     var _this = this;
     let queryString = { 
       isArchived: false, 
-      email: req.body.email.toLowerCase(), 
-      login: req.body.login.toLowerCase()
+      $or: [
+        { email: req.body.email.toLowerCase() },
+        { login: req.body.login.toLowerCase() }
+      ]
     };
     this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
     async function getObjectCallback(error, response) {
