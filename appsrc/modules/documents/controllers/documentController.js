@@ -270,7 +270,10 @@ exports.postDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              req.body.content = processedFile.base64thumbNailData;
+              
+              if(processedFile.base64thumbNailData)
+                req.body.content = processedFile.base64thumbNailData;
+              
               req.body.originalname = processedFile.name;
 
               if(document_ && document_.id) {
@@ -530,7 +533,10 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              req.body.content = processedFile.base64thumbNailData;
+              
+              if(processedFile.base64thumbNailData)
+                req.body.content = processedFile.base64thumbNailData;
+              
               req.body.originalname = processedFile.name;
 
               if(document_ && document_.id) {
@@ -602,7 +608,10 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              req.body.content = processedFile.base64thumbNailData;
+              
+              if(processedFile.base64thumbNailData)
+                req.body.content = processedFile.base64thumbNailData;
+              
               req.body.originalname = processedFile.name;
 
               if(document_ && document_.id) {
