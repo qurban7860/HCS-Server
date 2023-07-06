@@ -34,6 +34,7 @@
     "sharp": "^0.32.1",
     "soft-delete-plugin-mongoose": "^1.0.15",
     "swagger-ui-express": "^4.6.0",
+    "template-file": "^6.0.1",
     "util": "^0.12.5",
     "uuid": "^3.4.0",
     "winston": "^3.8.2",

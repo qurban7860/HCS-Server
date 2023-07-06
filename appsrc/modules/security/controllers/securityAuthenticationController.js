@@ -9,7 +9,8 @@ const logger = require('../../config/logger');
 const _ = require('lodash');
 let rtnMsg = require('../../config/static/static');
 const awsService = require('../../../../appsrc/base/aws');
-
+const { render } = require('template-file');
+const fs = require('fs');
 
 let securityDBService = require('../service/securityDBService');
 this.dbservice = new securityDBService();
@@ -221,16 +222,26 @@ exports.forgetPassword = async (req, res, next) => {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
+
+          let emailContent = `Hi ${existingUser.name},<br><br>You requested to reset your password.<br>
+                          <br>Please click the link below to reset your password.<br>
+                          <br><a href="${link}">Click here</a>`;
+          let emailSubject = "Reset Password";
+
           let params = {
             to: `${existingUser.email}`,
-            subject: "Reset Password",
-            html: true,
-            htmlData: `Hi ${existingUser.name},<br><br>You requested to reset your password.<br>
-                          <br>Please click the link below to reset your password.<br>
-                          <br><a href="${link}">Click here</a>`
+            subject: emailSubject,
+            html: true
           };
 
-          let response = await awsService.sendEmail(params);
+          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+
+            let htmlData = render(data,{ emailSubject, emailContent })
+            params.htmlData = htmlData;
+            let response = await awsService.sendEmail(params);
+          })
+
+          // let response = await awsService.sendEmail(params);
           
           const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           
@@ -269,15 +280,28 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               logger.error(new Error(error));
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
+
+              let emailContent = `Hi ${existingUser.name},<br><br>Your password has been update successfully.<br>
+                              <br>Please sign in to access your account<br>`;
+                              
+              let emailSubject = "Password Reset Successful";
+
               let params = {
                 to: `${existingUser.email}`,
-                subject: "Password Reset Successful",
+                subject: emailSubject,
                 html: true,
-                htmlData: `Hi ${existingUser.name},<br><br>Your password has been update successfully.<br>
-                              <br>Please sign in to access your account<br>`
               };
-    
-              let response = await awsService.sendEmail(params);
+              
+
+              fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+
+                let htmlData = render(data,{ emailSubject, emailContent })
+                params.htmlData = htmlData;
+                let response = await awsService.sendEmail(params);
+              })
+
+
+              // let response = await awsService.sendEmail(params);
 
               const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           
