@@ -224,7 +224,10 @@ exports.postDocumentVersion = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              req.body.content = processedFile.base64thumbNailData;
+  
+              if(processedFile.base64thumbNailData)
+                req.body.content = processedFile.base64thumbNailData;
+  
               req.body.originalname = processedFile.name;
 
 
@@ -418,7 +421,10 @@ exports.patchDocumentVersion = async (req, res, next) => {
             req.body.path = processedFile.s3FilePath;
             req.body.type = processedFile.type
             req.body.extension = processedFile.fileExt;
-            req.body.content = processedFile.base64thumbNailData;
+  
+            if(processedFile.base64thumbNailData)
+              req.body.content = processedFile.base64thumbNailData;
+  
             req.body.originalname = processedFile.name;
 
             let documentFile = await saveDocumentFile(document_,req.body);
@@ -517,7 +523,8 @@ async function processFile(file, userId) {
 
   if(file.mimetype.includes('image')){
     thumbnailPath = await generateThumbnail(file.path);
-    base64thumbNailData = await readFileAsBase64(thumbnailPath);
+    if(thumbnailPath)
+      base64thumbNailData = await readFileAsBase64(thumbnailPath);
   }
   
   const fileName = userId+"-"+new Date().getTime();
