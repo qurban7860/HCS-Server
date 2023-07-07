@@ -209,7 +209,7 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const existingUser = await SecurityUser.findOne({ login: req.body.login })
+    const existingUser = await SecurityUser.findOne({ email: req.body.email })
         .populate([{ path: 'customer', select: 'name type isActive isArchived' },
                   { path: 'contact', select: 'name isActive isArchived' }]);
     if (existingUser && isValidCustomer(existingUser.customer)) {

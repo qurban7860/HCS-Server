@@ -12,12 +12,12 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductCategory, ProductModel, ProductConnection, ProductStatus } = require('../models');
+const { Product, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
+const { postProductAuditLog, patchProductAuditLog } =  require('./productAuditLogController');
 const { Customer } = require('../../crm/models')
 const { SecurityUser } = require('../../security/models')
 const ObjectId = require('mongoose').Types.ObjectId;
-
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -158,11 +158,14 @@ exports.getConnectionProducts = async (req, res, next) => {
 exports.deleteProduct = async (req, res, next) => {
   dbservice.deleteObject(Product, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
-  function callbackFunc(error, result) {
+  async function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      const machine = { _id: req.params.id };
+      let machineAuditLog = createMachineAuditLogRequest(machine, 'Delete', req.body.loginUser.userId)
+      await postProductAuditLog(machineAuditLog, 'Delete');
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -185,6 +188,9 @@ exports.postProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
+        let machineAuditLog = createMachineAuditLogRequest(machine, 'Create', req.body.loginUser.userId)
+        await postProductAuditLog(machineAuditLog);
+
         if(machine && Array.isArray(machineConnections) && machineConnections.length>0) 
           machine = await connectMachines(machine.id, machineConnections);
         
@@ -201,7 +207,7 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
-    if(machine.status?.slug && machine.status.slug === 'transferred'){
+    if(machine.status?.slug && machine.status.slug === 'transferred' && "updateTransferStatus" in req.body){
       return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
     }
 
@@ -270,7 +276,7 @@ exports.patchProduct = async (req, res, next) => {
     
     
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
+    async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
@@ -278,6 +284,8 @@ exports.patchProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
+        let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
+        await postProductAuditLog(machineAuditLog, 'Update');
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
@@ -369,7 +377,18 @@ function isNonTransferrableMachine(status) {
   return false;
 }
 
+function createMachineAuditLogRequest(machine, activityType, loggedInUser) {
+  let machineAuditLog = {
+    body: JSON.parse(JSON.stringify(machine))
+  };
 
+  machineAuditLog.body.machine = machine._id;
+  machineAuditLog.body.activityType = activityType;
+  machineAuditLog.body.activitySummary = `Machine ${activityType} by userID:${loggedInUser}`;
+  machineAuditLog.body.activityDetail = `Machine ${activityType} by userID:${loggedInUser}`;
+
+  return machineAuditLog;
+}
 
 // exports.transferOwnership = async (req, res, next) => {
 //   const errors = validationResult(req);

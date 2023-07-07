@@ -98,8 +98,8 @@ exports.postSecurityUser = async (req, res, next) => {
     let queryString = { 
       isArchived: false, 
       $or: [
-        { email: req.body.email.toLowerCase() },
-        { login: req.body.login.toLowerCase() }
+        { email: req.body.email.toLowerCase().trim() },
+        { login: req.body.login.toLowerCase().trim() }
       ]
     };
     this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
@@ -202,12 +202,18 @@ exports.patchSecurityUser = async (req, res, next) => {
           // Only superadmin/logged in user can update
           if(hasSuperAdminRole || req.body.loginUser.userId == req.params.id){
             // check if email already exists
-            let queryString = { 
+            let queryString = {
               isArchived: false,
+              _id: { $ne: req.params.id },
               $or: [
-              { email: req.body.email?.toLowerCase()  }, 
-              { login: req.body.login?.toLowerCase()  }
-            ]};
+                { email: { $regex: req.body.email.toLowerCase().trim(), $options: 'i' } },
+                { email: { $regex: req.body.login.toLowerCase().trim(), $options: 'i' } },
+                { login: { $regex: req.body.email.toLowerCase().trim(), $options: 'i' } },
+                { login: { $regex: req.body.login.toLowerCase().trim(), $options: 'i' } }
+              ]
+            };
+
+            console.log('queryString----->', JSON.stringify(queryString));
             
             this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
             async function getObjectCallback(error, response) {
@@ -215,6 +221,7 @@ exports.patchSecurityUser = async (req, res, next) => {
                 logger.error(new Error(error));
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
               } else {
+                console.log('response------->', response);
                 // check if theres any other user by the same email
                 if(response && response._id && response._id != req.params.id){
                   // return error message
@@ -302,11 +309,11 @@ async function getDocumentFromReq(req, reqType){
   }
 
   if ("login" in req.body){
-    doc.login = login.toLowerCase();
+    doc.login = login.toLowerCase().trim();
   }
 
   if ("email" in req.body){
-    doc.email = email.toLowerCase();
+    doc.email = email.toLowerCase().trim();
   }
 
   if ("expireAt" in req.body){
