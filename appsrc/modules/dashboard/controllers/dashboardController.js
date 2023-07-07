@@ -24,7 +24,8 @@ exports.getData = async (req, res, next) => {
       { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
       { $unwind: "$machineModel" },
       { $match: { "machineModel": { $nin: ["", null] } } },
-      { $group: { _id: '$machineModel.name', count: { $sum: 1 } } }
+      { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
+      { $limit: 20 }
     ]);
     
     let countryWiseCustomerCount = await Customer.aggregate([
@@ -36,6 +37,15 @@ exports.getData = async (req, res, next) => {
       { $limit: 20 }
     ]);
 
+    let countryWiseMachineCount = await Product.aggregate([
+      { $match: { isArchived: false, isActive: true } }, 
+      { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
+      { $unwind: "$instalationSite" },
+      { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
+      { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+      { $limit: 20 }
+    ]);
+
     let countryWiseSiteCount = await CustomerSite.aggregate([
       { $match: { isArchived: false, isActive: true, 
           "address.country": { $nin: ["", null] } 
@@ -44,7 +54,7 @@ exports.getData = async (req, res, next) => {
       { $group: { _id: "$address.country", count: { $sum: 1 }}}
     ]);
 
-  res.json({customerCount, machineCount, userCount, siteCount, modelWiseMachineCount, countryWiseCustomerCount, countryWiseSiteCount});
+  res.json({customerCount, machineCount, userCount, siteCount, modelWiseMachineCount, countryWiseCustomerCount, countryWiseSiteCount, countryWiseMachineCount});
 
   }catch(e) {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
