@@ -80,8 +80,6 @@ exports.postProductAuditLog = async (req, res, next) => {
           error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
-      } else {
-        res.status(StatusCodes.CREATED).json({ MachineAuditLog: response });
       }
     }
   }
@@ -101,8 +99,6 @@ exports.patchProductAuditLog = async (req, res, next) => {
           error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }

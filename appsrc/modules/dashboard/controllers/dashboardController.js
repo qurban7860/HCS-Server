@@ -25,6 +25,7 @@ exports.getData = async (req, res, next) => {
       { $unwind: "$machineModel" },
       { $match: { "machineModel": { $nin: ["", null] } } },
       { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
     
@@ -34,6 +35,7 @@ exports.getData = async (req, res, next) => {
       { $unwind: "$mainSite" },
       { $match: { "mainSite.address.country": { $nin: ["", null] } } },
       { $group: { _id: "$mainSite.address.country", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
 
@@ -43,6 +45,7 @@ exports.getData = async (req, res, next) => {
       { $unwind: "$instalationSite" },
       { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
       { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
 
