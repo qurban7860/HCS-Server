@@ -469,7 +469,7 @@ function getDocumentFromReq(req, reqType){
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags, installationDate, shippingDate,
-    isActive, isArchived, loginUser, machineConnections, parentMachineID } = req.body;
+    isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -535,6 +535,10 @@ function getDocumentFromReq(req, reqType){
   if ("supportManager" in req.body){
     doc.supportManager = supportManager;
   }
+  if ("alias" in req.body){
+    doc.alias = alias;
+  }
+
 
   if ("license" in req.body){
     doc.license = license;
