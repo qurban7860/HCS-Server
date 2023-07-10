@@ -20,7 +20,9 @@ const docSchema = new Schema({
 
     name: { type: String },
     // name/title of machine
-  
+    
+    alias: [{ type: String  }],
+
     description: { type: String },
     // detailed description of machine
 

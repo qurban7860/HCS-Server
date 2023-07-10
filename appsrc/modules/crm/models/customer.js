@@ -10,7 +10,9 @@ const docSchema = new Schema({
         name: { type: String , required: true },
         // name of organization
         
-        tradingName: { type: String },
+        // tradingName: { type: String },
+        tradingName: [{ type: String  }],
+
         //brand/trade name if the organization has it
         
         type: { type: String },
