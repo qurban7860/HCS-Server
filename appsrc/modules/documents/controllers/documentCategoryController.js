@@ -14,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 this.dbservice = new documentDBService();
 
-const { DocumentCategory, Document } = require('../models');
+const { DocumentCategory, Document, DocumentType } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -31,7 +31,12 @@ this.populate = [
 
 exports.getDocumentCategory = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(DocumentCategory, this.fields, req.params.id, this.populate);
+    let response = await this.dbservice.getObjectById(DocumentCategory, this.fields, req.params.id, this.populate);
+    response = JSON.parse(JSON.stringify(response))
+    let docTypeQuery = { docCategory : req.params.id, isArchived:false, isActive:true };
+    let docTypeFields = { name:1, description:1, customerAccess:1 }
+    const documentCategory = await this.dbservice.getObjectList(DocumentType, docTypeFields, docTypeQuery, {}, []);
+    response.documentCategory = documentCategory;
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
