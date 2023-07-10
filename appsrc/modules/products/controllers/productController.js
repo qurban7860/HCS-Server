@@ -165,7 +165,7 @@ exports.deleteProduct = async (req, res, next) => {
     } else {
       const machine = { _id: req.params.id };
       let machineAuditLog = createMachineAuditLogRequest(machine, 'Delete', req.body.loginUser.userId)
-      await postProductAuditLog(machineAuditLog, 'Delete');
+      await postProductAuditLog(machineAuditLog);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -207,8 +207,10 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
-    if(machine.status?.slug && machine.status.slug === 'transferred' && "updateTransferStatus" in req.body){
-      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
+    if(machine.status?.slug && machine.status.slug === 'transferred'){
+      if(!("isVerified" in req.body)){
+        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
+      }
     }
 
     if(machine && req.body.isVerified){ 
@@ -285,7 +287,7 @@ exports.patchProduct = async (req, res, next) => {
         );
       } else {
         let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
-        await postProductAuditLog(machineAuditLog, 'Update');
+        await postProductAuditLog(machineAuditLog);
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
@@ -357,6 +359,8 @@ exports.transferOwnership = async (req, res, next) => {
                 status: parentMachineStatus._id
               });
               if(parentMachineUpdated){
+                let machineAuditLog = createMachineAuditLogRequest(parentMachine, 'Transfer', req.body.loginUser.userId);
+                await postProductAuditLog(machineAuditLog);
                 res.status(StatusCodes.CREATED).json({ Machine: transferredMachine });
               }
             }
@@ -384,11 +388,15 @@ function createMachineAuditLogRequest(machine, activityType, loggedInUser) {
   let machineAuditLog = {
     body: JSON.parse(JSON.stringify(machine))
   };
-
   machineAuditLog.body.machine = machine._id;
   machineAuditLog.body.activityType = activityType;
-  machineAuditLog.body.activitySummary = `Machine ${activityType} by userID:${loggedInUser}`;
-  machineAuditLog.body.activityDetail = `Machine ${activityType} by userID:${loggedInUser}`;
+  if(activityType == 'Transfer'){
+    machineAuditLog.body.activitySummary = `Machine(ID:${machine._id}) owned by customer(ID:${machine.customer}) transferred by user(ID:${loggedInUser})`;
+    machineAuditLog.body.activityDetail = `Machine(ID:${machine._id}) owned by customer(ID:${machine.customer}) transferred by user(ID:${loggedInUser})`;
+  } else {
+    machineAuditLog.body.activitySummary = `Machine(ID:${machine._id}) ${activityType} by user(ID:${loggedInUser})`;
+    machineAuditLog.body.activityDetail = `Machine(ID:${machine._id}) ${activityType} by user(ID:${loggedInUser})`;
+  }
 
   return machineAuditLog;
 }
