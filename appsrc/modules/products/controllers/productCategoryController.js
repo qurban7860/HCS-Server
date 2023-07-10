@@ -108,7 +108,7 @@ exports.patchProductCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, isActive, isArchived, loginUser } = req.body;
+  const { name, description, connections, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -123,6 +123,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("isActive" in req.body){
     doc.isActive = isActive;
+  }
+  if ("connections" in req.body){
+    doc.connections = connections;
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
