@@ -35,8 +35,8 @@ exports.getDocumentCategory = async (req, res, next) => {
     response = JSON.parse(JSON.stringify(response))
     let docTypeQuery = { docCategory : req.params.id, isArchived:false, isActive:true };
     let docTypeFields = { name:1, description:1, customerAccess:1 }
-    const documentCategory = await this.dbservice.getObjectList(DocumentType, docTypeFields, docTypeQuery, {}, []);
-    response.documentCategory = documentCategory;
+    const documentTypes = await this.dbservice.getObjectList(DocumentType, docTypeFields, docTypeQuery, {}, []);
+    response.documentTypes = documentTypes;
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
