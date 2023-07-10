@@ -330,9 +330,12 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
-          req.body.machineConnections = parentMachine.machineConnections;
-
-          // change status
+          
+          if(parentMachine.machineConnections.length > 0){
+            let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
+          }
+            
+          // update status of the new(transferred) machine
           let queryString = { slug: 'intransfer'}
           let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
           if(machineStatus){
