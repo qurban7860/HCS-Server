@@ -41,7 +41,7 @@ async function main() {
 				}
 
 				let customer = await Customer.findOne({
-					name:{ $regex: customerName, $options: 'i' },
+					name:{$in:[customerName,machine.ClientName]},
 			        type:customerType
 				})
 				
