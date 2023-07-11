@@ -7,7 +7,7 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-    name: { type: String, required: true, unique: true },
+    name: { type: String},
     // name of model 
     
     description: { type: String  },
