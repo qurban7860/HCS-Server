@@ -119,6 +119,7 @@ exports.patchProductTechParam = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let queryString  = { $or: [
+      { _id: req.params.id },
       { name: req.body.name },
       { code: req.body.code }
     ]};
