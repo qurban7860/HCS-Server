@@ -72,7 +72,7 @@ exports.postProductModel = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let duplicateEntry = await this.dbservice.getObject(ProductModel, {name: req.body.name, isArchived: false}, this.populate);
+    let duplicateEntry = await this.dbservice.getObject(ProductModel, {name: { $regex: req.body.name, $options: 'i' }, category: req.body.category, isArchived: false}, this.populate);
     if(duplicateEntry){
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
     }else{
