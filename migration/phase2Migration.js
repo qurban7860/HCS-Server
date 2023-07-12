@@ -27,7 +27,7 @@ async function main() {
 			if(!serialNo)
 				continue;
 			let name = machine.EquipmentDescription;
-			let customerName = machine.ClientID;
+			let customerName = machine.ClientName;
 			let customerType = 'Customer';
 			let dbMachine = await Product.findOne({serialNo});
 			if(!dbMachine) {
