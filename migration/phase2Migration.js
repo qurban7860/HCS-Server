@@ -78,7 +78,7 @@ async function main() {
 						customer:customer.id,
 						address:{
 							// city:'AuckLand',
-							country:'NewZeland',
+							country:'New Zealand',
 						},
 						createdBy:createdByUser.id,
 						updatedBy:createdByUser.id,
