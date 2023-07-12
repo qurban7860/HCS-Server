@@ -240,97 +240,97 @@ async function main() {
 
       console.log(customer__);
 
-      let customerMachines = machines.filter((c)=>c.Account__c==customerId);
-      for(let machine of customerMachines) {
+      // let customerMachines = machines.filter((c)=>c.Account__c==customerId);
+      // for(let machine of customerMachines) {
 
-        let machine_ = await Product.findOne({
-          serialNo:machine.SerialNumber,
-        })
-        if(!machine_) {
-          let createdBy = users.find((u)=>u.Id==machine.CreatedById);
+      //   let machine_ = await Product.findOne({
+      //     serialNo:machine.SerialNumber,
+      //   })
+      //   if(!machine_) {
+      //     let createdBy = users.find((u)=>u.Id==machine.CreatedById);
 
-          let machineSite = await CustomerSite.findOne({
-            name:machine.AccountName,
-            customer:customer__.id,
-          });
+      //     let machineSite = await CustomerSite.findOne({
+      //       name:machine.AccountName,
+      //       customer:customer__.id,
+      //     });
 
-          if(!machineSite) {
+      //     if(!machineSite) {
 
-            machineSite = {
-              name:machine.AccountName,
-              phone:'',
-              email:'',
-              customer:customer__.id,
-              contacts:[],
-              address:{
-                street:customer.Street__c,
-                suburb:'',
-                postcode:customer.PostalCode__c,
-                city:machine.City__c,
-                region:customer.State__c,
-                country:machine.Country,
-              },
-              createdBy:createdByUser.id,
-              updatedBy:createdByUser.id,
-            }
+      //       machineSite = {
+      //         name:machine.AccountName,
+      //         phone:'',
+      //         email:'',
+      //         customer:customer__.id,
+      //         contacts:[],
+      //         address:{
+      //           street:customer.Street__c,
+      //           suburb:'',
+      //           postcode:customer.PostalCode__c,
+      //           city:machine.City__c,
+      //           region:customer.State__c,
+      //           country:machine.Country,
+      //         },
+      //         createdBy:createdByUser.id,
+      //         updatedBy:createdByUser.id,
+      //       }
 
-            machineSite = await CustomerSite.create(machineSite);
-          }
+      //       machineSite = await CustomerSite.create(machineSite);
+      //     }
           
 
-          let contact = contacts.find((c)=>c.Id==machine.Machine_Service_Contact__c);
+      //     let contact = contacts.find((c)=>c.Id==machine.Machine_Service_Contact__c);
 
-          machine_ = {
-            name:machine.Machine_Name__c,
-            serialNo:machine.SerialNumber,
-            customer:customer__.id,
-            createdBy:createdBy._id,
-            updatedBy:createdBy._id,
-            operators:[createdBy.howickContact],
-            accountManager:createdBy.howickContact,
-            billingSite:customer__.mainSite,
-            status:'642607ab7ce0781e19dc2b22',
-            instalationSite: machineSite.id,
-            // billingSite: machineSite.id,
-          }
+      //     machine_ = {
+      //       name:machine.Machine_Name__c,
+      //       serialNo:machine.SerialNumber,
+      //       customer:customer__.id,
+      //       createdBy:createdBy._id,
+      //       updatedBy:createdBy._id,
+      //       operators:[createdBy.howickContact],
+      //       accountManager:createdBy.howickContact,
+      //       billingSite:customer__.mainSite,
+      //       status:'642607ab7ce0781e19dc2b22',
+      //       instalationSite: machineSite.id,
+      //       // billingSite: machineSite.id,
+      //     }
 
-          let query = { "name" : { $regex: machine.Machine_Name__c, $options: 'i' }};
-          let machineModel = await ProductModel.findOne(query);
+      //     let query = { "name" : { $regex: machine.Machine_Name__c, $options: 'i' }};
+      //     let machineModel = await ProductModel.findOne(query);
 
-          if(machineModel) {
-            machine_.machineModel = machineModel.id;
-          }
-          if(contact) {
-            machine_.operators.push(contact._id);
-            machine_.supportManager = contact._id;
-          }
+      //     if(machineModel) {
+      //       machine_.machineModel = machineModel.id;
+      //     }
+      //     if(contact) {
+      //       machine_.operators.push(contact._id);
+      //       machine_.supportManager = contact._id;
+      //     }
 
-          // console.log(machine.ParentSerialNumber)
-          // process.exit();
-          if(machine.ParentSerialNumber) {
-            machine_.parentSerialNo = machine.ParentSerialNumber;
-          }
+      //     // console.log(machine.ParentSerialNumber)
+      //     // process.exit();
+      //     if(machine.ParentSerialNumber) {
+      //       machine_.parentSerialNo = machine.ParentSerialNumber;
+      //     }
 
-          machine_ = new Product(machine_);
-          await machine_.save();
+      //     machine_ = new Product(machine_);
+      //     await machine_.save();
 
 
-        }
-      }
+      //   }
+      // }
 
-      let dbMachines = await Product.find({parentSerialNo:{$ne:null}});
+      // let dbMachines = await Product.find({parentSerialNo:{$ne:null}});
 
-      for(let dbMachine of dbMachines) {
+      // for(let dbMachine of dbMachines) {
 
-        if(dbMachine.parentSerialNo && dbMachine.parentSerialNo!='' && !dbMachine.parentMachine && 
-          dbMachine.parentSerialNo.length==5) {
-          let parentMachine = await Product.findOne({serialNo:dbMachine.parentSerialNo});
-          if(parentMachine) {
-            dbMachine.parentMachine = parentMachine.id;    
-            await dbMachine.save();
-          }
-        }
-      }
+      //   if(dbMachine.parentSerialNo && dbMachine.parentSerialNo!='' && !dbMachine.parentMachine && 
+      //     dbMachine.parentSerialNo.length==5) {
+      //     let parentMachine = await Product.findOne({serialNo:dbMachine.parentSerialNo});
+      //     if(parentMachine) {
+      //       dbMachine.parentMachine = parentMachine.id;    
+      //       await dbMachine.save();
+      //     }
+      //   }
+      // }
       // process.exit();
     }
 
