@@ -89,16 +89,35 @@ exports.getSPCustomerContacts = async (req, res, next) => {
     },
     {
       $match: {
-        "customer.type" : "SP"
+        "customer.type" : "SP",
+        "customer.isActive" : true,
+        "customer.isArchived" : false
+          
+          
+        
       }
     },
     {
       $sort: {
         "firstName" : 1,
         "lastName" : 1
-        
       }
+    },
+      {
+    $lookup: {
+      from: "CustomerContacts",
+      localField: "_id",
+      foreignField: "_id",
+      as: "contact"
     }
+  },
+  {
+    $match: {
+      "contact.isActive": true,
+      "contact.isArchived": false
+        
+    }
+  }
   ];
 
   var params = {};

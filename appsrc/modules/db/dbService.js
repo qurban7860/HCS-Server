@@ -55,10 +55,14 @@ class dbService {
 
 
   async getObjectListWithAggregate(model, aggregate, params, callback) {
+    const collationOptions = {
+      locale: 'en',
+      strength: 2
+    };
     if(callback) {
       model.aggregate([
         aggregate
-      ]).exec((err, documents) => {
+      ]).collation(collationOptions).exec((err, documents) => {
         if (err) {
           callback(err, []);
         } else {
