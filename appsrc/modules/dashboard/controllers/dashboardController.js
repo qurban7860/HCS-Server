@@ -41,10 +41,9 @@ exports.getData = async (req, res, next) => {
 
     let countryWiseMachineCount = await Product.aggregate([
       { $match: { isArchived: false, isActive: true } }, 
-      { $lookup: { from: "machineConnections", localField: "_id", foreignField: "machine", as: "machineConnections" } },
       { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
       { $unwind: "$instalationSite" },
-      { $match: { "instalationSite.address.country": { $nin: ["", null] }, machineConnections:null } },
+      { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
       { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 20 }
