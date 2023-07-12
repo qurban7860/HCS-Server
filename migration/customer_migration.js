@@ -97,7 +97,7 @@ async function main() {
       
       let customer__ = await Customer.findOne({
         name : customer.Name,
-        tradingName: customer.Name,
+        // tradingName: customer.Name,
         type:customer.Type
       });
 
@@ -105,7 +105,7 @@ async function main() {
         let accountManager = users.find((u)=>u.FullName==customer.OwnerName);
         customer__ = {
           name : customer.Name,
-          tradingName: customer.Name,
+          tradingName: [customer.Name],
           type:customer.Type,
           contacts:[],
           sites:[],
