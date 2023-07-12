@@ -87,9 +87,16 @@ exports.getSPCustomerContacts = async (req, res, next) => {
         as: "customer"
       }
     },
-      {
+    {
       $match: {
         "customer.type" : "SP"
+      }
+    },
+    {
+      $sort: {
+        "firstName" : 1,
+        "lastName" : 1
+        
       }
     }
   ];
