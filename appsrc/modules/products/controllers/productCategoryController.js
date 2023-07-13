@@ -30,12 +30,16 @@ this.populate = [
 
 exports.getProductCategory = async (req, res, next) => {
   let response = await this.dbservice.getObjectById(ProductCategory, this.fields, req.params.id, this.populate);
-  response = JSON.parse(JSON.stringify(response))
-  let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
-  let fieldsModels = { name:1 }
-  const models = await this.dbservice.getObjectList(ProductModel, fieldsModels, docModelQuery, {}, []);
-  response.models = models;
-  res.json(response);
+  if (response) {
+    response = JSON.parse(JSON.stringify(response))
+    let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
+    let fieldsModels = { name:1 }
+    const models = await this.dbservice.getObjectList(ProductModel, fieldsModels, docModelQuery, {}, []);
+    response.models = models;
+    res.json(response);
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  }
 };
 
 exports.getProductCategories = async (req, res, next) => {

@@ -26,12 +26,16 @@ this.populateList = [
 
 exports.getSecurityRole = async (req, res, next) => {
   let response = await this.dbservice.getObjectById(SecurityRole, this.fields, req.params.id, this.populate);
-  response = JSON.parse(JSON.stringify(response))
-  let querySecurityUser = { roles : req.params.id, isArchived:false, isActive:true };
-  let fieldsSecurityUser = { name:1, login:1, email:1 }
-  const securityUsers = await this.dbservice.getObjectList(SecurityUser, fieldsSecurityUser, querySecurityUser, {}, []);
-  response.securityUsers = securityUsers;
-  res.json(response);
+  if (response) {
+    response = JSON.parse(JSON.stringify(response))
+    let querySecurityUser = { roles : req.params.id, isArchived:false, isActive:true };
+    let fieldsSecurityUser = { name:1, login:1, email:1 }
+    const securityUsers = await this.dbservice.getObjectList(SecurityUser, fieldsSecurityUser, querySecurityUser, {}, []);
+    response.securityUsers = securityUsers;
+    res.json(response);
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  }
 };
 
 exports.getSecurityRoles = async (req, res, next) => {

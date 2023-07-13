@@ -27,12 +27,16 @@ this.populate = [
 
 exports.getProductTechParamCategory = async (req, res, next) => {
   let response = await this.dbservice.getObjectById(ProductTechParamCategory, this.fields, req.params.id, this.populate);
-  response = JSON.parse(JSON.stringify(response))
-  let docTypeQuery = { category : req.params.id, isArchived:false, isActive:true };
-  let docTypeFields = { name:1, code:1 }
-  const categoryParams = await this.dbservice.getObjectList(ProductTechParam, docTypeFields, docTypeQuery, {}, []);
-  response.categoryParams = categoryParams;
-  res.json(response);
+  if (response) {
+    response = JSON.parse(JSON.stringify(response))
+    let docTypeQuery = { category : req.params.id, isArchived:false, isActive:true };
+    let docTypeFields = { name:1, code:1 }
+    const categoryParams = await this.dbservice.getObjectList(ProductTechParam, docTypeFields, docTypeQuery, {}, []);
+    response.categoryParams = categoryParams;
+    res.json(response);
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  }
 };
 
 exports.getProductTechParamCategories = async (req, res, next) => {
