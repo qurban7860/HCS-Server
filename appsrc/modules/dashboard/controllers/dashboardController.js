@@ -21,16 +21,6 @@ exports.getData = async (req, res, next) => {
     let userCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
     let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
     
-    let modelWiseMachineCount = await Product.aggregate([
-      { $match: { isArchived: false, isActive: true } }, 
-      { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
-      { $unwind: "$machineModel" },
-      { $match: { "machineModel": { $nin: ["", null] } } },
-      { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
-      { $sort: { count: -1 } },
-      { $limit: 20 }
-    ]);
-    
     // let countryWiseCustomerCount = await Customer.aggregate([
     //   { $match: { isArchived: false, isActive: true } }, 
     //   { $lookup: { from: "CustomerSites", localField: "mainSite", foreignField: "_id", as: "mainSite" } },
@@ -54,6 +44,16 @@ exports.getData = async (req, res, next) => {
       { $unwind: "$instalationSite" },
       { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
       { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 20 }
+    ]);
+
+    let modelWiseMachineCount = await Product.aggregate([
+      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
+      { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
+      { $unwind: "$machineModel" },
+      { $match: { "machineModel": { $nin: ["", null] } } },
+      { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
       { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
