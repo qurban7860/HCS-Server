@@ -44,6 +44,7 @@ exports.getProductCategory = async (req, res, next) => {
 
 exports.getProductCategories = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
+  this.orderBy = { name: 1 };    
   if(this.query && this.query.name) {
     this.query.name = { $regex: this.query.name, $options: 'i' };
   }

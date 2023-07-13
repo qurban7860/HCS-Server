@@ -39,8 +39,13 @@ class dbService {
   }
 
   async getObjectList(model, fields, query, orderBy, populate, callback) {
+    const collationOptions = {
+      locale: 'en',
+      strength: 2
+    };
+
     if(callback) {
-      model.find(query).collation({locale: "en"}).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
+      model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
         if (err) {
           callback(err, []);
         } else {
@@ -49,7 +54,7 @@ class dbService {
       });
     }
     else {
-      return await model.find(query).collation({locale: "en"}).select(fields).populate(populate).sort(orderBy);
+      return await model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy);
     }
   }
 
