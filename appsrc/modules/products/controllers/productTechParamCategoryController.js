@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductTechParamCategory } = require('../models');
+const { ProductTechParamCategory, ProductTechParam } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -26,16 +26,13 @@ this.populate = [
 
 
 exports.getProductTechParamCategory = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductTechParamCategory, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
-  }
-
+  let response = await this.dbservice.getObjectById(ProductTechParamCategory, this.fields, req.params.id, this.populate);
+  response = JSON.parse(JSON.stringify(response))
+  let docTypeQuery = { category : req.params.id, isArchived:false, isActive:true };
+  let docTypeFields = { name:1, code:1 }
+  const categoryParams = await this.dbservice.getObjectList(ProductTechParam, docTypeFields, docTypeQuery, {}, []);
+  response.categoryParams = categoryParams;
+  res.json(response);
 };
 
 exports.getProductTechParamCategories = async (req, res, next) => {
