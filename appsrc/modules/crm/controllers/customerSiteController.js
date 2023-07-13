@@ -43,7 +43,9 @@ exports.getCustomerSite = async (req, res, next) => {
 };
 
 exports.getCustomerSites = async (req, res, next) => {
-    this.query = req.query != "undefined" ? req.query : {};   
+    this.query = req.query != "undefined" ? req.query : {};
+    this.orderBy = { name: 1 };
+
     this.customerId = req.params.customerId;
     this.query.customer = this.customerId; 
     this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);

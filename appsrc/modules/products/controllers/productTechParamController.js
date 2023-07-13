@@ -43,7 +43,8 @@ exports.getProductTechParam = async (req, res, next) => {
 };
 
 exports.getProductTechParams = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {}; 
+  this.orderBy = { name: 1 }; 
   this.dbservice.getObjectList(ProductTechParam, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

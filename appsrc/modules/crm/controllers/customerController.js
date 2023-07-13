@@ -112,6 +112,7 @@ exports.getCustomer = async (req, res, next) => {
 
 exports.getCustomers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {}; 
+  this.orderBy = { name: 1 };  
   this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

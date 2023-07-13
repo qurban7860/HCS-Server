@@ -32,12 +32,16 @@ this.populate = [
 exports.getDocumentCategory = async (req, res, next) => {
   try {
     let response = await this.dbservice.getObjectById(DocumentCategory, this.fields, req.params.id, this.populate);
-    response = JSON.parse(JSON.stringify(response))
-    let docTypeQuery = { docCategory : req.params.id, isArchived:false, isActive:true };
-    let docTypeFields = { name:1, description:1, customerAccess:1 }
-    const documentTypes = await this.dbservice.getObjectList(DocumentType, docTypeFields, docTypeQuery, {}, []);
-    response.documentTypes = documentTypes;
-    res.json(response);
+    if(response) {
+      response = JSON.parse(JSON.stringify(response))
+      let docTypeQuery = { docCategory : req.params.id, isArchived:false, isActive:true };
+      let docTypeFields = { name:1, description:1, customerAccess:1 }
+      const documentTypes = await this.dbservice.getObjectList(DocumentType, docTypeFields, docTypeQuery, {}, []);
+      response.documentTypes = documentTypes;
+      res.json(response);
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
