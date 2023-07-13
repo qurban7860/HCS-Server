@@ -11,7 +11,10 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductCategory } = require('../models');
+const { ProductCategory, ProductModel } = require('../models');
+
+
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -26,16 +29,17 @@ this.populate = [
 
 
 exports.getProductCategory = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductCategory, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
+  let response = await this.dbservice.getObjectById(ProductCategory, this.fields, req.params.id, this.populate);
+  if (response) {
+    response = JSON.parse(JSON.stringify(response))
+    let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
+    let fieldsModels = { name:1 }
+    const models = await this.dbservice.getObjectList(ProductModel, fieldsModels, docModelQuery, {}, []);
+    response.models = models;
+    res.json(response);
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
-
 };
 
 exports.getProductCategories = async (req, res, next) => {
