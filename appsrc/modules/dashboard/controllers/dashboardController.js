@@ -58,6 +58,16 @@ exports.getData = async (req, res, next) => {
       { $limit: 20 }
     ]);
 
+    let yearWiseMachines = await Product.aggregate([
+      { $match: { installationDate : { $ne:null } } },
+      { 
+          $group: {
+              _id: { year: { $year: "$installationDate" } },
+              yearWiseMachines: { $sum: 1 }
+          }
+      },
+      { $sort : { yearWiseMachines : -1 } }
+    ])
     // let countryWiseSiteCount = await CustomerSite.aggregate([
     //   { $match: { isArchived: false, isActive: true, 
     //       "address.country": { $nin: ["", null] } 
@@ -76,7 +86,8 @@ exports.getData = async (req, res, next) => {
     modelWiseMachineCount, 
     // countryWiseCustomerCount, 
     // countryWiseSiteCount, 
-    countryWiseMachineCount
+    countryWiseMachineCount,
+    yearWiseMachines
   });
 
   }catch(e) {
