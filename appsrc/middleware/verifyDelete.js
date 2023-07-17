@@ -20,7 +20,7 @@ module.exports = (req, res, next) => {
         } else { 
           const isSuperAdmin = loggedInUser?.roles?.some(role => role.roleType === 'SuperAdmin');
           const disableDelete = loggedInUser?.roles?.some(role => role?.disableDelete === true);
-          if(disableDelete && !isSuperAdmin){
+          if(disableDelete){
             return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User is not authorized to delete!', true));
           }else{
             next();
