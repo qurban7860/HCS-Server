@@ -43,6 +43,10 @@ exports.getCustomerNote = async (req, res, next) => {
 
 exports.getCustomerNotes = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {}; 
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
   console.log("This query ")
