@@ -241,11 +241,7 @@ exports.patchProduct = async (req, res, next) => {
         req.body.status = machineStatus._id;
       }
     }
-    else{
-      if(!req.body.installationSite && (machine.installationDate || machine.shippingDate)){
-        req.body.installationDate = null;
-        req.body.shippingDate = null;
-      } 
+    else{ 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
         
@@ -482,12 +478,12 @@ function getDocumentFromReq(req, reqType){
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags, installationDate, shippingDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
+ 
   
-  let doc = {};
+    let doc = {};
   if (reqType && reqType == "new"){
     doc = new Product({});
   }
-
   
   if ("serialNo" in req.body){
     doc.serialNo = serialNo;
@@ -519,7 +515,6 @@ function getDocumentFromReq(req, reqType){
   if ("customer" in req.body){
     doc.customer = customer;
   }
-
   if ("machineConnections" in req.body){
     doc.machineConnections = machineConnections;
   }
