@@ -135,7 +135,13 @@ exports.getProducts = async (req, res, next) => {
 };
 
 exports.getConnectionProducts = async (req, res, next) => {
-  this.query = { connections:true, isActive:true, isArchived:false };
+
+  this.query = req.query != "undefined" ? req.query : {};  
+
+  this.query.connections = true;
+  this.query.isActive = true;
+  this.query.isArchived = false;
+  
   let machines = [];
   let machienCategories = await dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
   if(machienCategories && machienCategories.length>0) {
