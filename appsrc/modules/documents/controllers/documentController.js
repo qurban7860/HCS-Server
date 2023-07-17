@@ -81,6 +81,10 @@ exports.getDocument = async (req, res, next) => {
 exports.getDocuments = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
+    if(this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
     let basicInfo = false;
 
     if(this.query && (this.query.basic==true || this.query.basic=='true')) {
