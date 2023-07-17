@@ -43,6 +43,7 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
+  this.orderBy = {firstName: 1, lastName: 1};
   this.query = req.query != "undefined" ? req.query : {};
   if(this.query.orderBy) {
     this.orderBy = this.query.orderBy;
