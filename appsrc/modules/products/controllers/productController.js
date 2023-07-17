@@ -101,6 +101,12 @@ exports.getProduct = async (req, res, next) => {
 exports.getProducts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
+  
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
+
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, products) {
     if (error) {
