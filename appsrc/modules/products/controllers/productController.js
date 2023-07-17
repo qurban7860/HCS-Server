@@ -135,34 +135,41 @@ exports.getProducts = async (req, res, next) => {
 };
 
 exports.getConnectionProducts = async (req, res, next) => {
-
   this.query = req.query != "undefined" ? req.query : {};  
-  
-  let aggregateQuery = [
-    { $match : { connections : true ,isActive:true, isArchived:false } },
-    { $lookup: { from: "MachineModels", localField: "_id", foreignField: "category", as: "machineModel" } },
-    { $lookup: { from: "Machines", localField: "machineModel._id", foreignField: "machineModel", as: "machines" } },
-    
-  ];
-  
-  if(this.query.customer) {
-    aggregateQuery.push({ $match : {"machines.customer": ObjectId(this.query.customer)}});
-  }
-  
-  let machines = [];
-  let machineCategories = await ProductCategory.aggregate(aggregateQuery);
-  if(Array.isArray(machineCategories) && machineCategories.length>0 ) {
-    for(let machineCategory of machineCategories) {
-      if(Array.isArray(machineCategory.machines)) {
-        for(let machine of machineCategory.machines)
-          machines.push(machine);  
+  aggregateQuery = [
+    {
+      $lookup: {
+        from: 'MachineModels',
+        localField: 'machineModel',
+        foreignField: '_id',
+        as: 'model'
       }
-
+    },
+    {
+      $unwind: '$model'
+    },
+    {
+      $lookup: {
+        from: 'MachineCategories',
+        localField: 'model.category',
+        foreignField: '_id',
+        as: 'category'
+      }
+    },
+    {
+      $unwind: '$category'
+    },
+    {
+      $match: {
+        'category.connections': true,
+        'customer': ObjectId(this.query.customer),
+          'isActive': true,
+          'isArchived': false
+      }
     }
-  }
-
-  res.status(StatusCodes.OK).json(machines);
-
+  ];
+  let listProducts = await Product.aggregate(aggregateQuery);
+  res.status(StatusCodes.OK).json(listProducts);
 };
 
 
