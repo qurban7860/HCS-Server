@@ -131,34 +131,32 @@ exports.getProducts = async (req, res, next) => {
 exports.getConnectionProducts = async (req, res, next) => {
 
   this.query = req.query != "undefined" ? req.query : {};  
-
-  this.query.connections = true;
-  this.query.isActive = true;
-  this.query.isArchived = false;
+  
+  let aggregateQuery = [
+    { $match : { connections : true ,isActive:true, isArchived:false } },
+    { $lookup: { from: "MachineModels", localField: "_id", foreignField: "category", as: "machineModel" } },
+    { $lookup: { from: "Machines", localField: "machineModel._id", foreignField: "machineModel", as: "machines" } },
+    
+  ];
+  
+  if(this.query.customer) {
+    aggregateQuery.push({ $match : {"machines.customer": ObjectId(this.query.customer)}});
+  }
   
   let machines = [];
-  let machienCategories = await dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate);
-  if(machienCategories && machienCategories.length>0) {
+  let machineCategories = await ProductCategory.aggregate(aggregateQuery);
+  if(Array.isArray(machineCategories) && machineCategories.length>0 ) {
+    for(let machineCategory of machineCategories) {
+      if(Array.isArray(machineCategory.machines)) {
+        for(let machine of machineCategory.machines)
+          machines.push(machine);  
+      }
 
-    let categoryIds = machienCategories.map(c => c.id);
-    let modelQuery = { category:{$in:categoryIds} ,isActive:true, isArchived:false };
-    let machineModels = await dbservice.getObjectList(ProductModel, this.fields, modelQuery, this.orderBy, this.populate);
-    if(machineModels && machineModels.length>0) {
-
-      let modelsIds = machineModels.map(m => m.id);
-      let machineQuery = { machineModel : {$in:modelsIds} ,isActive:true, isArchived:false};
-      this.orderBy = {createdAt : -1};
-      machines = await dbservice.getObjectList(Product, this.fields, machineQuery, this.orderBy, this.populate);
-      res.status(StatusCodes.OK).json(machines);
-    }
-    else {
-      res.status(StatusCodes.OK).json(machines);
     }
   }
-  else {
-    res.status(StatusCodes.OK).json(machines);
-  }
-  
+
+  res.status(StatusCodes.OK).json(machines);
+
 };
 
 
