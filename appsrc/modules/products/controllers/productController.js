@@ -467,10 +467,12 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
       $project: {
         name: 1, 
         instalationSite: 1,
+        serialNo: 1,
         lat: { $arrayElemAt: ["$installationSiteInfo.lat", 0] },
         lng: { $arrayElemAt: ["$installationSiteInfo.long", 0] },
         address: { $arrayElemAt: ["$installationSiteInfo.address", 0] },
-        customerName: { $arrayElemAt: ["$customerInfo.name", 0] }
+        customerName: { $arrayElemAt: ["$customerInfo.name", 0] },
+        type: 'Installation Site'
       }
     },
 
@@ -529,11 +531,13 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
     {
       $project: {
         name: 1, 
+        serialNo: 1, 
         billingSite: 1,
         lat: { $arrayElemAt: ["$billingSiteInfo.lat", 0] },
         lng: { $arrayElemAt: ["$billingSiteInfo.long", 0] },
         address: { $arrayElemAt: ["$billingSiteInfo.address", 0] },
-        customerName: { $arrayElemAt: ["$customerInfo.name", 0] }
+        customerName: { $arrayElemAt: ["$customerInfo.name", 0] },
+        type: 'Billing Site'
       }
     }
   ])
