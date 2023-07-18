@@ -415,6 +415,141 @@ function createMachineAuditLogRequest(machine, activityType, loggedInUser) {
   return machineAuditLog;
 }
 
+exports.getProductsSiteCoordinates = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
+  
+  var installationSiteAggregate = ([
+    {
+      $match: {
+        instalationSite: { $ne: null },
+        isActive: true,
+        isArchived: false,
+      }
+    },
+    {
+      $lookup: {
+        from: "CustomerSites",
+        let: { installationSite: "$instalationSite" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$_id", "$$installationSite"] },
+                  { $ne: ["$lat", null] },
+                  { $ne: ["$long", null] },
+                  { $ne: ["$lat", ""] },
+                  { $ne: ["$long", ""] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "installationSiteInfo"
+      }
+    },
+    {
+      $lookup: {
+        from: "Customers",
+        localField: "customer",
+        foreignField: "_id",
+        as: "customerInfo"
+      }
+    },
+    {
+      $match: {
+        $and: [
+          { "installationSiteInfo": { $ne: [] } },
+        ]
+      }
+    },
+    {
+      $project: {
+        name: 1, 
+        instalationSite: 1,
+        lat: { $arrayElemAt: ["$installationSiteInfo.lat", 0] },
+        lng: { $arrayElemAt: ["$installationSiteInfo.long", 0] },
+        address: { $arrayElemAt: ["$installationSiteInfo.address", 0] },
+        customerName: { $arrayElemAt: ["$customerInfo.name", 0] }
+      }
+    },
+
+  ])
+
+  var params = {};
+  
+  let machineInstallationCoordiantes = await dbservice.getObjectListWithAggregate(Product, installationSiteAggregate, params);
+  
+  
+  var billingSiteAggregate = ([
+    {
+      $match: {
+        billingSite: { $ne: null },
+        isActive: true,
+        isArchived: false,
+      }
+    },
+    {
+      $lookup: {
+        from: "CustomerSites",
+        let: { billingSite: "$billingSite" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$_id", "$$billingSite"] },
+                  { $ne: ["$lat", null] },
+                  { $ne: ["$long", null] },
+                  { $ne: ["$lat", ""] },
+                  { $ne: ["$long", ""] }
+                ]
+              }
+            }
+          }
+        ],
+        as: "billingSiteInfo"
+      }
+    },
+    {
+      $lookup: {
+        from: "Customers",
+        localField: "customer",
+        foreignField: "_id",
+        as: "customerInfo"
+      }
+    },
+    {
+      $match: {
+        $and: [
+          { "billingSiteInfo": { $ne: [] } }
+        ]
+      }
+    },
+    {
+      $project: {
+        name: 1, 
+        billingSite: 1,
+        lat: { $arrayElemAt: ["$billingSiteInfo.lat", 0] },
+        lng: { $arrayElemAt: ["$billingSiteInfo.long", 0] },
+        address: { $arrayElemAt: ["$billingSiteInfo.address", 0] },
+        customerName: { $arrayElemAt: ["$customerInfo.name", 0] }
+      }
+    }
+  ])
+
+  let machineBillingCoordiantes = await dbservice.getObjectListWithAggregate(Product, billingSiteAggregate, params);
+
+  let combineData = [...machineBillingCoordiantes, ...machineInstallationCoordiantes];
+  const convertedArray = combineData.map(obj => ({
+    ...obj,
+    lat: parseFloat(obj.lat),
+    lng: parseFloat(obj.lng)
+  }));
+
+  res.status(StatusCodes.OK).json(convertedArray);
+};
+
 // exports.transferOwnership = async (req, res, next) => {
 //   const errors = validationResult(req);
 //   if (!errors.isEmpty()) {
