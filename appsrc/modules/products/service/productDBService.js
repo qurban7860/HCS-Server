@@ -48,6 +48,19 @@ class ProductService {
     }
   };
 
+  async getObjectListWithAggregate(model, aggregate, params, callback) {
+    if(callback) {
+      this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    } else {
+      return await this.db.getObjectListWithAggregate(model, aggregate, params);
+    }
+
+  };
+
   async deleteObject(model, id, res, callback) {
     if(callback) {
       this.db.deleteObject(model, id, res, callbackFunc);

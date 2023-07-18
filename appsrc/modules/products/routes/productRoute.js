@@ -24,6 +24,8 @@ router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/`, controller.getProducts);
 
+router.get(`${baseRouteForObject}/machineCoordinates`, controller.getProductsSiteCoordinates);
+
 router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getConnectionProducts); 
 
 router.get(`${baseRouteForObject}/:id`, controller.getProduct);
