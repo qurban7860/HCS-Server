@@ -74,7 +74,7 @@ exports.postProductSupplier = async (req, res, next) => {
   } else {
     let alreadyExists = await ProductSupplier.findOne({name:req.body.name});
     if(alreadyExists) {
-      return res.status(StatusCodes.BAD_REQUEST).send('ProductSupplier with this name alreadyExists');
+      return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
     }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
@@ -99,7 +99,7 @@ exports.patchProductSupplier = async (req, res, next) => {
   } else {
     let alreadyExists = await ProductSupplier.findOne({name:req.body.name});
     if(alreadyExists) {
-      return res.status(StatusCodes.BAD_REQUEST).send('ProductSupplier with this name alreadyExists');
+      return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
     }
     this.dbservice.patchObject(ProductSupplier, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
