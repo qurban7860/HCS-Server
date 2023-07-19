@@ -472,7 +472,6 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
         lng: { $arrayElemAt: ["$installationSiteInfo.long", 0] },
         address: { $arrayElemAt: ["$installationSiteInfo.address", 0] },
         customerName: { $arrayElemAt: ["$customerInfo.name", 0] },
-        type: 'Installation Site'
       }
     },
 
@@ -480,72 +479,9 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
 
   var params = {};
   
-  let machineInstallationCoordiantes = await dbservice.getObjectListWithAggregate(Product, installationSiteAggregate, params);
-  
-  
-  var billingSiteAggregate = ([
-    {
-      $match: {
-        billingSite: { $ne: null },
-        isActive: true,
-        isArchived: false,
-      }
-    },
-    {
-      $lookup: {
-        from: "CustomerSites",
-        let: { billingSite: "$billingSite" },
-        pipeline: [
-          {
-            $match: {
-              $expr: {
-                $and: [
-                  { $eq: ["$_id", "$$billingSite"] },
-                  { $ne: ["$lat", null] },
-                  { $ne: ["$long", null] },
-                  { $ne: ["$lat", ""] },
-                  { $ne: ["$long", ""] }
-                ]
-              }
-            }
-          }
-        ],
-        as: "billingSiteInfo"
-      }
-    },
-    {
-      $lookup: {
-        from: "Customers",
-        localField: "customer",
-        foreignField: "_id",
-        as: "customerInfo"
-      }
-    },
-    {
-      $match: {
-        $and: [
-          { "billingSiteInfo": { $ne: [] } }
-        ]
-      }
-    },
-    {
-      $project: {
-        name: 1, 
-        serialNo: 1, 
-        billingSite: 1,
-        lat: { $arrayElemAt: ["$billingSiteInfo.lat", 0] },
-        lng: { $arrayElemAt: ["$billingSiteInfo.long", 0] },
-        address: { $arrayElemAt: ["$billingSiteInfo.address", 0] },
-        customerName: { $arrayElemAt: ["$customerInfo.name", 0] },
-        type: 'Billing Site'
-      }
-    }
-  ])
+  let machineInstallationSiteCoordiantes = await dbservice.getObjectListWithAggregate(Product, installationSiteAggregate, params);
 
-  let machineBillingCoordiantes = await dbservice.getObjectListWithAggregate(Product, billingSiteAggregate, params);
-
-  let combineData = [...machineBillingCoordiantes, ...machineInstallationCoordiantes];
-  const convertedArray = combineData.map(obj => ({
+  const convertedArray = machineInstallationSiteCoordiantes.map(obj => ({
     ...obj,
     lat: parseFloat(obj.lat),
     lng: parseFloat(obj.lng)
