@@ -45,7 +45,6 @@ async function main() {
 
 			if(customer && customer.name) {
 				console.log("customer",customer.name);
-				dbMachine = await Product.updateOne({serialNo},{customer:customer.id});
 			}
 			else {
 				console.log('Not Found');
@@ -91,6 +90,9 @@ async function main() {
 				await customer.save();
 				
 			}
+
+			dbMachine = await Product.updateOne({serialNo},{customer:customer.id,instalationSite:customer.mainSite});
+
 			// let dbMachine = await Product.findOne({serialNo});
 
 			
