@@ -107,7 +107,7 @@ exports.patchDocumentCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, customerAccess,
+  const { name, description, customerAccess, customer, machine, drawing,
     isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
@@ -129,6 +129,18 @@ function getDocumentFromReq(req, reqType) {
   }
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
+  }
+
+  if ("customer" in req.body) {
+    doc.customer = customer;
+  }
+
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+  if ("drawing" in req.body) {
+    doc.drawing = drawing;
   }
 
   if (reqType == "new" && "loginUser" in req.body) {

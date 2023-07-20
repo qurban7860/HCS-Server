@@ -16,6 +16,15 @@ const docSchema = new Schema({
         customerAccess: { type: Boolean, default: false },
         //can customer access files under this category.},
 
+        customer: { type: Boolean, default: false },
+        //can customer access files under this category.},
+
+        machine: { type: Boolean, default: false },
+        //can customer access files under this category.},
+
+        drawing: { type: Boolean, default: false },
+        //can customer access files under this category.},
+
 },
         {
                 collection: 'DocumentCategories'
