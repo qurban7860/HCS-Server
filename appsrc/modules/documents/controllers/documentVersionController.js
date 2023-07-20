@@ -158,8 +158,7 @@ exports.postDocumentVersion = async (req, res, next) => {
       let machine = req.body.machine;
       let documentID = req.params.documentid;
 
-      if(mongoose.Types.ObjectId.isValid(documentID) &&
-        (mongoose.Types.ObjectId.isValid(machine)|| mongoose.Types.ObjectId.isValid(customer))) {
+      if(mongoose.Types.ObjectId.isValid(documentID)) {
 
         let cust = {}
 
@@ -368,8 +367,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
       if(!documentVersion)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
-      if(name && mongoose.Types.ObjectId.isValid(documentID) && 
-        mongoose.Types.ObjectId.isValid(customer) ) {
+      if(name && mongoose.Types.ObjectId.isValid(documentID) ) {
 
         let cust = {}
 
