@@ -33,6 +33,18 @@ const docSchema = new Schema({
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
         ],
+
+        regions: [
+            { type: Schema.Types.ObjectId, ref: 'Region' }
+        ],
+
+        customers: [
+            { type: Schema.Types.ObjectId, ref: 'Customer' }
+        ],
+
+        machines: [
+            { type: Schema.Types.ObjectId, ref: 'Product' }
+        ],
         
         whiteListIPs: [{ type: String}],
         // list of white IPs
