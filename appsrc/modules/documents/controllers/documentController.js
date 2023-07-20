@@ -211,10 +211,7 @@ exports.postDocument = async (req, res, next) => {
       let site = req.body.site;
       let documentCategory = req.body.documentCategory;
       let machineModel = req.body.machineModel;
-      if(name && mongoose.Types.ObjectId.isValid(documentType) && 
-        (mongoose.Types.ObjectId.isValid(customer) || 
-          mongoose.Types.ObjectId.isValid(machine) || mongoose.Types.ObjectId.isValid(machineModel)) && 
-        mongoose.Types.ObjectId.isValid(documentCategory)) {
+      if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
 
         let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
               
@@ -485,7 +482,7 @@ exports.patchDocument = async (req, res, next) => {
       if(!document_)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
-       let name = req.body.name;
+      let name = req.body.name;
       let customer = req.body.customer;
       let machine = req.body.machine;
       let documentType = req.body.documentType;
@@ -493,9 +490,7 @@ exports.patchDocument = async (req, res, next) => {
       let documentCategory = req.body.documentCategory;
       let archiveStatus = req.body.isArchived;
 
-      if(name && mongoose.Types.ObjectId.isValid(documentType) && 
-        (mongoose.Types.ObjectId.isValid(customer) || mongoose.Types.ObjectId.isValid(machine)) && 
-        mongoose.Types.ObjectId.isValid(documentCategory) ) {
+      if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory) ) {
 
         let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
               

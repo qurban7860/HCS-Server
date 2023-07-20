@@ -117,8 +117,7 @@ exports.postDocumentFile = async (req, res, next) => {
       let versionID = req.params.versionid;
       let machine = req.body.machine;
 
-      if(name && mongoose.Types.ObjectId.isValid(customer) && 
-        mongoose.Types.ObjectId.isValid(versionID)) {
+      if(name && mongoose.Types.ObjectId.isValid(versionID)) {
 
         let cust = {}
 
@@ -240,8 +239,7 @@ exports.patchDocumentFile = async (req, res, next) => {
       if(!documentFile)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
-      if(name && mongoose.Types.ObjectId.isValid(versionID) && 
-        mongoose.Types.ObjectId.isValid(customer) ) {
+      if(name && mongoose.Types.ObjectId.isValid(versionID)) {
 
         let cust = {}
 
