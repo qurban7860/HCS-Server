@@ -107,7 +107,7 @@ exports.patchDocumentCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, customerAccess, customer, machine, drawing
+  const { name, description, customerAccess, customer, machine, drawing,
     isActive, isArchived, loginUser } = req.body;
 
   let doc = {};

@@ -92,6 +92,37 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.basic;
     }
 
+
+    if(this.query.forCustomer) {
+      let docCats = await DocumentCategory.find({customer:true}).select('_id').lean();
+      if(Array.isArray(docCats) && docCats.length>0) {
+        let docCatIds = docCats.map((dc)=>dc._id.toString());
+        this.query.docCategory = {'$in':docCatIds};
+        delete this.query.forCustomer;
+      }
+
+    }
+
+    if(this.query.forMachine) {
+      let docCats = await DocumentCategory.find({machine:true}).select('_id').lean();
+      if(Array.isArray(docCats) && docCats.length>0) {
+        let docCatIds = docCats.map((dc)=>dc._id.toString());
+        this.query.docCategory = {'$in':docCatIds};
+        delete this.query.forMachine;
+      }
+      
+    }
+
+    if(this.query.forDrawing) {
+      let docCats = await DocumentCategory.find({customer:true}).select('_id').lean();
+      if(Array.isArray(docCats) && docCats.length>0) {
+        let docCatIds = docCats.map((dc)=>dc._id.toString());
+        this.query.docCategory = {'$in':docCatIds};
+        delete this.query.forDrawing;
+      }
+      
+    }
+
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0 && basicInfo===false) {
       documents = JSON.parse(JSON.stringify(documents));
