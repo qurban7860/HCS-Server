@@ -1,3 +1,5 @@
 module.exports = {
-    regionController: require('./regionController')
+    regionController: require('./regionController'),
+    countryController: require('./countryController')
+
 }
