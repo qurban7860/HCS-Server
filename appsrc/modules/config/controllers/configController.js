@@ -100,7 +100,7 @@ function getDocumentFromReq(req, reqType) {
   if ("name" in req.body) {
     doc.name = name;
   }
-  if ("value" in req.value) {
+  if ("value" in req.body) {
     doc.value = value;
   }
 
