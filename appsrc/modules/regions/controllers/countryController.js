@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let regionDBService = require('../service/regionDBService')
 this.dbservice = new regionDBService();
 
-const { Region } = require('../models');
+const { Country } = require('../../config/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -23,37 +23,26 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
-  { path: 'updatedBy', select: 'name' },
-  { path: 'countries', select: '' }
+  { path: 'updatedBy', select: 'name' }
 ];
 
 
 
-exports.getRegion = async (req, res, next) => {
+exports.getCountry = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Region, this.fields, req.params.id, this.populate);
-    let updatedResponse = response;
-    if (response.countries.length > 0) {
-      const updatedCountries = response.countries.map((country) => ({
-        ...country.toObject(),
-        name: country.country_name, 
-      }));
-      updatedResponse = { ...response.toObject(), countries: updatedCountries };
-    }
-      
-    res.json(updatedResponse);
-
+    const response = await this.dbservice.getObjectById(Country, this.fields, req.params.id, this.populate);
+    res.json(response);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
-exports.getRegions = async (req, res, next) => {
+exports.getCountries = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    const response = await this.dbservice.getObjectList(Region, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(Country, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -62,9 +51,9 @@ exports.getRegions = async (req, res, next) => {
 };
 
 
-exports.deleteRegion = async (req, res, next) => {
+exports.deleteCountry = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Region, req.params.id);
+    const result = await this.dbservice.deleteObject(Country, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -72,14 +61,14 @@ exports.deleteRegion = async (req, res, next) => {
   }
 };
 
-exports.postRegion = async (req, res, next) => {
+exports.postCountry = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ Region: response });
+      res.status(StatusCodes.CREATED).json({ Country: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -87,13 +76,13 @@ exports.postRegion = async (req, res, next) => {
   }
 };
 
-exports.patchRegion = async (req, res, next) => {
+exports.patchCountry = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Region, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(Country, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -104,21 +93,15 @@ exports.patchRegion = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, countries, isActive, isArchived, loginUser } = req.body;
+  const { country_code, country_name, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
-  if (reqType && reqType == "new") {
-    doc = new Region({});
+  
+  if ("country_code" in req.body) {
+    doc.country_code = country_code;
   }
-  if ("name" in req.body) {
-    doc.name = name;
-  }
-  if ("description" in req.body) {
-    doc.description = description;
-  }
-
-  if ("countries" in req.body) {
-    doc.countries = countries;
+  if ("country_name" in req.body) {
+    doc.country_name = country_name;
   }
 
   if ("isArchived" in req.body) {
