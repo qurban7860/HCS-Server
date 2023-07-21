@@ -18,6 +18,7 @@ const customerRoutes  = require ('../crm/routes');
 const dashboardRoute  = require ('../dashboard/routes');
 const documentRoute  = require ('../documents/routes');
 const emailRoute  = require ('../email/routes');
+const regionRoute  = require ('../regions/routes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -65,6 +66,7 @@ class App {
     dashboardRoute.registerDashboardRoutes(this.app, apiPath);
     documentRoute.registerDocumentRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
+    regionRoute.registerRegionRoutes(this.app, apiPath);
   }
 
 
