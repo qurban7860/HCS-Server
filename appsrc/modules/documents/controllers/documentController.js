@@ -120,7 +120,7 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     if(this.query.forDrawing) {
-      let docCats = await DocumentCategory.find({customer:true}).select('_id').lean();
+      let docCats = await DocumentCategory.find({drawing:true}).select('_id').lean();
       if(Array.isArray(docCats) && docCats.length>0) {
         let docCatIds = docCats.map((dc)=>dc._id.toString());
         this.query.docCategory = {'$in':docCatIds};
