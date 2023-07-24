@@ -16,14 +16,14 @@ const baseRouteForObject = `/`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getConfig);
+router.get(`${baseRouteForObject}:id`, controller.getConfig);
 
 router.get(`${baseRouteForObject}/`, controller.getConfigs);
 
 router.post(`${baseRouteForObject}`, controller.postConfig);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchConfig);
+router.patch(`${baseRouteForObject}:id`, verifyDelete, controller.patchConfig);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteConfig);
+router.delete(`${baseRouteForObject}:id`, controller.deleteConfig);
 
 module.exports = router;

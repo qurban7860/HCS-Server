@@ -27,6 +27,7 @@ this.populate = [
 
 
 exports.getConfig = async (req, res, next) => {
+  console.log("route.....");
   try {
     const response = await this.dbservice.getObjectById(Config, this.fields, req.params.id, this.populate);
     res.json(response);
@@ -37,6 +38,7 @@ exports.getConfig = async (req, res, next) => {
 };
 
 exports.getConfigs = async (req, res, next) => {
+  console.log("request");
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
