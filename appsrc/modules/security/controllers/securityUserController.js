@@ -26,12 +26,14 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
   {path: 'roles', select: ''},
+  {path: 'regions', select: ''},
 ];
 
 this.populateList = [
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
   {path: 'roles', select: ''},
+  // {path: 'regions', select: ''},
 ];
 
 
@@ -213,7 +215,6 @@ exports.patchSecurityUser = async (req, res, next) => {
               ]
             };
 
-            console.log('queryString----->', JSON.stringify(queryString));
             
             this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
             async function getObjectCallback(error, response) {
@@ -221,7 +222,6 @@ exports.patchSecurityUser = async (req, res, next) => {
                 logger.error(new Error(error));
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
               } else {
-                console.log('response------->', response);
                 // check if theres any other user by the same email
                 if(response && response._id && response._id != req.params.id){
                   // return error message
@@ -275,7 +275,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 
 async function getDocumentFromReq(req, reqType){
-  const { customer, contact, name, phone, email, login,
+  const { customer, contact, name, phone, email, login, regions,
      password, expireAt, roles, isActive, isArchived } = req.body;
 
 
@@ -322,6 +322,10 @@ async function getDocumentFromReq(req, reqType){
 
   if ("roles" in req.body){
     doc.roles = roles;
+  }
+
+  if ("regions" in req.body){
+    doc.regions = regions;
   }
 
   if ("isActive" in req.body){
