@@ -9,6 +9,7 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
+const ObjectId = require('mongoose').Types.ObjectId;
 let configDBService = require('../service/configDBService') 
 this.dbservice = new configDBService();
 
@@ -21,24 +22,30 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'}
 ];
 
 
 
 exports.getConfig = async (req, res, next) => {
-  console.log("route.....");
-  try {
-    const response = await this.dbservice.getObjectById(Config, this.fields, req.params.id, this.populate);
-    res.json(response);
-  } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+
+  if (ObjectId.isValid(req.params.id)) {
+    try {
+      const response = await this.dbservice.getObjectById(Config, this.fields, req.params.id, this.populate);
+      res.json(response);
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }    
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 };
 
+
+
 exports.getConfigs = async (req, res, next) => {
-  console.log("request");
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
@@ -93,7 +100,7 @@ exports.patchConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, value} = req.body;
+  const { name, value, loginUser} = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -105,6 +112,16 @@ function getDocumentFromReq(req, reqType) {
   if ("value" in req.body) {
     doc.value = value;
   }
+  
+  if (reqType == "new" && "loginUser" in req.body ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  } 
 
 
   return doc;

@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        name: { type: String , required: true, unique: true },
+        name: { type: String , required: true, unique: true, minlength: 2, maxlength: 40 },
         // name of organization
         value: { type: String , required: true },
        
