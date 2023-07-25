@@ -29,7 +29,6 @@ this.populate = [
 
 
 exports.getConfig = async (req, res, next) => {
-  console.log("route.....");
 
   if (ObjectId.isValid(req.params.id)) {
     try {
@@ -47,7 +46,6 @@ exports.getConfig = async (req, res, next) => {
 
 
 exports.getConfigs = async (req, res, next) => {
-  console.log("request");
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
