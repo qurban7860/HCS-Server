@@ -19,7 +19,8 @@ class dbService {
       });
     }
     else {
-      return await model.findById(id, fields).populate(populate);
+      const document = await model.findById(id, fields).populate(populate);
+      return document != null ? document : {};
     }
   }
 

@@ -66,7 +66,7 @@ exports.getData = async (req, res, next) => {
               yearWiseMachines: { $sum: 1 }
           }
       },
-      { $sort : { yearWiseMachines : -1 } }
+      { $sort : { "_id.year" : -1 } }
     ])
     // let countryWiseSiteCount = await CustomerSite.aggregate([
     //   { $match: { isArchived: false, isActive: true, 

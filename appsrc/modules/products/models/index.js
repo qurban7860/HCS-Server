@@ -13,5 +13,6 @@ module.exports = {
     ProductTechParamValue: require('./productTechParamValue'),
     ProductTool: require('./productTool'),
     ProductToolInstalled: require('./productToolInstalled'),
-    ProductConnection: require('./productConnection')
+    ProductConnection: require('./productConnection'),
+    ProductDrawing: require('./productDrawing')
 }

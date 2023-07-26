@@ -9,10 +9,11 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let emailDBService = require('../service/emailDBService')
-this.dbservice = new emailDBService();
+const ObjectId = require('mongoose').Types.ObjectId;
+let configDBService = require('../service/configDBService') 
+this.dbservice = new configDBService();
 
-const { Email } = require('../models');
+const { Config } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -21,28 +22,34 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  { path: 'createdBy', select: 'name' },
-  { path: 'customer', select: 'name' },
-  { path: 'updatedBy', select: 'name' }
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'}
 ];
 
 
 
-exports.getEmail = async (req, res, next) => {
-  try {
-    const response = await this.dbservice.getObjectById(Email, this.fields, req.params.id, this.populate);
-    res.json(response);
-  } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+exports.getConfig = async (req, res, next) => {
+
+  if (ObjectId.isValid(req.params.id)) {
+    try {
+      const response = await this.dbservice.getObjectById(Config, this.fields, req.params.id, this.populate);
+      res.json(response);
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }    
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 };
 
-exports.getEmails = async (req, res, next) => {
+
+
+exports.getConfigs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    const response = await this.dbservice.getObjectList(Email, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(Config, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -51,9 +58,9 @@ exports.getEmails = async (req, res, next) => {
 };
 
 
-exports.deleteEmail = async (req, res, next) => {
+exports.deleteConfig = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Email, req.params.id);
+    const result = await this.dbservice.deleteObject(Config, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -61,14 +68,14 @@ exports.deleteEmail = async (req, res, next) => {
   }
 };
 
-exports.postEmail = async (req, res, next) => {
+exports.postConfig = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ Email: response });
+      res.status(StatusCodes.CREATED).json({ Config: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -76,13 +83,13 @@ exports.postEmail = async (req, res, next) => {
   }
 };
 
-exports.patchEmail = async (req, res, next) => {
+exports.patchConfig = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Email, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(Config, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -93,56 +100,20 @@ exports.patchEmail = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { subject, body, toEmails, fromEmail, toContacts, toUsers, customer, 
-  isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
+  const { name, value, loginUser} = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new Email({});
+    doc = new Config({});
   }
-  if ("subject" in req.body) {
-    doc.subject = subject;
+  if ("name" in req.body) {
+    doc.name = name;
   }
-  if ("body" in req.body) {
-    doc.body = body;
+  if ("value" in req.body) {
+    doc.value = value;
   }
-
-  if ("toEmails" in req.body) {
-    doc.toEmails = toEmails;
-  }
-
-  if ("fromEmail" in req.body) {
-    doc.fromEmail = fromEmail;
-  }
-
-  if ("toContacts" in req.body) {
-    doc.toContacts = toContacts;
-  }
-
-  if ("toUsers" in req.body) {
-    doc.toUsers = toUsers;
-  }
-
-  if ("ccEmails" in req.body) {
-    doc.ccEmails = ccEmails;
-  }
-
-  if ("bccEmails" in req.body) {
-    doc.bccEmails = bccEmails;
-  }
-
-  if ("customer" in req.body) {
-    doc.customer = customer;
-  }
-
-  if ("isArchived" in req.body) {
-    doc.isArchived = isArchived;
-  }
-  if ("isActive" in req.body) {
-    doc.isActive = isActive;
-  }
-
-  if (reqType == "new" && "loginUser" in req.body) {
+  
+  if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -150,7 +121,8 @@ function getDocumentFromReq(req, reqType) {
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  }
+  } 
+
 
   return doc;
 

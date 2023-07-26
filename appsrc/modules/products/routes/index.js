@@ -8,6 +8,7 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productAuditLogRoute'));
     app.use(`${ rootPathForModule }`, require('./productCategoryRoute'));
     app.use(`${ rootPathForModule }`, require('./productConnectionRoute'));
+    app.use(`${ rootPathForModule }`, require('./productDrawingRoute'));
     app.use(`${ rootPathForModule }`, require('./productLicenseRoute'));
     app.use(`${ rootPathForModule }`, require('./productModelRoute'));
     app.use(`${ rootPathForModule }`, require('./productNoteRoute'));

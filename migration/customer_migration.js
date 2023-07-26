@@ -64,7 +64,7 @@ async function main() {
       user.howickContact = howickContact.id;
 
       let howickUser = await SecurityUser.findOne({
-        name:user.FullName,
+        name:user.name,
         customer:howickCustomer.id,
         phone:user.Phone,
         email:user.Email,
@@ -72,7 +72,7 @@ async function main() {
       
       if(!howickUser) {
         howickUser = {
-          name:user.FullName,
+          name:user.name,
           customer:howickCustomer.id,
           contact:howickContact.id,
           phone:user.Phone,

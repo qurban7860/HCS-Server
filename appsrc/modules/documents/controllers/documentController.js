@@ -36,6 +36,10 @@ this.populate = [
   { path: 'machine', select: 'name serialNo' },
   { path: 'site', select: 'name' },
 ];
+this.populateHistory = [
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
+];
 
 
 
@@ -50,10 +54,12 @@ exports.getDocument = async (req, res, next) => {
       let documentVersions = [];
       let historical = req.query.historical;
       
+
+      
       if(historical) 
-        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description updatedBy createdBy updatedIP createdIP createdAt updatedAt').sort({createdAt:-1}).populate(this.populateHistory);
       else 
-        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1}).limit(1);
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description updatedBy createdBy updatedIP createdIP createdAt updatedAt').sort({createdAt:-1}).populate(this.populateHistory).limit(1);
       
       
 
@@ -92,6 +98,7 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.basic;
     }
 
+
     if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
 
       let query;
@@ -121,9 +128,6 @@ exports.getDocuments = async (req, res, next) => {
       
       }
     }
-
-
-
 
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0 && basicInfo===false) {

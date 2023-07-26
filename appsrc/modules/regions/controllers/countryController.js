@@ -9,10 +9,10 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let emailDBService = require('../service/emailDBService')
-this.dbservice = new emailDBService();
+let regionDBService = require('../service/regionDBService')
+this.dbservice = new regionDBService();
 
-const { Email } = require('../models');
+const { Country } = require('../../config/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -28,9 +28,9 @@ this.populate = [
 
 
 
-exports.getEmail = async (req, res, next) => {
+exports.getCountry = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Email, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(Country, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -38,11 +38,11 @@ exports.getEmail = async (req, res, next) => {
   }
 };
 
-exports.getEmails = async (req, res, next) => {
+exports.getCountries = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    const response = await this.dbservice.getObjectList(Email, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(Country, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -51,9 +51,9 @@ exports.getEmails = async (req, res, next) => {
 };
 
 
-exports.deleteEmail = async (req, res, next) => {
+exports.deleteCountry = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Email, req.params.id);
+    const result = await this.dbservice.deleteObject(Country, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -61,14 +61,14 @@ exports.deleteEmail = async (req, res, next) => {
   }
 };
 
-exports.postEmail = async (req, res, next) => {
+exports.postCountry = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ Email: response });
+      res.status(StatusCodes.CREATED).json({ Country: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -76,13 +76,13 @@ exports.postEmail = async (req, res, next) => {
   }
 };
 
-exports.patchEmail = async (req, res, next) => {
+exports.patchCountry = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Email, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(Country, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -93,46 +93,15 @@ exports.patchEmail = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { subject, body, toEmails, fromEmail, toContacts, toUsers, customer, 
-  isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
+  const { country_code, country_name, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
-  if (reqType && reqType == "new") {
-    doc = new Email({});
+  
+  if ("country_code" in req.body) {
+    doc.country_code = country_code;
   }
-  if ("subject" in req.body) {
-    doc.subject = subject;
-  }
-  if ("body" in req.body) {
-    doc.body = body;
-  }
-
-  if ("toEmails" in req.body) {
-    doc.toEmails = toEmails;
-  }
-
-  if ("fromEmail" in req.body) {
-    doc.fromEmail = fromEmail;
-  }
-
-  if ("toContacts" in req.body) {
-    doc.toContacts = toContacts;
-  }
-
-  if ("toUsers" in req.body) {
-    doc.toUsers = toUsers;
-  }
-
-  if ("ccEmails" in req.body) {
-    doc.ccEmails = ccEmails;
-  }
-
-  if ("bccEmails" in req.body) {
-    doc.bccEmails = bccEmails;
-  }
-
-  if ("customer" in req.body) {
-    doc.customer = customer;
+  if ("country_name" in req.body) {
+    doc.country_name = country_name;
   }
 
   if ("isArchived" in req.body) {

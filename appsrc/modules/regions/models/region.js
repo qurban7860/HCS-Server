@@ -15,8 +15,12 @@ const docSchema = new Schema({
 {
         collection: 'Regions'
 });
+
+docSchema.add(baseSchema.docVisibilitySchema);
+docSchema.add(baseSchema.docAuditSchema);
+docSchema.set('timestamps', true);
+
 docSchema.index({"name":1})
 docSchema.index({"countries":1})
-
 
 module.exports = mongoose.model('Region', docSchema);
