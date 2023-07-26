@@ -19,6 +19,9 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };    
 this.populate = [
+  {path: 'document', select: 'displayName'},
+  {path: 'documentCategory', select: 'name'},
+  {path: 'documentType', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
