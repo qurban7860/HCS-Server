@@ -134,15 +134,15 @@ exports.getDocuments = async (req, res, next) => {
 
     if(this.query.isArchived=='true')
       this.query.isArchived = true;
-    else {
+
+    if(this.query.isArchived=='false')
       this.query.isArchived = false;
-    }
 
     if(this.query.isActive=='true')
       this.query.isActive = true;
-    else {
+    
+    if(this.query.isActive=='false')
       this.query.isActive = false;
-    }
 
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0 && basicInfo===false) {
