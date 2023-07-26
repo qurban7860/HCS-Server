@@ -99,34 +99,34 @@ exports.getDocuments = async (req, res, next) => {
     }
 
 
-    if(this.query.forCustomer) {
-      let docCats = await DocumentCategory.find({customer:true}).select('_id').lean();
-      if(Array.isArray(docCats) && docCats.length>0) {
-        let docCatIds = docCats.map((dc)=>dc._id.toString());
-        this.query.docCategory = {'$in':docCatIds};
-        delete this.query.forCustomer;
-      }
+    if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
 
-    }
-
-    if(this.query.forMachine) {
-      let docCats = await DocumentCategory.find({machine:true}).select('_id').lean();
-      if(Array.isArray(docCats) && docCats.length>0) {
-        let docCatIds = docCats.map((dc)=>dc._id.toString());
-        this.query.docCategory = {'$in':docCatIds};
-        delete this.query.forMachine;
-      }
+      let query;
+      if(this.query.forCustomer && this.query.forMachine) 
+        query = { customer:true, machine:true};
       
-    }
-
-    if(this.query.forDrawing) {
-      let docCats = await DocumentCategory.find({drawing:true}).select('_id').lean();
-      if(Array.isArray(docCats) && docCats.length>0) {
-        let docCatIds = docCats.map((dc)=>dc._id.toString());
-        this.query.docCategory = {'$in':docCatIds};
-        delete this.query.forDrawing;
-      }
+      else if(this.query.forCustomer) 
+        query = { customer:true };
       
+      else if(this.query.forMachine) 
+        query = { machine:true };
+      
+      else if(this.query.forDrawing) 
+        query = { drawing:true };
+      
+      if(query) {
+
+        let docCats = await DocumentCategory.find(query).select('_id').lean();
+
+        if(Array.isArray(docCats) && docCats.length>0) {
+          let docCatIds = docCats.map((dc)=>dc._id.toString());
+          this.query.docCategory = {'$in':docCatIds};
+          delete this.query.forCustomer;
+          delete this.query.forMachine;
+          delete this.query.forDrawing;
+        }
+      
+      }
     }
 
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
