@@ -65,6 +65,11 @@ exports.getCustomerContacts = async (req, res, next) => {
 
 exports.searchCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
+  if(this.query.customerArr){
+    const customerIds = JSON.parse(this.query.customerArr);
+    this.query.customer = { $in: customerIds };
+    delete this.query.customerArr;
+  }
   
   this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
