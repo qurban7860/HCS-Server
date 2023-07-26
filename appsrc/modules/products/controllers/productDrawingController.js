@@ -66,17 +66,28 @@ exports.postProductDrawing = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        res.status(StatusCodes.CREATED).json({ MachineCategory: response });
+    let documentId = req.body.documentId;
+    let documentCategory = req.body.documentCategory;
+    let documentType = req.body.documentType;
+
+    let alreadyExists = await ProductDrawing.findOne( { document:documentId, documentCategory, documentType } );
+    if(!alreadyExists) {
+      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+        } else {
+          res.status(StatusCodes.CREATED).json({ MachineCategory: response });
+        }
       }
+    }
+    else {
+      res.status(StatusCodes.BAD_REQUEST).send('Already Exists');
+
     }
   }
 };
