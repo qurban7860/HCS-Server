@@ -191,19 +191,27 @@ exports.postDocumentVersion = async (req, res, next) => {
         }
 
         if(Array.isArray(files) && files.length>0) {
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
-          .sort({ versionNo:-1 });
-          let version = 0;
 
-          if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
-            version = 1;
-          else 
-            version = parseInt(documentVersion.versionNo) + 1;
+          let versionNo_ = parseInt(req.body.versionNo);
+  
+          if(isNaN(versionNo_)) {
+            let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
+            .sort({ versionNo:-1 });
+            let version = 0;
 
-          req.body.versionNo = version;
+            if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+              version = 1;
+            else 
+              version = parseInt(documentVersion.versionNo) + 1;            
+
+            req.body.versionNo = version;
+
+          }
+          else {
+            req.body.versionNo = versionNo_;
+          }
+
           req.body.document = document_.id;
-
-
           documentVersion = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
           if(!documentVersion) {

@@ -28,6 +28,8 @@ const docSchema = new Schema({
         documentVersions: [{ type: Schema.Types.ObjectId , ref: 'DocumentVersion' }],
         // list of versions. 
 
+        referenceNumber: { type: String },
+        
         customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
         // customer information.
 

@@ -295,8 +295,12 @@ exports.postDocument = async (req, res, next) => {
 
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
           }
-          
-          req.body.versionNo = 1;
+  
+          let versionNo_ = parseInt(req.body.versionNo);
+  
+          if(isNaN(versionNo_))
+            req.body.versionNo = 1;
+  
           let documentVersion = createDocumentVersionObj(document_,req.body);
           let documentFiles = [];
           let dbFiles = []
@@ -781,7 +785,7 @@ function getDocumentFromReq(req, reqType) {
   const { name, displayName, description, path, type, extension, content, 
     documentVersions, documentCategory, customer, customerAccess, site,
     contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
-    machineModel, documentType, shippingDate, installationDate } = req.body;
+    machineModel, documentType, shippingDate, installationDate, referenceNumber } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -790,6 +794,11 @@ function getDocumentFromReq(req, reqType) {
   if ("name" in req.body) {
     doc.name = name;
   }
+
+  if ("referenceNumber" in req.body) {
+    doc.referenceNumber = referenceNumber;
+  }
+  
   if ("displayName" in req.body) {
     doc.displayName = displayName;
   }
