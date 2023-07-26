@@ -26,7 +26,12 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'contact', select: 'firstName lastName'},
   {path: 'roles', select: ''},
-  {path: 'regions', select: ''},
+  {path: 'regions', populate: {
+    path: 'countries',
+    select: 'country_name as name'
+  }},
+  {path: 'customers', select: ''},  
+  {path: 'machines', select: ''},
 ];
 
 this.populateList = [
@@ -275,7 +280,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 
 async function getDocumentFromReq(req, reqType){
-  const { customer, contact, name, phone, email, login, regions,
+  const { customer, customers, contact, name, phone, email, login, regions, machines,
      password, expireAt, roles, isActive, isArchived } = req.body;
 
 
@@ -326,6 +331,14 @@ async function getDocumentFromReq(req, reqType){
 
   if ("regions" in req.body){
     doc.regions = regions;
+  }
+
+  if ("customers" in req.body){
+    doc.customers = customers;
+  }
+
+  if ("machines" in req.body){
+    doc.machines = machines;
   }
 
   if ("isActive" in req.body){

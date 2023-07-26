@@ -106,6 +106,11 @@ exports.getProducts = async (req, res, next) => {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
+  if(this.query.customerArr){
+    const customerIds = JSON.parse(this.query.customerArr);
+    this.query.customer = { $in: customerIds };
+    delete this.query.customerArr;
+  }
 
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, products) {
@@ -172,6 +177,48 @@ exports.getConnectionProducts = async (req, res, next) => {
   res.status(StatusCodes.OK).json(listProducts);
 };
 
+
+exports.getMachinesAgainstCountries = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {}; 
+  let targetCountries = [];
+
+  if(this.query.countries) {
+    targetCountries = JSON.parse(this.query.countries);
+  }
+  const aggregate = [
+    {
+      $match: {
+        instalationSite: { $exists: true },
+        isActive: true,
+        isArchived: false,
+      }
+    },
+    {
+      $lookup: {
+        from: "CustomerSites",
+        localField: "instalationSite",
+        foreignField: "_id",
+        as: "installationSiteData"
+      }
+    },
+    {
+      $match: {
+        "installationSiteData.address.country": { $in: targetCountries }
+      }
+    }
+  ];
+  const params = {};
+
+  dbservice.getObjectListWithAggregate(Product, aggregate, params, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
 
 exports.deleteProduct = async (req, res, next) => {
   dbservice.deleteObject(Product, req.params.id, res, callbackFunc);

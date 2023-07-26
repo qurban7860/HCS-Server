@@ -33,6 +33,9 @@ router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchCustomer
 // - /api/1.0.0/crm/customers/:id
 router.delete(`${baseRouteForObject}/:id`, controller.deleteCustomer);
 
+// - /api/1.0.0/crm/customers/getRegionCustomers
+router.get(`/getCustomersAgainstCountries`, controller.getCustomersAgainstCountries);
+
 // - /api/1.0.0/crm/customers/search
 // router.get(`/customers/search`, controller.searchCustomers);
 

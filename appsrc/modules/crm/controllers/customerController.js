@@ -128,6 +128,49 @@ exports.getCustomers = async (req, res, next) => {
   }
 };
 
+exports.getCustomersAgainstCountries = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {}; 
+  let targetCountries = [];
+
+  if(this.query.countries) {
+    targetCountries = JSON.parse(this.query.countries);
+  }
+  const aggregate = [
+    {
+      $match: {
+        mainSite: { $exists: true },
+        isActive: true,
+        isArchived: false,
+        type: 'SP'
+      }
+    },
+    {
+      $lookup: {
+        from: "CustomerSites",
+        localField: "mainSite",
+        foreignField: "_id",
+        as: "mainSiteData"
+      }
+    },
+    {
+      $match: {
+        "mainSiteData.address.country": { $in: targetCountries }
+      }
+    }
+  ];
+  const params = {};
+
+  this.dbservice.getObjectListWithAggregate(Customer, aggregate, params, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
+
 exports.deleteCustomer = async (req, res, next) => {
   let customer = await Customer.findById(req.params.id); 
   if(!_.isEmpty(customer)){
