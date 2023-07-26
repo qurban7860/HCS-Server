@@ -102,8 +102,17 @@ exports.getDocuments = async (req, res, next) => {
     if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
 
       let query;
-      if(this.query.forCustomer && this.query.forMachine) 
-        query = { $or : [ { customer : true } ,{ machine : true } ] };
+
+      if(this.query.forCustomer && this.query.forMachine) {
+        query = { 
+          $or : [ 
+            { customer : true },
+            { machine : true } 
+          ], 
+          customer : { $exists : false }, 
+          machine : { $exists : false }, 
+        };
+      }
       
       else if(this.query.forCustomer) 
         query = { customer:true };
