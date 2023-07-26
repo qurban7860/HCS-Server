@@ -103,7 +103,7 @@ exports.getDocuments = async (req, res, next) => {
 
       let query;
       if(this.query.forCustomer && this.query.forMachine) 
-        query = { customer:true, machine:true};
+        query = { $or : [ { customer : true } ,{ machine : true } ] };
       
       else if(this.query.forCustomer) 
         query = { customer:true };
