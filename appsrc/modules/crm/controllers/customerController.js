@@ -13,6 +13,8 @@ this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const { SecurityUser } = require('../../security/models');
+const { Region } = require('../../regions/models');
+const { Country } = require('../../config/models');
 const _ = require('lodash');
 
 
@@ -117,6 +119,53 @@ exports.getCustomers = async (req, res, next) => {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
+
+
+  if(!req.body.loginUser)
+    req.body.loginUser = await getToken(req);
+  
+  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+
+  if(user) {
+    if(Array.isArray(user.regions) && user.regions.length>0 ) {
+      let regions = Region.find({_id:{$in:user.regions}}).select('countries').lean();
+      let countries = []
+      let countryNames = [];
+      let customerSites = []
+      for(let region of regions) {
+        
+        if(Array.isArray(region.countries) && region.countries.length>0)
+          countries.concat(region.countries);
+      
+      }
+      
+      if(Array.isArray(countries) && countries.length>0) {
+        let countriesDB = Country.find({_id:{$in:countries}}).select('country_name').lean();
+        
+        if(Array.isArray(countriesDB) && countriesDB.length>0)
+          countryNames = countriesDB.map((c)=>c.country_name);
+      
+      }
+      
+      if(Array.isArray(countryNames) && countryNames.length>0) {
+        customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
+        
+        if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
+          customerSites = customerSitesDB.map((site)=>site._id);
+      
+      }
+
+      if(Array.isArray(customerSites) && customerSites.length>0) 
+        this.query.mainSite = {$in:customerSites};
+  
+
+      if(Array.isArray(user.customers) && user.customers.length>0) {
+        this.query._id = {$in:user.customers}
+      }     
+    }
+  }
+
+  console.log('customers Query',this.query);
   this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -395,4 +444,17 @@ function getDocumentFromReq(req, reqType){
   } 
 
   return doc;
+}
+
+
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
 }
