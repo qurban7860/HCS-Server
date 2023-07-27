@@ -69,8 +69,9 @@ exports.postProductDrawing = async (req, res, next) => {
     let documentId = req.body.documentId;
     let documentCategory = req.body.documentCategory;
     let documentType = req.body.documentType;
+    let machine = req.body.machine
 
-    let alreadyExists = await ProductDrawing.findOne( { document:documentId, documentCategory, documentType } );
+    let alreadyExists = await ProductDrawing.findOne( { machine, document:documentId, documentCategory, documentType } );
     if(!alreadyExists) {
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       function callbackFunc(error, response) {
