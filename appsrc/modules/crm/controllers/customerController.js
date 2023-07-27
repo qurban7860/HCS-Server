@@ -127,6 +127,9 @@ exports.getCustomers = async (req, res, next) => {
   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
 
   if(user) {
+    let finalQuery = {
+      $or: []
+    };
     if(Array.isArray(user.regions) && user.regions.length>0 ) {
       let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
       let countries = [];
@@ -134,9 +137,8 @@ exports.getCustomers = async (req, res, next) => {
       let customerSites = [];
       for(let region of regions) {
         
-        if(Array.isArray(region.countries) && region.countries.length>0)
-          countries.concat(region.countries);
-      
+      if(Array.isArray(region.countries) && region.countries.length>0)
+        countries = [...region.countries];      
       }
       
       if(Array.isArray(countries) && countries.length>0) {
@@ -155,13 +157,22 @@ exports.getCustomers = async (req, res, next) => {
       
       }
 
-      if(Array.isArray(customerSites) && customerSites.length>0) 
-        this.query.mainSite = {$in:customerSites};
-  
+      if(Array.isArray(customerSites) && customerSites.length>0) {
+        let mainSiteQuery = {$in:customerSites};
+        finalQuery.$or.push({ mainSite: mainSiteQuery});
+      }  
+    }
 
-      if(Array.isArray(user.customers) && user.customers.length>0) {
-        this.query._id = {$in:user.customers}
-      }     
+    if(Array.isArray(user.customers) && user.customers.length>0) {
+      let idQuery = {$in:user.customers}
+      finalQuery.$or.push({ _id: idQuery});
+    }
+
+    if(finalQuery.$or.length > 0){
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
     }
   }
 
