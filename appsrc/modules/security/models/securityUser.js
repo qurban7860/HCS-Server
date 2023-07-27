@@ -43,7 +43,7 @@ const docSchema = new Schema({
         ],
 
         machines: [
-            { type: Schema.Types.ObjectId, ref: 'Product' }
+            { type: Schema.Types.ObjectId, ref: 'Machine' }
         ],
         
         whiteListIPs: [{ type: String}],
