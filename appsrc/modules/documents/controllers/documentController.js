@@ -150,7 +150,7 @@ exports.getDocuments = async (req, res, next) => {
       this.query.isActive = false;
 
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
-    if(documents && Array.isArray(documents) && documents.length>0 && basicInfo===false) {
+    if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
       let documentIndex = 0;
       for(let document_ of documents) {
@@ -160,17 +160,24 @@ exports.getDocuments = async (req, res, next) => {
           document_ = JSON.parse(JSON.stringify(document_));
 
           let documentVersionQuery = {_id:{$in:document_.documentVersions},isActive:true,isArchived:false};
-          let documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
-          if(Array.isArray(documentVersions) && documentVersions.length>0) {
-            documentVersions = JSON.parse(JSON.stringify(documentVersions));
+          let documentVersions = [];
+          if(basicInfo===false) {
+            documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
+            if(Array.isArray(documentVersions) && documentVersions.length>0) {
+              documentVersions = JSON.parse(JSON.stringify(documentVersions));
 
-            for(let documentVersion of documentVersions) {
-              if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-                let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
-                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
-                documentVersion.files = documentFiles;
+              for(let documentVersion of documentVersions) {
+                if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+                  let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
+                  let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                  documentVersion.files = documentFiles;
+                }
               }
             }
+          }
+          else {
+            let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
+            documentVersions = [documentVersion]
           }
           document_.documentVersions = documentVersions;
         }
