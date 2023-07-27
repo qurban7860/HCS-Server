@@ -128,10 +128,10 @@ exports.getCustomers = async (req, res, next) => {
 
   if(user) {
     if(Array.isArray(user.regions) && user.regions.length>0 ) {
-      let regions = Region.find({_id:{$in:user.regions}}).select('countries').lean();
-      let countries = []
+      let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+      let countries = [];
       let countryNames = [];
-      let customerSites = []
+      let customerSites = [];
       for(let region of regions) {
         
         if(Array.isArray(region.countries) && region.countries.length>0)
@@ -140,7 +140,7 @@ exports.getCustomers = async (req, res, next) => {
       }
       
       if(Array.isArray(countries) && countries.length>0) {
-        let countriesDB = Country.find({_id:{$in:countries}}).select('country_name').lean();
+        let countriesDB = await Country.find({_id:{$in:countries}}).select('country_name').lean();
         
         if(Array.isArray(countriesDB) && countriesDB.length>0)
           countryNames = countriesDB.map((c)=>c.country_name);
@@ -165,7 +165,6 @@ exports.getCustomers = async (req, res, next) => {
     }
   }
 
-  console.log('customers Query',this.query);
   this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
