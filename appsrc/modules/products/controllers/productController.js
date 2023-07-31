@@ -114,59 +114,69 @@ exports.getProducts = async (req, res, next) => {
     delete this.query.customerArr;
   }
 
-  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
-  if(user) {
-    let finalQuery = {
-      $or: []
-    };
-    if(Array.isArray(user.regions) && user.regions.length>0 ) {
-      let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-      let countries = [];
-      let countryNames = [];
-      let customerSites = [];
-      for(let region of regions) {
-        if(Array.isArray(region.countries) && region.countries.length>0)
-          countries = [...region.countries];
-      }
-      
-      if(Array.isArray(countries) && countries.length>0) {
-        let countriesDB = await Country.find({_id:{$in:countries}}).select('country_name').lean();
+  if(!this.query.unfiltered){
+    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+    if(user) {
+      let finalQuery = {
+        $or: []
+      };
+      if(Array.isArray(user.regions) && user.regions.length>0 ) {
+        let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+        let countries = [];
+        let countryNames = [];
+        let customerSites = [];
+        for(let region of regions) {
+          if(Array.isArray(region.countries) && region.countries.length>0)
+            countries = [...region.countries];
+        }
         
-        if(Array.isArray(countriesDB) && countriesDB.length>0)
-          countryNames = countriesDB.map((c)=>c.country_name);
-      
-      }
-      
-      if(Array.isArray(countryNames) && countryNames.length>0) {
-        customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
+        if(Array.isArray(countries) && countries.length>0) {
+          let countriesDB = await Country.find({_id:{$in:countries}}).select('country_name').lean();
+          
+          if(Array.isArray(countriesDB) && countriesDB.length>0)
+            countryNames = countriesDB.map((c)=>c.country_name);
         
-        if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
-          customerSites = customerSitesDB.map((site)=>site._id);
-      
+        }
+        
+        if(Array.isArray(countryNames) && countryNames.length>0) {
+          customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
+          
+          if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
+            customerSites = customerSitesDB.map((site)=>site._id);
+        
+        }
+
+        if(Array.isArray(customerSites) && customerSites.length>0){
+          let installationSiteQuery = {$in:customerSites};
+          finalQuery.$or.push({ instalationSite: installationSiteQuery});
+
+          let customers = await Customer.find({"mainSite": {$in: customerSites}}).lean();
+          if(Array.isArray(customers) && customers.length>0){
+            let customerIDs = customers.map((customer) => customer._id);
+            finalQuery.$or.push({ customer: customerIDs});
+          }
+        }
       }
 
-      if(Array.isArray(customerSites) && customerSites.length>0){
-        let installationSiteQuery = {$in:customerSites};
-        finalQuery.$or.push({ instalationSite: installationSiteQuery});
-      } 
-      console.log('this query--------->', this.query);
-    }
-    if(Array.isArray(user.machines) && user.machines.length>0) {
-      let idQuery = {$in:user.machines}
-      finalQuery.$or.push({ _id: idQuery});
-    }
+      if(Array.isArray(user.machines) && user.machines.length>0) {
+        let idQuery = {$in:user.machines}
+        finalQuery.$or.push({ _id: idQuery});
+      }
 
-    if(Array.isArray(user.customers) && user.customers.length>0) {
-      let customerQuery = {$in:user.customers}
-      finalQuery.$or.push({ customer: customerQuery});
-    }
+      if(Array.isArray(user.customers) && user.customers.length>0) {
+        let customerQuery = {$in:user.customers}
+        finalQuery.$or.push({ customer: customerQuery});
+      }
 
-    if(finalQuery.$or.length > 0){
-      this.query = {
-        ...this.query,
-        ...finalQuery
+      if(finalQuery.$or.length > 0){
+        this.query = {
+          ...this.query,
+          ...finalQuery
+        }
       }
     }
+  }else{
+    delete this.query.unfiltered;
   }
 
 
