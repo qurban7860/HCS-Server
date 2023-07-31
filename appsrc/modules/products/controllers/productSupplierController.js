@@ -97,7 +97,7 @@ exports.patchProductSupplier = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let alreadyExists = await ProductSupplier.findOne({name:req.body.name});
+    let alreadyExists = await ProductSupplier.findOne({name:req.body.name,_id:{$ne:req.params.id}});
     if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
     }
