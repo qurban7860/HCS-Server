@@ -122,7 +122,7 @@ exports.getCustomers = async (req, res, next) => {
 
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-  
+
   if(!this.query.unfiltered && this.query.type !== 'SP'){
     let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
     if(user) {
@@ -134,10 +134,10 @@ exports.getCustomers = async (req, res, next) => {
         let countries = [];
         let countryNames = [];
         let customerSites = [];
+
         for(let region of regions) {
-          
-        if(Array.isArray(region.countries) && region.countries.length>0)
-          countries = [...region.countries];      
+          if(Array.isArray(region.countries) && region.countries.length>0)
+            countries = [...region.countries];      
         }
         
         if(Array.isArray(countries) && countries.length>0) {
@@ -145,7 +145,6 @@ exports.getCustomers = async (req, res, next) => {
           
           if(Array.isArray(countriesDB) && countriesDB.length>0)
             countryNames = countriesDB.map((c)=>c.country_name);
-        
         }
         
         if(Array.isArray(countryNames) && countryNames.length>0) {
@@ -156,10 +155,8 @@ exports.getCustomers = async (req, res, next) => {
         
         }
 
-        if(Array.isArray(customerSites) && customerSites.length>0) {
-          let mainSiteQuery = {$in:customerSites};
-          finalQuery.$or.push({ mainSite: mainSiteQuery});
-        }  
+        let mainSiteQuery = {$in:customerSites};
+        finalQuery.$or.push({ mainSite: mainSiteQuery});
       }
 
       if(Array.isArray(user.customers) && user.customers.length>0) {
@@ -184,6 +181,7 @@ exports.getCustomers = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      // console.log('respomse-------------------->', response);
       res.json(response);
     }
   }
