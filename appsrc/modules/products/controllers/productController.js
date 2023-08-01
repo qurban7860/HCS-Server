@@ -146,10 +146,10 @@ exports.getProducts = async (req, res, next) => {
         
         }
 
+        let installationSiteQuery = {$in:customerSites};
+        finalQuery.$or.push({ instalationSite: installationSiteQuery});
+      
         if(Array.isArray(customerSites) && customerSites.length>0){
-          let installationSiteQuery = {$in:customerSites};
-          finalQuery.$or.push({ instalationSite: installationSiteQuery});
-
           let customers = await Customer.find({"mainSite": {$in: customerSites}}).lean();
           if(Array.isArray(customers) && customers.length>0){
             let customerIDs = customers.map((customer) => customer._id);
