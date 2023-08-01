@@ -21,16 +21,62 @@ this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
   {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  {path: 'updatedBy', select: 'name'},
+  {path: 'blockedUsers', select: 'name type'},
+  {path: 'blockedCustomers', select: 'name customer roles'} 
 ];
 
 
 this.populateList = [
+  {path: 'blockedUsers', select: 'name type'},
+  {path: 'blockedCustomers', select: 'name customer roles'}, 
   {path: '', select: ''}
 ];
 
+exports.searchSecurityConfig = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+
+    this.query = req.query != "undefined" ? req.query : {};
+    let searchName = this.query.name;
+    delete this.query.name;
+    this.dbservice.getObjectList(SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    
+    function callbackFunc(error, signInLogs) {
+
+      if (error) {
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+
+        if(searchName) {
+          let filterSignInLogs = [];
+          
+          for(let signInLog of signInLogs) {
+            let name = signInLog.user.name.toLowerCase();
+            console.log(name,searchName,name.search(searchName.toLowerCase()));
+            if(name.search(searchName.toLowerCase())>-1) {
+              filterSignInLogs.push(signInLog);
+            }
+          }
+
+          signInLogs = filterSignInLogs;
+
+        } 
+        
+        return res.status(StatusCodes.OK).json(signInLogs);
+      }
+    }
+
+  }
+}
+
 
 exports.getSecurityConfig = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectById(SecurityConfig, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -43,6 +89,7 @@ exports.getSecurityConfig = async (req, res, next) => {
 };
 
 exports.getSecurityConfigs = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectList(SecurityConfig, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -108,7 +155,7 @@ exports.patchSecurityConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { blockedUsers, blockedCustomers, whiteListIPs, blackListIPs, isActive, isArchived} = req.body;
+  const { blockedUsers, blockedCustomers, whiteListIPs, blackListIPs, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
