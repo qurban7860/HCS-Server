@@ -13,6 +13,7 @@ let emailDBService = require('../service/emailDBService')
 this.dbservice = new emailDBService();
 
 const { Email } = require('../models');
+const { SecurityUser } = require('../../security/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -42,8 +43,27 @@ exports.getEmails = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    const response = await this.dbservice.getObjectList(Email, this.fields, this.query, this.orderBy, this.populate);
-    res.json(response);
+    let response = await this.dbservice.getObjectList(Email, this.fields, this.query, this.orderBy, this.populate);
+    
+    if(Array.isArray(response) && response.length>0) { 
+      response = JSON.parse(JSON.stringify(response));
+      let i = 0
+      for(let email of response) {
+        if(Array.isArray(email.toUsers) && email.toUsers.length>0) {
+          
+          let toUsers = []
+          
+          for(let user of email.toUsers) 
+            toUsers.push(await SecurityUser.findById(user).select('name').lean());
+
+            response[i].toUsers = toUsers;
+          i++;
+        }
+      }
+      
+    }
+    
+    return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
