@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const _ = require('lodash');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 var ObjectId = require('mongoose').Types.ObjectId;
 const HttpError = require('../../config/models/http-error');
@@ -43,9 +44,9 @@ exports.searchSecurityConfig = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    this.dbservice.getObjectList(SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    this.dbservice.getObjectList(SecurityConfig, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
     
-    function callbackFunc(error, signInLogs) {
+    function callbackFunc(error, securityConfigs) {
 
       if (error) {
         logger.error(new Error(error));
@@ -53,21 +54,20 @@ exports.searchSecurityConfig = async (req, res, next) => {
       } else {
 
         if(searchName) {
-          let filterSignInLogs = [];
+          let filterSecurityConfigs = [];
           
-          for(let signInLog of signInLogs) {
-            let name = signInLog.user.name.toLowerCase();
-            console.log(name,searchName,name.search(searchName.toLowerCase()));
+          for(let securityConfig of securityConfigs) {
+            let name = securityConfig.blockedUsers.name.toLowerCase();
             if(name.search(searchName.toLowerCase())>-1) {
-              filterSignInLogs.push(signInLog);
+              filterSecurityConfigs.push(securityConfig);
             }
           }
 
-          signInLogs = filterSignInLogs;
+          securityConfigs = filterSecurityConfigs;
 
         } 
         
-        return res.status(StatusCodes.OK).json(signInLogs);
+        return res.status(StatusCodes.OK).json(securityConfigs);
       }
     }
 
@@ -115,7 +115,7 @@ exports.deleteSecurityConfig = async (req, res, next) => {
 
 exports.postSecurityConfig = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
+  if (!errors.isEmpty() || _.isEmpty(req.body)) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
