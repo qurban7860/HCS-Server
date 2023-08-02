@@ -23,6 +23,8 @@ const baseRoute = `/configs`;
 
 router.use(checkAuth, checkCustomer);
 
+router.get(`${baseRoute}/search`, controller.searchSecurityConfig);
+
 // - /api/1.0.0/security/configs/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityConfig);
 
@@ -37,5 +39,7 @@ router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSecurityConfig);
 
 // - /api/1.0.0/security/configs/:id
 router.delete(`${baseRoute}/:id`, controller.deleteSecurityConfig);
+
+// - /api/1.0.0/security/configs/search
 
 module.exports = router;
