@@ -115,9 +115,16 @@ exports.deleteSecurityConfig = async (req, res, next) => {
 
 exports.postSecurityConfig = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty() || _.isEmpty(req.body)) {
+  if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    const allowedProperties = ['loginUser'];
+    const invalidProperties = Object.keys(req.body).filter(prop => !allowedProperties.includes(prop));
+
+    if (invalidProperties.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
