@@ -136,7 +136,7 @@ function getDocumentFromReq(req, reqType){
   // }
 
   const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, 
-    isBackToBackPunch, isManualSelect, isAssign, Operations, toolType } = req.body;
+    isBackToBackPunch, isManualSelect, isAssign, Operations, toolType, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
