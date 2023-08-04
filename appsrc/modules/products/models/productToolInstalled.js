@@ -10,7 +10,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-    machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
+    // machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
     // machine information ---------- (REMOVED IN THE UPDATED SCHEMA) ----------
    
     tool: { type: Schema.Types.ObjectId, required: true, ref: 'MachineTool' },
