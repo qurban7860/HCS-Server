@@ -25,7 +25,7 @@ const docSchema = new Schema({
     // note information
     
     tool: { type: Schema.Types.ObjectId , ref: 'MachineTool' },
-    // toools
+    // tools
     
     machineTechParam: { type: Schema.Types.ObjectId , ref: 'MachineTechParam' },
     // configuration names
