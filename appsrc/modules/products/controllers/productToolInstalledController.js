@@ -119,26 +119,74 @@ exports.patchProductToolInstalled = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { tool, note, isActive, isArchived, loginUser } = req.body;
+  
+  // const { tool, note, isActive, isArchived, loginUser } = req.body;
+
+   // if ("machine" in req.body){
+  //   doc.machine = req.body.machine;
+  // }else{
+  //   doc.machine = req.params.machineId;
+  // }
+  // if ("tool" in req.body){
+  //   doc.tool = tool;
+  // }
+
+  // if ("note" in req.body){
+  //   doc.note = note;
+  // }
+
+  const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, 
+    isBackToBackPunch, isManualSelect, isAssign, Operations, toolType } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductToolInstalled({});
   }
 
-  if ("machine" in req.body){
-    doc.machine = req.body.machine;
-  }else{
-    doc.machine = req.params.machineId;
-  }
   if ("tool" in req.body){
     doc.tool = tool;
   }
-
-  if ("note" in req.body){
-    doc.note = note;
-  }
   
+  if ("offset" in req.body){
+    doc.offset = offset;
+  }
+
+  if ("isApplyWaste" in req.body){
+    doc.isApplyWaste = isApplyWaste;
+  }
+
+  if ("wasteTriggerDistance" in req.body){
+    doc.wasteTriggerDistance = wasteTriggerDistance;
+  }
+
+  if ("isApplyCrimp" in req.body){
+    doc.isApplyCrimp = isApplyCrimp;
+  }
+
+  if ("crimpTriggerDistance" in req.body){
+    doc.crimpTriggerDistance = crimpTriggerDistance;
+  }
+
+  if ("isBackToBackPunch" in req.body){
+    doc.isBackToBackPunch = isBackToBackPunch;
+  }
+
+  if ("isManualSelect" in req.body){
+    doc.isManualSelect = isManualSelect;
+  }
+
+  if ("isAssign" in req.body){
+    doc.isAssign = isAssign;
+  }
+
+  if ("Operations" in req.body){
+    doc.Operations = Operations;
+  }
+
+  if ("toolType" in req.body){
+    doc.toolType = toolType;
+  }
+
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }

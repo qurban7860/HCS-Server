@@ -21,7 +21,6 @@ const baseRouteForObject = `/machines/:machineId/toolsinstalled`;
 
 // EndPoint: {{baseUrl}}/products/machines/
 // localhost://api/1.0.0/products/machines/ 
-//localhost://api/1.0.0/products/search/
 
 router.use(checkAuth, checkCustomer);
 
@@ -35,6 +34,6 @@ router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controll
 
 router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductToolInstalled);
 
-router.get('/notes/search', controller.searchProductToolInstalled);
+router.get('/products/toolsinstalled/search', controller.searchProductToolInstalled);
 
 module.exports = router;

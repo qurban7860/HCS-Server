@@ -274,7 +274,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
         const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
         if (!tokenExpired) {
           const hashedPassword = await bcrypt.hash(req.body.password, 12);
-          this.dbservice.patchObject(SecurityUser, existingUser._id, { password: hashedPassword }, callbackPatchFunc);
+          this.dbservice.patchObject(SecurityUser, existingUser._id, { password: hashedPassword, token: {} }, callbackPatchFunc);
           async function callbackPatchFunc(error, response) {
             if (error) {
               logger.error(new Error(error));
