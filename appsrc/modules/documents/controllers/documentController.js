@@ -578,7 +578,7 @@ exports.patchDocument = async (req, res, next) => {
 
         if(Array.isArray(files) && files.length>0) {
 
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
+          let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:1})
           .sort({ versionNo:-1 });
           let version = 0;
 
@@ -659,7 +659,7 @@ exports.patchDocument = async (req, res, next) => {
       }
       else {
         
-        let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false})
+        let documentVersion = await DocumentVersion.findOne({document:document_.id})
         .sort({ versionNo:-1 });
         let dbFiles = []
 
