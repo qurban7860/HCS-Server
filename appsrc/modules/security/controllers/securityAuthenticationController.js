@@ -72,9 +72,9 @@ exports.login = async (req, res, next) => {
             let htmlData = render(data,{ emailSubject, emailContent })
             params.htmlData = htmlData;
             console.log("@3");
-            let response = await awsService.sendEmail(params);
+            // let response = await awsService.sendEmail(params);
 
-            console.log("response", response);
+            // console.log("response", response);
           })
           const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           _this.dbservice.postObject(emailResponse, callbackFunc);
