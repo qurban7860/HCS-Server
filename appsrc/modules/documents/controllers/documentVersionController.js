@@ -43,9 +43,7 @@ exports.getDocumentVersion = async (req, res, next) => {
       let documentFilesQuery = {
         _id : {
           $in:documentVersion.files
-        },
-        isActive:true,
-        isArchived:false
+        }
       };
       
       let documentFiles = await DocumentFile.find(documentFilesQuery).sort({createdAt:-1});
@@ -79,9 +77,7 @@ exports.getDocumentVersions = async (req, res, next) => {
           let documentFilesQuery = {
             _id:{
               $in:documentVersion.files
-            },
-            isActive:true,
-            isArchived:false
+            }
           };
 
           let files = await DocumentFile.find(documentFilesQuery).sort({createdAt:-1});
@@ -195,7 +191,7 @@ exports.postDocumentVersion = async (req, res, next) => {
           let versionNo_ = parseInt(req.body.versionNo);
   
           if(isNaN(versionNo_)) {
-            let documentVersion = await DocumentVersion.findOne({document:document_.id, isActive:true, isArchived:false},{versionNo:1})
+            let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:1})
             .sort({ versionNo:-1 });
             let version = 0;
 
