@@ -26,7 +26,16 @@ const docSchema = new Schema({
         
         password: { type: String, required: true },
         // password to access portal
-        
+
+        multiFactorAuthenticationCode: {type: String},
+        // code to access portal
+
+        multiFactorAuthentication: {type: Boolean, default: false},
+        //Authentification 
+
+        multiFactorAuthenticationExpireTime: {type: Date},
+        // Date/Time for code expiry.
+
         expireAt: { type: Date},
         // Date/Time for password expiry.
         

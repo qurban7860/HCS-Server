@@ -39,25 +39,73 @@ this.populateList = [
 exports.login = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
+  console.log("login....");
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
-
     this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
     async function getObjectCallback(error, response) {
+      console.log("response -->", response);
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
+        const existingUser = response;
+        if (existingUser.multiFactorAuthentication) {
+          console.log("123--->", existingUser)
+          // User has enabled MFA, so redirect them to the MFA page
+          // Generate a one time code and send it to the user's email address
+          const code = Math.floor(100000 + Math.random() * 900000);
+          // const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
+          let emailContent = `Hi ${existingUser.name},<br><br>You code is ${code}.<br>
+                          <br><a href=>Click here</a>`;
+          let emailSubject = "Authentication";
+
+          let params = {
+            to: `${existingUser.email}`,
+            subject: emailSubject,
+            html: true
+          };
+          // console.log("@2");
+          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+            let htmlData = render(data,{ emailSubject, emailContent })
+            params.htmlData = htmlData;
+            console.log("@3");
+            let response = await awsService.sendEmail(params);
+
+            console.log("response", response);
+          })
+          const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
+          _this.dbservice.postObject(emailResponse, callbackFunc);
+          function callbackFunc(error, response) {
+            console.log("add object -->", response);
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            } else {
+              //update user..........
+              
+              this.multiFactorAuthenticationCode = code;
+
+            }
+            console.log("code--->", code)
+          }  
+        }
+
         if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact) && isValidRole(response.roles)) {
-          const existingUser = response;
           const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
           if (passwordsResponse) {
             const accessToken = await issueToken(existingUser._id, existingUser.login);
             //console.log('accessToken: ', accessToken)
             if (accessToken) {
               updatedToken = updateUserToken(accessToken);
+              console.log("existingUser", existingUser);
+              if(_this.multiFactorAuthenticationCode){
+                updatedToken.multiFactorAuthenticationCode = _this.multiFactorAuthenticationCode;
+                updatedToken.multiFactorAuthenticationExpireTime=new Date(currentDate.getTime() + 10 * 60 * 1000);
+              }
+              
               _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
               async function callbackPatchFunc(error, response) {
                 if (error) {
