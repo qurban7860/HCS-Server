@@ -281,7 +281,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 async function getDocumentFromReq(req, reqType){
   const { customer, customers, contact, name, phone, email, login, regions, machines,
-     password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode } = req.body;
+     password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
 
 
   let doc = {};
@@ -308,6 +308,9 @@ async function getDocumentFromReq(req, reqType){
 
   if ("multiFactorAuthenticationCode" in req.body){
     doc.multiFactorAuthenticationCode = multiFactorAuthenticationCode;
+  }
+  if ("multiFactorAuthenticationExpireTime" in req.body){
+    doc.multiFactorAuthenticationExpireTime = multiFactorAuthenticationExpireTime;
   }
 
   if ("password" in req.body) {

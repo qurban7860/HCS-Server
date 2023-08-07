@@ -58,8 +58,8 @@ exports.login = async (req, res, next) => {
           // Generate a one time code and send it to the user's email address
           const code = Math.floor(100000 + Math.random() * 900000);
           // const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
-          let emailContent = `Hi ${existingUser.name},<br><br>You code is ${code}.<br>
-                          <br><a href=>Click here</a>`;
+          
+          let emailContent = `Hi ${existingUser.name},<br><br>Your code is ${code}.`;
           let emailSubject = "Authentication";
 
           let params = {
@@ -72,9 +72,8 @@ exports.login = async (req, res, next) => {
             let htmlData = render(data,{ emailSubject, emailContent })
             params.htmlData = htmlData;
             console.log("@3");
-            // let response = await awsService.sendEmail(params);
-
-            // console.log("response", response);
+            let response = await awsService.sendEmail(params);
+            console.log("response", response);
           })
           const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           _this.dbservice.postObject(emailResponse, callbackFunc);
@@ -85,9 +84,7 @@ exports.login = async (req, res, next) => {
               res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
               //update user..........
-              
-              this.multiFactorAuthenticationCode = code;
-
+              _this.multiFactorAuthenticationCode = code;
             }
             console.log("code--->", code)
           }  
@@ -102,10 +99,13 @@ exports.login = async (req, res, next) => {
               updatedToken = updateUserToken(accessToken);
               console.log("existingUser", existingUser);
               if(_this.multiFactorAuthenticationCode){
+                console.log("123>>>");
                 updatedToken.multiFactorAuthenticationCode = _this.multiFactorAuthenticationCode;
                 updatedToken.multiFactorAuthenticationExpireTime=new Date(currentDate.getTime() + 10 * 60 * 1000);
+              } else {
+                console.log("Executing alternative path");
               }
-              
+              console.log("updatedToken-->", updatedToken)
               _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
               async function callbackPatchFunc(error, response) {
                 if (error) {
