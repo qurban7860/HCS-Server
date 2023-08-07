@@ -85,6 +85,7 @@ exports.login = async (req, res, next) => {
             } else {
               //update user..........
               _this.multiFactorAuthenticationCode = code;
+              res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON('Authentification Code has been sent on your email!', true));
             }
             console.log("code--->", code)
           }  
