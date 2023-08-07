@@ -86,7 +86,7 @@ exports.getDocumentVersions = async (req, res, next) => {
 
             for(let file of files) {
               if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-                let documentFileQuery = {_id:{$in:documentVersion.files},isActive:true,isArchived:false};
+                let documentFileQuery = {_id:{$in:documentVersion.files}};
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 documentVersion.files = documentFiles;
               }
@@ -180,7 +180,7 @@ exports.postDocumentVersion = async (req, res, next) => {
 
         let document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
         
-        if(!document_ || document_.isActive==false || document_.isArchived) {
+        if(!document_ ) {
           console.error("Invalid document for documentVersion");
 
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -386,7 +386,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
 
         document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
         
-        if(!document_ || document_.isActive==false || document_.isArchived) {
+        if(!document_ ) {
           console.error("Invalid document for documentVersion");
 
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
