@@ -120,27 +120,18 @@ exports.patchProductToolInstalled = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   
-  // const { tool, note, isActive, isArchived, loginUser } = req.body;
-
-   // if ("machine" in req.body){
-  //   doc.machine = req.body.machine;
-  // }else{
-  //   doc.machine = req.params.machineId;
-  // }
-  // if ("tool" in req.body){
-  //   doc.tool = tool;
-  // }
-
-  // if ("note" in req.body){
-  //   doc.note = note;
-  // }
-
   const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, 
     isBackToBackPunch, isManualSelect, isAssign, Operations, toolType, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductToolInstalled({});
+  }
+
+  if ("machine" in req.body){
+    doc.machine = req.body.machine;
+  }else{
+    doc.machine = req.params.machineId;
   }
 
   if ("tool" in req.body){

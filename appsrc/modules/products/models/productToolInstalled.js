@@ -10,8 +10,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-    // machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
-    // machine information ---------- (REMOVED IN THE UPDATED SCHEMA) ----------
+    machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
    
     tool: { type: Schema.Types.ObjectId, required: true, ref: 'MachineTool' },
     // name of tool 
@@ -40,7 +39,7 @@ const docSchema = new Schema({
     isAssign: { type: Boolean, default: false },
     // can assign to component
     
-    Operations: { type: Number, default: false },
+    operations: { type: Number, default: false },
     // number of operations
     
     toolType: {type: String, default: "GENERIC TOOL"},
@@ -122,7 +121,6 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-docSchema.index({"machine":1})
 docSchema.index({"tool":1})
 docSchema.index({"offset": 1})
 docSchema.index({"wasteTriggerDistance": 1})
