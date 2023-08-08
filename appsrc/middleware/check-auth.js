@@ -30,6 +30,7 @@ module.exports = (req, res, next) => {
     req.body.loginUser = decodedToken;
     next();
   } catch (err) {
+    console.log('middleware------------------------');
     //console.log(err);
     const error = new HttpError('Authentication failed!', 403);
     return next(error);
