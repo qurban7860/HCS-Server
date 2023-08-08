@@ -50,7 +50,7 @@ exports.getDocument = async (req, res, next) => {
       
       document_ = JSON.parse(JSON.stringify(document_));
 
-      let documentVersionQuery = {_id:{$in:document_.documentVersions}};
+      let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
       let documentVersions = [];
       let historical = req.query.historical;
       
@@ -69,7 +69,7 @@ exports.getDocument = async (req, res, next) => {
 
         for(let documentVersion of documentVersions) {
           if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-            let documentFileQuery = {_id:{$in:documentVersion.files}};
+            let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
             let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
             documentVersion.files = documentFiles;
           }
@@ -159,7 +159,7 @@ exports.getDocuments = async (req, res, next) => {
           
           document_ = JSON.parse(JSON.stringify(document_));
 
-          let documentVersionQuery = {_id:{$in:document_.documentVersions}};
+          let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
           let documentVersions = [];
           if(basicInfo===false) {
             documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
@@ -168,7 +168,7 @@ exports.getDocuments = async (req, res, next) => {
 
               for(let documentVersion of documentVersions) {
                 if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-                  let documentFileQuery = {_id:{$in:documentVersion.files}};
+                  let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
                   let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                   documentVersion.files = documentFiles;
                 }
@@ -578,7 +578,7 @@ exports.patchDocument = async (req, res, next) => {
 
         if(Array.isArray(files) && files.length>0) {
 
-          let documentVersion = await DocumentVersion.findOne({document:document_.id},{versionNo:1})
+          let documentVersion = await DocumentVersion.findOne({document:document_.id, isArchived:false},{versionNo:1})
           .sort({ versionNo:-1 });
           let version = 0;
 
@@ -659,7 +659,7 @@ exports.patchDocument = async (req, res, next) => {
       }
       else {
         
-        let documentVersion = await DocumentVersion.findOne({document:document_.id})
+        let documentVersion = await DocumentVersion.findOne({document:document_.id, isArchived:false})
         .sort({ versionNo:-1 });
         let dbFiles = []
 
