@@ -13,7 +13,7 @@ const { render } = require('template-file');
 const fs = require('fs');
 
 let securityDBService = require('../service/securityDBService');
-this.dbservice = new securityDBService();
+const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
@@ -46,18 +46,16 @@ exports.login = async (req, res, next) => {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
     this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
     async function getObjectCallback(error, response) {
-      console.log("response -->", response);
+
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
         const existingUser = response;
         if (existingUser.multiFactorAuthentication) {
-          console.log("123--->", existingUser)
           // User has enabled MFA, so redirect them to the MFA page
           // Generate a one time code and send it to the user's email address
           const code = Math.floor(100000 + Math.random() * 900000);
-          // const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
           
           let emailContent = `Hi ${existingUser.name},<br><br>Your code is ${code}.`;
           let emailSubject = "Authentication";
@@ -71,80 +69,131 @@ exports.login = async (req, res, next) => {
           fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
             let htmlData = render(data,{ emailSubject, emailContent })
             params.htmlData = htmlData;
-            console.log("@3");
             let response = await awsService.sendEmail(params);
-            console.log("response", response);
           })
           const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           _this.dbservice.postObject(emailResponse, callbackFunc);
           function callbackFunc(error, response) {
-            console.log("add object -->", response);
+            // console.log("add object -->", response);
             if (error) {
               logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+              return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              //update user..........
-              _this.multiFactorAuthenticationCode = code;
-              res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON('Authentification Code has been sent on your email!', true));
+              let userMFAData = {};
+              userMFAData.multiFactorAuthenticationCode = code;
+              const currentDate = new Date();
+              userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
+              _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
+              
+              function callbackPatchFunc(error, response) {
+                return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
+              }
             }
-            console.log("code--->", code)
-          }  
+          }
+          return;  
         }
 
-        if (!(_.isEmpty(response)) && isValidCustomer(response.customer) && isValidContact(response.contact) && isValidRole(response.roles)) {
-          const passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
-          if (passwordsResponse) {
-            const accessToken = await issueToken(existingUser._id, existingUser.login);
-            //console.log('accessToken: ', accessToken)
-            if (accessToken) {
-              updatedToken = updateUserToken(accessToken);
-              console.log("existingUser", existingUser);
-              if(_this.multiFactorAuthenticationCode){
-                console.log("123>>>");
-                updatedToken.multiFactorAuthenticationCode = _this.multiFactorAuthenticationCode;
-                updatedToken.multiFactorAuthenticationExpireTime=new Date(currentDate.getTime() + 10 * 60 * 1000);
-              } else {
-                console.log("Executing alternative path");
-              }
-              console.log("updatedToken-->", updatedToken)
-              _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-              async function callbackPatchFunc(error, response) {
-                if (error) {
-                  logger.error(new Error(error));
-                  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                }
-                const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-                const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
-                _this.dbservice.postObject(loginLogResponse, callbackFunc);
-                function callbackFunc(error, response) {
-                  if (error) {
-                    logger.error(new Error(error));
-                    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                  } else {
-                    return res.json({
-                      accessToken,
-                      userId: existingUser.id,
-                      user: {
-                        login: existingUser.login,
-                        email: existingUser.email,
-                        displayName: existingUser.name,
-                        roles: existingUser.roles
-                      }
-                    });
-                  }
-                }
-              }
-            }
-          } else {
-            res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
-          }
-        } else {
-          res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
-        }
+        return await validateAndLoginUser(req, res, existingUser);
       }
     }
   }
 };
+
+
+async function validateAndLoginUser(req, res, existingUser, MFA=false) {
+  console.log(!(_.isEmpty(existingUser)) , isValidCustomer(existingUser.customer) , isValidContact(existingUser.contact) , isValidRole(existingUser.roles))
+  if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+  
+    let passwordsResponse;
+  
+    if(!MFA)
+      passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
+
+    if (passwordsResponse || MFA) {
+      const accessToken = await issueToken(existingUser._id, existingUser.login);
+      //console.log('accessToken: ', accessToken)
+      if (accessToken) {
+        let updatedToken = updateUserToken(accessToken);
+       
+        dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+        async function callbackPatchFunc(error, response) {
+          if (error) {
+            logger.error(new Error(error));
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          }
+          const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+          const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
+          dbService.postObject(loginLogResponse, callbackFunc);
+          function callbackFunc(error, response) {
+            if (error) {
+              logger.error(new Error(error));
+              return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            } else {
+              return res.json({
+                accessToken,
+                userId: existingUser.id,
+                user: {
+                  login: existingUser.login,
+                  email: existingUser.email,
+                  displayName: existingUser.name,
+                  roles: existingUser.roles
+                }
+              });
+            }
+          }
+        }
+      }
+      else {
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      }
+    } else {
+      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+    }
+  } else {
+    return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
+  }
+}
+
+exports.multifactorverifyCode = async (req, res, next) => {
+  const errors = validationResult(req);
+  var _this = this;
+  if (!errors.isEmpty()) {
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    let existingUser = await SecurityUser.findOne({ _id: req.body.userID })
+    .populate({ path: 'customer', select: 'name type isActive isArchived' })
+    .populate({ path: 'contact', select: 'name isActive isArchived' })
+    .populate('roles');
+
+    if(existingUser){
+      console.log(existingUser.multiFactorAuthenticationCode,req.body.code)
+      if (existingUser.multiFactorAuthenticationCode == req.body.code) {
+        const currentTime = new Date();
+        const multiFactorAuthenticationExpireTime = new Date(existingUser.multiFactorAuthenticationExpireTime);
+
+        // Check if the code has expired
+        if (currentTime <= multiFactorAuthenticationExpireTime) {  
+          return await validateAndLoginUser(req, res, existingUser,true);
+        } 
+        else {
+          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Code has expired', true));
+        }
+      } else {
+        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid code', true));
+      }
+    }
+    else{
+      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Code not found', true));
+    }
+  }
+};
+
+
+
+
+
+
+
 
 exports.refreshToken = async (req, res, next) => {
   const errors = validationResult(req);
@@ -263,7 +312,7 @@ exports.forgetPassword = async (req, res, next) => {
                   { path: 'contact', select: 'name isActive isArchived' }]);
     if (existingUser && isValidCustomer(existingUser.customer)) {
       const token = await generateRandomString();
-      updatedToken = updateUserToken(token);
+      let updatedToken = updateUserToken(token);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
       const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
       async function callbackPatchFunc(error, response) {
