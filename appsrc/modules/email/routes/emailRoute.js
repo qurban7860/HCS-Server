@@ -21,7 +21,10 @@ const router = express.Router();
 router.use(checkAuth, checkCustomer);
 
 
-// - /api/1.0.0/emails//:id/
+// - /api/1.0.0/emails/
 router.get(`/`, controller.getEmails);
+
+// - /api/1.0.0/emails/:id/
+router.get(`/:id`, controller.getEmail);
 
 module.exports = router;
