@@ -121,7 +121,7 @@ exports.patchProductToolInstalled = async (req, res, next) => {
 function getDocumentFromReq(req, reqType){
   
   const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, 
-    isBackToBackPunch, isManualSelect, isAssign, Operations, toolType, isActive, isArchived, loginUser } = req.body;
+    isBackToBackPunch, isManualSelect, isAssign, operations, toolType, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -170,8 +170,8 @@ function getDocumentFromReq(req, reqType){
     doc.isAssign = isAssign;
   }
 
-  if ("Operations" in req.body){
-    doc.Operations = Operations;
+  if ("operations" in req.body){
+    doc.operations = operations;
   }
 
   if ("toolType" in req.body){
