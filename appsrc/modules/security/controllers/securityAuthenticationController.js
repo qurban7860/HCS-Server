@@ -64,8 +64,8 @@ exports.login = async (req, res, next) => {
               // Generate a one time code and send it to the user's email address
               const code = Math.floor(100000 + Math.random() * 900000);
               
-              let emailContent = `Hi ${existingUser.name},<br><br>Your code is ${code}.`;
-              let emailSubject = "Authentication";
+              let emailContent = `Dear ${existingUser.name},<br><br>Your Multi-Factor Authentication Code for login is ${code}.As a security measure we recommend not sharing your code with anyone.`;
+              let emailSubject = "Multi-Factor Authentication Code";
 
               let params = {
                 to: `${existingUser.email}`,
@@ -179,7 +179,7 @@ exports.multifactorverifyCode = async (req, res, next) => {
           return await validateAndLoginUser(req, res, existingUser);
         } 
         else {
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Code has expired', true));
+          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'The code is no longer valid.', true));
         }
       } else {
         return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid code', true));
