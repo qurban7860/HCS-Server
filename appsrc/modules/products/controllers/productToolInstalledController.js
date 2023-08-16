@@ -120,7 +120,7 @@ exports.patchProductToolInstalled = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   
-  const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, 
+  const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, singleToolConfig,
     isBackToBackPunch, isManualSelect, isAssign, operations, toolType, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -183,6 +183,59 @@ function getDocumentFromReq(req, reqType){
   }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
+  }
+  if("singleToolConfig" in req.body){
+    if("engageSolenoidLocation" in singleToolConfig){
+      doc.singleToolConfig.engageSolenoidLocation = singleToolConfig.engageSolenoidLocation;
+    }
+    if("returnSolenoidLocation" in singleToolConfig){
+      doc.singleToolConfig.returnSolenoidLocation = singleToolConfig.returnSolenoidLocation;
+    }
+    if("engageOnCondition" in singleToolConfig){
+      doc.singleToolConfig.engageOnCondition = singleToolConfig.engageOnCondition;
+    }
+    if("engageOffCondition" in singleToolConfig){
+      doc.singleToolConfig.engageOffCondition = singleToolConfig.engageOffCondition;
+    }
+    if("timeOut" in singleToolConfig){
+      doc.singleToolConfig.timeOut = singleToolConfig.timeOut;
+    }
+    if("engagingDuration" in singleToolConfig){
+      doc.singleToolConfig.engagingDuration = singleToolConfig.engagingDuration;
+    }
+    if("returningDuration" in singleToolConfig){
+      doc.singleToolConfig.returningDuration = singleToolConfig.returningDuration;
+    }
+    if("twoWayCheckDelayTime" in singleToolConfig){
+      doc.singleToolConfig.twoWayCheckDelayTime = singleToolConfig.twoWayCheckDelayTime;
+    }
+    if("homeProximitySensorLocation" in singleToolConfig){
+      doc.singleToolConfig.homeProximitySensorLocation = singleToolConfig.homeProximitySensorLocation;
+    }
+    if("engagedProximitySensorLocation" in singleToolConfig){
+      doc.singleToolConfig.engagedProximitySensorLocation = singleToolConfig.engagedProximitySensorLocation;
+    }
+    if("pressureTarget" in singleToolConfig){
+      doc.singleToolConfig.pressureTarget = singleToolConfig.pressureTarget;
+    }
+    if("distanceSensorLocation" in singleToolConfig){
+      doc.singleToolConfig.distanceSensorLocation = singleToolConfig.distanceSensorLocation;
+    }
+    if("distanceSensorTarget" in singleToolConfig){
+      doc.singleToolConfig.distanceSensorTarget = singleToolConfig.distanceSensorTarget;
+    }
+    if("isHasTwoWayCheck" in singleToolConfig){
+      doc.singleToolConfig.isHasTwoWayCheck = singleToolConfig.isHasTwoWayCheck;
+    }
+    if("isEngagingHasEnable" in singleToolConfig){
+      doc.singleToolConfig.isEngagingHasEnable = singleToolConfig.isEngagingHasEnable;
+    }
+    if("isReturningHasEnable" in singleToolConfig){
+      doc.singleToolConfig.isReturningHasEnable = singleToolConfig.isReturningHasEnable;
+    }
+    if("movingPunchCondition" in singleToolConfig){
+      doc.singleToolConfig.movingPunchCondition = singleToolConfig.movingPunchCondition;
+    }
   }
 
   if (reqType == "new" && "loginUser" in req.body ){
