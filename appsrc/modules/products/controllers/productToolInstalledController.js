@@ -120,8 +120,9 @@ exports.patchProductToolInstalled = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   
-  const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, singleToolConfig,
-    isBackToBackPunch, isManualSelect, isAssign, operations, toolType, isActive, isArchived, loginUser } = req.body;
+  const { tool, offset, isApplyWaste, wasteTriggerDistance, isApplyCrimp, crimpTriggerDistance, 
+  singleToolConfig, compositeToolConfig, isBackToBackPunch, isManualSelect, isAssign, operations, 
+  toolType, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -235,6 +236,15 @@ function getDocumentFromReq(req, reqType){
     }
     if("movingPunchCondition" in singleToolConfig){
       doc.singleToolConfig.movingPunchCondition = singleToolConfig.movingPunchCondition;
+    }
+  }
+
+  if("compositeToolConfig" in req.body){
+    if("engageInstruction" in compositeToolConfig){
+      doc.compositeToolConfig.engageInstruction = compositeToolConfig.engageInstruction;
+    }
+    if("disengageInstruction" in compositeToolConfig){
+      doc.compositeToolConfig.disengageInstruction = compositeToolConfig.disengageInstruction;
     }
   }
 
