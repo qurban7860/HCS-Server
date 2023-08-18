@@ -82,6 +82,41 @@ exports.postProductToolInstalled = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let validToolTypeArr = ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'];
+    let validEngageOnCondition = ['PASS','NO CONDITION','PROXIMITY SENSOR'];
+    let validEngageOffCondition = ['PASS','TIMER','PROXIMITY SENSOR','PRESSURE TARGET','DISTANCE SENSOR','PRESSURE TRIGGERS TIMER'];
+    let validMovingPunchCondition = ['NO PUNCH','PUNCH WHILE JOGGING','PUNCH WHILE RUNNING'];
+
+    if(req.body.toolType && !validToolTypeArr.includes(req.body.toolType))
+      return res.status(StatusCodes.BAD_REQUEST).send({message:"Tool Type is not valid"});
+
+    if(req.body.toolType!='SINGLE TOOL')
+      req.body.singleToolConfig = undefined;      
+
+    if(req.body.toolType!='COMPOSIT TOOL')
+      req.body.compositeToolConfig = undefined;
+
+    if(req.body.singleToolConfig && !validEngageOnCondition.includes(req.body.singleToolConfig.engageOnCondition) ) 
+      req.body.singleToolConfig.engageOnCondition = 'NO CONDITION';
+
+    if(req.body.singleToolConfig && !validEngageOffCondition.includes(req.body.singleToolConfig.engageOffCondition) ) 
+      req.body.singleToolConfig.engageOffCondition = 'PASS';
+
+    if(req.body.singleToolConfig && !validMovingPunchCondition.includes(req.body.singleToolConfig.movingPunchCondition) ) 
+      req.body.singleToolConfig.movingPunchCondition = 'NO PUNCH';
+
+    if(req.body.compositeToolConfig && req.body.compositeToolConfig.engageInstruction) {
+      req.body.compositeToolConfig.engageInstruction = [...new Set(req.body.compositeToolConfig.engageInstruction)];
+      req.body.compositeToolConfig.engageInstruction = req.body.compositeToolConfig.engageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
+    }
+
+
+    if(req.body.compositeToolConfig && req.body.compositeToolConfig.disengageInstruction) {
+      req.body.compositeToolConfig.disengageInstruction = [...new Set(req.body.compositeToolConfig.disengageInstruction)];
+      req.body.compositeToolConfig.disengageInstruction = req.body.compositeToolConfig.disengageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
+    }
+
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -185,7 +220,7 @@ function getDocumentFromReq(req, reqType){
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
-  if("singleToolConfig" in req.body){
+  if("singleToolConfig" in req.body && typeof req.body.singleToolConfig=='object' ){
     if("engageSolenoidLocation" in singleToolConfig){
       doc.singleToolConfig.engageSolenoidLocation = singleToolConfig.engageSolenoidLocation;
     }
@@ -239,7 +274,7 @@ function getDocumentFromReq(req, reqType){
     }
   }
 
-  if("compositeToolConfig" in req.body){
+  if("compositeToolConfig" in req.body && typeof req.body.compositeToolConfig=='object'){
     if("engageInstruction" in compositeToolConfig){
       doc.compositeToolConfig.engageInstruction = compositeToolConfig.engageInstruction;
     }

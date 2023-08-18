@@ -42,7 +42,7 @@ const docSchema = new Schema({
     operations: { type: Number, default: false },
     // number of operations
     
-    toolType: {type: String, default: "GENERIC TOOL"},
+    toolType: {type: String, enum: ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'], default: "GENERIC TOOL"},
     
     singleToolConfig: {
         engageSolenoidLocation: { type: Number },
@@ -51,10 +51,10 @@ const docSchema = new Schema({
         returnSolenoidLocation: { type: Number },
         // disengage solenoid port
         
-        engageOnCondition: {  type: String,  default: 'NO CONDITION'  },
+        engageOnCondition: {  type: String, enum: ['PASS','NO CONDITION','PROXIMITY SENSOR'],  default: 'NO CONDITION'  },
         // soilenoid port engage on conditions
         
-        engageOffCondition: { type: String , default: '???'  },
+        engageOffCondition: { type: String, enum: ['PASS','TIMER','PROXIMITY SENSOR','PRESSURE TARGET','DISTANCE SENSOR','PRESSURE TRIGGERS TIMER'],default: 'PASS'  },
         // soilenoid port engage off conditions
         
         timeOut: { type: Date },
@@ -93,9 +93,9 @@ const docSchema = new Schema({
         isReturningHasEnable: { type: Boolean, default: false },
         // disengaging has enable
         
-        movingPunchCondition: { type: String, default: 'NO PUNCH' },
+        movingPunchCondition: { type: String, enum: ['NO PUNCH','PUNCH WHILE JOGGING','PUNCH WHILE RUNNING'], default: 'NO PUNCH' },
         // moving punch conditions, 
-      },
+    },
    
     compositeToolConfig: {
         engageInstruction: [{ type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' }],
