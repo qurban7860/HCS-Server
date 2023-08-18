@@ -39,7 +39,7 @@ const docSchema = new Schema({
     isAssign: { type: Boolean, default: false },
     // can assign to component
     
-    operations: { type: Number, default: false },
+    operations: { type: Number },
     // number of operations
     
     toolType: {type: String, enum: ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'], default: "GENERIC TOOL"},
@@ -105,12 +105,6 @@ const docSchema = new Schema({
         // will inherit list of conditions from Machine Tool Installed
   },
 
-    // tool: { type: Schema.Types.ObjectId , required:true, ref: 'MachineTool' },
-    // configuration name
-    
-    // note: { type: String },
-    // note for tool
-   
 },
 {
     collection: 'MachineToolsInstalled'
