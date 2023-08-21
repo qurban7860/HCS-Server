@@ -117,7 +117,7 @@ exports.postProductToolInstalled = async (req, res, next) => {
     if(req.body.toolType!='COMPOSIT TOOL')
       req.body.compositeToolConfig = {};
 
-    
+
 
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
@@ -223,6 +223,7 @@ function getDocumentFromReq(req, reqType){
     doc.isArchived = isArchived;
   }
   if("singleToolConfig" in req.body && typeof req.body.singleToolConfig=='object' ){
+    doc.singleToolConfig = {};
     if("engageSolenoidLocation" in singleToolConfig){
       doc.singleToolConfig.engageSolenoidLocation = singleToolConfig.engageSolenoidLocation;
     }
@@ -277,6 +278,7 @@ function getDocumentFromReq(req, reqType){
   }
 
   if("compositeToolConfig" in req.body && typeof req.body.compositeToolConfig=='object'){
+    doc.compositeToolConfig = {};
     if("engageInstruction" in compositeToolConfig){
       doc.compositeToolConfig.engageInstruction = compositeToolConfig.engageInstruction;
     }
