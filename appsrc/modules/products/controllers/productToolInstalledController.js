@@ -25,6 +25,12 @@ this.populate = [
   {path: 'tool', select: 'name'}
 ];
 
+let validToolTypeArr = ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'];
+let validEngageOnCondition = ['PASS','NO CONDITION','PROXIMITY SENSOR'];
+let validEngageOffCondition = ['PASS','TIMER','PROXIMITY SENSOR','PRESSURE TARGET','DISTANCE SENSOR','PRESSURE TRIGGERS TIMER'];
+let validMovingPunchCondition = ['NO PUNCH','PUNCH WHILE JOGGING','PUNCH WHILE RUNNING'];
+
+
 exports.getProductToolInstalled = async (req, res, next) => {
   this.dbservice.getObjectById(ProductToolInstalled, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
@@ -32,7 +38,21 @@ exports.getProductToolInstalled = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+
+      let toolInstalled = JSON.parse(JSON.stringify(response));
+
+      if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
+        if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
+          toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
+          toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}});
+        }
+
+        if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
+          toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
+          toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}});
+        }
+      }
+      res.json(toolInstalled);
     }
   }
 
@@ -46,6 +66,25 @@ exports.getProductToolInstalledList = async (req, res, next) => {
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
+      
+      response = JSON.parse(JSON.stringify(response));
+      let i = 0;
+      for(let toolInstalled of response) {
+
+        if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
+          if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
+            toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
+            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}});
+          }
+
+          if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
+            toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
+            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}});
+          }
+        }
+        response[i] = toolInstalled;
+        i++;
+      }
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       res.json(response);
@@ -82,11 +121,7 @@ exports.postProductToolInstalled = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let validToolTypeArr = ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'];
-    let validEngageOnCondition = ['PASS','NO CONDITION','PROXIMITY SENSOR'];
-    let validEngageOffCondition = ['PASS','TIMER','PROXIMITY SENSOR','PRESSURE TARGET','DISTANCE SENSOR','PRESSURE TRIGGERS TIMER'];
-    let validMovingPunchCondition = ['NO PUNCH','PUNCH WHILE JOGGING','PUNCH WHILE RUNNING'];
-
+    
     if(!req.body.toolType || !validToolTypeArr.includes(req.body.toolType))
       return res.status(StatusCodes.BAD_REQUEST).send({message:"Tool Type is not valid"});
 
@@ -139,6 +174,37 @@ exports.patchProductToolInstalled = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(!req.body.toolType || !validToolTypeArr.includes(req.body.toolType))
+      return res.status(StatusCodes.BAD_REQUEST).send({message:"Tool Type is not valid"});
+
+
+    if(req.body.singleToolConfig && !validEngageOnCondition.includes(req.body.singleToolConfig.engageOnCondition) ) 
+      req.body.singleToolConfig.engageOnCondition = 'NO CONDITION';
+
+    if(req.body.singleToolConfig && !validEngageOffCondition.includes(req.body.singleToolConfig.engageOffCondition) ) 
+      req.body.singleToolConfig.engageOffCondition = 'PASS';
+
+    if(req.body.singleToolConfig && !validMovingPunchCondition.includes(req.body.singleToolConfig.movingPunchCondition) ) 
+      req.body.singleToolConfig.movingPunchCondition = 'NO PUNCH';
+
+    if(req.body.compositeToolConfig && req.body.compositeToolConfig.engageInstruction) {
+      req.body.compositeToolConfig.engageInstruction = [...new Set(req.body.compositeToolConfig.engageInstruction)];
+      req.body.compositeToolConfig.engageInstruction = req.body.compositeToolConfig.engageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
+    }
+
+
+    if(req.body.compositeToolConfig && req.body.compositeToolConfig.disengageInstruction) {
+      req.body.compositeToolConfig.disengageInstruction = [...new Set(req.body.compositeToolConfig.disengageInstruction)];
+      req.body.compositeToolConfig.disengageInstruction = req.body.compositeToolConfig.disengageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
+    }
+
+    if(req.body.toolType!='SINGLE TOOL')
+      req.body.singleToolConfig = {};      
+
+    if(req.body.toolType!='COMPOSIT TOOL')
+      req.body.compositeToolConfig = {};
+
+
     this.dbservice.patchObject(ProductToolInstalled, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
