@@ -82,14 +82,14 @@ exports.postProductToolInstalled = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    console.log(req.body);
     let validToolTypeArr = ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'];
     let validEngageOnCondition = ['PASS','NO CONDITION','PROXIMITY SENSOR'];
     let validEngageOffCondition = ['PASS','TIMER','PROXIMITY SENSOR','PRESSURE TARGET','DISTANCE SENSOR','PRESSURE TRIGGERS TIMER'];
     let validMovingPunchCondition = ['NO PUNCH','PUNCH WHILE JOGGING','PUNCH WHILE RUNNING'];
 
-    if(req.body.toolType && !validToolTypeArr.includes(req.body.toolType))
+    if(!req.body.toolType || !validToolTypeArr.includes(req.body.toolType))
       return res.status(StatusCodes.BAD_REQUEST).send({message:"Tool Type is not valid"});
+
 
     if(req.body.singleToolConfig && !validEngageOnCondition.includes(req.body.singleToolConfig.engageOnCondition) ) 
       req.body.singleToolConfig.engageOnCondition = 'NO CONDITION';
@@ -105,18 +105,19 @@ exports.postProductToolInstalled = async (req, res, next) => {
       req.body.compositeToolConfig.engageInstruction = req.body.compositeToolConfig.engageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
     }
 
+
     if(req.body.compositeToolConfig && req.body.compositeToolConfig.disengageInstruction) {
       req.body.compositeToolConfig.disengageInstruction = [...new Set(req.body.compositeToolConfig.disengageInstruction)];
       req.body.compositeToolConfig.disengageInstruction = req.body.compositeToolConfig.disengageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
     }
 
     if(req.body.toolType!='SINGLE TOOL')
-      req.body.singleToolConfig = undefined;      
+      req.body.singleToolConfig = {};      
 
     if(req.body.toolType!='COMPOSIT TOOL')
-      req.body.compositeToolConfig = undefined;
+      req.body.compositeToolConfig = {};
+
     
-    console.log(req.body);
 
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
