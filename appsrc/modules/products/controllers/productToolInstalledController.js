@@ -44,12 +44,12 @@ exports.getProductToolInstalled = async (req, res, next) => {
       if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
         if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
           toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
-          toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}});
+          toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}}).populate('tool');
         }
 
         if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
           toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
-          toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}});
+          toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}}).populate('tool');
         }
       }
       res.json(toolInstalled);
@@ -76,12 +76,12 @@ exports.getProductToolInstalledList = async (req, res, next) => {
         if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
           if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
             toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}});
+            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}}).populate('tool');
           }
 
           if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
             toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}});
+            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}}).populate('tool');
           }
         }
         response[i] = toolInstalled;
@@ -96,7 +96,7 @@ exports.searchProductToolInstalled = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
   this.dbservice.getObjectList(ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -108,12 +108,12 @@ exports.searchProductToolInstalled = async (req, res, next) => {
         if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
           if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
             toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}});
+            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}}).populate('tool');
           }
 
           if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
             toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}});
+            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}}).populate('tool');
           }
         }
         response[i] = toolInstalled;
@@ -197,9 +197,6 @@ exports.patchProductToolInstalled = async (req, res, next) => {
     if(!req.body.toolType || !validToolTypeArr.includes(req.body.toolType))
       return res.status(StatusCodes.BAD_REQUEST).send({message:"Tool Type is not valid"});
 
-    console.log(req.body);
-
-
     if(req.body.singleToolConfig && !validEngageOnCondition.includes(req.body.singleToolConfig.engageOnCondition) ) 
       req.body.singleToolConfig.engageOnCondition = 'NO CONDITION';
 
@@ -226,7 +223,6 @@ exports.patchProductToolInstalled = async (req, res, next) => {
     if(req.body.toolType!='COMPOSIT TOOL')
       req.body.compositeToolConfig = {};
 
-    console.log(req.body);
     this.dbservice.patchObject(ProductToolInstalled, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
