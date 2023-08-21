@@ -24,6 +24,8 @@ const baseRouteForObject = `/machines/:machineId/toolsinstalled`;
 
 router.use(checkAuth, checkCustomer);
 
+router.get(`${baseRouteForObject}/search`, controller.searchProductToolInstalled);
+
 router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductToolInstalled);
 
 router.get(`${baseRouteForObject}`, checkProductID, controller.getProductToolInstalledList);
@@ -34,6 +36,5 @@ router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controll
 
 router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductToolInstalled);
 
-router.get('/products/toolsinstalled/search', controller.searchProductToolInstalled);
 
 module.exports = router;
