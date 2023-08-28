@@ -97,13 +97,13 @@ const docSchema = new Schema({
         // moving punch conditions, 
     },
    
-    compositeToolConfig: {
-        engageInstruction: [{ type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' }],
+    compositeToolConfig: [{
+        engageInstruction: { type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' },
         // will inherit list of conditions from Machine Tool Installed
         
-        disengageInstruction: [{ type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' }],
+        disengageInstruction: { type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' },
         // will inherit list of conditions from Machine Tool Installed
-  },
+    }],
 
 },
 {
