@@ -39,20 +39,24 @@ exports.getProductToolInstalled = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-      let toolInstalled = JSON.parse(JSON.stringify(response));
+      let toolsInstalled = JSON.parse(JSON.stringify(response));
+      let index = 0;
+      if(toolsInstalled &&  Array.isArray(toolsInstalled.compositeToolConfig)) {
+        for(let compositeConfig of toolsInstalled.compositeToolConfig) {
 
-      if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
-        if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
-          toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
-          toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}}).populate('tool');
-        }
+          if(compositeConfig.engageInstruction) {
+            compositeConfig.engageInstruction = await ProductToolInstalled.findById(compositeConfig.engageInstruction).populate('tool');
+          }
 
-        if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
-          toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
-          toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}}).populate('tool');
+          if(compositeConfig.disengageInstruction) {
+            compositeConfig.disengageInstruction = await ProductToolInstalled.findById(compositeConfig.disengageInstruction).populate('tool');
+          }
+
+          toolsInstalled.compositeToolConfig[index] = compositeConfig;
+          
         }
       }
-      res.json(toolInstalled);
+      res.json(toolsInstalled);
     }
   }
 
@@ -71,20 +75,25 @@ exports.getProductToolInstalledList = async (req, res, next) => {
     } else {
       response = JSON.parse(JSON.stringify(response));
       let i = 0;
-      for(let toolInstalled of response) {
+      for(let toolsInstalled of response) {
 
-        if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
-          if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
-            toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}}).populate('tool');
-          }
+        let index = 0;
+        if(toolsInstalled &&  Array.isArray(toolsInstalled.compositeToolConfig)) {
+          for(let compositeConfig of toolsInstalled.compositeToolConfig) {
 
-          if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
-            toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}}).populate('tool');
+            if(compositeConfig.engageInstruction) {
+              compositeConfig.engageInstruction = await ProductToolInstalled.findById(compositeConfig.engageInstruction).populate('tool');
+            }
+
+            if(compositeConfig.disengageInstruction) {
+              compositeConfig.disengageInstruction = await ProductToolInstalled.findById(compositeConfig.disengageInstruction).populate('tool');
+            }
+            
+            toolsInstalled.compositeToolConfig[index] = compositeConfig;
+            
           }
         }
-        response[i] = toolInstalled;
+        response[i] = toolsInstalled;
         i++;
       }
       res.json(response);
@@ -103,20 +112,25 @@ exports.searchProductToolInstalled = async (req, res, next) => {
     } else {
       response = JSON.parse(JSON.stringify(response));
       let i = 0;
-      for(let toolInstalled of response) {
+      for(let toolsInstalled of response) {
 
-        if(toolInstalled && typeof toolInstalled.compositeToolConfig=='object') {
-          if(Array.isArray(toolInstalled.compositeToolConfig.engageInstruction) && 
-            toolInstalled.compositeToolConfig.engageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.engageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.engageInstruction}}).populate('tool');
-          }
+        let index = 0;
+        if(toolsInstalled &&  Array.isArray(toolsInstalled.compositeToolConfig)) {
+          for(let compositeConfig of toolsInstalled.compositeToolConfig) {
 
-          if(Array.isArray(toolInstalled.compositeToolConfig.disengageInstruction) && 
-            toolInstalled.compositeToolConfig.disengageInstruction.length>0 ) {
-            toolInstalled.compositeToolConfig.disengageInstruction = await ProductToolInstalled.find({_id:{$in:toolInstalled.compositeToolConfig.disengageInstruction}}).populate('tool');
+            if(compositeConfig.engageInstruction) {
+              compositeConfig.engageInstruction = await ProductToolInstalled.findById(compositeConfig.engageInstruction).populate('tool');
+            }
+
+            if(compositeConfig.disengageInstruction) {
+              compositeConfig.disengageInstruction = await ProductToolInstalled.findById(compositeConfig.disengageInstruction).populate('tool');
+            }
+            
+            toolsInstalled.compositeToolConfig[index] = compositeConfig;
+            
           }
         }
-        response[i] = toolInstalled;
+        response[i] = toolsInstalled;
         i++;
       }
       res.json(response);
@@ -155,24 +169,24 @@ exports.postProductToolInstalled = async (req, res, next) => {
     if(req.body.singleToolConfig && !validMovingPunchCondition.includes(req.body.singleToolConfig.movingPunchCondition) ) 
       req.body.singleToolConfig.movingPunchCondition = 'NO PUNCH';
 
-    if(req.body.compositeToolConfig && req.body.compositeToolConfig.engageInstruction) {
-      req.body.compositeToolConfig.engageInstruction = [...new Set(req.body.compositeToolConfig.engageInstruction)];
-      req.body.compositeToolConfig.engageInstruction = req.body.compositeToolConfig.engageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
+    let finalCompositeToolConfig = [];
+
+    if(Array.isArray(req.body.compositeToolConfig) && req.body.compositeToolConfig.length>0) {
+      for(let compositeToolConfig of req.body.compositeToolConfig) {
+        if(mongoose.Types.ObjectId.isValid(compositeToolConfig.engageInstruction) &&
+          mongoose.Types.ObjectId.isValid(compositeToolConfig.disengageInstruction)) {
+          finalCompositeToolConfig.push(compositeToolConfig);
+        }
+      }
     }
 
-
-    if(req.body.compositeToolConfig && req.body.compositeToolConfig.disengageInstruction) {
-      req.body.compositeToolConfig.disengageInstruction = [...new Set(req.body.compositeToolConfig.disengageInstruction)];
-      req.body.compositeToolConfig.disengageInstruction = req.body.compositeToolConfig.disengageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
-    }
+    req.body.compositeToolConfig = finalCompositeToolConfig;
 
     if(req.body.toolType!='SINGLE TOOL')
       req.body.singleToolConfig = {};      
 
     if(req.body.toolType!='COMPOSIT TOOL')
-      req.body.compositeToolConfig = {};
-
-
+      req.body.compositeToolConfig = [];
 
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
@@ -206,22 +220,24 @@ exports.patchProductToolInstalled = async (req, res, next) => {
     if(req.body.singleToolConfig && !validMovingPunchCondition.includes(req.body.singleToolConfig.movingPunchCondition) ) 
       req.body.singleToolConfig.movingPunchCondition = 'NO PUNCH';
 
-    if(req.body.compositeToolConfig && req.body.compositeToolConfig.engageInstruction) {
-      req.body.compositeToolConfig.engageInstruction = [...new Set(req.body.compositeToolConfig.engageInstruction)];
-      req.body.compositeToolConfig.engageInstruction = req.body.compositeToolConfig.engageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
+    let finalCompositeToolConfig = [];
+    
+    if(Array.isArray(req.body.compositeToolConfig) && req.body.compositeToolConfig.length>0) {
+      for(let compositeToolConfig of req.body.compositeToolConfig) {
+        if(mongoose.Types.ObjectId.isValid(compositeToolConfig.engageInstruction) &&
+          mongoose.Types.ObjectId.isValid(compositeToolConfig.disengageInstruction)) {
+          finalCompositeToolConfig.push(compositeToolConfig);
+        }
+      }
     }
 
-
-    if(req.body.compositeToolConfig && req.body.compositeToolConfig.disengageInstruction) {
-      req.body.compositeToolConfig.disengageInstruction = [...new Set(req.body.compositeToolConfig.disengageInstruction)];
-      req.body.compositeToolConfig.disengageInstruction = req.body.compositeToolConfig.disengageInstruction.filter((ei)=>mongoose.Types.ObjectId.isValid(ei));
-    }
+    req.body.compositeToolConfig = finalCompositeToolConfig;
 
     if(req.body.toolType!='SINGLE TOOL')
       req.body.singleToolConfig = {};      
 
     if(req.body.toolType!='COMPOSIT TOOL')
-      req.body.compositeToolConfig = {};
+      req.body.compositeToolConfig = [];
 
     this.dbservice.patchObject(ProductToolInstalled, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
@@ -361,14 +377,12 @@ function getDocumentFromReq(req, reqType){
     }
   }
 
-  if("compositeToolConfig" in req.body && typeof req.body.compositeToolConfig=='object'){
-    doc.compositeToolConfig = {};
-    if("engageInstruction" in compositeToolConfig){
-      doc.compositeToolConfig.engageInstruction = compositeToolConfig.engageInstruction;
-    }
-    if("disengageInstruction" in compositeToolConfig){
-      doc.compositeToolConfig.disengageInstruction = compositeToolConfig.disengageInstruction;
-    }
+  doc.compositeToolConfig = [];
+  
+  if("compositeToolConfig" in req.body && 
+    Array.isArray(req.body.compositeToolConfig) && 
+    req.body.compositeToolConfig.length>0){
+    doc.compositeToolConfig = req.body.compositeToolConfig;
   }
 
   if (reqType == "new" && "loginUser" in req.body ){
