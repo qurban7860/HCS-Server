@@ -14,5 +14,6 @@ module.exports = {
     ProductTool: require('./productTool'),
     ProductToolInstalled: require('./productToolInstalled'),
     ProductConnection: require('./productConnection'),
-    ProductDrawing: require('./productDrawing')
+    ProductDrawing: require('./productDrawing'),
+    ProductServiceParams: require('./productServiceParams')
 }
