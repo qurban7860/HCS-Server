@@ -170,10 +170,10 @@ exports.postProductToolInstalled = async (req, res, next) => {
       req.body.singleToolConfig.movingPunchCondition = 'NO PUNCH';
 
     let finalCompositeToolConfig = [];
-
     if(Array.isArray(req.body.compositeToolConfig) && req.body.compositeToolConfig.length>0) {
       for(let compositeToolConfig of req.body.compositeToolConfig) {
-        if(mongoose.Types.ObjectId.isValid(compositeToolConfig.engageInstruction) &&
+
+        if(mongoose.Types.ObjectId.isValid(compositeToolConfig.engageInstruction) ||
           mongoose.Types.ObjectId.isValid(compositeToolConfig.disengageInstruction)) {
           finalCompositeToolConfig.push(compositeToolConfig);
         }
