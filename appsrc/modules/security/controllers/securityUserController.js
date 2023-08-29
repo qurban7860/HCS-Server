@@ -54,6 +54,26 @@ exports.getSecurityUser = async (req, res, next) => {
   }
 };
 
+exports.sendUserInvite = async (req, res, next) =>{
+  let user = await SecurityUser.findById(req.params.id);
+  user.inviteCode = (Math.random() + 1).toString(36).substring(7);
+  user.inviteExpireTime = new Date();
+  user = await user.save();
+  let emailSubject = "User Invite - HOWICK";
+  let emailContent = `Dear ${user.name},<br><br>Howick has invited you join howick cloud.Please click on below link and enter password for joining.`;
+
+  let params = {
+    to: `${user.email}`,
+    subject: emailSubject,
+    html: true
+  };
+  fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+    let htmlData = render(data,{  })
+    params.htmlData = htmlData;
+    let response = await awsService.sendEmail(params);
+  })
+}
+
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
