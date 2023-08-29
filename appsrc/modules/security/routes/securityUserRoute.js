@@ -20,11 +20,16 @@ const baseRoute = `/users`;
 
 router.use(checkAuth, checkCustomer);
 
+
 // - /api/1.0.0/security/users/:id
 router.get(`${baseRoute}/:id`, controller.getSecurityUser);
 
 // - /api/1.0.0/security/users
+router.get(`${baseRoute}/sendUserInvite/:id`, controller.sendUserInvite);
+
+// - /api/1.0.0/security/users
 router.get(`${baseRoute}/`, controller.getSecurityUsers);
+
 
 // - /api/1.0.0/security/users
 router.post(`${baseRoute}/`, controller.postSecurityUser);
