@@ -28,4 +28,4 @@ docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
 
 
-module.exports = mongoose.model('SecurityNotes', docSchema);
+module.exports = mongoose.model('SecurityNote', docSchema);
