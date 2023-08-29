@@ -20,5 +20,6 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productTechParamValueRoute'));
     app.use(`${ rootPathForModule }`, require('./productToolInstalledRoute'));
     app.use(`${ rootPathForModule }`, require('./productToolRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceParams'));
 }
 
