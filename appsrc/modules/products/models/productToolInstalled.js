@@ -9,7 +9,7 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-
+ 
     machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
    
     tool: { type: Schema.Types.ObjectId, required: true, ref: 'MachineTool' },
