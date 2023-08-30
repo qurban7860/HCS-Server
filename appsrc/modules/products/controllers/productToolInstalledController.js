@@ -90,7 +90,7 @@ exports.getProductToolInstalledList = async (req, res, next) => {
             }
             
             toolsInstalled.compositeToolConfig[index] = compositeConfig;
-            
+            index++;
           }
         }
         response[i] = toolsInstalled;
@@ -127,7 +127,7 @@ exports.searchProductToolInstalled = async (req, res, next) => {
             }
             
             toolsInstalled.compositeToolConfig[index] = compositeConfig;
-            
+            index++;
           }
         }
         response[i] = toolsInstalled;
