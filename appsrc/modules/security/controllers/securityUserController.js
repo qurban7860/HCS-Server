@@ -7,8 +7,8 @@ const { render } = require('template-file');
 const _ = require('lodash');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const logger = require('../../config/logger');
+const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
-
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
