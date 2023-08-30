@@ -86,7 +86,7 @@ exports.verifyInviteCode = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Invalid invitation code'));
   }
   else {
-    return res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, { valid:true }));
+    return res.status(StatusCodes.OK).json({ valid:true });
   }
 
 };
