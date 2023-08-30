@@ -113,7 +113,8 @@ function getDocumentFromReq(req, reqType){
   const { 
     recordType, serviceRecordConfig, serviceDate, customer, site, machine, decoiler, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks
+    serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks,
+    loginUser, isActive, isArchived
 } = req.body;
   
   let doc = {};

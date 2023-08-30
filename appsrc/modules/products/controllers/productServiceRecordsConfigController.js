@@ -114,7 +114,7 @@ function getDocumentFromReq(req, reqType){
     checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterFields, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
-    enableSuggestedSpares, header, footer
+    enableSuggestedSpares, header, footer, loginUser, isActive, isArchived
 } = req.body;
   
   let doc = {};
