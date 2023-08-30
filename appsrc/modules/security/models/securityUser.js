@@ -42,6 +42,8 @@ const docSchema = new Schema({
 
         expireAt: { type: Date},
         // Date/Time for password expiry.
+
+        currentEmployee: { type: Boolean, default: false },
         
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
