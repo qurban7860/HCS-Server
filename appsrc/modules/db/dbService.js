@@ -83,20 +83,31 @@ class dbService {
 
   async deleteObject(model, id, res, callback) {
     try {
+      
       let existingRecord = await model.findById(id);
-      if (!existingRecord.isArchived) {
+     
+      if(existingRecord == null) {
+        console.log("----------------------------------------------------------------");
+        const error = new Error("Invalid record");
+        error.statusCode = StatusCodes.BAD_REQUEST;
+        throw error;
+      } else if (!existingRecord.isArchived) {
         const error = new Error("Record cannot be deleted. It should be archived first!");
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }
+
+      
   
       if (callback) {
+      
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
           callback(err);
         });
       } else {
+   
         return await model.deleteOne({ _id: id });
       }
     } catch (error) {
