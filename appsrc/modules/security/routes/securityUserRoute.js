@@ -28,6 +28,9 @@ router.get(`${baseRoute}/:id`, controller.getSecurityUser);
 router.get(`${baseRoute}/sendUserInvite/:id`, controller.sendUserInvite);
 
 // - /api/1.0.0/security/users
+router.get(`${baseRoute}/verifyInviteCode/:id/:code`, controller.verifyInviteCode);
+
+// - /api/1.0.0/security/users
 router.get(`${baseRoute}/`, controller.getSecurityUsers);
 
 
