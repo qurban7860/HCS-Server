@@ -8,11 +8,10 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let productDBService = require('../service/securityDBService')
-this.dbservice = new productDBService();
+let securityDBService = require('../service/securityDBService')
+this.dbservice = new securityDBService();
 
-const { ProductNote, SecurityNotes } = require('../models');
-
+const { SecurityNotes } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -26,7 +25,7 @@ this.populate = [
 
 
 exports.getSecurityNote = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductNote, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(SecurityNotes, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -39,14 +38,14 @@ exports.getSecurityNote = async (req, res, next) => {
 };
 
 exports.getSecurityNotes = async (req, res, next) => {
-  this.machineId = req.params.machineId;
+  this.userId = req.params.userId;
   this.query = req.query != "undefined" ? req.query : {};
   if(this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
   this.query.user = this.userId;
-  this.dbservice.getObjectList(ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -59,7 +58,7 @@ exports.getSecurityNotes = async (req, res, next) => {
 
 exports.searchSecurityNotes = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.dbservice.getObjectList(ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -69,28 +68,43 @@ exports.searchSecurityNotes = async (req, res, next) => {
     }
   }
 };
-
 exports.deleteSecurityNote = async (req, res, next) => {
-  const response = await ProductNote.findById(req.params.id);
-  if(response === null) {
-    try {
-      const result = await this.dbservice.deleteObject(ProductNote, req.params.id, res, callbackFunc);
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-    } catch (error) {
+  this.dbservice.deleteObject(SecurityNotes, req.params.id, res, callbackFunc);
+  function callbackFunc(error, result) {
+    if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
-  } else {
-    res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
   }
 };
+// exports.deleteSecurityNote = async (req, res, next) => {
+//   const response = await SecurityNotes.findById(req.params.id);
+//   // console.log(response, "1")
+//   if(response === null) {
+//     try {
+//       const result = await this.dbservice.deleteObject(SecurityNotes, req.params.id, res, callbackFunc);
+//       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+//     } catch (error) {
+//       logger.error(new Error(error));
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+//   } else {
+//     res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
+//   }
+// };
 
 exports.postSecurityNote = async (req, res, next) => {
+  // console.log("1")
   const errors = validationResult(req);
+  // console.log("2")
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    // console.log("3")
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    // console.log("4")
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -99,7 +113,7 @@ exports.postSecurityNote = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.CREATED).json({ MachineNote: response });
+        res.status(StatusCodes.CREATED).json({ SecurityNote: response });
       }
     }
   }
@@ -110,7 +124,7 @@ exports.patchSecurityNote = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(ProductNote, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(SecurityNotes, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
