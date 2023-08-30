@@ -81,7 +81,7 @@ exports.sendUserInvite = async (req, res, next) =>{
 }
 
 exports.verifyInviteCode = async (req, res, next) => {
-  let user = await SecurityUser.findOne({ _id : req.params.id, code : req.params.code });
+  let user = await SecurityUser.findOne({ _id : req.params.id, inviteCode : req.params.code });
   if(!user) {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Invalid invitation code'));
   }
