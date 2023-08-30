@@ -83,14 +83,9 @@ class dbService {
 
   async deleteObject(model, id, res, callback) {
     try {
-      console.log("@@@1");
+      
       let existingRecord = await model.findById(id);
-      console.log("@@@1.1");
-
-      console.log("@@@1.2", typeof existingRecord);
-
-      console.log("@@@1.3", existingRecord);
-
+     
       if(existingRecord == null) {
         console.log("----------------------------------------------------------------");
         const error = new Error("Invalid record");
@@ -102,18 +97,17 @@ class dbService {
         throw error;
       }
 
-      console.log("@@@22222");
+      
   
       if (callback) {
-        console.log("@@@3");
+      
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
           callback(err);
         });
       } else {
-        console.log("@@@4");
-        console.log("dbService", id);
+   
         return await model.deleteOne({ _id: id });
       }
     } catch (error) {
