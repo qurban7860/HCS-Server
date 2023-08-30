@@ -67,7 +67,7 @@ exports.sendUserInvite = async (req, res, next) =>{
 
   let emailContent = `Dear ${user.name},<br><br>Howick has invited you join howick cloud.Please click on below link and enter password for joining.<br><br>`;
 
-  emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${expireAt.getTime()}`;
+  emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${expireAt}`;
   let params = {
     to: `${user.email}`,
     subject: emailSubject,
