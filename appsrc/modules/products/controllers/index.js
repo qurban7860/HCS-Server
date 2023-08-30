@@ -14,5 +14,7 @@ module.exports = {
     productTechParamValueController: require('./productTechParamValueController'),
     productToolController: require('./productToolController'),
     productToolInstalledController: require('./productToolInstalledController'),
-    productServiceParamsController: require('./productServiceParamsController')
+    productServiceParamsController: require('./productServiceParamsController'),
+    productServiceRecordsConfigController: require('./productServiceRecordsConfigController'),
+    productServiceRecordsController: require('./productServiceRecordsController')
 }
