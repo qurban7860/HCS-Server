@@ -53,7 +53,7 @@ exports.getProductToolInstalled = async (req, res, next) => {
           }
 
           toolsInstalled.compositeToolConfig[index] = compositeConfig;
-          
+          index++;
         }
       }
       res.json(toolsInstalled);
