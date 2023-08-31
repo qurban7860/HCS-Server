@@ -8,6 +8,7 @@ module.exports = (req, res, next) => {
   req.url.toLowerCase() === '/gettoken' || 
   req.url.toLowerCase() === '/forgetpassword' || 
   req.url.includes("verifyInviteCode")  || 
+  req.url.includes("updatePasswordUserInvite")  || 
   req.url.toLowerCase() === '/forgetpassword/verifytoken') {
     return next();
   }
