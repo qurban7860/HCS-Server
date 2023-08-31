@@ -134,6 +134,10 @@ function getDocumentFromReq(req, reqType){
     doc.isRequired = isRequired;
   }
 
+  if ("linkToUserManual" in req.body){
+    doc.linkToUserManual = linkToUserManual;
+  }
+  
   if ("inputType" in req.body){
     doc.inputType = inputType;
   }
@@ -143,11 +147,11 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("minValidation" in req.body){
-    doc.minValidation = minValidation;
+    doc.minValidation = minValidation.substring(0, 100);
   }
 
   if ("maxValidation" in req.body){
-    doc.maxValidation = maxValidation;
+    doc.maxValidation = maxValidation.substring(0, 100);
   }
 
   if ("description" in req.body){
