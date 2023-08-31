@@ -20,7 +20,10 @@ const docSchema = new Schema({
     // detailed description of field
     
     helpHint: { type: String },
-    // display this text as help at input screen 
+    // display this text as help at input screen
+
+    linkToUserManual: { type: String },
+    // link to user manual for this parameter 
     
     isRequired: {type: Boolean, default: false},
     // if true, it value must be required
@@ -31,8 +34,8 @@ const docSchema = new Schema({
     unitType: {type: String},
     // like Meter, Cycle, Kg, etc
     
-    minValidation: {type: String},
-    maxValidation: {type: String},
+    minValidation: {type: String, maxLength: 100},
+    maxValidation: {type: String, maxLength: 100},
     // Used for validatioin. like for 0-100, MinValiidation = 0, and maxVaidation = 100
     // For text value, The length of value can be 0 to 100. 
 
