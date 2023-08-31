@@ -110,7 +110,7 @@ exports.patchProductServiceParams = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, printName, helpHint, isRequired, inputType, unitType, minValidation, 
+  const { name, printName, helpHint, isRequired, inputType, unitType, minValidation, linkToUserManual
   maxValidation, description, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
