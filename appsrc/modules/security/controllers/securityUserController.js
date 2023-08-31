@@ -187,8 +187,6 @@ exports.updatePasswordUser = async(req,res,next) =>{
       else {
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));   
       }
-      const hashedPassword = await bcrypt.hash(password, 12);
-      doc.password = hashedPassword;
     } else {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
     }
