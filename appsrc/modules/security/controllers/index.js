@@ -6,5 +6,5 @@ module.exports = {
     securityUserController: require('./securityUserController'),
     securityAudiLogController: require('./securityAuditLogController'),
     securitySignInLogController: require('./securitySignInLogController'),
-
+    securityNoteController: require('./securityNoteController'),
 }
