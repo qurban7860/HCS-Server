@@ -81,7 +81,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
         error._message
       );
     } else {
-      res.status(StatusCodes.CREATED).json({ MachineTool: response });
+      res.status(StatusCodes.CREATED).json({ ServiceRecordConfig: response });
     }
   }
 }

@@ -60,13 +60,13 @@ const docSchema = new Schema({
         timeOut: { type: Date },
         // timeout time
     
-        engagingDuration: { type: Date },
+        engagingDuration: { type: Number },
         // engage duration
     
-        returningDuration: { type: Date },
+        returningDuration: { type: Number },
         // disengage duration
         
-        twoWayCheckDelayTime: { type: Date },
+        twoWayCheckDelayTime: { type: Number },
         // two way check time
     
         homeProximitySensorLocation: { type: Number }, 
