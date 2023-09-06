@@ -27,7 +27,7 @@ const docSchema = new Schema({
   machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
   // machine information.
   
-  decoiler: { type: Schema.Types.ObjectId , ref: 'Machine' },
+  decoilers: [{ type: Schema.Types.ObjectId , ref: 'Machine' }],
   // decoiler information attached to machine.
   
   technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },

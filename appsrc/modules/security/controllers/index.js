@@ -7,4 +7,5 @@ module.exports = {
     securityAudiLogController: require('./securityAuditLogController'),
     securitySignInLogController: require('./securitySignInLogController'),
     securityNoteController: require('./securityNoteController'),
+    securityInviteController: require('./securityInviteController'),
 }
