@@ -16,5 +16,9 @@ module.exports = {
     productToolInstalledController: require('./productToolInstalledController'),
     productServiceParamsController: require('./productServiceParamsController'),
     productServiceRecordsConfigController: require('./productServiceRecordsConfigController'),
-    productServiceRecordsController: require('./productServiceRecordsController')
+    productServiceRecordsController: require('./productServiceRecordsController'),
+    productServiceCategoryController: require('./productServiceCategoryController')
+
+    
+
 }

@@ -17,5 +17,7 @@ module.exports = {
     ProductDrawing: require('./productDrawing'),
     ProductServiceParams: require('./productServiceParams'),
     ProductServiceRecordsConfig: require('./productServiceRecordsConfig'),
-    ProductServiceRecords: require('./productServiceRecords')
+    ProductServiceRecords: require('./productServiceRecords'),
+    ProductServiceCategory: require('./productServiceCategory'),
+    
 }
