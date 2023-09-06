@@ -7,5 +7,5 @@ module.exports = {
     SecuritySignInLog: require('./securitySignInLog'),
     SecurityAuditLog: require('./securityAuditLog'),
     SecurityNotes: require('./securityNote'),
-    SecurityInvite: require('./securityInvite'),
+    // SecurityInvite: require('./securityInvite'),
 }
