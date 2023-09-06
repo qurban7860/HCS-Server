@@ -23,5 +23,6 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productServiceParamsRoute'));
     app.use(`${ rootPathForModule }`, require('./productServiceRecordsConfigRoute'));
     app.use(`${ rootPathForModule }`, require('./productServiceRecordsRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceCategoryRoute'));
 }
 
