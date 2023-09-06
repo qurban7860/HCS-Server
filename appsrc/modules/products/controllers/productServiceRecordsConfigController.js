@@ -110,7 +110,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { recordType, machineModel, docTitle, textBeforeParams, paramsTitle, params, 
+  const { serviceCategory, recordType, machineModel, docTitle, textBeforeParams, paramsTitle, params, 
     checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterFields, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
@@ -125,6 +125,11 @@ function getDocumentFromReq(req, reqType){
   if ("recordType" in req.body){
     doc.recordType = recordType;
   }
+
+  if ("serviceCategory" in req.body){
+    doc.serviceCategory = serviceCategory;
+  }
+
 
   if ("machineModel" in req.body){
     doc.machineModel = machineModel;

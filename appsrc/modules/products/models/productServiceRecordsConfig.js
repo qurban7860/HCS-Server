@@ -8,7 +8,11 @@ const GUID = require('mongoose-guid')(mongoose);
 
 const Schema = mongoose.Schema;
 
-const docSchema = new Schema({  
+const docSchema = new Schema({
+  
+    ServiceCategory: { type: Schema.Types.ObjectId , ref: 'MachineServiceCategory' },
+    // Category Information
+    
     recordType: {type: String, required: true},
     // service/repair/training/install 
     

@@ -8,9 +8,9 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
     name: { type: String, required: true, unique: true },
-    // name of model 
+    // name of Category 
     description: { type: String, },
-    // description of model
+    // description of Category
     },
     {
         collection: 'MachineServiceCategories'
@@ -30,4 +30,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineServiceCategories', docSchema);
+module.exports = mongoose.model('MachineServiceCategory', docSchema);
