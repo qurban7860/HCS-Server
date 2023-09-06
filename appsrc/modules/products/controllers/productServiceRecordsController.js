@@ -111,7 +111,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { 
-    recordType, serviceRecordConfig, serviceDate, customer, site, machine, decoiler, 
+    recordType, serviceRecordConfig, serviceDate, customer, site, machine, decoilers, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks,
     loginUser, isActive, isArchived
@@ -142,8 +142,8 @@ function getDocumentFromReq(req, reqType){
     doc.machine = machine;
   }
 
-  if ("decoiler" in req.body){
-    doc.decoiler = decoiler;
+  if ("decoilers" in req.body){
+    doc.decoilers = decoilers;
   }
 
   if ("technician" in req.body){
