@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceParams } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -22,6 +22,8 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
+  {path: 'machineModel', select: 'name'},
+  {path: 'category', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -30,12 +32,27 @@ this.populate = [
 
 exports.getProductServiceRecordsConfig = async (req, res, next) => {
   this.dbservice.getObjectById(ProductServiceRecordsConfig, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      try{
+        response = JSON.parse(JSON.stringify(response));
+        if(response) {
+          let index = 0;
+          for(let checkParam of response.checkParams) {
+            if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+              response.checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
+            }
+            index++;
+          }
+        }
+        res.json(response);
+
+      }catch(e) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      }
     }
   }
 
@@ -45,11 +62,33 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
   this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
+      try{
+        let serviceRecordConfigs = JSON.parse(JSON.stringify(response));
+        let i = 0;
+        if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
+          for(let serviceRecordConfig of serviceRecordConfigs) {
+            let index = 0;
+            for(let checkParam of response.checkParams) {
+              if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+                serviceRecordConfigs[i].checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
+              }
+              index++;
+            }
+            i++;
+          }
+        }
+        res.json(serviceRecordConfigs);
+
+      }catch(e) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      }
+
       res.json(response);
     }
   }
@@ -110,7 +149,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { serviceCategory, recordType, machineModel, docTitle, textBeforeParams, paramsTitle, params, 
+  const { category, recordType, machineModel, docTitle, textBeforeParams, paramsTitle, params, 
     checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterFields, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
@@ -126,8 +165,8 @@ function getDocumentFromReq(req, reqType){
     doc.recordType = recordType;
   }
 
-  if ("serviceCategory" in req.body){
-    doc.serviceCategory = serviceCategory;
+  if ("category" in req.body){
+    doc.category = category;
   }
 
 
@@ -210,6 +249,7 @@ function getDocumentFromReq(req, reqType){
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
+
 
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;
