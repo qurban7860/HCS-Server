@@ -35,7 +35,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       try{
         response = JSON.parse(JSON.stringify(response));
@@ -48,10 +48,10 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
             index++;
           }
         }
-        res.json(response);
+        return res.json(response);
 
       }catch(e) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       }
     }
   }
@@ -88,8 +88,6 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
       }catch(e) {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       }
-
-      res.json(response);
     }
   }
 };
