@@ -16,7 +16,7 @@ const docSchema = new Schema({
   // Model information of machine
 
   category: { type: Schema.Types.ObjectId , ref: 'MachineServiceCategory' },
-  // Model information of machine
+  // Category information of machine
   
   docTitle: { type: String },
   // name/title of document/screen
