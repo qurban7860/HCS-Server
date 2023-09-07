@@ -65,7 +65,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
       try{
@@ -74,7 +74,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
         if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
           for(let serviceRecordConfig of serviceRecordConfigs) {
             let index = 0;
-            for(let checkParam of response.checkParams) {
+            for(let checkParam of serviceRecordConfig.checkParams) {
               if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
                 serviceRecordConfigs[i].checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
               }
@@ -83,10 +83,11 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
             i++;
           }
         }
-        res.json(serviceRecordConfigs);
+        return res.json(serviceRecordConfigs);
 
       }catch(e) {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        console.log(e);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       }
     }
   }
