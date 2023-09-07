@@ -61,36 +61,37 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
 exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
-  this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      console.log(error)
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
+  let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
-      try{
-        let serviceRecordConfigs = JSON.parse(JSON.stringify(response));
-        let i = 0;
-        if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
-          for(let serviceRecordConfig of serviceRecordConfigs) {
-            let index = 0;
-            for(let checkParam of serviceRecordConfig.checkParams) {
-              if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-                serviceRecordConfigs[i].checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
-              }
-              index++;
-            }
-            i++;
-          }
+  try{
+    console.log('inside exception');
+    serviceRecordConfigs = JSON.parse(JSON.stringify(response));
+    let i = 0;
+    console.log('after JSON');
+
+    if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
+
+      for(let serviceRecordConfig of serviceRecordConfigs) {
+        console.log('inside 1st loop');
+
+        let index = 0;
+        for(let checkParam of serviceRecordConfig.checkParams) {
+          console.log('inside 2nd loop');
+
+          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) 
+            serviceRecordConfigs[i].checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
+          
+          index++;
         }
-        return res.json(serviceRecordConfigs);
-
-      }catch(e) {
-        console.log(e);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        i++;
       }
     }
+    console.log('final output',serviceRecordConfigs);
+    return res.status(StatusCodes.OK).json(serviceRecordConfigs);
+
+  }catch(e) {
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
