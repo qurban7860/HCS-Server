@@ -65,6 +65,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
+      console.log(error)
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
