@@ -65,7 +65,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
   try{
     console.log('inside exception');
-    serviceRecordConfigs = JSON.parse(JSON.stringify(response));
+    serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
     let i = 0;
     console.log('after JSON');
 
