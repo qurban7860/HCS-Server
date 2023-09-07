@@ -64,19 +64,15 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
-    console.log('inside exception');
     serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
     let i = 0;
-    console.log('after JSON');
 
     if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
 
       for(let serviceRecordConfig of serviceRecordConfigs) {
-        console.log('inside 1st loop');
 
         let index = 0;
         for(let checkParam of serviceRecordConfig.checkParams) {
-          console.log('inside 2nd loop');
 
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) 
             serviceRecordConfigs[i].checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
@@ -86,7 +82,6 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
         i++;
       }
     }
-    console.log('final output',serviceRecordConfigs);
     return res.status(StatusCodes.OK).json(serviceRecordConfigs);
 
   }catch(e) {
