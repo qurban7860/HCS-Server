@@ -36,8 +36,14 @@ const docSchema = new Schema({
         multiFactorAuthenticationExpireTime: {type: Date},
         // Date/Time for code expiry.
 
+        inviteCode: {type: String},
+
+        inviteExpireTime: {type: Date},
+
         expireAt: { type: Date},
         // Date/Time for password expiry.
+
+        currentEmployee: { type: Boolean, default: false },
         
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }

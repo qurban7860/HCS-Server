@@ -9,7 +9,7 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-
+ 
     machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
    
     tool: { type: Schema.Types.ObjectId, required: true, ref: 'MachineTool' },
@@ -39,10 +39,10 @@ const docSchema = new Schema({
     isAssign: { type: Boolean, default: false },
     // can assign to component
     
-    operations: { type: Number, default: false },
+    operations: { type: Number },
     // number of operations
     
-    toolType: {type: String, default: "GENERIC TOOL"},
+    toolType: {type: String, enum: ['GENERIC TOOL','SINGLE TOOL','COMPOSIT TOOL'], default: "GENERIC TOOL"},
     
     singleToolConfig: {
         engageSolenoidLocation: { type: Number },
@@ -51,22 +51,22 @@ const docSchema = new Schema({
         returnSolenoidLocation: { type: Number },
         // disengage solenoid port
         
-        engageOnCondition: {  type: String,  default: 'NO CONDITION'  },
+        engageOnCondition: {  type: String, enum: ['PASS','NO CONDITION','PROXIMITY SENSOR']  },
         // soilenoid port engage on conditions
         
-        engageOffCondition: { type: String , default: '???'  },
+        engageOffCondition: { type: String, enum: ['PASS','TIMER','PROXIMITY SENSOR','PRESSURE TARGET','DISTANCE SENSOR','PRESSURE TRIGGERS TIMER']},
         // soilenoid port engage off conditions
         
         timeOut: { type: Date },
         // timeout time
     
-        engagingDuration: { type: Date },
+        engagingDuration: { type: Number },
         // engage duration
     
-        returningDuration: { type: Date },
+        returningDuration: { type: Number },
         // disengage duration
         
-        twoWayCheckDelayTime: { type: Date },
+        twoWayCheckDelayTime: { type: Number },
         // two way check time
     
         homeProximitySensorLocation: { type: Number }, 
@@ -84,33 +84,27 @@ const docSchema = new Schema({
         distanceSensorTarget: { type: Number },
         // distance sensor target
         
-        isHasTwoWayCheck: { type: Boolean, default: false },
+        isHasTwoWayCheck: { type: Boolean },
         // has two way check valves
         
-        isEngagingHasEnable: { type: Boolean, default: true },
+        isEngagingHasEnable: { type: Boolean },
         // engaging has enable
         
-        isReturningHasEnable: { type: Boolean, default: false },
+        isReturningHasEnable: { type: Boolean },
         // disengaging has enable
         
-        movingPunchCondition: { type: String, default: 'NO PUNCH' },
+        movingPunchCondition: { type: String, enum: ['NO PUNCH','PUNCH WHILE JOGGING','PUNCH WHILE RUNNING'] },
         // moving punch conditions, 
-      },
+    },
    
-    compositeToolConfig: {
-        engageInstruction: [{ type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' }],
+    compositeToolConfig: [{
+        engageInstruction: { type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' },
         // will inherit list of conditions from Machine Tool Installed
         
-        disengageInstruction: [{ type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' }],
+        disengageInstruction: { type: Schema.Types.ObjectId, ref: 'MachineToolsInstalled' },
         // will inherit list of conditions from Machine Tool Installed
-  },
+    }],
 
-    // tool: { type: Schema.Types.ObjectId , required:true, ref: 'MachineTool' },
-    // configuration name
-    
-    // note: { type: String },
-    // note for tool
-   
 },
 {
     collection: 'MachineToolsInstalled'

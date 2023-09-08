@@ -83,20 +83,31 @@ class dbService {
 
   async deleteObject(model, id, res, callback) {
     try {
+      
       let existingRecord = await model.findById(id);
-      if (!existingRecord.isArchived) {
+     
+      if(existingRecord == null) {
+        console.log("----------------------------------------------------------------");
+        const error = new Error("Invalid record");
+        error.statusCode = StatusCodes.BAD_REQUEST;
+        throw error;
+      } else if (!existingRecord.isArchived) {
         const error = new Error("Record cannot be deleted. It should be archived first!");
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
       }
+
+      
   
       if (callback) {
+      
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
           callback(err);
         });
       } else {
+   
         return await model.deleteOne({ _id: id });
       }
     } catch (error) {
@@ -128,7 +139,6 @@ class dbService {
 
   async patchObject(model, id, Object, callback) {
     if(callback) {
-      console.log("call back Object -->", Object);
       model.updateOne({ _id: id }, Object).then(function (doc) {
         //console.log("doc: "+JSON.stringify(doc) );
         callback(null, doc);
