@@ -64,8 +64,12 @@ exports.login = async (req, res, next) => {
               // Generate a one time code and send it to the user's email address
               const code = Math.floor(100000 + Math.random() * 900000);
               
-              let emailContent = `Hi ${existingUser.name},<br><br>Your code is ${code}.`;
-              let emailSubject = "Authentication";
+              let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
+              sign-in from a device or location you don't usually use. If this was you, 
+              enter the code below to sign in. <br>
+              <h2 style="font-size: 80px;letter-spacing: 10px;font-weight: bold;">${code}<h2><br>.
+              The code will expire in 10 minutes.`;
+              let emailSubject = "Multi-Factor Authentication Code";
 
               let params = {
                 to: `${existingUser.email}`,
@@ -179,7 +183,7 @@ exports.multifactorverifyCode = async (req, res, next) => {
           return await validateAndLoginUser(req, res, existingUser);
         } 
         else {
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Code has expired', true));
+          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'The code is no longer valid.', true));
         }
       } else {
         return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid code', true));
