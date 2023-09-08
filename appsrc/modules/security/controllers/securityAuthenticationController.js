@@ -67,7 +67,7 @@ exports.login = async (req, res, next) => {
               let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
               sign-in from a device or location you don't usually use. If this was you, 
               enter the code below to sign in. <br>
-              <h2 style="font-size: 80px;letter-spacing: 10px;font-weight: bold;">${code}<h2><br>.
+              <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
               The code will expire in 10 minutes.`;
               let emailSubject = "Multi-Factor Authentication Code";
 
