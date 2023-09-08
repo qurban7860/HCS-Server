@@ -64,7 +64,11 @@ exports.login = async (req, res, next) => {
               // Generate a one time code and send it to the user's email address
               const code = Math.floor(100000 + Math.random() * 900000);
               
-              let emailContent = `Dear ${existingUser.name},<br><br>Your Multi-Factor Authentication Code for login is ${code}.As a security measure we recommend not sharing your code with anyone.`;
+              let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
+              sign-in from a device or location you don't usually use. If this was you, 
+              enter the code below to sign in. <br>
+              <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
+              The code will expire in 10 minutes.`;
               let emailSubject = "Multi-Factor Authentication Code";
 
               let params = {
