@@ -98,30 +98,34 @@ this.populateList = [
   exports.sendUserInvite = async (req, res, next) =>{
     let user = await SecurityUser.findById(req.params.id);
 
-    let userInvite = new SecurityUserInvite({});
-    userInvite.senderInvitationUser = req.body.loginUser.userId;
-    userInvite.receiverInvitationUser = req.params.id;
-    userInvite.receiverInvitationEmail = user.email;
-    userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-    userInvite.inviteExpireTime = new Date().setHours(new Date().getHours() + 1);
-    userInvite.invitationStatus = 'PENDING';
-    await userInvite.save();
-  
-    let emailSubject = "User Invite - HOWICK";
-  
-    let emailContent = `Dear ${user.name},<br><br>Howick has invited you join howick cloud.Please click on below link and enter password for joining.<br><br>`;
-  
-    emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${userInvite.inviteExpireTime}`;
-    let params = {
-      to: `${user.email}`,
-      subject: emailSubject,
-      html: true
-    };
-    fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-      let htmlData = render(data,{ emailSubject, emailContent })
-      params.htmlData = htmlData;
-      let response = await awsService.sendEmail(params);
-    })
+    if(user) {
+      let userInvite = new SecurityUserInvite({});
+      userInvite.senderInvitationUser = req.body.loginUser.userId;
+      userInvite.receiverInvitationUser = req.params.id;
+      userInvite.receiverInvitationEmail = user.email;
+      userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
+      userInvite.inviteExpireTime = new Date().setHours(new Date().getHours() + 1);
+      userInvite.invitationStatus = 'PENDING';
+      await userInvite.save();
+    
+      let emailSubject = "User Invite - HOWICK";
+    
+      let emailContent = `Dear ${user.name},<br><br>Howick has invited you join howick cloud.Please click on below link and enter password for joining.<br><br>`;
+    
+      emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${userInvite.inviteExpireTime}`;
+      let params = {
+        to: `${user.email}`,
+        subject: emailSubject,
+        html: true
+      };
+      fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+        let htmlData = render(data,{ emailSubject, emailContent })
+        params.htmlData = htmlData;
+        let response = await awsService.sendEmail(params);
+      })
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
   }
   
   exports.verifyInviteCode = async (req, res, next) => {
