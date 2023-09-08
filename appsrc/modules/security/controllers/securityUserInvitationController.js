@@ -29,9 +29,6 @@ this.populate = [
   {path: 'updatedBy', select: 'name'}
 ];
 
-this.populateList = [
-];
-
 
   exports.getUserInvitation = async (req, res, next) => {
     this.dbservice.getObjectById(SecurityUserInvite, this.fields, req.params.id, this.populate, callbackFunc);
@@ -47,7 +44,7 @@ this.populateList = [
 
   exports.getUserInvitations = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};  
-    this.dbservice.getObjectList(SecurityUserInvite, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    this.dbservice.getObjectList(SecurityUserInvite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
