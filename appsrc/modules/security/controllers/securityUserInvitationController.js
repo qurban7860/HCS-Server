@@ -168,7 +168,7 @@ this.populate = [
   }
 
   function getDocumentFromReq(req, reqType){
-    const { senderInvitationUser, receiverInvitationUser, receiverInvitationEmail, inviteCode, inviteExpireTime, invitationStatus} = req.body;
+    const {senderInvitationUser, receiverInvitationUser, receiverInvitationEmail, inviteCode, inviteExpireTime, invitationStatus, isActive, isArchived, loginUser} = req.body;
 
     let doc = {};
     if (reqType && reqType == "new"){
