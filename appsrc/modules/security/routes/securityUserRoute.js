@@ -34,9 +34,6 @@ router.post(`${baseRoute}/`, controller.postSecurityUser);
 router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSecurityUser);
 
 // - /api/1.0.0/security/users/updatePassword/:id
-router.patch(`${baseRoute}/updatePasswordUserInvite/:id`, controller.updatePasswordUser);
-
-// - /api/1.0.0/security/users/updatePassword/:id
 router.patch(`${baseRoute}/updatePassword/:id`, controller.patchSecurityUser);
 
 // - /api/1.0.0/security/users/:id

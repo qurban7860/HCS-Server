@@ -134,6 +134,33 @@ this.populateList = [
     }
   };
 
+  exports.updatePasswordUser = async(req,res,next) =>{
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } 
+    else {
+      if (ObjectId.isValid(req.params.id)) {
+        let loginUser = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
+        if(loginUser && req.body.password) {
+          loginUser.password = await bcrypt.hash(req.body.password, 12);
+          await loginUser.save();          
+          this.query = {receiverInvitationUser: req.params.id, invitationStatus: 'PENDING'};
+          this.orderBy = {_id: -1};
+          const securityUserInvite = await SecurityUserInvite.findOne(this.query).sort(this.orderBy);
+          securityUserInvite.invitationStatus = 'ACCEPTED';
+          await securityUserInvite.save();
+          res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
+        }
+        else {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));   
+        }
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+      }
+    }
+  }
+
   function getDocumentFromReq(req, reqType){
     const { senderInvitationUser, receiverInvitationUser, receiverInvitationEmail, inviteCode, inviteExpireTime, invitationStatus} = req.body;
 

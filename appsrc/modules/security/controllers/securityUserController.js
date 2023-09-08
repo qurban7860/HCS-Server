@@ -135,28 +135,7 @@ exports.postSecurityUser = async (req, res, next) => {
     }
   }
 };
-exports.updatePasswordUser = async(req,res,next) =>{
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } 
-  else {
-    if (ObjectId.isValid(req.params.id)) {
-      let loginUser = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
-      if(loginUser) {
-        loginUser.password = await bcrypt.hash(req.body.password, 12);
-        await loginUser.save();
-        res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
 
-      }
-      else {
-        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));   
-      }
-    } else {
-      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
-    }
-  }
-}
 exports.patchSecurityUser = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;

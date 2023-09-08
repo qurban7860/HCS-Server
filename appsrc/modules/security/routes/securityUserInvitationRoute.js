@@ -39,7 +39,8 @@ router.get(`${baseRoute}/sendUserInvite/:id`, controller.sendUserInvite);
 router.get(`${baseRoute}/verifyInviteCode/:id/:code`, controller.verifyInviteCode);
 
 
-
+// - /api/1.0.0/security/users/updatePassword/:id
+router.patch(`${baseRoute}/updatePasswordUserInvite/:id`, controller.updatePasswordUser);
 
 
 module.exports = router;
