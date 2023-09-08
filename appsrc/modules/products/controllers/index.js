@@ -17,8 +17,10 @@ module.exports = {
     productServiceParamsController: require('./productServiceParamsController'),
     productServiceRecordsConfigController: require('./productServiceRecordsConfigController'),
     productServiceRecordsController: require('./productServiceRecordsController'),
-    productServiceCategoryController: require('./productServiceCategoryController')
+    productServiceCategoryController: require('./productServiceCategoryController'),
+    productProfileController: require('./productProfileController'),
 
     
+
 
 }

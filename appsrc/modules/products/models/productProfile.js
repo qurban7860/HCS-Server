@@ -1,0 +1,43 @@
+const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
+const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
+const baseSchema = require('../../../base/baseSchema');
+
+const GUID = require('mongoose-guid')(mongoose);
+
+
+const Schema = mongoose.Schema;
+
+const docSchema = new Schema({
+    machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
+
+    defaultName: { type: String , required: true, unique: true },
+    // DefaultName for profile.
+    
+    names: [{ type: String }],
+    // Names list for profile.
+    
+    width: { type: Number},
+    // Width
+    
+    height: { type: Number},
+    // Height
+},
+{
+    collection: 'MachineProfiles'
+});
+docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docVisibilitySchema);
+docSchema.add(baseSchema.docAuditSchema);
+
+docSchema.plugin(uniqueValidator);
+
+docSchema.index({"defaultName":1})
+docSchema.index({"names":1})
+docSchema.index({"width":1})
+docSchema.index({"height":1})
+
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
+module.exports = mongoose.model('MachineProfile', docSchema);
