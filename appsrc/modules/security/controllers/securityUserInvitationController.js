@@ -112,7 +112,7 @@ this.populateList = [
   
     let emailContent = `Dear ${user.name},<br><br>Howick has invited you join howick cloud.Please click on below link and enter password for joining.<br><br>`;
   
-    emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${expireAt}`;
+    emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${userInvite.inviteExpireTime}`;
     let params = {
       to: `${user.email}`,
       subject: emailSubject,
