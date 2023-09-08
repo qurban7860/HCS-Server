@@ -58,26 +58,26 @@ this.populateList = [
     }
   };
 
-  exports.postUserInvitation = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } else {
-      let inviteData = getDocumentFromReq(req, 'new');
-      await inviteData.save();
-      this.dbservice.postObject(inviteData, callbackFunc);
-      function callbackFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-            );
-        } else {
-          res.status(StatusCodes.CREATED).json({ CustomerSite: response });
-        }
-      }
-    }
-  };
+  // exports.postUserInvitation = async (req, res, next) => {
+  //   const errors = validationResult(req);
+  //   if (!errors.isEmpty()) {
+  //     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  //   } else {
+  //     let inviteData = getDocumentFromReq(req, 'new');
+  //     await inviteData.save();
+  //     this.dbservice.postObject(inviteData, callbackFunc);
+  //     function callbackFunc(error, response) {
+  //       if (error) {
+  //         logger.error(new Error(error));
+  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+  //           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+  //           );
+  //       } else {
+  //         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
+  //       }
+  //     }
+  //   }
+  // };
 
 
   exports.patchUserInvitation = async (req, res, next) => {
@@ -142,15 +142,20 @@ this.populateList = [
     else {
       if (ObjectId.isValid(req.params.id)) {
         let loginUser = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
-        if(loginUser && req.body.password) {
-          loginUser.password = await bcrypt.hash(req.body.password, 12);
-          await loginUser.save();          
+        if(loginUser && req.body.password) {   
           this.query = {receiverInvitationUser: req.params.id, invitationStatus: 'PENDING'};
           this.orderBy = {_id: -1};
           const securityUserInvite = await SecurityUserInvite.findOne(this.query).sort(this.orderBy);
-          securityUserInvite.invitationStatus = 'ACCEPTED';
-          await securityUserInvite.save();
-          res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
+          const currentTime = new Date();
+          if(securityUserInvite && securityUserInvite.inviteExpireTime > currentTime) {
+            securityUserInvite.invitationStatus = 'ACCEPTED';
+            await securityUserInvite.save();
+            loginUser.password = await bcrypt.hash(req.body.password, 12);
+            await loginUser.save();
+            res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
+          } else {
+            res.status(StatusCodes.BAD_REQUEST).json({ message: 'No Invitation Found!' });
+          }
         }
         else {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));   
