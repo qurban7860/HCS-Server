@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecurityUserInvite } = require('../models');
+const { SecurityUser, SecurityUserInvite } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
@@ -23,15 +23,14 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
+  {path: 'senderInvitationUser', select: 'name'},
+  {path: 'receiverInvitationUser', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
 
 this.populateList = [
-  {path: 'customer', select: 'name'},
-  {path: 'contact', select: 'firstName lastName'},
-  {path: 'roles', select: ''},
-  // {path: 'regions', select: ''},
+{}
 ];
 
 
@@ -66,7 +65,6 @@ this.populateList = [
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
       let inviteData = getDocumentFromReq(req, 'new');
-      console.log("inviteData",inviteData);
       await inviteData.save();
       this.dbservice.postObject(inviteData, callbackFunc);
       function callbackFunc(error, response) {
@@ -100,26 +98,15 @@ this.populateList = [
 
   exports.sendUserInvite = async (req, res, next) =>{
     let user = await SecurityUser.findById(req.params.id);
-    user.inviteCode = (Math.random() + 1).toString(36).substring(7);
-    let expireAt = new Date().setHours(new Date().getHours() + 1);
-    user.inviteExpireTime = expireAt;
-    user = await user.save();
 
-
-
-
-    // let object = getDocumentFromReq(req, 'new');
-    // this.dbservice.postObject(object, callbackFunc);
-    // function callbackFunc(error, response) {
-    //   if (error) {
-    //     logger.error(new Error(error));
-    //   } else {
-
-    //   }
-    // }
-
-
-
+    let userInvite = new SecurityUserInvite({});
+    userInvite.senderInvitationUser = req.body.loginUser.userId;
+    userInvite.receiverInvitationUser = req.params.id;
+    userInvite.receiverInvitationEmail = user.email;
+    userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
+    userInvite.inviteExpireTime = new Date().setHours(new Date().getHours() + 1);
+    userInvite.invitationStatus = 'PENDING';
+    await userInvite.save();
   
     let emailSubject = "User Invite - HOWICK";
   
@@ -152,30 +139,30 @@ this.populateList = [
     const { senderInvitationUser, receiverInvitationUser, receiverInvitationEmail, inviteCode, inviteExpireTime, invitationStatus} = req.body;
 
     let doc = {};
-    console.log(SecurityUserInvite);
     if (reqType && reqType == "new"){
-      console.log('asjd')
       doc = new SecurityUserInvite({});
-      
-    }
-    if ("senderInvitationUser" in req.body){
-      doc.senderInvitationUser = senderInvitationUser;
+
+
+      if ("senderInvitationUser" in req.body){
+        doc.senderInvitationUser = senderInvitationUser;
+      }
+  
+      if ("receiverInvitationUser" in req.body){
+        doc.receiverInvitationUser = receiverInvitationUser;
+      }
+  
+      if ("receiverInvitationEmail" in req.body){
+        doc.receiverInvitationEmail = receiverInvitationEmail;
+      }
+  
+      if ("inviteCode" in req.body){
+        doc.inviteCode = inviteCode;
+      }
+      if ("inviteExpireTime" in req.body){
+        doc.inviteExpireTime = inviteExpireTime;
+      }
     }
 
-    if ("receiverInvitationUser" in req.body){
-      doc.receiverInvitationUser = receiverInvitationUser;
-    }
-
-    if ("receiverInvitationEmail" in req.body){
-      doc.receiverInvitationEmail = receiverInvitationEmail;
-    }
-
-    if ("inviteCode" in req.body){
-      doc.inviteCode = inviteCode;
-    }
-    if ("inviteExpireTime" in req.body){
-      doc.inviteExpireTime = inviteExpireTime;
-    }
 
     if ("invitationStatus" in req.body){
       doc.invitationStatus = invitationStatus;
