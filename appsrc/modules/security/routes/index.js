@@ -10,6 +10,8 @@ const securityUserRoute = require('./securityUserRoute');
 const securityAuditLogRoute = require('./securityAuditLogRoute');
 const securitySignInLogRoute = require('./securitySignInLogRoute');
 const securityNoteRoute = require('./securityNoteRoute');
+const securityUserInvitationRoute = require('./securityUserInvitationRoute');
+
 // const securityInviteRoute = require('./securityInviteRoute');
 
 exports.registerSecurityRoutes = (app, apiPath) => {
@@ -38,6 +40,13 @@ exports.registerSecurityRoutes = (app, apiPath) => {
 
     // localhost://api/1.0.0/security/
     app.use(`${rootPathForModule}`, securityNoteRoute);
+
+    // localhost://api/1.0.0/security/
+    app.use(`${rootPathForModule}`, securityUserInvitationRoute);
+
+
+    
+
 
     // // localhost://api/1.0.0/security/
     // app.use(`${rootPathForModule}`, securityInviteRoute);
