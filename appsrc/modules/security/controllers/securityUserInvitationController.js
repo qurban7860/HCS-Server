@@ -147,14 +147,14 @@ this.populateList = [
           this.orderBy = {_id: -1};
           const securityUserInvite = await SecurityUserInvite.findOne(this.query).sort(this.orderBy);
           const currentTime = new Date();
-          if(securityUserInvite && securityUserInvite.inviteExpireTime > currentTime) {
+          if(securityUserInvite && securityUserInvite.inviteExpireTime >= currentTime) {
             securityUserInvite.invitationStatus = 'ACCEPTED';
             await securityUserInvite.save();
             loginUser.password = await bcrypt.hash(req.body.password, 12);
             await loginUser.save();
             res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
           } else {
-            res.status(StatusCodes.BAD_REQUEST).json({ message: 'No Invitation Found!' });
+            res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid Invitation!' });
           }
         }
         else {

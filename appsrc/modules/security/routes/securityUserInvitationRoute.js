@@ -25,22 +25,16 @@ router.get(`${baseRoute}/:id`, controller.getUserInvitation);
 // - /api/1.0.0/security/userInvitations/
 router.get(`${baseRoute}/`, controller.getUserInvitations);
 
-// // - /api/1.0.0/security/userInvitations
-// router.post(`${baseRoute}/`, controller.postUserInvitation);
-
-// - /api/1.0.0/security/userInvitations/updatePassword/:id
-router.patch(`${baseRoute}/:id`, controller.patchUserInvitation);
-
-
 // - /api/1.0.0/security/users
 router.get(`${baseRoute}/sendUserInvite/:id`, controller.sendUserInvite);
 
 // - /api/1.0.0/security/users
 router.get(`${baseRoute}/verifyInviteCode/:id/:code`, controller.verifyInviteCode);
 
+// - /api/1.0.0/security/userInvitations/updatePassword/:id
+router.patch(`${baseRoute}/:id`, controller.patchUserInvitation);
 
 // - /api/1.0.0/security/users/updatePassword/:id
 router.patch(`${baseRoute}/updatePasswordUserInvite/:id`, controller.updatePasswordUser);
-
 
 module.exports = router;
