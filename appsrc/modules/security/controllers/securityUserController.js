@@ -56,41 +56,6 @@ exports.getSecurityUser = async (req, res, next) => {
   }
 };
 
-exports.sendUserInvite = async (req, res, next) =>{
-  let user = await SecurityUser.findById(req.params.id);
-  user.inviteCode = (Math.random() + 1).toString(36).substring(7);
-  let expireAt = new Date().setHours(new Date().getHours() + 1);
-  user.inviteExpireTime = expireAt;
-  user = await user.save();
-
-  let emailSubject = "User Invite - HOWICK";
-
-  let emailContent = `Dear ${user.name},<br><br>Howick has invited you join howick cloud.Please click on below link and enter password for joining.<br><br>`;
-
-  emailContent+=`${process.env.CLIENT_APP_URL}/invite/${req.params.id}/${user.inviteCode}/${expireAt}`;
-  let params = {
-    to: `${user.email}`,
-    subject: emailSubject,
-    html: true
-  };
-  fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-    let htmlData = render(data,{ emailSubject, emailContent })
-    params.htmlData = htmlData;
-    let response = await awsService.sendEmail(params);
-  })
-}
-
-exports.verifyInviteCode = async (req, res, next) => {
-  let user = await SecurityUser.findOne({ _id : req.params.id, inviteCode : req.params.code });
-  if(!user) {
-    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Invalid invitation code'));
-  }
-  else {
-    return res.status(StatusCodes.OK).json({ valid:true });
-  }
-
-};
-
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
