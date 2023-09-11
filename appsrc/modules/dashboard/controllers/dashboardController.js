@@ -14,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 exports.getMachineByCountries = async (req, res, next) => {
 
   let modelsIds = []
-  if(ObjectId.isValid(req.query.machineModel)) {
+  if(mongoose.Types.ObjectId.isValid(req.query.machineModel)) {
     // let machineModel = await ProductModel.findById(req.query.machineModel);
     modelsIds.push(req.query.machineModel);
   }
