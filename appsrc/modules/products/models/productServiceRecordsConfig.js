@@ -21,7 +21,7 @@ const docSchema = new Schema({
   docTitle: { type: String },
   // name/title of document/screen
   
-  textBeforeParams: { type: String },
+  textBeforeCheckItems: { type: String },
   // display this text before fields  
   
   checkParams : [{
@@ -29,7 +29,7 @@ const docSchema = new Schema({
     paramList : [{type: Schema.Types.ObjectId , ref: 'MachineServiceParam'}],
   }],
   
-  textAfterFields: { type: String },
+  textAfterCheckItems: { type: String },
   // display this text before fields
   
   isOperatorSignatureRequired: { type: Boolean, default: false},
