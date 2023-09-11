@@ -36,7 +36,7 @@ exports.getMachineByCountries = async (req, res, next) => {
       { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
-  return res.json({customerCount, 
+  return res.json({ 
     countryWiseMachineCount,
   });
 
@@ -60,7 +60,7 @@ exports.getMachineByModels = async (req, res, next) => {
     { $limit: 20 }
   ]);
 
-  return res.json({customerCount, 
+  return res.json({ 
     modelWiseMachineCount,
   });
 
@@ -80,7 +80,7 @@ exports.getMachineByYears = async (req, res, next) => {
     { $sort : { "_id.year" : -1 } }
   ]);
 
-  return res.json({customerCount, 
+  return res.json({ 
     yearWiseMachines,
   });
 
