@@ -119,6 +119,15 @@ this.populate = [
         let htmlData = render(data,{ emailSubject, emailContent })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
+
+        console.log("response", response);
+        if(response) {
+          res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
+        } else {
+          res.status(StatusCodes.EXPECTATION_FAILED).send("Email Sending Failure");
+        }
+
+
       })
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
