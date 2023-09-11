@@ -11,7 +11,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 
-export.getMachineByCountries = async (req, res, next) => {
+exports.getMachineByCountries = async (req, res, next) => {
 
   let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
@@ -35,7 +35,7 @@ export.getMachineByCountries = async (req, res, next) => {
 };
 
 
-export.getMachineByModels = async (req, res, next) => {
+exports.getMachineByModels = async (req, res, next) => {
 
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
@@ -59,7 +59,7 @@ export.getMachineByModels = async (req, res, next) => {
 };
 
 
-export.getMachineByYears = async (req, res, next) => {
+exports.getMachineByYears = async (req, res, next) => {
 
   let yearWiseMachines = await Product.aggregate([
     { $match: { installationDate : { $ne:null } } },
