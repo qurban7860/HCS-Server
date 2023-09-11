@@ -15,7 +15,7 @@ const docSchema = new Schema({
   machineModel: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
   // Model information of machine
 
-  category: { type: Schema.Types.ObjectId , ref: 'MachineServiceCategory' },
+  category: { type: Schema.Types.ObjectId , ref: 'MachineCategory' },
   // Category information of machine
   
   docTitle: { type: String },
