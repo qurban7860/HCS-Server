@@ -11,6 +11,112 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 
+export.getMachineByCountries = async (req, res, next) => {
+
+  let machineModels = await ProductModel.aggregate([
+      { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
+      { $match: { "machineCategory.connections": true} },
+    ]);
+  let modelsIds = machineModels.map(m => m._id);
+
+  let countryWiseMachineCount = await Product.aggregate([
+      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
+      { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
+      { $unwind: "$instalationSite" },
+      { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
+      { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+      { $limit: 20 }
+    ]);
+  return res.json({customerCount, 
+    countryWiseMachineCount,
+  });
+
+};
+
+
+export.getMachineByModels = async (req, res, next) => {
+
+  let machineModels = await ProductModel.aggregate([
+    { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
+    { $match: { "machineCategory.connections": true} },
+  ]);
+  let modelsIds = machineModels.map(m => m._id);
+  let modelWiseMachineCount = await Product.aggregate([
+    { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
+    { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
+    { $unwind: "$machineModel" },
+    { $match: { "machineModel": { $nin: ["", null] } } },
+    { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+    { $limit: 20 }
+  ]);
+
+  return res.json({customerCount, 
+    modelWiseMachineCount,
+  });
+
+};
+
+
+export.getMachineByYears = async (req, res, next) => {
+
+  let yearWiseMachines = await Product.aggregate([
+    { $match: { installationDate : { $ne:null } } },
+    { 
+        $group: {
+            _id: { year: { $year: "$installationDate" } },
+            yearWiseMachines: { $sum: 1 }
+        }
+    },
+    { $sort : { "_id.year" : -1 } }
+  ]);
+
+  return res.json({customerCount, 
+    yearWiseMachines,
+  });
+
+};
+
+exports.getCount = async (req, res, next) => {
+
+  try{
+    let customerCount = await Customer.find({isActive:true, isArchived:false}).countDocuments();
+    let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
+    let machineCount = await Product.find({isActive:true, isArchived:false}).countDocuments();
+    let nonVerifiedMachineCount = await Product.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
+    let userCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
+    
+    
+    let machineModels = await ProductModel.aggregate([
+      { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
+      { $match: { "machineCategory.connections": true} },
+    ]);
+    let modelsIds = machineModels.map(m => m._id);
+    let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}}).countDocuments();
+
+    
+
+  res.json({customerCount, 
+    nonVerifiedCustomerCount, 
+    nonVerifiedMachineCount,
+    connectAbleMachinesCount,
+    machineCount, 
+    userCount, 
+    siteCount, 
+  });
+
+  }catch(e) {
+    console.log(e);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+
+};
+
+
+
+
 exports.getData = async (req, res, next) => {
 
   try{
