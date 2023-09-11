@@ -145,10 +145,10 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { category, recordType, machineModel, docTitle, textBeforeParams, paramsTitle, params, 
+  const { category, recordType, machineModel, docTitle, textBeforeCheckItems, paramsTitle, params, 
     checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
-    punchCyclesParams, textAfterFields, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
+    punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
     enableSuggestedSpares, header, footer, loginUser, isActive, isArchived
 } = req.body;
   
@@ -174,8 +174,8 @@ function getDocumentFromReq(req, reqType){
     doc.docTitle = docTitle;
   }
 
-  if ("textBeforeParams" in req.body){
-    doc.textBeforeParams = textBeforeParams;
+  if ("textBeforeCheckItems" in req.body){
+    doc.textBeforeCheckItems = textBeforeCheckItems;
   }
 
   if ("paramsTitle" in req.body){
@@ -218,8 +218,8 @@ function getDocumentFromReq(req, reqType){
   if ("punchCyclesTitle" in req.body){
     doc.punchCyclesTitle = punchCyclesTitle;
   }
-  if ("textAfterFields" in req.body){
-    doc.textAfterFields = textAfterFields;
+  if ("textAfterCheckItems" in req.body){
+    doc.textAfterCheckItems = textAfterCheckItems;
   }
   if ("isOperatorSignatureRequired" in req.body){
     doc.isOperatorSignatureRequired = isOperatorSignatureRequired;
