@@ -12,6 +12,10 @@ this.cntrl = controllers.dashboardController;
 
 router.use(checkAuth, checkCustomer);
 
+router.get('/machineCountries', this.cntrl.getMachineByCountries);
+router.get('/machineModel', this.cntrl.getMachineByModels);
+router.get('/machineYear', this.cntrl.getMachineByYears);
+router.get('/getCount', this.cntrl.getCount);
 router.get('/', this.cntrl.getData);
 
 module.exports = router;
