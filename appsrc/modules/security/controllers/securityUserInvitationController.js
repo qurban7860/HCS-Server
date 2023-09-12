@@ -101,7 +101,8 @@ this.populate = [
       userInvite.receiverInvitationUser = req.params.id;
       userInvite.receiverInvitationEmail = user.email;
       userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      userInvite.inviteExpireTime = new Date().setHours(new Date().getHours() + 1);
+      let expireAt = new Date().setHours(new Date().getHours() + 1);
+      userInvite.inviteExpireTime = expireAt;
       userInvite.invitationStatus = 'PENDING';
       await userInvite.save();
     
@@ -111,7 +112,7 @@ this.populate = [
     
       // emailContent+=`${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${userInvite.inviteExpireTime}`;
       
-      emailContent += `<a href="${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${userInvite.inviteExpireTime}">Click here</a>`;
+      emailContent += `<a href="${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}">Click here</a>`;
 
       let params = {
         to: `${user.email}`,
