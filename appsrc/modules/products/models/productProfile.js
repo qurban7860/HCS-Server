@@ -14,13 +14,13 @@ const docSchema = new Schema({
     defaultName: { type: String , required: true, unique: true },
     // DefaultName for profile.
     
-    names: [{ type: String }],
+    names: [{ type: String, maxlength: 50 }],
     // Names list for profile.
     
-    width: { type: Number},
+    width: { type: String, maxlength: 35},
     // Width
     
-    height: { type: Number},
+    height: { type: String, maxlength: 35},
     // Height
 },
 {
