@@ -131,7 +131,7 @@ this.populate = [
   }
   
   exports.verifyInviteCode = async (req, res, next) => {
-    let securityUserInvite = await SecurityUserInvite.findOne({ receiverInvitationUser : req.params.id, inviteCode : req.params.code });
+    let securityUserInvite = await SecurityUserInvite.findOne({ receiverInvitationUser : req.params.id, inviteCode : req.params.code, invitationStatus:"PENDING" });
     if(!securityUserInvite) {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Invalid invitation code'));
     }
