@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductServiceParams } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceParams, ProductModel } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -22,7 +22,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
-  {path: 'machineModel', select: 'name'},
+  {path: 'machineModel', select: 'name category'},
   {path: 'category', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -116,6 +116,12 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
         error._message
       );
     } else {
+      if(response && response.machineModel) {
+        let machineModel = await ProductModel.findById(response.machineModel).populate('category');
+        response = JSON.parse(JSON.stringify(response));
+        if(machineModel)
+          response.machineModel = machineModel;
+      }
       res.status(StatusCodes.CREATED).json({ ServiceRecordConfig: response });
     }
   }
@@ -137,7 +143,14 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        let machineServiceRecordConfig = await ProductServiceRecordsConfig.findById(req.params.id).populate('category');
+        if(response && response.machineModel) {
+          let machineModel = await ProductModel.findById(machineServiceRecordConfig.machineModel).populate('category');
+          machineServiceRecordConfig = JSON.parse(JSON.stringify(machineServiceRecordConfig));
+          if(machineModel)
+            machineServiceRecordConfig.machineModel = machineModel;
+        }
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, machineServiceRecordConfig));
       }
     }
   }
