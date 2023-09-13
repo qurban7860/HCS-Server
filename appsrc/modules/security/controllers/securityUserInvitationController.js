@@ -13,7 +13,7 @@ let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
-const { Customer } = require('../../crm/models');
+const { Customer, CustomerContact } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -150,6 +150,7 @@ this.populate = [
       .populate('contact');
       let customerName = '';
       let contactName = '';
+      let contactId = '';
       
       if(user && user.customer && user.customer.name) {
         customerName = user.customer.name;
@@ -157,12 +158,14 @@ this.populate = [
       
       if(user && user.contact && user.contact.name) {
         contactName = user.contact.name;
+        contactId = user.contact.id;
       }
 
       return res.status(StatusCodes.OK).json({ 
         valid:true, 
         customerName,
         contactName,
+        contactId,
         fullName:user.name,
         email:user.email,
         phone:user.phone,
@@ -191,8 +194,20 @@ this.populate = [
             loginUser.password = await bcrypt.hash(req.body.password, 12);
             loginUser.name = req.body.name?req.body.name:'';
             loginUser.phone = req.body.phone?req.body.phone:'';
+
+            if(!loginUser.contact) {
+              let contact = await CustomerContact.create({
+                customer:loginUser.customer,
+                firstName:loginUser.name,
+                phone:loginUser.phone,
+                email:loginUser.email
+              });
+              
+              if(contact)
+                loginUser.contact = contact.id;
+            }
             await loginUser.save();
-            res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
+            res.status(StatusCodes.OK).json({ message: 'Information Updated Successfully' });
           } else {
             res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid Invitation!' });
           }
