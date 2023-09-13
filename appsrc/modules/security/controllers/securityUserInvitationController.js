@@ -131,12 +131,39 @@ this.populate = [
   }
   
   exports.verifyInviteCode = async (req, res, next) => {
-    let securityUserInvite = await SecurityUserInvite.findOne({ receiverInvitationUser : req.params.id, inviteCode : req.params.code, invitationStatus:"PENDING" });
+    let securityUserInvite = await SecurityUserInvite.findOne({ 
+      receiverInvitationUser : req.params.id, 
+      inviteCode : req.params.code, 
+      invitationStatus:"PENDING" 
+    });
     if(!securityUserInvite) {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Invalid invitation code'));
     }
     else {
-      return res.status(StatusCodes.OK).json({ valid:true });
+      let user = await SecurityUser.findById(req.params.id)
+      .populate('customer')
+      .populate('contact');
+      let customerName = '';
+      let contactName = '';
+      
+      if(user && user.customer && user.customer.name) {
+        customerName = user.customer.name;
+      }
+      
+      if(user && user.contact && user.contact.name) {
+        contactName = user.contact.name;
+      }
+
+      return res.status(StatusCodes.OK).json({ 
+        valid:true, 
+        customerName,
+        contactName,
+        fullName:user.name,
+        email:user.email,
+        phone:user.phone,
+        login:user.login,
+        roles:user.roles
+      });
     }
   };
 
@@ -157,6 +184,8 @@ this.populate = [
             securityUserInvite.invitationStatus = 'ACCEPTED';
             await securityUserInvite.save();
             loginUser.password = await bcrypt.hash(req.body.password, 12);
+            loginUser.name = req.body.name?req.body.name:'';
+            loginUser.phone = req.body.phone?req.body.phone:'';
             await loginUser.save();
             res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
           } else {
