@@ -126,6 +126,7 @@ exports.getMachineByModels = async (req, res, next) => {
 exports.getMachineByYears = async (req, res, next) => {
 
   console.log(req.query)
+  let modelsIds = []
 
   let matchQuery = { isArchived: false, isActive: true, installationDate : { $ne:null } } ;
 
