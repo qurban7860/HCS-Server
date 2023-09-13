@@ -111,7 +111,7 @@ exports.patchProductProfile = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, defaultName, names, width, height, isActive, isArchived, loginUser} = req.body;
+  const { machine, defaultName, names, width, type, height, isActive, isArchived, loginUser} = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -122,6 +122,10 @@ function getDocumentFromReq(req, reqType){
     doc.machine = req.body.machine;
   }else{
     doc.machine = req.params.machineId;
+  }
+
+  if ("type" in req.body){
+    doc.type = type;
   }
 
   

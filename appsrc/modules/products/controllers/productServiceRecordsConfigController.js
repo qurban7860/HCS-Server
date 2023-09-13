@@ -144,7 +144,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         );
       } else {
         let machineServiceRecordConfig = await ProductServiceRecordsConfig.findById(req.params.id).populate('category');
-        if(response && response.machineModel) {
+        if(res && res.machineModel) {
           let machineModel = await ProductModel.findById(machineServiceRecordConfig.machineModel).populate('category');
           machineServiceRecordConfig = JSON.parse(JSON.stringify(machineServiceRecordConfig));
           if(machineModel)
