@@ -101,7 +101,12 @@ this.populate = [
       userInvite.receiverInvitationUser = req.params.id;
       userInvite.receiverInvitationEmail = user.email;
       userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let expireAt = new Date().setHours(new Date().getHours() + 1);
+      let inviteCodeExpireHours = process.env.INVITE_EXPIRE_HOURS;
+
+      if(isNaN(inviteCodeExpireHours))
+        inviteCodeExpireHours = 48;
+      
+      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
       userInvite.inviteExpireTime = expireAt;
       userInvite.invitationStatus = 'PENDING';
       await userInvite.save();
