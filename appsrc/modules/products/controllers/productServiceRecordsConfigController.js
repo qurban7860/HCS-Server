@@ -109,7 +109,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
@@ -135,7 +135,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
+    async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
