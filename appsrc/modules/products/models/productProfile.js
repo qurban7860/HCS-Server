@@ -22,6 +22,8 @@ const docSchema = new Schema({
     
     height: { type: String, maxlength: 35},
     // Height
+    type: {  type: String, enum: ['CUTOMER','MANUFACTURER'], default: 'CUSTOMER'},                  
+    
 },
 {
     collection: 'MachineProfiles'
