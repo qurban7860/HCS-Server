@@ -13,7 +13,7 @@ let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
-const { Customer } = require('../../crm/models');
+const { Customer, CustomerContact } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
 const ObjectId = require('mongoose').Types.ObjectId;
@@ -101,7 +101,12 @@ this.populate = [
       userInvite.receiverInvitationUser = req.params.id;
       userInvite.receiverInvitationEmail = user.email;
       userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let expireAt = new Date().setHours(new Date().getHours() + 1);
+      let inviteCodeExpireHours = process.env.INVITE_EXPIRE_HOURS;
+
+      if(isNaN(inviteCodeExpireHours))
+        inviteCodeExpireHours = 48;
+      
+      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
       userInvite.inviteExpireTime = expireAt;
       userInvite.invitationStatus = 'PENDING';
       await userInvite.save();
@@ -131,12 +136,42 @@ this.populate = [
   }
   
   exports.verifyInviteCode = async (req, res, next) => {
-    let securityUserInvite = await SecurityUserInvite.findOne({ receiverInvitationUser : req.params.id, inviteCode : req.params.code });
+    let securityUserInvite = await SecurityUserInvite.findOne({ 
+      receiverInvitationUser : req.params.id, 
+      inviteCode : req.params.code, 
+      invitationStatus:"PENDING" 
+    });
     if(!securityUserInvite) {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Invalid invitation code'));
     }
     else {
-      return res.status(StatusCodes.OK).json({ valid:true });
+      let user = await SecurityUser.findById(req.params.id)
+      .populate('customer')
+      .populate('contact');
+      let customerName = '';
+      let contactName = '';
+      let contactId = '';
+      
+      if(user && user.customer && user.customer.name) {
+        customerName = user.customer.name;
+      }
+      
+      if(user && user.contact && user.contact.name) {
+        contactName = user.contact.name;
+        contactId = user.contact.id;
+      }
+
+      return res.status(StatusCodes.OK).json({ 
+        valid:true, 
+        customerName,
+        contactName,
+        contactId,
+        fullName:user.name,
+        email:user.email,
+        phone:user.phone,
+        login:user.login,
+        roles:user.roles
+      });
     }
   };
 
@@ -157,8 +192,22 @@ this.populate = [
             securityUserInvite.invitationStatus = 'ACCEPTED';
             await securityUserInvite.save();
             loginUser.password = await bcrypt.hash(req.body.password, 12);
+            loginUser.name = req.body.name?req.body.name:'';
+            loginUser.phone = req.body.phone?req.body.phone:'';
+
+            if(!loginUser.contact) {
+              let contact = await CustomerContact.create({
+                customer:loginUser.customer,
+                firstName:loginUser.name,
+                phone:loginUser.phone,
+                email:loginUser.email
+              });
+              
+              if(contact)
+                loginUser.contact = contact.id;
+            }
             await loginUser.save();
-            res.status(StatusCodes.OK).json({ message: 'Password Changed Successfully' });
+            res.status(StatusCodes.OK).json({ message: 'Information Updated Successfully' });
           } else {
             res.status(StatusCodes.BAD_REQUEST).json({ message: 'Invalid Invitation!' });
           }

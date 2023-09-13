@@ -14,7 +14,7 @@ let rtnMsg = require('../../config/static/static')
 
 exports.getMachineByCountries = async (req, res, next) => {
 
-  // console.log(req.query)
+  console.log(req.query)
   let modelsIds = []
   let installationSitesId = []
   let matchQuery = { isArchived: false, isActive: true };
@@ -49,7 +49,7 @@ exports.getMachineByCountries = async (req, res, next) => {
     toDate.setFullYear(req.query.year, 11, 31);
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
-  // console.log(matchQuery);
+  console.log(matchQuery);
   let countryWiseMachineCount = await Product.aggregate([
       { $match: matchQuery }, 
       { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
@@ -125,7 +125,8 @@ exports.getMachineByModels = async (req, res, next) => {
 
 exports.getMachineByYears = async (req, res, next) => {
 
-  // console.log(req.query)
+  console.log(req.query)
+  let modelsIds = []
 
   let matchQuery = { isArchived: false, isActive: true, installationDate : { $ne:null } } ;
 
@@ -164,7 +165,7 @@ exports.getMachineByYears = async (req, res, next) => {
     }
   }  
 
-  // console.log(matchQuery);
+  console.log(matchQuery);
 
   let yearWiseMachines = await Product.aggregate([
     { $match : matchQuery },

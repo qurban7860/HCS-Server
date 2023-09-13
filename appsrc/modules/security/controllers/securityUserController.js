@@ -129,7 +129,7 @@ exports.postSecurityUser = async (req, res, next) => {
             }
           }  
         }else{
-          return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email/Login already exists!', true));
+          return res.status(StatusCodes.CONFLICT).json({message:'Email/Login already exists!',userStatus:response.isActive});
         }
       }
     }

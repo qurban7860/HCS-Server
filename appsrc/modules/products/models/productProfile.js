@@ -11,16 +11,16 @@ const Schema = mongoose.Schema;
 const docSchema = new Schema({
     machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
 
-    defaultName: { type: String , required: true, unique: true },
+    defaultName: { type: String, required: true },
     // DefaultName for profile.
     
     names: [{ type: String, maxlength: 50 }],
     // Names list for profile.
     
-    width: { type: String, maxlength: 35},
+    width: { type: String, maxlength: 35 },
     // Width
     
-    height: { type: String, maxlength: 35},
+    height: { type: String, maxlength: 35 },
     // Height
     type: {  type: String, enum: ['CUTOMER','MANUFACTURER'], default: 'CUSTOMER'},                  
     
