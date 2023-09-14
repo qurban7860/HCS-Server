@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { machineProfile } = require('../models');
+const { ProductProfile } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -29,7 +29,7 @@ this.populate = [
 
 
 exports.getProductProfile = async (req, res, next) => {
-  this.dbservice.getObjectById(machineProfile, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(ProductProfile, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -44,8 +44,7 @@ exports.getProductProfile = async (req, res, next) => {
 exports.getProductProfiles = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
-  console.log("here...", machineProfile);
-  this.dbservice.getObjectList(machineProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -57,7 +56,7 @@ exports.getProductProfiles = async (req, res, next) => {
 };
 
 exports.deleteProductProfile = async (req, res, next) => {
-  this.dbservice.deleteObject(machineProfile, req.params.id, res, callbackFunc);
+  this.dbservice.deleteObject(ProductProfile, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -72,20 +71,26 @@ exports.deleteProductProfile = async (req, res, next) => {
 exports.postProductProfile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-  this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-        error._message
-      );
-    } else {
-      res.status(StatusCodes.CREATED).json({ MachineProfile: response });
+    if(req.body.type='MANUFACTURER') {
+      let alreadyExists = await ProductProfile.findOne({type:req.body.type});
+      if(alreadyExists) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
+      }
+    }
+    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error._message
+        );
+      } else {
+        return res.status(StatusCodes.CREATED).json({ ProductProfile: response });
+      }
     }
   }
-}
 };
 
 exports.patchProductProfile = async (req, res, next) => {
@@ -94,7 +99,14 @@ exports.patchProductProfile = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(machineProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
+
+    if(req.body.type='MANUFACTURER') {
+      let alreadyExists = await ProductProfile.findOne({type:req.body.type});
+      if(alreadyExists && req.params.id!=alreadyExists.id) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
+      }
+    }
+    this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -111,11 +123,11 @@ exports.patchProductProfile = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, defaultName, names, width, type, height, isActive, isArchived, loginUser} = req.body;
+  const { machine, defaultName, names, flange, type, web, isActive, isArchived, loginUser} = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new machineProfile({});
+    doc = new ProductProfile({});
   }
 
   if ("machine" in req.body){
@@ -137,12 +149,12 @@ function getDocumentFromReq(req, reqType){
     doc.names = names;
   }
   
-  if ("width" in req.body){
-    doc.width = width;
+  if ("flange" in req.body){
+    doc.flange = flange;
   }
   
-  if ("height" in req.body){
-    doc.height = height;
+  if ("web" in req.body){
+    doc.web = web;
   }
   
   if ("isActive" in req.body){

@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog } = require('../models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog } = require('../models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 const { postProductAuditLog, patchProductAuditLog } =  require('./productAuditLogController');
 const { Customer, CustomerSite } = require('../../crm/models')
@@ -93,6 +93,9 @@ exports.getProduct = async (req, res, next) => {
         }
         machine.verifications = machineVerifications;
       }
+
+
+      machine.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:machine.id});
 
       res.json(machine);
     }
@@ -193,7 +196,9 @@ exports.getProducts = async (req, res, next) => {
 
           if(product && product.machineModel && product.machineModel.category && 
             product.machineModel.category.connections) {
+            product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:product.id});        
             filteredProducts.push(product);
+          
           }
 
         }
