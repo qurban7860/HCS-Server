@@ -42,6 +42,7 @@ exports.getProductAuditLog = async (req, res, next) => {
 };
 
 exports.getProductAuditLogs = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectList(ProductAuditLog, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -54,7 +55,7 @@ exports.getProductAuditLogs = async (req, res, next) => {
 };
 
 exports.deleteProductAuditLog = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductAuditLog, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductAuditLog, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -79,8 +80,6 @@ exports.postProductAuditLog = async (req, res, next) => {
           error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
-      } else {
-        res.status(StatusCodes.CREATED).json({ MachineAuditLog: response });
       }
     }
   }
@@ -100,8 +99,6 @@ exports.patchProductAuditLog = async (req, res, next) => {
           error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }
@@ -176,6 +173,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

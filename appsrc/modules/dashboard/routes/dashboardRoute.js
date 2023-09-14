@@ -7,11 +7,15 @@ const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 
 const router = express.Router();
-this.cntrl = controllers.dashboardController;
+const dashBoardController = controllers.dashboardController;
 
 
 router.use(checkAuth, checkCustomer);
 
-router.get('/', this.cntrl.getData);
+router.get('/', dashBoardController.getData);
+router.get('/machineCountries', dashBoardController.getMachineByCountries);
+router.get('/machineModel', dashBoardController.getMachineByModels);
+router.get('/machineYear', dashBoardController.getMachineByYears);
+router.get('/getCount', dashBoardController.getCount);
 
 module.exports = router;

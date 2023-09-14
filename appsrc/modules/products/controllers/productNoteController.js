@@ -40,7 +40,11 @@ exports.getProductNote = async (req, res, next) => {
 
 exports.getProductNotes = async (req, res, next) => {
   this.machineId = req.params.machineId;
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.query.machine = this.machineId;
   this.dbservice.getObjectList(ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
@@ -70,7 +74,7 @@ exports.deleteProductNote = async (req, res, next) => {
   const response = await ProductNote.findById(req.params.id);
   if(response === null) {
     try {
-      const result = await this.dbservice.deleteObject(ProductNote, req.params.id, callbackFunc);
+      const result = await this.dbservice.deleteObject(ProductNote, req.params.id, res, callbackFunc);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -148,6 +152,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

@@ -14,6 +14,17 @@ const docSchema = new Schema({
     
     description: { type: String },
     // description of tool
+
+    isManualSelect: { type: Boolean, default: false },  
+    // can manual select
+    
+    isAssign: { type: Boolean, default: false },
+    // can assign to component
+    
+    Operations: { type: Number, default: false },
+    // number of operations
+    
+    toolType: {type: String, default: "GENERIC TOOL"}
 },
 {
     collection: 'MachineTools'
@@ -23,5 +34,9 @@ docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
+
+docSchema.index({"name":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 module.exports = mongoose.model('MachineTool', docSchema);

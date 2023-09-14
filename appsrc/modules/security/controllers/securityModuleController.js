@@ -104,16 +104,23 @@ exports.searchSecurityModules = async (req, res, next) => {
 };
 
 exports.deleteSecurityModule = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityModule, req.params.id, callbackFunc);
-  function callbackFunc(error, result) {
-    if (error) {
+  const response = await SecurityModule.findById(req.params.id);
+  if(response === null) {
+    try {
+      console.log("@1");
+      const result = await this.dbservice.deleteObject(SecurityModule, req.params.id, res);
+      console.log("@2", result);
+      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+      console.log("@3");
+    } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
+  } else {
+    res.status(StatusCodes.CONFLICT).send(rtnMsg.recordDelMessage(StatusCodes.CONFLICT, null));
   }
 };
+
 
 exports.postSecurityModule = async (req, res, next) => {
   const errors = validationResult(req);
@@ -152,7 +159,7 @@ exports.patchSecurityModule = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, accessForNormalUsers, isActive, isArchived } = req.body;
+  const { name, description, accessForNormalUsers, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -178,6 +185,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

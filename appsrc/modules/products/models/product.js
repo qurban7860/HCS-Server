@@ -8,7 +8,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
     
-    serialNo: { type: String , required: true, unique: true},
+    serialNo: { type: String , required: true },
     // Serial No of machine
   //
 
@@ -20,9 +20,20 @@ const docSchema = new Schema({
 
     name: { type: String },
     // name/title of machine
-  
+    
+    alias: [{ type: String  }],
+
     description: { type: String },
     // detailed description of machine
+
+    transferredDate: { type: Date },
+    // date of transfer
+
+    transferredMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    // transferred machine having new/updated customer data
+
+    parentMachineID: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    // parent machine ID(ownership transfer)
 
     status: { type: Schema.Types.ObjectId , ref: 'MachineStatus' },
     // Status information of machine
@@ -35,7 +46,10 @@ const docSchema = new Schema({
   
     workOrderRef: { type: String },
     // information about work order, purchase order or quotation ref no
-  
+    
+    machineConnections: [{ type: Schema.Types.ObjectId , ref: 'MachineConnection' }],
+    // list of connections with other machines like decoiler
+
     customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
     // customer for this machine
   
@@ -68,11 +82,22 @@ const docSchema = new Schema({
     
     internalTags: [{ type: String }],
     // list of tags used for reporting internally (Howick)
+
+    shippingDate: { type: Date },
+    // shipping date
+
+    installationDate: { type: Date },
+    // installation date
   
     customerTags: [{ type: String }],
     // list of tags used for reporting by customer
 
-    siteMilestone: { type: String }
+    siteMilestone: { type: String },
+
+    verifications : [{
+        verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+        verifiedDate: { type: Date }
+    }]
 },
 {
     collection: 'Machines'
@@ -80,6 +105,19 @@ const docSchema = new Schema({
 
 docSchema.set('timestamps', true);
 
+docSchema.index({"name":1})
+docSchema.index({"serialNo":1})
+docSchema.index({"parentMachine":1})
+docSchema.index({"parentSerialNo":1})
+docSchema.index({"transferredMachine":1})
+docSchema.index({"parentMachineID":1})
+docSchema.index({"status":1})
+docSchema.index({"supplier":1})
+docSchema.index({"machineModel":1})
+docSchema.index({"customer":1})
+docSchema.index({"instalationSite":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);

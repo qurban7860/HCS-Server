@@ -26,12 +26,35 @@ const docSchema = new Schema({
         
         password: { type: String, required: true },
         // password to access portal
-        
+
+        multiFactorAuthenticationCode: {type: String},
+        // code to access portal
+
+        multiFactorAuthentication: {type: Boolean, default: false},
+        //Authentification 
+
+        multiFactorAuthenticationExpireTime: {type: Date},
+        // Date/Time for code expiry.
+
         expireAt: { type: Date},
         // Date/Time for password expiry.
+
+        currentEmployee: { type: Boolean, default: false },
         
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
+        ],
+
+        regions: [
+            { type: Schema.Types.ObjectId, ref: 'Region' }
+        ],
+
+        customers: [
+            { type: Schema.Types.ObjectId, ref: 'Customer' }
+        ],
+
+        machines: [
+            { type: Schema.Types.ObjectId, ref: 'Machine' }
         ],
         
         whiteListIPs: [{ type: String}],
@@ -56,5 +79,12 @@ docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
+
+docSchema.index({"name":1})
+docSchema.index({"customer":1})
+docSchema.index({"contact":1})
+docSchema.index({"email":1})
+docSchema.index({"login":1})
+docSchema.index({"token.accessToken":1})
 
 module.exports = mongoose.model('SecurityUser', docSchema);

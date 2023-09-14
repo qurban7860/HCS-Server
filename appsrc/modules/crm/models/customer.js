@@ -10,7 +10,9 @@ const docSchema = new Schema({
         name: { type: String , required: true },
         // name of organization
         
-        tradingName: { type: String },
+        // tradingName: { type: String },
+        tradingName: [{ type: String  }],
+
         //brand/trade name if the organization has it
         
         type: { type: String },
@@ -43,6 +45,11 @@ const docSchema = new Schema({
         
         supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
         // support project manager for this customer from Howick Side
+
+        verifications : [{
+                verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+                verifiedDate: { type: Date }
+        }]
 },
 {
         collection: 'Customers'
@@ -51,6 +58,12 @@ const docSchema = new Schema({
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
+
+docSchema.index({"name":1})
+docSchema.index({"type":1})
+docSchema.index({"mainSite":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 

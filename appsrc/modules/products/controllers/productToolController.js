@@ -42,6 +42,8 @@ exports.getProductTool = async (req, res, next) => {
 };
 
 exports.getProductTools = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.orderBy = { name: 1 };
   this.dbservice.getObjectList(ProductTool, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -54,7 +56,7 @@ exports.getProductTools = async (req, res, next) => {
 };
 
 exports.deleteProductTool = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductTool, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductTool, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -133,6 +135,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

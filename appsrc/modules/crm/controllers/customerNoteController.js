@@ -43,6 +43,10 @@ exports.getCustomerNote = async (req, res, next) => {
 
 exports.getCustomerNotes = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {}; 
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
   console.log("This query ")
@@ -75,7 +79,7 @@ exports.deleteCustomerNote = async (req, res, next) => {
     let customerNote = await CustomerNote.findOne({_id:req.params.id, customer:req.params.customerId});
     
     if(customerNote) {
-      this.dbservice.deleteObject(CustomerNote, req.params.id, callbackFunc);
+      this.dbservice.deleteObject(CustomerNote, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));
@@ -169,6 +173,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

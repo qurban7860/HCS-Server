@@ -41,6 +41,8 @@ exports.getProductStatus = async (req, res, next) => {
 };
 
 exports.getProductStatuses = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
+  this.orderBy = { name: 1 };
   this.dbservice.getObjectList(ProductStatus, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -53,7 +55,7 @@ exports.getProductStatuses = async (req, res, next) => {
 };
 
 exports.deleteProductStatus = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductStatus, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductStatus, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -108,7 +110,7 @@ exports.patchProductStatus = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, displayOrderNo, isActive, isArchived, loginUser } = req.body;
+  const { name, description, displayOrderNo, isActive, isArchived, loginUser, slug } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -125,6 +127,10 @@ function getDocumentFromReq(req, reqType){
   if ("displayOrderNo" in req.body){
     doc.displayOrderNo = displayOrderNo;
   }
+
+  if ("slug" in req.body){
+    doc.slug = req.body.slug.toLowerCase();
+  }
   
   if ("isActive" in req.body){
     doc.isActive = isActive;
@@ -137,6 +143,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

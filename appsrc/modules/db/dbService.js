@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+
 
 class dbService {
   
@@ -17,7 +19,8 @@ class dbService {
       });
     }
     else {
-      return await model.findById(id, fields).populate(populate);
+      const document = await model.findById(id, fields).populate(populate);
+      return document != null ? document : {};
     }
   }
 
@@ -37,8 +40,13 @@ class dbService {
   }
 
   async getObjectList(model, fields, query, orderBy, populate, callback) {
+    const collationOptions = {
+      locale: 'en',
+      strength: 2
+    };
+
     if(callback) {
-      model.find(query).collation({locale: "en"}).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
+      model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
         if (err) {
           callback(err, []);
         } else {
@@ -47,16 +55,20 @@ class dbService {
       });
     }
     else {
-      return await model.find(query).collation({locale: "en"}).select(fields).populate(populate).sort(orderBy);
+      return await model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy);
     }
   }
 
 
   async getObjectListWithAggregate(model, aggregate, params, callback) {
+    const collationOptions = {
+      locale: 'en',
+      strength: 2
+    };
     if(callback) {
       model.aggregate([
         aggregate
-      ]).exec((err, documents) => {
+      ]).collation(collationOptions).exec((err, documents) => {
         if (err) {
           callback(err, []);
         } else {
@@ -69,30 +81,44 @@ class dbService {
     }
   }
 
-  async deleteObject(model, id, callback) {
-    let existingRecord = await model.findById(id);
-    if (!existingRecord.isArchived) {
-      throw new Error("Record cannot be deleted");
-    }
-    try{
-      if(callback) {
+  async deleteObject(model, id, res, callback) {
+    try {
+      
+      let existingRecord = await model.findById(id);
+     
+      if(existingRecord == null) {
+        console.log("----------------------------------------------------------------");
+        const error = new Error("Invalid record");
+        error.statusCode = StatusCodes.BAD_REQUEST;
+        throw error;
+      } else if (!existingRecord.isArchived) {
+        const error = new Error("Record cannot be deleted. It should be archived first!");
+        error.statusCode = StatusCodes.BAD_REQUEST;
+        throw error;
+      }
+
+      
+  
+      if (callback) {
+      
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
           callback(err);
         });
-      }
-      else {
+      } else {
+   
         return await model.deleteOne({ _id: id });
       }
-    } catch (err) {
-      if (callback) {
-        callback(err);
+    } catch (error) {
+      if (error.statusCode) {
+        res.status(error.statusCode).send(error.message);
       } else {
-        throw err;
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       }
     }
   }
+  
 
 
   async postObject(Object, callback) {
@@ -122,6 +148,7 @@ class dbService {
       });
     }
     else{
+      console.log("Object -->", Object);
       return await model.updateOne({ _id: id }, Object);
     }
   }

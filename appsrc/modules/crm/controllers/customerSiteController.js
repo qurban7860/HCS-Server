@@ -43,7 +43,12 @@ exports.getCustomerSite = async (req, res, next) => {
 };
 
 exports.getCustomerSites = async (req, res, next) => {
-    this.query = req.query != "undefined" ? req.query : {};   
+    this.query = req.query != "undefined" ? req.query : {};
+    this.orderBy = { name: 1 };
+    if(this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
     this.customerId = req.params.customerId;
     this.query.customer = this.customerId; 
     this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
@@ -71,7 +76,7 @@ exports.searchCustomerSites = async (req, res, next) => {
 };
 
 exports.deleteCustomerSite = async (req, res, next) => {
-  this.dbservice.deleteObject(CustomerSite, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(CustomerSite, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -240,6 +245,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

@@ -3,8 +3,6 @@ const uniqueValidator = require('mongoose-unique-validator');
 const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
 const baseSchema = require('../../../base/baseSchema');
 
-const GUID = require('mongoose-guid')(mongoose);
-
 
 const Schema = mongoose.Schema;
 
@@ -27,7 +25,7 @@ const docSchema = new Schema({
     // note information
     
     tool: { type: Schema.Types.ObjectId , ref: 'MachineTool' },
-    // toools
+    // tools
     
     machineTechParam: { type: Schema.Types.ObjectId , ref: 'MachineTechParam' },
     // configuration names
@@ -52,6 +50,14 @@ docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
-docSchema.plugin(uniqueValidator);
+docSchema.index({"machine":1})
+docSchema.index({"category":1})
+docSchema.index({"model":1})
+docSchema.index({"status":1})
+docSchema.index({"tool":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
+// docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('MachineAuditLog', docSchema);

@@ -12,5 +12,16 @@ module.exports = {
     ProductTechParamCategory: require('./productTechParamCategory'),
     ProductTechParamValue: require('./productTechParamValue'),
     ProductTool: require('./productTool'),
-    ProductToolInstalled: require('./productToolInstalled')
+    ProductToolInstalled: require('./productToolInstalled'),
+    ProductConnection: require('./productConnection'),
+    ProductDrawing: require('./productDrawing'),
+    ProductServiceParams: require('./productServiceParams'),
+    ProductServiceRecordsConfig: require('./productServiceRecordsConfig'),
+    ProductServiceRecords: require('./productServiceRecords'),
+    ProductServiceCategory: require('./productServiceCategory'),
+    ProductProfile: require('./productProfile'),
+
+    
+
+    
 }

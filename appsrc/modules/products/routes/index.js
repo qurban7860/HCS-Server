@@ -7,6 +7,8 @@ exports.registerProductRoutes = (app, apiPath) => {
 
     app.use(`${ rootPathForModule }`, require('./productAuditLogRoute'));
     app.use(`${ rootPathForModule }`, require('./productCategoryRoute'));
+    app.use(`${ rootPathForModule }`, require('./productConnectionRoute'));
+    app.use(`${ rootPathForModule }`, require('./productDrawingRoute'));
     app.use(`${ rootPathForModule }`, require('./productLicenseRoute'));
     app.use(`${ rootPathForModule }`, require('./productModelRoute'));
     app.use(`${ rootPathForModule }`, require('./productNoteRoute'));
@@ -18,5 +20,10 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productTechParamValueRoute'));
     app.use(`${ rootPathForModule }`, require('./productToolInstalledRoute'));
     app.use(`${ rootPathForModule }`, require('./productToolRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceParamsRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceRecordsConfigRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceRecordsRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceCategoryRoute'));
+    app.use(`${ rootPathForModule }`, require('./productProfileRoute'));
 }
 

@@ -65,7 +65,7 @@ exports.searchProductLicenses = async (req, res, next) => {
 };
 
 exports.deleteProductLicense = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductLicense, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductLicense, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -150,6 +150,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

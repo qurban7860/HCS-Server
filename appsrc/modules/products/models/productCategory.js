@@ -10,6 +10,7 @@ const docSchema = new Schema({
     name: { type: String, required: true, unique: true },
     // name of model 
 
+    connections: { type: Boolean, default:false },
     description: { type: String, },
     // description of model
     },
@@ -18,6 +19,12 @@ const docSchema = new Schema({
     }
 );
 docSchema.set('timestamps', true);
+
+
+docSchema.index({"name":1})
+docSchema.index({"connections":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 
 docSchema.add(baseSchema.docVisibilitySchema);

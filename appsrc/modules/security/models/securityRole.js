@@ -10,12 +10,18 @@ const docSchema = new Schema({
   name: { type: String, required: true},
   // name of role
   
-  description: { type: String, required: true},
-  // discription of role
+  description: { type: String },
+  // description of role
+  
+  roleType : { type: String, required: true, default: 'normal'},
+  // SuperAdmin/Developer/Normal
   
   allModules: { type: Boolean, default: false},
   //will be used to assign all module , like Administrator
   
+  disableDelete: { type: Boolean, default: false},
+  //if true, nothing can be deleted in system
+
   allWriteAccess: { type: Boolean, default: false},
   //enable write access for all module , like for Administrator
   
@@ -37,5 +43,13 @@ docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
+
+docSchema.index({"name":1})
+docSchema.index({"roleType":1})
+docSchema.index({"disableDelete":1})
+docSchema.index({"allWriteAccess":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
 
 module.exports = mongoose.model('SecurityRole', docSchema);

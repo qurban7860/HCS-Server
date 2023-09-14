@@ -92,8 +92,8 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
   try {
     const data = await s3UploadAsync(uploadFileParams);
 
-    if ('Location' in data) {
-      url = data.Location;
+    if ('Key' in data) {
+      url = data.Key;
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -181,11 +181,27 @@ async function sendEmail(params) {
   
 }
 
+async function downloadFileS3(filePath) {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: filePath
+  };
+
+  try {
+    const data = await s3.getObject(params).promise();
+    console.log('data------------>', data);
+    return data.Body;
+  } catch (err) {
+    console.log(err.message);
+    return err;
+  }
+}
 
 module.exports = {
   sendEmail,
   uploadFileS3,
   checkFileHeader,
   copyFile,
-  listBuckets
+  listBuckets,
+  downloadFileS3
 };

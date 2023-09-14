@@ -10,7 +10,7 @@ let rtnMsg = require('../../config/static/static')
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-
+const ObjectId = require('mongoose').Types.ObjectId;
 const { ProductModel } = require('../models');
 
 
@@ -42,6 +42,8 @@ exports.getProductModel = async (req, res, next) => {
 };
 
 exports.getProductModels = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
+  this.orderBy = { name: 1 };
   this.dbservice.getObjectList(ProductModel, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -54,7 +56,7 @@ exports.getProductModels = async (req, res, next) => {
 };
 
 exports.deleteProductModel = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductModel, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductModel, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -71,16 +73,21 @@ exports.postProductModel = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.CREATED).json({ MachineModel: response });
+    let duplicateEntry = await this.dbservice.getObject(ProductModel, {name: { $regex: req.body.name, $options: 'i' }, category: req.body.category, isArchived: false}, this.populate);
+    if(duplicateEntry){
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
+    }else{
+      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          res.status(StatusCodes.CREATED).json({ MachineModel: response });
+        }
       }
     }
   }
@@ -92,16 +99,21 @@ exports.patchProductModel = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(ProductModel, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+    let duplicateEntry = await this.dbservice.getObject(ProductModel, {name: req.body.name, isArchived: false}, this.populate);
+    if(duplicateEntry && duplicateEntry._id != req.params.id){
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
+    }else{
+      this.dbservice.patchObject(ProductModel, req.params.id, getDocumentFromReq(req), callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        }
       }
     }
   }
@@ -149,6 +161,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

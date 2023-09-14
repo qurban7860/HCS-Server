@@ -43,7 +43,12 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.orderBy = {firstName: 1, lastName: 1};
+  this.query = req.query != "undefined" ? req.query : {};
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
   this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
@@ -60,6 +65,11 @@ exports.getCustomerContacts = async (req, res, next) => {
 
 exports.searchCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
+  if(this.query.customerArr){
+    const customerIds = JSON.parse(this.query.customerArr);
+    this.query.customer = { $in: customerIds };
+    delete this.query.customerArr;
+  }
   
   this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
@@ -87,11 +97,37 @@ exports.getSPCustomerContacts = async (req, res, next) => {
         as: "customer"
       }
     },
-      {
+    {
       $match: {
-        "customer.type" : "SP"
+        "customer.type" : "SP",
+        "customer.isActive" : true,
+        "customer.isArchived" : false
+          
+          
+        
       }
+    },
+    {
+      $sort: {
+        "firstName" : 1,
+        "lastName" : 1
+      }
+    },
+      {
+    $lookup: {
+      from: "CustomerContacts",
+      localField: "_id",
+      foreignField: "_id",
+      as: "contact"
     }
+  },
+  {
+    $match: {
+      "contact.isActive": true,
+      "contact.isArchived": false
+        
+    }
+  }
   ];
 
   var params = {};
@@ -150,7 +186,7 @@ exports.deleteCustomerContact = async (req, res, next) => {
     
     if(customerContact) {
 
-      this.dbservice.deleteObject(CustomerContact, req.params.id, callbackFunc);
+      this.dbservice.deleteObject(CustomerContact, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));
@@ -304,6 +340,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

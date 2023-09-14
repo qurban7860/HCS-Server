@@ -27,4 +27,7 @@ const docSchema = new Schema({
 
 docSchema.plugin(uniqueValidator);
 
+docSchema.index({"user":1})
+docSchema.index({"loginTime":1})
+
 module.exports = mongoose.model('SecuritySignInLog', docSchema);

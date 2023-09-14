@@ -15,7 +15,7 @@ console.log('MONGODB_NAME: ' + process.env.MONGODB_NAME);
 let dburl = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`
 
 if (process.env.MONGODB_HOST_TYPE && process.env.MONGODB_HOST_TYPE == "mongocloud"){
-    dburl = `mongodb+srv://${ process.env.MONGODB_USERNAME }:${ process.env.MONGODB_PASSWD }@${ process.env.MONGODB_HOST }/${ process.env.MONGODB_NAME }?etryWrites=true&w=majority`;
+    dburl = `mongodb+srv://${ process.env.MONGODB_USERNAME }:${ process.env.MONGODB_PASSWD }@${ process.env.MONGODB_HOST }/${ process.env.MONGODB_NAME }?retryWrites=true&w=majority`;
 }
 
 //console.log('dburl: ' + dburl);

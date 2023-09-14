@@ -10,59 +10,87 @@ class SecurityService {
     this.db = new dbService();
   }
 
-  getObject(model, query, populate, callback) {
-    this.db.getObject(model, query, populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObject(model, query, populate, callback) {
+    if(callback){
+      this.db.getObject(model, query, populate, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    }else {
+      return await this.db.getObject(model, query, populate);
     }
   }
 
-  getObjectById(model, fields, id, populate, callback) {
-    this.db.getObjectById(model, fields, id, populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObjectById(model, fields, id, populate, callback) {
+    if(callback){
+      this.db.getObjectById(model, fields, id, populate, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    }else{
+      return await this.db.getObjectById(model, fields, id, populate);
     }
   }
 
-  getObjectList(model, fields, query, orderBy, populate, callback) {
-    this.db.getObjectList(model, fields, query, orderBy, populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObjectList(model, fields, query, orderBy, populate, callback) {
+    if(callback){
+      this.db.getObjectList(model, fields, query, orderBy, populate, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    }else{
+      return await this.db.getObjectList(model, fields, query, orderBy, populate);
     }
   };
 
-  getObjectListWithAggregate(model, aggregate, params, callback) {
-    this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async getObjectListWithAggregate(model, aggregate, params, callback) {
+    if(callback){
+      this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    }else{
+      return await this.db.getObjectListWithAggregate(model, aggregate, params);
     }
   };
 
-  deleteObject(model, id, callback) {
-    this.db.deleteObject(model, id, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async deleteObject(model, id, res, callback) {
+    if(callback){
+      this.db.deleteObject(model, id, res, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    }else{
+      return await this.db.deleteObject(model, id, res);
     }
   };
 
-  postObject(document, callback) {
-    this.db.postObject(document, callbackFunction);
-    function callbackFunction(error, response) {
-      if (error) callback(error, {});
-      else callback(null, response);
+  async postObject(document, callback) {
+    if(callback){
+      this.db.postObject(document, callbackFunction);
+      function callbackFunction(error, response) {
+        if (error) callback(error, {});
+        else callback(null, response);
+      }
+    }else{
+      return await this.db.postObject(document);
     }
   }
 
-  patchObject(model, id, newValues, callback) {
-    this.db.patchObject(model, id, newValues, callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) callback(error, {});
-      else callback(null, result);
+  async patchObject(model, id, newValues, callback) {
+    if(callback){
+      this.db.patchObject(model, id, newValues, callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) callback(error, {});
+        else callback(null, result);
+      }
+    }else{
+      return await this.db.patchObject(model, id, newValues);
     }
   };
 }

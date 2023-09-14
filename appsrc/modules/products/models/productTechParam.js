@@ -16,7 +16,7 @@ const docSchema = new Schema({
     description: { type: String },
     // description of TechnicalParam
     
-    category: { type: Schema.Types.ObjectId , ref: 'MachineTechParamCategory' }
+    category: { type: Schema.Types.ObjectId , ref: 'MachineTechParamCategory', required: true }
     // Param category
 },
 {
@@ -27,5 +27,11 @@ docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
+
+docSchema.index({"name":1})
+docSchema.index({"code":1})
+docSchema.index({"category":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 module.exports = mongoose.model('MachineTechParam', docSchema);

@@ -4,6 +4,7 @@ const { check } = require('express-validator');
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 const controllers = require('../controllers');
 const controller = controllers.productController;
@@ -21,14 +22,23 @@ const baseRouteForObject = `/machines`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProduct);
-
 router.get(`${baseRouteForObject}/`, controller.getProducts);
+
+router.get(`${baseRouteForObject}/getMachinesAgainstCountries`, controller.getMachinesAgainstCountries);
+
+router.get(`${baseRouteForObject}/machineCoordinates`, controller.getProductsSiteCoordinates);
+
+router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getConnectionProducts); 
+
+router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
-router.patch(`${baseRouteForObject}/:id`, controller.patchProduct);
+router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProduct);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProduct);
+
+router.post(`${baseRouteForObject}/transferMachine/`, controller.transferOwnership);
+
 
 module.exports = router;

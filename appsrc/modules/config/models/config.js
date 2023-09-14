@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        name: { type: String , required: true, unique: true },
+        name: { type: String , required: true, minlength: 2, maxlength: 40 },
         // name of organization
         value: { type: String , required: true },
        
@@ -15,10 +15,10 @@ const docSchema = new Schema({
 {
         collection: 'Configs'
 });
-
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
+docSchema.index({"name":1})
 
 docSchema.plugin(uniqueValidator);
 

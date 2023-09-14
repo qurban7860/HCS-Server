@@ -11,7 +11,10 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductCategory } = require('../models');
+const { ProductCategory, ProductModel } = require('../models');
+
+
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -26,19 +29,25 @@ this.populate = [
 
 
 exports.getProductCategory = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductCategory, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
+  let response = await this.dbservice.getObjectById(ProductCategory, this.fields, req.params.id, this.populate);
+  if (response) {
+    response = JSON.parse(JSON.stringify(response))
+    let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
+    let fieldsModels = { name:1 }
+    const models = await this.dbservice.getObjectList(ProductModel, fieldsModels, docModelQuery, {}, []);
+    response.models = models;
+    res.json(response);
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
-
 };
 
 exports.getProductCategories = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.orderBy = { name: 1 };    
+  if(this.query && this.query.name) {
+    this.query.name = { $regex: this.query.name, $options: 'i' };
+  }
   this.dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -51,7 +60,7 @@ exports.getProductCategories = async (req, res, next) => {
 };
 
 exports.deleteProductCategory = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductCategory, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductCategory, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -104,7 +113,7 @@ exports.patchProductCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, isActive, isArchived, loginUser } = req.body;
+  const { name, description, connections, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -120,6 +129,9 @@ function getDocumentFromReq(req, reqType){
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
+  if ("connections" in req.body){
+    doc.connections = connections;
+  }
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
@@ -128,6 +140,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

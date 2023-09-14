@@ -43,7 +43,8 @@ exports.getProductTechParam = async (req, res, next) => {
 };
 
 exports.getProductTechParams = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {}; 
+  this.orderBy = { name: 1 }; 
   this.dbservice.getObjectList(ProductTechParam, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -56,7 +57,7 @@ exports.getProductTechParams = async (req, res, next) => {
 };
 
 exports.deleteProductTechParam = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductTechParam, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(ProductTechParam, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -119,6 +120,7 @@ exports.patchProductTechParam = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let queryString  = { $or: [
+      { _id: req.params.id },
       { name: req.body.name },
       { code: req.body.code }
     ]};
@@ -190,6 +192,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;

@@ -6,6 +6,7 @@ const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 
 
@@ -19,7 +20,11 @@ const router = express.Router();
 
 router.use(checkAuth, checkCustomer);
 
-// - /api/1.0.0/emails//:id/
-router.get(`${baseRoute}/:id`, controller.getEmails);
+
+// - /api/1.0.0/emails/
+router.get(`/`, controller.getEmails);
+
+// - /api/1.0.0/emails/:id/
+router.get(`/:id`, controller.getEmail);
 
 module.exports = router;

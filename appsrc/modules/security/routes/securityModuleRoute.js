@@ -4,6 +4,7 @@ const { check } = require('express-validator');
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
+const verifyDelete = require('../../../middleware/verifyDelete');
 
 
 
@@ -30,7 +31,7 @@ router.get(`${baseRoute}/`, controller.getSecurityModules);
 router.post(`${baseRoute}/`, controller.postSecurityModule);
 
 // - /api/1.0.0/security/modules/:id
-router.patch(`${baseRoute}/:id`, controller.patchSecurityModule);
+router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSecurityModule);
 
 // - /api/1.0.0/security/modules/:id
 router.delete(`${baseRoute}/:id`, controller.deleteSecurityModule);

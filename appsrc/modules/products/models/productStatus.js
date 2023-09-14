@@ -21,6 +21,9 @@ const docSchema = new Schema({
     */
     description: { type: String },
     // description of Status
+
+    slug: { type: String },
+    // unique identification for different statuses
     
     displayOrderNo: { type: Number },
     // order to display in dropdown lists
@@ -31,6 +34,11 @@ const docSchema = new Schema({
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
+
+docSchema.index({"name":1})
+docSchema.index({"slug":1})
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 

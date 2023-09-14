@@ -7,6 +7,8 @@ module.exports = (req, res, next) => {
   if (req.method === 'OPTIONS' || 
   req.url.toLowerCase() === '/gettoken' || 
   req.url.toLowerCase() === '/forgetpassword' || 
+  req.url.includes("verifyInviteCode")  || 
+  req.url.includes("updatePasswordUserInvite")  || 
   req.url.toLowerCase() === '/forgetpassword/verifytoken') {
     return next();
   }
@@ -30,6 +32,7 @@ module.exports = (req, res, next) => {
     req.body.loginUser = decodedToken;
     next();
   } catch (err) {
+    console.log('middleware------------------------');
     //console.log(err);
     const error = new HttpError('Authentication failed!', 403);
     return next(error);

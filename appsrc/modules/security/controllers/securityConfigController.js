@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
+const _ = require('lodash');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 var ObjectId = require('mongoose').Types.ObjectId;
 const HttpError = require('../../config/models/http-error');
@@ -21,16 +22,61 @@ this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
   {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  {path: 'updatedBy', select: 'name'},
+  {path: 'blockedUsers', select: 'name type'},
+  {path: 'blockedCustomers', select: 'name customer roles'} 
 ];
 
 
 this.populateList = [
+  {path: 'blockedUsers', select: 'name type'},
+  {path: 'blockedCustomers', select: 'name customer roles'}, 
   {path: '', select: ''}
 ];
 
+exports.searchSecurityConfig = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    console.log(errors);
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+
+    this.query = req.query != "undefined" ? req.query : {};
+    let searchName = this.query.name;
+    delete this.query.name;
+    this.dbservice.getObjectList(SecurityConfig, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    
+    function callbackFunc(error, securityConfigs) {
+
+      if (error) {
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+
+        if(searchName) {
+          let filterSecurityConfigs = [];
+          
+          for(let securityConfig of securityConfigs) {
+            let name = securityConfig.blockedUsers.name.toLowerCase();
+            if(name.search(searchName.toLowerCase())>-1) {
+              filterSecurityConfigs.push(securityConfig);
+            }
+          }
+
+          securityConfigs = filterSecurityConfigs;
+
+        } 
+        
+        return res.status(StatusCodes.OK).json(securityConfigs);
+      }
+    }
+
+  }
+}
+
 
 exports.getSecurityConfig = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectById(SecurityConfig, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -43,6 +89,7 @@ exports.getSecurityConfig = async (req, res, next) => {
 };
 
 exports.getSecurityConfigs = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectList(SecurityConfig, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -55,7 +102,7 @@ exports.getSecurityConfigs = async (req, res, next) => {
 };
 
 exports.deleteSecurityConfig = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityConfig, req.params.id, callbackFunc);
+  this.dbservice.deleteObject(SecurityConfig, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -71,6 +118,13 @@ exports.postSecurityConfig = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    const allowedProperties = ['loginUser'];
+    const invalidProperties = Object.keys(req.body).filter(prop => !allowedProperties.includes(prop));
+
+    if (invalidProperties.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -108,7 +162,7 @@ exports.patchSecurityConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { blockedUsers, blockedCustomers, whiteListIPs, blackListIPs, isActive, isArchived} = req.body;
+  const { blockedUsers, blockedCustomers, whiteListIPs, blackListIPs, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -144,6 +198,7 @@ function getDocumentFromReq(req, reqType){
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
