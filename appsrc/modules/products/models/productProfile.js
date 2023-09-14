@@ -17,10 +17,10 @@ const docSchema = new Schema({
     names: [{ type: String, maxlength: 50 }],
     // Names list for profile.
     
-    width: { type: String, maxlength: 35 },
+    web: { type: String, maxlength: 35 },
     // Width
     
-    height: { type: String, maxlength: 35 },
+    flange: { type: String, maxlength: 35 },
     // Height
     type: {  type: String, enum: ['CUTOMER','MANUFACTURER'], default: 'CUSTOMER'},                  
     

@@ -19,7 +19,7 @@ module.exports = {
     ProductServiceRecordsConfig: require('./productServiceRecordsConfig'),
     ProductServiceRecords: require('./productServiceRecords'),
     ProductServiceCategory: require('./productServiceCategory'),
-    machineProfile: require('./productProfile'),
+    ProductProfile: require('./productProfile'),
 
     
 
