@@ -43,7 +43,11 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
           let index = 0;
           for(let checkParam of response.checkParams) {
             if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-              response.checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
+              let indexP = 0;
+              for(let paramListId of checkParam.paramList) {
+                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId);
+                indexP++;
+              }
             }
             index++;
           }
@@ -59,8 +63,9 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
 };
 
 exports.getProductServiceRecordsConfigs = async (req, res, next) => {
+
   this.query = req.query != "undefined" ? req.query : {};  
-  this.orderBy = { name: 1 };
+  this.orderBy = { docTitle: 1 };
   let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
@@ -74,8 +79,13 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
         let index = 0;
         for(let checkParam of serviceRecordConfig.checkParams) {
 
-          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) 
-            serviceRecordConfigs[i].checkParams[index].paramList = await ProductServiceParams.find({_id:{$in:checkParam.paramList}});
+          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+            let indexP = 0;
+            for(let paramListId of checkParam.paramList) {
+              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId);
+              indexP++;
+            }
+          } 
           
           index++;
         }
