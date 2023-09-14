@@ -101,7 +101,7 @@ this.populate = [
       userInvite.receiverInvitationUser = req.params.id;
       userInvite.receiverInvitationEmail = user.email;
       userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let inviteCodeExpireHours = process.env.INVITE_EXPIRE_HOURS;
+      let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
 
       if(isNaN(inviteCodeExpireHours))
         inviteCodeExpireHours = 48;
@@ -192,7 +192,7 @@ this.populate = [
             securityUserInvite.invitationStatus = 'ACCEPTED';
             await securityUserInvite.save();
             loginUser.password = await bcrypt.hash(req.body.password, 12);
-            loginUser.name = req.body.name?req.body.name:'';
+            loginUser.name = req.body.fullName?req.body.fullName:'';
             loginUser.phone = req.body.phone?req.body.phone:'';
 
             if(!loginUser.contact) {
