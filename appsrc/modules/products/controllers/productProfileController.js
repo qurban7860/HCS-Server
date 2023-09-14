@@ -74,7 +74,7 @@ exports.postProductProfile = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if(req.body.type=='MANUFACTURER') {
-      let alreadyExists = await ProductProfile.findOne({type:req.body.type});
+      let alreadyExists = await ProductProfile.findOne({type:req.body.type,isArchived:false,isActive:true});
       if(alreadyExists) {
         return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
       }
@@ -101,7 +101,7 @@ exports.patchProductProfile = async (req, res, next) => {
   } else {
 
     if(req.body.type=='MANUFACTURER') {
-      let alreadyExists = await ProductProfile.findOne({type:req.body.type});
+      let alreadyExists = await ProductProfile.findOne({type:req.body.type,isArchived:false,isActive:true});
       if(alreadyExists && req.params.id!=alreadyExists.id) {
         return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
       }
