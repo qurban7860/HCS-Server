@@ -184,7 +184,7 @@ exports.getProducts = async (req, res, next) => {
 
 
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, products) {
+  async function callbackFunc(error, products) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
