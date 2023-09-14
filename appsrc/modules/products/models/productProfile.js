@@ -22,7 +22,7 @@ const docSchema = new Schema({
     
     flange: { type: String, maxlength: 35 },
     // Height
-    type: {  type: String, enum: ['CUTOMER','MANUFACTURER'], default: 'CUSTOMER'},                  
+    type: {  type: String, enum: ['CUSTOMER','MANUFACTURER'], default: 'CUSTOMER'},                  
     
 },
 {
