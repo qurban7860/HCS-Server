@@ -14,10 +14,11 @@ let rtnMsg = require('../../config/static/static')
 
 exports.getMachineByCountries = async (req, res, next) => {
 
-  console.log(req.query)
+  // console.log(req.query)
   let modelsIds = []
   let installationSitesId = []
   let matchQuery = { isArchived: false, isActive: true };
+
 
   if(mongoose.Types.ObjectId.isValid(req.query.model)) {
     
@@ -33,12 +34,28 @@ exports.getMachineByCountries = async (req, res, next) => {
 
   }
   else {
+
     let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-      { $match: { "machineCategory.connections": true} },
+      { $match: { "machineCategory.connections": {$ne:true}} },
     ]);
     modelsIds = machineModels.map(m => m._id);
-    matchQuery.machineModel = { $nin : modelsIds };
+    matchQuery.machineModel = { $in : modelsIds };
+  }
+
+  if(mongoose.Types.ObjectId.isValid(req.query.category)) {
+    if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
+      let machineModel = await ProductModel.find({category:req.query.category , _id : matchQuery.machineModel } );
+      if(!machineModel) {
+        delete matchQuery.machineModel;
+      }
+    }
+    else if(matchQuery.machineModel && matchQuery.machineModel['$in']) {
+      let machineModels = await ProductModel.find({category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } } );
+      modelsIds = machineModels.map(m => m._id);
+      matchQuery.machineModel = { $in : modelsIds };
+    }
+    
   }
 
   req.query.year = parseInt(req.query.year);
@@ -49,7 +66,7 @@ exports.getMachineByCountries = async (req, res, next) => {
     toDate.setFullYear(req.query.year, 11, 31);
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
-  console.log(matchQuery);
+  // console.log(matchQuery);
   let countryWiseMachineCount = await Product.aggregate([
       { $match: matchQuery }, 
       { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
@@ -71,10 +88,26 @@ exports.getMachineByModels = async (req, res, next) => {
   // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-    { $match: { "machineCategory.connections": true} },
+    { $match: { "machineCategory.connections": {$ne:true}} },
   ]);
   let modelsIds = machineModels.map(m => m._id);
-  let matchQuery = { isArchived: false, isActive: true, machineModel:{$nin:modelsIds} };
+
+  let matchQuery = { isArchived: false, isActive: true, machineModel:{$in:modelsIds} };
+
+  if(mongoose.Types.ObjectId.isValid(req.query.category)) {
+    if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
+      let machineModel = await ProductModel.find({category:req.query.category , _id : matchQuery.machineModel } );
+      if(!machineModel) {
+        delete matchQuery.machineModel;
+      }
+    }
+    else if(matchQuery.machineModel && matchQuery.machineModel['$in']) {
+      let machineModels = await ProductModel.find({category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } } );
+      modelsIds = machineModels.map(m => m._id);
+      matchQuery.machineModel = { $in : modelsIds };
+    }
+    
+  }
 
   if(Array.isArray(req.query.country) && req.query.country.length>0) {
     let countries = await Country.find( { country_code : { $in : req.query.country } } );
@@ -125,7 +158,7 @@ exports.getMachineByModels = async (req, res, next) => {
 
 exports.getMachineByYears = async (req, res, next) => {
 
-  console.log(req.query)
+  // console.log(req.query)
   let modelsIds = []
 
   let matchQuery = { isArchived: false, isActive: true, installationDate : { $ne:null } } ;
@@ -148,6 +181,27 @@ exports.getMachineByYears = async (req, res, next) => {
   }
 
 
+  if(mongoose.Types.ObjectId.isValid(req.query.category)) {
+    if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
+      let machineModel = await ProductModel.find({category:req.query.category , _id : matchQuery.machineModel } );
+      if(!machineModel) {
+        delete matchQuery.machineModel;
+      }
+    }
+    else if(matchQuery.machineModel && matchQuery.machineModel['$in']) {
+      let machineModels = await ProductModel.find({category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } } );
+      modelsIds = machineModels.map(m => m._id);
+      matchQuery.machineModel = { $in : modelsIds };
+    }
+    else {
+      let machineModels = await ProductModel.find({category:req.query.category } );
+      modelsIds = machineModels.map(m => m._id);
+      matchQuery.machineModel = { $in : modelsIds }; 
+    }
+    
+  }
+
+
   if(Array.isArray(req.query.country) && req.query.country.length>0) {
     let countries = await Country.find( { country_code : { $in : req.query.country } } );
     let countriesNames = countries.map(c => c.country_name);
@@ -165,7 +219,7 @@ exports.getMachineByYears = async (req, res, next) => {
     }
   }  
 
-  console.log(matchQuery);
+  // console.log(matchQuery);
 
   let yearWiseMachines = await Product.aggregate([
     { $match : matchQuery },
