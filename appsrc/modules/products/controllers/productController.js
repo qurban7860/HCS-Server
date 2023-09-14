@@ -94,8 +94,11 @@ exports.getProduct = async (req, res, next) => {
         machine.verifications = machineVerifications;
       }
 
+      let machineProfileQuery = {type:"MANUFACTURER", machine: machine._id, isActive:true, isArchived:false};
 
-      machine.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:machine.id});
+      console.log("machineProfileQuery", machineProfileQuery);
+
+      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery);
 
       res.json(machine);
     }
