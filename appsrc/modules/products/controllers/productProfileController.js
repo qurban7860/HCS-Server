@@ -43,7 +43,7 @@ exports.getProductProfile = async (req, res, next) => {
 
 exports.getProductProfiles = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.orderBy = { name: 1 };
+  this.orderBy = { createdAt: -1 };
   this.dbservice.getObjectList(ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -158,11 +158,11 @@ function getDocumentFromReq(req, reqType){
   }
   
   if ("isActive" in req.body){
-    doc.isActive = isActive;
+    doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
   }
 
   if ("isArchived" in req.body){
-    doc.isArchived = isArchived;
+    doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
   }
 
   if (reqType == "new" && "loginUser" in req.body ){
