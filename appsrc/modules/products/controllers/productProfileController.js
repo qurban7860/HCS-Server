@@ -42,7 +42,9 @@ exports.getProductProfile = async (req, res, next) => {
 };
 
 exports.getProductProfiles = async (req, res, next) => {
+  this.machineId = req.params.machineId;
   this.query = req.query != "undefined" ? req.query : {};  
+  this.query.machine = this.machineId;
   this.orderBy = { createdAt: -1 };
   this.dbservice.getObjectList(ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
