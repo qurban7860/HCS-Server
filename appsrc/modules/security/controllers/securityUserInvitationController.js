@@ -124,8 +124,19 @@ this.populate = [
         subject: emailSubject,
         html: true
       };
+
+      let hostName = 'portal.howickltd.com';
+
+      if(process.env.CLINET_NAME)
+        hostName = process.env.CLINET_NAME;
+      
+      let hostUrl = "https://portal.howickltd.com";
+
+      if(process.env.CLINET_URL)
+        hostUrl = process.env.CLINET_URL;
+
       fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-        let htmlData = render(data,{ emailSubject, emailContent })
+        let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
         res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
