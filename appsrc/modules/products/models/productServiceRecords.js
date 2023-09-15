@@ -33,38 +33,6 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
   // technician information who performed service process.
    
-  params: [{
-    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineServiceParam'},
-    name: {type: String},
-    checked: {type: Boolean, default: false},
-    value: {type: String},
-    comments: {type: String} 
-  }],
-  
-  additionalParams: [{
-    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineServiceParam'},
-    name: {type: String},
-    checked: {type: Boolean, default: false},
-    value: {type: String},
-    comments: {type: String} 
-  }],
-  
-  machineMetreageParams: [{
-    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineServiceParam'},
-    name: {type: String},
-    checked: {type: Boolean, default: false},
-    value: {type: String},
-    comments: {type: String} 
-  }],
-  
-  punchCyclesParams: [{
-    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineServiceParam'},
-    name: {type: String},
-    checked: {type: Boolean, default: false},
-    value: {type: String},
-    comments: {type: String} 
-  }],
-  
   serviceNote: { type: String },
   //some notes regarding service/installation/training,
   

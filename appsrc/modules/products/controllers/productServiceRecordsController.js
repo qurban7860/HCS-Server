@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecords } = require('../models');
+const { ProductServiceRecords, Product } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -22,6 +22,12 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
+  {path: 'serviceRecordConfig', select: ''},
+  {path: 'customer', select: 'name'},
+  {path: 'site', select: 'name'},
+  {path: 'machine', select: 'name serialNo'},
+  {path: 'technician', select: 'firstName lastName'},
+  {path: 'operator', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -30,11 +36,17 @@ this.populate = [
 
 exports.getProductServiceRecord = async (req, res, next) => {
   this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
+      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
+        response = JSON.parse(JSON.stringify(response));
+        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+      }
+
       res.json(response);
     }
   }
@@ -45,11 +57,26 @@ exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
+      if(response && Array.isArray(response) && response.length>0) {
+        response = JSON.parse(JSON.stringify(response));
+
+        let index = 0;
+        for(let serviceRecord of response) {
+
+          if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
+            serviceRecord.decoilers.length>0) {
+            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+          }
+          response[index] = serviceRecord;
+          index++;
+        }
+      }
       res.json(response);
     }
   }
