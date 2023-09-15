@@ -78,13 +78,13 @@ exports.login = async (req, res, next) => {
               };
               let hostName = 'portal.howickltd.com';
 
-              if(process.env.CLINET_NAME)
-                hostName = process.env.CLINET_NAME;
+              if(process.env.CLIENT_HOST_NAME)
+                hostName = process.env.CLIENT_HOST_NAME;
               
               let hostUrl = "https://portal.howickltd.com";
 
-              if(process.env.CLINET_URL)
-                hostUrl = process.env.CLINET_URL;
+              if(process.env.CLIENT_APP_URL)
+                hostUrl = process.env.CLIENT_APP_URL;
               
               // console.log("@2");
               fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
@@ -351,13 +351,13 @@ exports.forgetPassword = async (req, res, next) => {
 
           let hostName = 'portal.howickltd.com';
 
-          if(process.env.CLINET_NAME)
-            hostName = process.env.CLINET_NAME;
+          if(process.env.CLIENT_HOST_NAME)
+            hostName = process.env.CLIENT_HOST_NAME;
           
           let hostUrl = "https://portal.howickltd.com";
 
-          if(process.env.CLINET_URL)
-            hostUrl = process.env.CLINET_URL;
+          if(process.env.CLIENT_APP_URL)
+            hostUrl = process.env.CLIENT_APP_URL;
 
           fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
 
@@ -420,13 +420,13 @@ exports.verifyForgottenPassword = async (req, res, next) => {
 
               let hostName = 'portal.howickltd.com';
 
-              if(process.env.CLINET_NAME)
-                hostName = process.env.CLINET_NAME;
+              if(process.env.CLIENT_HOST_NAME)
+                hostName = process.env.CLIENT_HOST_NAME;
               
               let hostUrl = "https://portal.howickltd.com";
 
-              if(process.env.CLINET_URL)
-                hostUrl = process.env.CLINET_URL;
+              if(process.env.CLIENT_APP_URL)
+                hostUrl = process.env.CLIENT_APP_URL;
 
               fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
 
