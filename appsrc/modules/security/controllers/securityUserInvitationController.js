@@ -167,8 +167,8 @@ this.populate = [
         customerName = user.customer.name;
       }
       
-      if(user && user.contact && user.contact.name) {
-        contactName = user.contact.name;
+      if(user && user.contact && user.contact.firstName) {
+        contactName = user.contact.firstName +' '+ user.contact.lastName;
         contactId = user.contact.id;
       }
 
