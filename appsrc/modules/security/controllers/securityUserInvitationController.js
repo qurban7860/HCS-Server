@@ -167,22 +167,20 @@ this.populate = [
         customerName = user.customer.name;
       }
       
-      if(user && !user.contact) {
-        if(!user.contact) {
-          let contact = await CustomerContact.create({
-            customer:user.customer,
-            firstName:user.name,
-            phone:user.phone,
-            email:user.email
-          });
-          
-          if(contact) {
+      // if(user && !user.contact) {
+      //   let contact = await CustomerContact.create({
+      //     customer:user.customer,
+      //     firstName:user.name,
+      //     phone:user.phone,
+      //     email:user.email
+      //   });
+        
+      //   if(contact) {
 
-            user.contact = contact.id;
-            user = await user.save();
-          }
-        }
-      }
+      //     user.contact = contact.id;
+      //     user = await user.save();
+      //   }
+      // }
 
       if(user && user.contact && user.contact.firstName) {
         contactName = user.contact.firstName +' '+ user.contact.lastName;
