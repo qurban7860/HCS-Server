@@ -74,9 +74,9 @@ exports.postProductServiceParams = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let alreadyExists = await ProductServiceParams.findOne({name:{ $regex: req.body.name, $options: 'i' },category:req.body.category});
+    let alreadyExists = await ProductServiceParams.findOne({name:{ $regex: req.body.name, $options: 'i' } , category:req.body.category});
     
-    if(!alreadyExists) {
+    if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send({ message : "Item with this name under category already exists" });
     }
 
