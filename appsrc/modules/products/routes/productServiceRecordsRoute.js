@@ -1,7 +1,10 @@
 const express = require('express');
 const { check } = require('express-validator');
+const multer = require('multer');
 
 const fileUpload = require('../../../middleware/file-upload');
+const upload = multer({ dest: 'uploads/' })
+
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
@@ -22,7 +25,7 @@ router.get(`${baseRouteForObject}/:id`, controller.getProductServiceRecord);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceRecords);
 
-router.post(`${baseRouteForObject}/`,  controller.postProductServiceRecord);
+router.post(`${baseRouteForObject}/`,upload.single('document'),  controller.postProductServiceRecord);
 
 router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceRecord);
 
