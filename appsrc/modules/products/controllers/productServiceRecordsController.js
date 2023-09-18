@@ -35,6 +35,7 @@ this.populate = [
 
 
 exports.getProductServiceRecord = async (req, res, next) => {
+  
   this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -56,6 +57,10 @@ exports.getProductServiceRecord = async (req, res, next) => {
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   // this.orderBy = { name: 1 };
+  if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
+    return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
+
+  this.query.machine = req.params.machineId;
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
