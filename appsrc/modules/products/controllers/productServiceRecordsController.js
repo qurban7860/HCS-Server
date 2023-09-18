@@ -152,12 +152,13 @@ exports.patchProductServiceRecord = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { 
-    recordType, serviceRecordConfig, serviceDate, customer, site, machine, decoilers, 
+    recordType, serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks,
     loginUser, isActive, isArchived
-} = req.body;
-  
+  } = req.body;
+    
+  let { decoilers } = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductServiceRecords({});
