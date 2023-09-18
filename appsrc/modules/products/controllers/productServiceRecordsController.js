@@ -102,18 +102,20 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
+  console.log(req.body);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
   function callbackFunc(error, response) {
+    console.log()
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
         error._message
       );
     } else {
-      res.status(StatusCodes.CREATED).json({ MachineTool: response });
+      res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
 }
