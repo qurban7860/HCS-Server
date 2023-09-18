@@ -9,6 +9,9 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
+const fileUpload = require('../../../middleware/file-upload');
+const multer = require("multer");
+
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
@@ -102,7 +105,9 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
-  console.log(req.body);
+
+  req.body.machine = req.params.machineId;
+
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -123,6 +128,8 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
+  
+  req.body.machine = req.params.machineId;
   
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
