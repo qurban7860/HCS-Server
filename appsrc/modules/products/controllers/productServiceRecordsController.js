@@ -184,6 +184,10 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("decoilers" in req.body){
+
+    if(decoilers.indexOf(','))
+      decoilers = decoilers.split(',');
+    
     doc.decoilers = decoilers;
   }
 
