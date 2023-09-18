@@ -116,6 +116,7 @@ exports.deleteProductServiceRecordsConfig = async (req, res, next) => {
 exports.postProductServiceRecordsConfig = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    logger.error(new Error(error));
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -142,6 +143,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
+    logger.error(new Error(error));
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
