@@ -74,18 +74,24 @@ exports.postProductServiceParams = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-  this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-        error._message
-      );
-    } else {
-      res.status(StatusCodes.CREATED).json({ MachineTool: response });
+    let alreadyExists = await ProductServiceParams.findOne({name:{ $regex: req.body.name, $options: 'i' },category:req.body.category});
+    
+    if(!alreadyExists) {
+      return res.status(StatusCodes.BAD_REQUEST).send({ message : "Item with this name under category already exists" });
+    }
+
+    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error._message
+        );
+      } else {
+        res.status(StatusCodes.CREATED).json({ checkItems : response });
+      }
     }
   }
-}
 };
 
 exports.patchProductServiceParams = async (req, res, next) => {
