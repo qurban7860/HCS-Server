@@ -173,7 +173,7 @@ function getDocumentFromReq(req, reqType){
   const { category, recordType, machineModel, docTitle, textBeforeCheckItems, paramsTitle, params, 
     checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
-    punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
+    punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
     enableSuggestedSpares, header, footer, loginUser, isActive, isArchived
 } = req.body;
   
@@ -249,8 +249,8 @@ function getDocumentFromReq(req, reqType){
   if ("isOperatorSignatureRequired" in req.body){
     doc.isOperatorSignatureRequired = isOperatorSignatureRequired;
   }
-  if ("enableServiceNote" in req.body){
-    doc.enableServiceNote = enableServiceNote;
+  if ("enableNote" in req.body){
+    doc.enableNote = enableNote;
   }
   if ("enableMaintenanceRecommendations" in req.body){
     doc.enableMaintenanceRecommendations = enableMaintenanceRecommendations;
