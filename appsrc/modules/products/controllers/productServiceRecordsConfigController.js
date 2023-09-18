@@ -45,7 +45,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
             if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
               let indexP = 0;
               for(let paramListId of checkParam.paramList) {
-                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId);
+                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
                 indexP++;
               }
             }
@@ -82,7 +82,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
             for(let paramListId of checkParam.paramList) {
-              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId);
+              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
               indexP++;
             }
           } 
