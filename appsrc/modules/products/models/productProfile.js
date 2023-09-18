@@ -14,7 +14,7 @@ const docSchema = new Schema({
     defaultName: { type: String, required: true },
     // DefaultName for profile.
     
-    names: [{ type: String, maxlength: 50 }],
+    names: [{ type: String }],
     // Names list for profile.
     
     web: { type: String, maxlength: 35 },
