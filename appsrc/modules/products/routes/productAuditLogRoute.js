@@ -14,7 +14,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/auditlogs`; 
+const baseRouteForObject = `/machines/:machineId/auditlogs`; 
 
 router.use(checkAuth, checkCustomer);
 

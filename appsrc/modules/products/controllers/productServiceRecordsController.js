@@ -15,7 +15,7 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecords, Product } = require('../models');
+const { ProductServiceRecords, Product, ProductServiceParams } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -48,10 +48,25 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response = JSON.parse(JSON.stringify(response));
-        async function fetchDecoilers() {
-          response.decoilers = await Product.find({_id: {$in: response.decoilers}});
+        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+
+        if(response.serviceRecordConfig && 
+          Array.isArray(response.serviceRecordConfig.checkParams) &&
+          response.serviceRecordConfig.checkParams.length>0) {
+
+          let index = 0;
+          for(let checkParam of response.serviceRecordConfig.checkParams) {
+            if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+              let indexP = 0;
+              for(let paramListId of checkParam.paramList) {
+                response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+                indexP++;
+              }
+            }
+            index++;
+          }
         }
-        await fetchDecoilers();
+
       }
 
       res.json(response);
@@ -82,10 +97,8 @@ exports.getProductServiceRecords = async (req, res, next) => {
 
           if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
             serviceRecord.decoilers.length>0) {
-            async function fetchDecoilers() {
-              serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
-            }
-            await fetchDecoilers();
+            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+
           }
           response[index] = serviceRecord;
           index++;
@@ -119,7 +132,6 @@ exports.postProductServiceRecord = async (req, res, next) => {
   } else {
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
   async function callbackFunc(error, response) {
-    console.log()
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
@@ -128,10 +140,8 @@ exports.postProductServiceRecord = async (req, res, next) => {
     } else {
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response = JSON.parse(JSON.stringify(response));
-        async function fetchDecoilers() {
-          response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-        }
-        await fetchDecoilers();
+        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+
       }
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }

@@ -27,5 +27,8 @@ router.post(`${baseRouteForObject}/:id/connect`, controller.connectMachine);
 
 router.post(`${baseRouteForObject}/:id/disconnect`, controller.disconnectMachine);
 
+router.get(`${baseRouteForObject}/`, controller.getConnectionProducts); 
+
+
 
 module.exports = router;
