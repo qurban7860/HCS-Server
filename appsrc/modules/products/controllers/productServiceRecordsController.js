@@ -29,7 +29,7 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  {path: 'technician', select: 'firstName lastName'},
+  {path: 'technician', select: 'name'},
   {path: 'operator', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
