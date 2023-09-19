@@ -126,6 +126,13 @@ exports.postProductServiceRecord = async (req, res, next) => {
         error._message
       );
     } else {
+      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
+        response = JSON.parse(JSON.stringify(response));
+        async function fetchDecoilers() {
+          response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+        }
+        await fetchDecoilers();
+      }
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
