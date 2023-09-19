@@ -118,7 +118,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     console.log()
     if (error) {
       logger.error(new Error(error));
