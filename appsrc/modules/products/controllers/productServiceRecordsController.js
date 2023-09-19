@@ -48,7 +48,10 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response = JSON.parse(JSON.stringify(response));
-        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+        async function fetchDecoilers() {
+          response.decoilers = await Product.find({_id: {$in: response.decoilers}});
+        }
+        await fetchDecoilers();
       }
 
       res.json(response);
@@ -79,7 +82,10 @@ exports.getProductServiceRecords = async (req, res, next) => {
 
           if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
             serviceRecord.decoilers.length>0) {
-            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+            async function fetchDecoilers() {
+              serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+            }
+            await fetchDecoilers();
           }
           response[index] = serviceRecord;
           index++;
@@ -120,10 +126,6 @@ exports.postProductServiceRecord = async (req, res, next) => {
         error._message
       );
     } else {
-      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response = JSON.parse(JSON.stringify(response));
-        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-      }
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
