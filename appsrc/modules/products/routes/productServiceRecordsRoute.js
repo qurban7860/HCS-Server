@@ -27,7 +27,7 @@ router.get(`${baseRouteForObject}/`, controller.getProductServiceRecords);
 
 router.post(`${baseRouteForObject}/`,upload.single('document'),  controller.postProductServiceRecord);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceRecord);
+router.patch(`${baseRouteForObject}/:id`, [verifyDelete,upload.single('document')], controller.patchProductServiceRecord);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceRecord);
 
