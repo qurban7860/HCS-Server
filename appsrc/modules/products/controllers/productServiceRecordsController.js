@@ -229,7 +229,7 @@ function getDocumentFromReq(req, reqType){
 
   if ("decoilers" in req.body){
 
-    if(decoilers.indexOf(','))
+    if(decoilers.indexOf(',')>-1 && !Array.isArray(decoilers))
       decoilers = decoilers.split(',');
     
     doc.decoilers = decoilers;
