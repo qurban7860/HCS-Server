@@ -255,6 +255,10 @@ function getDocumentFromReq(req, reqType){
   if ("serviceNote" in req.body){
     doc.serviceNote = serviceNote;
   }
+
+  if ("serviceDate" in req.body){
+    doc.serviceDate = serviceDate;
+  }
   if ("maintenanceRecommendation" in req.body){
     doc.maintenanceRecommendation = maintenanceRecommendation;
   }
