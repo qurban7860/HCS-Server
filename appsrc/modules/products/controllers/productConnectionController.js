@@ -38,6 +38,9 @@ exports.connectMachine = async (req, res, next) => {
 
 };
 
+
+
+
 async function connectMachines(machineId, connectedMachines = []) {
   try{
     if(!mongoose.Types.ObjectId.isValid(machineId))
@@ -96,6 +99,46 @@ async function connectMachines(machineId, connectedMachines = []) {
 
 
 exports.connectMachines = connectMachines;
+
+
+
+exports.getConnectionProducts = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
+  aggregateQuery = [
+    {
+      $lookup: {
+        from: 'MachineModels',
+        localField: 'machineModel',
+        foreignField: '_id',
+        as: 'model'
+      }
+    },
+    {
+      $unwind: '$model'
+    },
+    {
+      $lookup: {
+        from: 'MachineCategories',
+        localField: 'model.category',
+        foreignField: '_id',
+        as: 'category'
+      }
+    },
+    {
+      $unwind: '$category'
+    },
+    {
+      $match: {
+        'category.connections': true,
+        'customer': ObjectId(this.query.customer),
+          'isActive': true,
+          'isArchived': false
+      }
+    }
+  ];
+  let listProducts = await Product.aggregate(aggregateQuery);
+  res.status(StatusCodes.OK).json(listProducts);
+};
 
 
 exports.disconnectMachine = async (req, res, next) => {

@@ -42,8 +42,10 @@ exports.getProductProfile = async (req, res, next) => {
 };
 
 exports.getProductProfiles = async (req, res, next) => {
+  this.machineId = req.params.machineId;
   this.query = req.query != "undefined" ? req.query : {};  
-  this.orderBy = { name: 1 };
+  this.query.machine = this.machineId;
+  this.orderBy = { createdAt: -1 };
   this.dbservice.getObjectList(ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -74,7 +76,12 @@ exports.postProductProfile = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if(req.body.type=='MANUFACTURER') {
-      let alreadyExists = await ProductProfile.findOne({type:req.body.type});
+      let alreadyExists = await ProductProfile.findOne({
+        type:req.body.type,
+        isArchived:false,
+        isActive:true,
+        machine:req.params.machineId
+      });
       if(alreadyExists) {
         return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
       }
@@ -101,7 +108,12 @@ exports.patchProductProfile = async (req, res, next) => {
   } else {
 
     if(req.body.type=='MANUFACTURER') {
-      let alreadyExists = await ProductProfile.findOne({type:req.body.type});
+      let alreadyExists = await ProductProfile.findOne({
+        type:req.body.type,
+        isArchived:false,
+        isActive:true,
+        machine:req.params.machineId
+      });
       if(alreadyExists && req.params.id!=alreadyExists.id) {
         return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
       }
@@ -158,11 +170,11 @@ function getDocumentFromReq(req, reqType){
   }
   
   if ("isActive" in req.body){
-    doc.isActive = isActive;
+    doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
   }
 
   if ("isArchived" in req.body){
-    doc.isArchived = isArchived;
+    doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
   }
 
   if (reqType == "new" && "loginUser" in req.body ){

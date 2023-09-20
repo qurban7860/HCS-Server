@@ -45,7 +45,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
             if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
               let indexP = 0;
               for(let paramListId of checkParam.paramList) {
-                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId);
+                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
                 indexP++;
               }
             }
@@ -82,7 +82,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
             for(let paramListId of checkParam.paramList) {
-              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId);
+              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
               indexP++;
             }
           } 
@@ -116,8 +116,13 @@ exports.deleteProductServiceRecordsConfig = async (req, res, next) => {
 exports.postProductServiceRecordsConfig = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    logger.error(new Error(error));
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+  if(!req.body.loginUser)
+    req.body.loginUser = await getToken(req);
+
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -142,8 +147,13 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
+    logger.error(new Error(error));
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+    if(!req.body.loginUser)
+      req.body.loginUser = await getToken(req);
+    
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
       if (error) {
@@ -166,12 +176,23 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
   }
 };
 
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
 
 function getDocumentFromReq(req, reqType){
   const { category, recordType, machineModel, docTitle, textBeforeCheckItems, paramsTitle, params, 
     checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
-    punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableServiceNote, enableMaintenanceRecommendations, 
+    punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
     enableSuggestedSpares, header, footer, loginUser, isActive, isArchived
 } = req.body;
   
@@ -247,8 +268,8 @@ function getDocumentFromReq(req, reqType){
   if ("isOperatorSignatureRequired" in req.body){
     doc.isOperatorSignatureRequired = isOperatorSignatureRequired;
   }
-  if ("enableServiceNote" in req.body){
-    doc.enableServiceNote = enableServiceNote;
+  if ("enableNote" in req.body){
+    doc.enableNote = enableNote;
   }
   if ("enableMaintenanceRecommendations" in req.body){
     doc.enableMaintenanceRecommendations = enableMaintenanceRecommendations;

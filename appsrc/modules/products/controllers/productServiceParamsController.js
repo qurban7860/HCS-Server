@@ -74,18 +74,29 @@ exports.postProductServiceParams = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-  this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-        error._message
-      );
-    } else {
-      res.status(StatusCodes.CREATED).json({ MachineTool: response });
+
+
+    if(!req.body.loginUser)
+      req.body.loginUser = await getToken(req);
+    
+    let alreadyExists = await ProductServiceParams.findOne({name:{ $regex: req.body.name, $options: 'i' } , category:req.body.category});
+    
+    if(alreadyExists) {
+      return res.status(StatusCodes.BAD_REQUEST).send({ message : "Item with this name under category already exists" });
+    }
+
+    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error._message
+        );
+      } else {
+        res.status(StatusCodes.CREATED).json({ checkItems : response });
+      }
     }
   }
-}
 };
 
 exports.patchProductServiceParams = async (req, res, next) => {
@@ -94,6 +105,10 @@ exports.patchProductServiceParams = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+    if(!req.body.loginUser)
+      req.body.loginUser = await getToken(req);
+    
     this.dbservice.patchObject(ProductServiceParams, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
@@ -108,6 +123,18 @@ exports.patchProductServiceParams = async (req, res, next) => {
     }
   }
 };
+
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
 
 
 function getDocumentFromReq(req, reqType){

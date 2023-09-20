@@ -101,7 +101,7 @@ this.populate = [
       userInvite.receiverInvitationUser = req.params.id;
       userInvite.receiverInvitationEmail = user.email;
       userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let inviteCodeExpireHours = process.env.INVITE_EXPIRE_HOURS;
+      let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
 
       if(isNaN(inviteCodeExpireHours))
         inviteCodeExpireHours = 48;
@@ -124,8 +124,19 @@ this.populate = [
         subject: emailSubject,
         html: true
       };
+
+      let hostName = 'portal.howickltd.com';
+
+      if(process.env.CLIENT_HOST_NAME)
+        hostName = process.env.CLIENT_HOST_NAME;
+      
+      let hostUrl = "https://portal.howickltd.com";
+
+      if(process.env.CLIENT_APP_URL)
+        hostUrl = process.env.CLIENT_APP_URL;
+
       fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-        let htmlData = render(data,{ emailSubject, emailContent })
+        let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
         res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
@@ -156,8 +167,23 @@ this.populate = [
         customerName = user.customer.name;
       }
       
-      if(user && user.contact && user.contact.name) {
-        contactName = user.contact.name;
+      // if(user && !user.contact) {
+      //   let contact = await CustomerContact.create({
+      //     customer:user.customer,
+      //     firstName:user.name,
+      //     phone:user.phone,
+      //     email:user.email
+      //   });
+        
+      //   if(contact) {
+
+      //     user.contact = contact.id;
+      //     user = await user.save();
+      //   }
+      // }
+
+      if(user && user.contact && user.contact.firstName) {
+        contactName = user.contact.firstName +' '+ user.contact.lastName;
         contactId = user.contact.id;
       }
 
@@ -192,7 +218,7 @@ this.populate = [
             securityUserInvite.invitationStatus = 'ACCEPTED';
             await securityUserInvite.save();
             loginUser.password = await bcrypt.hash(req.body.password, 12);
-            loginUser.name = req.body.name?req.body.name:'';
+            loginUser.name = req.body.fullName?req.body.fullName:'';
             loginUser.phone = req.body.phone?req.body.phone:'';
 
             if(!loginUser.contact) {

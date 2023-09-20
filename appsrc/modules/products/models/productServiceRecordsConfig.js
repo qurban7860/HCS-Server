@@ -35,7 +35,7 @@ const docSchema = new Schema({
   isOperatorSignatureRequired: { type: Boolean, default: false},
   // true if operator signature is required
   
-  enableServiceNote: { type: Boolean, default: false},
+  enableNote: { type: Boolean, default: false},
   // enable Service Note at input screen
   
   enableMaintenanceRecommendations: { type: Boolean, default: false},

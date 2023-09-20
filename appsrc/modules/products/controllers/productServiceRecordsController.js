@@ -9,10 +9,13 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
+const fileUpload = require('../../../middleware/file-upload');
+const multer = require("multer");
+
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecords } = require('../models');
+const { ProductServiceRecords, Product, ProductServiceParams } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -22,6 +25,12 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
+  {path: 'serviceRecordConfig', select: ''},
+  {path: 'customer', select: 'name'},
+  {path: 'site', select: 'name'},
+  {path: 'machine', select: 'name serialNo'},
+  {path: 'technician', select: 'firstName lastName'},
+  {path: 'operator', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -29,12 +38,37 @@ this.populate = [
 
 
 exports.getProductServiceRecord = async (req, res, next) => {
+  
   this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
+      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
+        response = JSON.parse(JSON.stringify(response));
+        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+
+        if(response.serviceRecordConfig && 
+          Array.isArray(response.serviceRecordConfig.checkParams) &&
+          response.serviceRecordConfig.checkParams.length>0) {
+
+          let index = 0;
+          for(let checkParam of response.serviceRecordConfig.checkParams) {
+            if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+              let indexP = 0;
+              for(let paramListId of checkParam.paramList) {
+                response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+                indexP++;
+              }
+            }
+            index++;
+          }
+        }
+
+      }
+
       res.json(response);
     }
   }
@@ -43,13 +77,33 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.orderBy = { name: 1 };
+  // this.orderBy = { name: 1 };
+  if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
+    return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
+
+  this.query.machine = req.params.machineId;
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
+      if(response && Array.isArray(response) && response.length>0) {
+        response = JSON.parse(JSON.stringify(response));
+
+        let index = 0;
+        for(let serviceRecord of response) {
+
+          if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
+            serviceRecord.decoilers.length>0) {
+            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+
+          }
+          response[index] = serviceRecord;
+          index++;
+        }
+      }
       res.json(response);
     }
   }
@@ -70,18 +124,30 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
+
+  req.body.machine = req.params.machineId;
+
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+  if(!req.body.loginUser)
+    req.body.loginUser = await getToken(req);
+  
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
         error._message
       );
     } else {
-      res.status(StatusCodes.CREATED).json({ MachineTool: response });
+      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
+        response = JSON.parse(JSON.stringify(response));
+        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+
+      }
+      res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
 }
@@ -90,9 +156,15 @@ exports.postProductServiceRecord = async (req, res, next) => {
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
   
+  req.body.machine = req.params.machineId;
+  
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    
+    if(!req.body.loginUser)
+      req.body.loginUser = await getToken(req);
+    
     this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
@@ -109,14 +181,27 @@ exports.patchProductServiceRecord = async (req, res, next) => {
 };
 
 
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
+
 function getDocumentFromReq(req, reqType){
   const { 
-    recordType, serviceRecordConfig, serviceDate, customer, site, machine, decoilers, 
+    recordType, serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks,
     loginUser, isActive, isArchived
-} = req.body;
-  
+  } = req.body;
+    
+  let { decoilers } = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductServiceRecords({});
@@ -143,6 +228,10 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("decoilers" in req.body){
+
+    if(decoilers.indexOf(',')>-1 && !Array.isArray(decoilers))
+      decoilers = decoilers.split(',');
+    
     doc.decoilers = decoilers;
   }
 

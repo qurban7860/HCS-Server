@@ -53,6 +53,8 @@ exports.getProduct = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
+      machine = JSON.parse(JSON.stringify(machine));
+      
       if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
         let query_ = { _id : { $in:machine.machineConnections }, isActive : true, isArchived : false };
         let populate = {path: 'connectedMachine', select: '_id name serialNo'}
@@ -79,7 +81,6 @@ exports.getProduct = async (req, res, next) => {
       }
 
       if(Array.isArray(machine.verifications) && machine.verifications.length>0 ) {
-        machine = JSON.parse(JSON.stringify(machine));
         let machineVerifications = [];
 
         for(let verification of machine.verifications) {
@@ -94,9 +95,9 @@ exports.getProduct = async (req, res, next) => {
         machine.verifications = machineVerifications;
       }
 
-
-      machine.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:machine.id});
-
+      let machineProfileQuery = {type:"MANUFACTURER", machine: machine._id, isActive:true, isArchived:false};
+      console.log(machineProfileQuery);
+      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName');
       res.json(machine);
     }
   }
@@ -196,7 +197,7 @@ exports.getProducts = async (req, res, next) => {
 
           if(product && product.machineModel && product.machineModel.category && 
             product.machineModel.category.connections) {
-            product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:product.id});        
+            // product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:product.id});        
             filteredProducts.push(product);
           
           }

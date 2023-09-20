@@ -1,7 +1,10 @@
 const express = require('express');
 const { check } = require('express-validator');
+const multer = require('multer');
 
 const fileUpload = require('../../../middleware/file-upload');
+const upload = multer({ dest: 'uploads/' })
+
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
@@ -14,7 +17,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/serviceRecords`; 
+const baseRouteForObject = `/machines/:machineId/serviceRecords`; 
 
 router.use(checkAuth, checkCustomer);
 
@@ -22,9 +25,9 @@ router.get(`${baseRouteForObject}/:id`, controller.getProductServiceRecord);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceRecords);
 
-router.post(`${baseRouteForObject}/`,  controller.postProductServiceRecord);
+router.post(`${baseRouteForObject}/`,upload.single('document'),  controller.postProductServiceRecord);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceRecord);
+router.patch(`${baseRouteForObject}/:id`, [verifyDelete,upload.single('document')], controller.patchProductServiceRecord);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceRecord);
 
