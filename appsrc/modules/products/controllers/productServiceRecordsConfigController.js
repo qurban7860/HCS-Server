@@ -74,11 +74,11 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
     this.query.isArchived = false;
   }
 
-  if(this.query.isActive=='true'){
-    this.query.isActive = true
+  if(this.query.isActive=='false'){
+    this.query.isActive = false
   }
   else {
-    this.query.isActive = false;
+    this.query.isActive = true;
   }
 
   if(req.params.machineId) {
@@ -104,32 +104,12 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   }
 
   console.log(JSON.stringify(this.query));
-  let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
+
+  let serviceRecordConfigs = await ProductServiceRecordsConfig.find(this.query,{docTitle:1,recordType:1}).sort(this.orderBy);
+  // this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
-    serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
-    let i = 0;
 
-    if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
-
-      for(let serviceRecordConfig of serviceRecordConfigs) {
-
-        let index = 0;
-        for(let checkParam of serviceRecordConfig.checkParams) {
-
-          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-            let indexP = 0;
-            for(let paramListId of checkParam.paramList) {
-              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
-              indexP++;
-            }
-          } 
-          
-          index++;
-        }
-        i++;
-      }
-    }
     return res.status(StatusCodes.OK).json(serviceRecordConfigs);
 
   }catch(e) {
