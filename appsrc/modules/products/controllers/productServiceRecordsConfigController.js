@@ -92,14 +92,13 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
         { category : {$exists :false } },
       ];
        
-      // this.fields = 'docTitle recordType';
     }
   }
 
-  // console.log(JSON.stringify(this.query));
+  console.log(JSON.stringify(this.query));
 
   // let serviceRecordConfigs = await ProductServiceRecordsConfig.find(this.query,{docTitle:1,recordType:1}).sort(this.orderBy);
-  this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
+  let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
 
