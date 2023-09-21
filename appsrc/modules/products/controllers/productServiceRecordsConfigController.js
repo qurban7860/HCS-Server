@@ -97,17 +97,39 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
   console.log(JSON.stringify(this.query));
 
-  // let serviceRecordConfigs = await ProductServiceRecordsConfig.find(this.query,{docTitle:1,recordType:1}).sort(this.orderBy);
   let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
+    serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
+    let i = 0;
 
+    if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
+
+      for(let serviceRecordConfig of serviceRecordConfigs) {
+
+        let index = 0;
+        for(let checkParam of serviceRecordConfig.checkParams) {
+
+          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+            let indexP = 0;
+            for(let paramListId of checkParam.paramList) {
+              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+              indexP++;
+            }
+          } 
+          
+          index++;
+        }
+        i++;
+      }
+    }
     return res.status(StatusCodes.OK).json(serviceRecordConfigs);
 
   }catch(e) {
     console.log(e);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
+  
 };
 
 exports.deleteProductServiceRecordsConfig = async (req, res, next) => {
