@@ -85,20 +85,13 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
     let machine = await Product.findById(req.params.machineId).populate('machineModel');
     if(machine && machine.machineModel) {
       
-      this.query['$and'] = [
-        {
-          '$or':[
-            { machineModel : machine.machineModel.id },
-            { machineModel : {$exists :false } },
-          ]
-        },
-        {
-          '$or':[
-            { category : machine.machineModel.category },
-            { category : {$exists :false } },
-          ],
-        }
+      this.query['$or'] = [
+        { machineModel : machine.machineModel.id },
+        { machineModel : {$exists :false } },
+        { category : machine.machineModel.category },
+        { category : {$exists :false } },
       ];
+       
 
     }
   }
