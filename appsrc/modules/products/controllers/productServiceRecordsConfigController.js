@@ -66,15 +66,44 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { docTitle: 1 };
-  
-  if(this.params.machineId) {
-    let machine = await Product.findById(this.params.machineId).populate('machineModel');
+
+  if(this.query.isArchived=='true'){
+    this.query.isArchived = true
+  }
+  else {
+    this.query.isArchived = false;
+  }
+
+  if(this.query.isActive=='true'){
+    this.query.isActive = true
+  }
+  else {
+    this.query.isActive = false;
+  }
+
+  if(req.params.machineId) {
+    let machine = await Product.findById(req.params.machineId).populate('machineModel');
     if(machine && machine.machineModel) {
-      this.query.machineModel = machine.machineModel.id;
-      this.query.category = machine.machineModel.category;
+      
+      this.query['$and'] = [
+        {
+          '$or':[
+            { machineModel : machine.machineModel.id },
+            { machineModel : {$exists :false } },
+          ]
+        },
+        {
+          '$or':[
+            { category : machine.machineModel.category },
+            { category : {$exists :false } },
+          ],
+        }
+      ];
+
     }
   }
 
+  console.log(this.query);
   let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
