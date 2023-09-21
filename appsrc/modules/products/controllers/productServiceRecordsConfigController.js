@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductServiceParams, ProductModel } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceParams, ProductModel, Product } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -66,6 +66,15 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { docTitle: 1 };
+  
+  if(this.params.machineId) {
+    let machine = await Product.findById(this.params.machineId).populate('machineModel');
+    if(machine && machine.machineModel) {
+      this.query.machineModel = machine.machineModel.id;
+      this.query.category = machine.machineModel.category;
+    }
+  }
+
   let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
