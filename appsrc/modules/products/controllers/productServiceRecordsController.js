@@ -197,7 +197,7 @@ function getDocumentFromReq(req, reqType){
   const { 
     recordType, serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks,
+    serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operator, operatorRemarks,
     loginUser, isActive, isArchived
   } = req.body;
     
@@ -252,6 +252,11 @@ function getDocumentFromReq(req, reqType){
   if ("punchCyclesParams" in req.body){
     doc.punchCyclesParams = punchCyclesParams;
   }
+
+  if ("checkParams" in req.body){
+    doc.checkParams = checkParams;
+  }
+
   if ("serviceNote" in req.body){
     doc.serviceNote = serviceNote;
   }
@@ -274,6 +279,7 @@ function getDocumentFromReq(req, reqType){
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
+  
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
