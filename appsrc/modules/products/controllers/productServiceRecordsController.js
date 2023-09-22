@@ -46,27 +46,27 @@ exports.getProductServiceRecord = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
+      response = JSON.parse(JSON.stringify(response));
+ 
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response = JSON.parse(JSON.stringify(response));
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+      }
+      
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkParams) &&
+        response.serviceRecordConfig.checkParams.length>0) {
 
-        if(response.serviceRecordConfig && 
-          Array.isArray(response.serviceRecordConfig.checkParams) &&
-          response.serviceRecordConfig.checkParams.length>0) {
-
-          let index = 0;
-          for(let checkParam of response.serviceRecordConfig.checkParams) {
-            if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-              let indexP = 0;
-              for(let paramListId of checkParam.paramList) {
-                response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
-                indexP++;
-              }
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkParams) {
+          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+            let indexP = 0;
+            for(let paramListId of checkParam.paramList) {
+              response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+              indexP++;
             }
-            index++;
           }
+          index++;
         }
-
       }
 
       res.json(response);
