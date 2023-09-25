@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductCheckItems } = require('../models');
+const { ProductCheckItems, ProductServiceRecordsConfig } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -36,7 +36,11 @@ exports.getProductCheckItem = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+
+      let serviceRecordConfigs = await ProductServiceRecordsConfig.find({checkParams.paramList:req.params.id, isArchived:false, isActive:true},{'docTitle':1});
+      response.serviceRecordConfigs = serviceRecordConfigs;
+      
+      return res.json(response);
     }
   }
 
@@ -108,6 +112,14 @@ exports.patchProductCheckItems = async (req, res, next) => {
 
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
+    
+    
+    if(req.body.isArchived==true) {
+      let serviceRecordConfigs = await ProductServiceRecordsConfig.findOne({checkParams.paramList:req.params.id, isArchived:false, isActive:true});
+      if(serviceRecordConfigs) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Can not delete check item as its used in configurations doc');
+      }
+    }
     
     this.dbservice.patchObject(ProductCheckItems, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
