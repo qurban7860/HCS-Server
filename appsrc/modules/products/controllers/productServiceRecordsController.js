@@ -51,11 +51,11 @@ exports.getProductServiceRecord = async (req, res, next) => {
       
 
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+        response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
       }
       
-      if(Array.isArray(response.operator) && response.operator.length>0) {
-        response.operator = await CustomerContact.find( { _id : { $in:response.operator } }, { firstName:1, lastName:1 })
+      if(Array.isArray(response.operators) && response.operators.length>0) {
+        response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
       
       if(response.serviceRecordConfig && 
@@ -102,8 +102,8 @@ exports.getProductServiceRecords = async (req, res, next) => {
         for(let serviceRecord of response) {
 
 
-          if(Array.isArray(serviceRecord.operator) && serviceRecord.operator.length>0) {
-            serviceRecord.operator = await CustomerContact.find( { _id : { $in : serviceRecord.operator } }, { firstName:1, lastName:1 })
+          if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
+            serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
           }
   
           if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
@@ -208,7 +208,7 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operator, operatorRemarks,
+    serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operators, operatorRemarks,
     loginUser, isActive, isArchived
   } = req.body;
     
@@ -278,8 +278,8 @@ function getDocumentFromReq(req, reqType){
   if ("suggestedSpares" in req.body){
     doc.suggestedSpares = suggestedSpares;
   }
-  if ("operator" in req.body){
-    doc.operator = operator;
+  if ("operators" in req.body){
+    doc.operators = operators;
   }
   if ("operatorRemarks" in req.body){
     doc.operatorRemarks = operatorRemarks;

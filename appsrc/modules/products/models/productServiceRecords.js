@@ -53,8 +53,8 @@ const docSchema = new Schema({
   // files : []
   // list of documents/images related to this record
   
-  operator: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
-  // operator who is training.
+  operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+  // operators who is training.
   
   operatorRemarks: { type: String },
   // operator comments against this record.
