@@ -45,7 +45,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
             if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
               let indexP = 0;
               for(let paramListId of checkParam.paramList) {
-                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+                response.checkParams[index].paramList[indexP] = await ProductServiceParams.find({_id:paramListId,isActive:true,isArchived:false}).populate('category');
                 indexP++;
               }
             }
@@ -82,7 +82,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   }
 
   if(req.params.machineId) {
-    let machine = await Product.findById(req.params.machineId).populate('machineModel');
+    let machine = await Product.findOne({_id:req.params.machineId,isActive:true,isArchived:false}).populate('machineModel');
     if(machine && machine.machineModel) {
       
       this.query['$or'] = [
@@ -94,8 +94,6 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
        
     }
   }
-
-  console.log(JSON.stringify(this.query));
 
   let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
@@ -113,7 +111,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
             for(let paramListId of checkParam.paramList) {
-              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.find({_id:paramListId,isActive:true,isArchived:false}).populate('category');
               indexP++;
             }
           } 
@@ -164,7 +162,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       );
     } else {
       if(response && response.machineModel) {
-        let machineModel = await ProductModel.findById(response.machineModel).populate('category');
+        let machineModel = await ProductModel.findOne({_id:response.machineModel,isActive:true,isArchived:false}).populate('category');
         response = JSON.parse(JSON.stringify(response));
         if(machineModel)
           response.machineModel = machineModel;
@@ -195,9 +193,9 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        let machineServiceRecordConfig = await ProductServiceRecordsConfig.findById(req.params.id).populate('category');
+        let machineServiceRecordConfig = await ProductServiceRecordsConfig.findOne({_id:req.params.id,isActive:true,isArchived:false}).populate('category');
         if(res && res.machineModel) {
-          let machineModel = await ProductModel.findById(machineServiceRecordConfig.machineModel).populate('category');
+          let machineModel = await ProductModel.findOne({_id:machineServiceRecordConfig.machineModel,isActive:true,isArchived:false}).populate('category');
           machineServiceRecordConfig = JSON.parse(JSON.stringify(machineServiceRecordConfig));
           if(machineModel)
             machineServiceRecordConfig.machineModel = machineModel;
