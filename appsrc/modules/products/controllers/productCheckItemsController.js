@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductCheckItems, ProductServiceRecordsConfig } = require('../models');
+const { ProductCheckItem, ProductServiceRecordsConfig } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -30,13 +30,13 @@ this.populate = [
 
 
 exports.getProductCheckItem = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductCheckItems, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(ProductCheckItem, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-
+      response = JSON.parse(JSON.stringify(response));
       let serviceRecordConfigs = await ProductServiceRecordsConfig.find({"checkParams.paramList":req.params.id, isArchived:false, isActive:true},{'docTitle':1});
       response.serviceRecordConfigs = serviceRecordConfigs;
       
@@ -49,7 +49,7 @@ exports.getProductCheckItem = async (req, res, next) => {
 exports.getProductCheckItems = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
-  this.dbservice.getObjectList(ProductCheckItems, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(ProductCheckItem, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -61,7 +61,7 @@ exports.getProductCheckItems = async (req, res, next) => {
 };
 
 exports.deleteProductCheckItems = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductCheckItems, req.params.id, res, callbackFunc);
+  this.dbservice.deleteObject(ProductCheckItem, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -83,7 +83,7 @@ exports.postProductCheckItems = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
     
-    let alreadyExists = await ProductCheckItems.findOne({name:{ $regex: req.body.name, $options: 'i' } , category:req.body.category});
+    let alreadyExists = await ProductCheckItem.findOne({name:{ $regex: req.body.name, $options: 'i' } , category:req.body.category});
     
     if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send({ message : "Item with this name under category already exists" });
@@ -121,7 +121,7 @@ exports.patchProductCheckItems = async (req, res, next) => {
       }
     }
     
-    this.dbservice.patchObject(ProductCheckItems, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(ProductCheckItem, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -155,7 +155,7 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new ProductCheckItems({});
+    doc = new ProductCheckItem({});
   }
 
   if ("name" in req.body){
