@@ -9,8 +9,8 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
-  recordType: { type: Date , default: Date.now, required: true },
-  // service/repair/training/install
+  recordType: { type: Date , enum: ['SERVICE','REPAIR','TRAINING', 'INSTALL', 'PRE-INSTALL'], required: true },
+  // service/repair/training/install/preinstall
   
   serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
   // record configuration used to create this record.
@@ -30,7 +30,7 @@ const docSchema = new Schema({
   decoilers: [{ type: Schema.Types.ObjectId , ref: 'Machine' }],
   // decoiler information attached to machine.
   
-  technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+  technician: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // technician information who performed service process.
   
   checkParams: [{
