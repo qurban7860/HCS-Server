@@ -206,7 +206,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType){
   const { 
-    recordType, serviceRecordConfig, serviceDate, customer, site, machine, 
+    serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operator, operatorRemarks,
     loginUser, isActive, isArchived
@@ -218,9 +218,6 @@ function getDocumentFromReq(req, reqType){
     doc = new ProductServiceRecords({});
   }
 
-  if ("recordType" in req.body){
-    doc.recordType = recordType;
-  }
 
   if ("serviceRecordConfig" in req.body){
     doc.serviceRecordConfig = serviceRecordConfig;

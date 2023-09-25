@@ -9,8 +9,6 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
-  recordType: { type: Date , enum: ['SERVICE','REPAIR','TRAINING', 'INSTALL', 'PRE-INSTALL'], required: true },
-  // service/repair/training/install/preinstall
   
   serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
   // record configuration used to create this record.
