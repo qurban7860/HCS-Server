@@ -15,7 +15,7 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecords, Product, ProductServiceParams } = require('../models');
+const { ProductServiceRecords, Product, ProductCheckItems } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -61,7 +61,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
             for(let paramListId of checkParam.paramList) {
-              response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
+              response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItems.findById(paramListId).populate('category');
               indexP++;
             }
           }

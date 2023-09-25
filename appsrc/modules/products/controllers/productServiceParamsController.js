@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceParams } = require('../models');
+const { ProductCheckItems } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -29,8 +29,8 @@ this.populate = [
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
 
-exports.getProductServiceParam = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductServiceParams, this.fields, req.params.id, this.populate, callbackFunc);
+exports.getProductCheckItem = async (req, res, next) => {
+  this.dbservice.getObjectById(ProductCheckItems, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -42,10 +42,10 @@ exports.getProductServiceParam = async (req, res, next) => {
 
 };
 
-exports.getProductServiceParams = async (req, res, next) => {
+exports.getProductCheckItems = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
-  this.dbservice.getObjectList(ProductServiceParams, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(ProductCheckItems, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -56,8 +56,8 @@ exports.getProductServiceParams = async (req, res, next) => {
   }
 };
 
-exports.deleteProductServiceParams = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductServiceParams, req.params.id, res, callbackFunc);
+exports.deleteProductCheckItems = async (req, res, next) => {
+  this.dbservice.deleteObject(ProductCheckItems, req.params.id, res, callbackFunc);
   //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
@@ -69,7 +69,7 @@ exports.deleteProductServiceParams = async (req, res, next) => {
   }
 };
 
-exports.postProductServiceParams = async (req, res, next) => {
+exports.postProductCheckItems = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -79,7 +79,7 @@ exports.postProductServiceParams = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
     
-    let alreadyExists = await ProductServiceParams.findOne({name:{ $regex: req.body.name, $options: 'i' } , category:req.body.category});
+    let alreadyExists = await ProductCheckItems.findOne({name:{ $regex: req.body.name, $options: 'i' } , category:req.body.category});
     
     if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send({ message : "Item with this name under category already exists" });
@@ -99,7 +99,7 @@ exports.postProductServiceParams = async (req, res, next) => {
   }
 };
 
-exports.patchProductServiceParams = async (req, res, next) => {
+exports.patchProductCheckItems = async (req, res, next) => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
@@ -109,7 +109,7 @@ exports.patchProductServiceParams = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
     
-    this.dbservice.patchObject(ProductServiceParams, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(ProductCheckItems, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -143,7 +143,7 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new ProductServiceParams({});
+    doc = new ProductCheckItems({});
   }
 
   if ("name" in req.body){

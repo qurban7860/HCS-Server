@@ -26,7 +26,7 @@ const docSchema = new Schema({
   
   checkParams : [{
     paramListTitle: { type: String },
-    paramList : [{type: Schema.Types.ObjectId , ref: 'MachineServiceParam'}],
+    paramList : [{type: Schema.Types.ObjectId , ref: 'MachineCheckItem'}],
   }],
   
   textAfterCheckItems: { type: String },
