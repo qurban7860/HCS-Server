@@ -16,6 +16,7 @@ let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
 const { ProductServiceRecords, Product, ProductCheckItem } = require('../models');
+const { CustomerContact } = require('../../crm/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -29,7 +30,7 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  {path: 'technician', select: 'firstName lastName'},
+  // {path: 'technician', select: 'firstName lastName'},
   {path: 'operator', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -47,9 +48,14 @@ exports.getProductServiceRecord = async (req, res, next) => {
     } else {
 
       response = JSON.parse(JSON.stringify(response));
- 
+      
+
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+      }
+      
+      if(Array.isArray(response.technician) && response.technician.length>0) {
+        response.technician = await CustomerContact.find( { _id : { $in:response.technician } }, { firstName:1, lastName:1 })
       }
       
       if(response.serviceRecordConfig && 
@@ -95,6 +101,11 @@ exports.getProductServiceRecords = async (req, res, next) => {
         let index = 0;
         for(let serviceRecord of response) {
 
+
+          if(Array.isArray(serviceRecord.technician) && serviceRecord.technician.length>0) {
+            serviceRecord.technician = await CustomerContact.find( { _id : { $in : serviceRecord.technician } }, { firstName:1, lastName:1 })
+          }
+  
           if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
             serviceRecord.decoilers.length>0) {
             serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
