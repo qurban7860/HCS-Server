@@ -30,8 +30,8 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  // {path: 'technician', select: 'firstName lastName'},
-  {path: 'operator', select: 'firstName lastName'},
+  {path: 'technician', select: 'firstName lastName'},
+  // {path: 'operator', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -54,8 +54,8 @@ exports.getProductServiceRecord = async (req, res, next) => {
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
       }
       
-      if(Array.isArray(response.technician) && response.technician.length>0) {
-        response.technician = await CustomerContact.find( { _id : { $in:response.technician } }, { firstName:1, lastName:1 })
+      if(Array.isArray(response.operator) && response.operator.length>0) {
+        response.operator = await CustomerContact.find( { _id : { $in:response.operator } }, { firstName:1, lastName:1 })
       }
       
       if(response.serviceRecordConfig && 
@@ -102,8 +102,8 @@ exports.getProductServiceRecords = async (req, res, next) => {
         for(let serviceRecord of response) {
 
 
-          if(Array.isArray(serviceRecord.technician) && serviceRecord.technician.length>0) {
-            serviceRecord.technician = await CustomerContact.find( { _id : { $in : serviceRecord.technician } }, { firstName:1, lastName:1 })
+          if(Array.isArray(serviceRecord.operator) && serviceRecord.operator.length>0) {
+            serviceRecord.operator = await CustomerContact.find( { _id : { $in : serviceRecord.operator } }, { firstName:1, lastName:1 })
           }
   
           if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 

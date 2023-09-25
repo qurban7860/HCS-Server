@@ -30,7 +30,7 @@ const docSchema = new Schema({
   decoilers: [{ type: Schema.Types.ObjectId , ref: 'Machine' }],
   // decoiler information attached to machine.
   
-  technician: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+  technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
   // technician information who performed service process.
   
   checkParams: [{
@@ -55,7 +55,7 @@ const docSchema = new Schema({
   // files : []
   // list of documents/images related to this record
   
-  operator: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+  operator: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // operator who is training.
   
   operatorRemarks: { type: String },
