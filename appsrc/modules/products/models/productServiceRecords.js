@@ -34,7 +34,7 @@ const docSchema = new Schema({
   // technician information who performed service process.
   
   checkParams: [{
-    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineServiceParam'},
+    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem'},
     name: {type: String},
     paramListTitle: {type: String},
     checked: {type: Boolean, default: false},

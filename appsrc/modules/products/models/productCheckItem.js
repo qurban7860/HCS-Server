@@ -69,7 +69,7 @@ const docSchema = new Schema({
     //user ip address
 },
 {
-    collection: 'MachineServiceParams'
+    collection: 'MachineCheckItems'
 });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -81,4 +81,4 @@ docSchema.index({"name":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
 
-module.exports = mongoose.model('MachineServiceParam', docSchema);
+module.exports = mongoose.model('MachineCheckItem', docSchema);
