@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductCheckItems, ProductModel, Product } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceParams, ProductModel, Product } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -45,7 +45,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
             if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
               let indexP = 0;
               for(let paramListId of checkParam.paramList) {
-                response.checkParams[index].paramList[indexP] = await ProductCheckItems.findById(paramListId).populate('category');
+                response.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
                 indexP++;
               }
             }
@@ -113,7 +113,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
             for(let paramListId of checkParam.paramList) {
-              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductCheckItems.findById(paramListId).populate('category');
+              serviceRecordConfigs[i].checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
               indexP++;
             }
           } 
