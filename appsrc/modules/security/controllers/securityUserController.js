@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecurityUser } = require('../models');
+const { SecurityUser, SecurityRole } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
@@ -58,15 +58,27 @@ exports.getSecurityUser = async (req, res, next) => {
 
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
+  
+  if(req.query.roleType) {
+
+    let filteredRoles = await SecurityRole.find({roleType:req.query.roleType});
+    if(Array.isArray(filteredRoles) && filteredRoles.length>0) {
+      let filteredRolesIds = filteredRoles.map((r)=>r._id);
+      this.query.roles = { $in : filteredRolesIds };
+    }
+  }
+
   this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
       res.json(response);
     }
   }
+
 };
 
 exports.deleteSecurityUser = async (req, res, next) => {
