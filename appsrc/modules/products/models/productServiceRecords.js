@@ -31,6 +31,9 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
   // technician information who performed service process.
   
+  technicianRemarks: { type: String },
+  // operator comments against this record.
+  
   checkParams: [{
     serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem'},
     name: {type: String},
