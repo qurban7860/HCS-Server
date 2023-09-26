@@ -66,7 +66,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
         for(let checkParam of response.serviceRecordConfig.checkParams) {
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
-            for(let paramListId of checkParam.paramList) {
+            for(let paramListId of checkParam.paramList) { 
               response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
               indexP++;
             }
@@ -280,6 +280,13 @@ function getDocumentFromReq(req, reqType){
   if ("operatorRemarks" in req.body){
     doc.operatorRemarks = operatorRemarks;
   }
+
+
+  if ("technicianRemarks" in req.body){
+    doc.technicianRemarks = technicianRemarks;
+  }
+  
+  
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
