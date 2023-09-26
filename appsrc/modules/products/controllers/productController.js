@@ -97,7 +97,7 @@ exports.getProduct = async (req, res, next) => {
 
       let machineProfileQuery = {type:"MANUFACTURER", machine: machine._id, isActive:true, isArchived:false};
       console.log(machineProfileQuery);
-      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName');
+      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
       res.json(machine);
     }
   }
