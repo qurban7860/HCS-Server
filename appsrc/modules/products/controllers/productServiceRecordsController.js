@@ -209,7 +209,7 @@ function getDocumentFromReq(req, reqType){
     serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operators, operatorRemarks,
-    loginUser, isActive, isArchived
+    technicianRemarks, loginUser, isActive, isArchived
   } = req.body;
     
   let { decoilers } = req.body;
@@ -285,7 +285,7 @@ function getDocumentFromReq(req, reqType){
   if ("technicianRemarks" in req.body){
     doc.technicianRemarks = technicianRemarks;
   }
-  
+
   
   if ("isActive" in req.body){
     doc.isActive = isActive;
