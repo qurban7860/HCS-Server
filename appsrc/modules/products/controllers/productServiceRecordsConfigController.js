@@ -44,7 +44,19 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
           for(let checkParam of response.checkParams) {
             if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
               let indexP = 0;
-              response.checkParams[index].paramList = await ProductCheckItem.find({_id: { $in : checkParam.paramList },isActive:true,isArchived:false}).populate('category');
+              let paramLists_ = [];
+
+              for(let paramListId of checkParam.paramList) {
+                let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
+                
+                if(checkItem__) {
+                  response.checkParams[index].paramList[indexP] = checkItem__;
+                  paramLists_.push(checkItem__);
+                }
+                
+                indexP++;
+              }
+              response.checkParams[index].paramList = paramLists_;
             }
             index++;
           }
@@ -109,7 +121,19 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
           if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
             let indexP = 0;
-            serviceRecordConfigs[i].checkParams[index].paramList = await ProductCheckItem.find({_id: { $in : checkParam.paramList },isActive:true,isArchived:false}).populate('category');
+            let paramLists_ = [];
+            for(let paramListId of checkParam.paramList) {
+              let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
+
+              if(checkItem__) {
+                serviceRecordConfigs[i].checkParams[index].paramList[indexP] = checkItem__;
+                paramLists_.push(checkItem__);
+              }
+              indexP++;
+            }
+
+            serviceRecordConfigs[i].checkParams[index].paramList = paramLists_;
+
           } 
           
           index++;
