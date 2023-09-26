@@ -85,8 +85,10 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
       this.query['$or'] = [
         { machineModel : machine.machineModel.id },
         { machineModel : {$exists :false } },
+        { machineModel : null },
         { category : machine.machineModel.category },
         { category : {$exists :false } },
+        { category : null },
       ];
        
     }
