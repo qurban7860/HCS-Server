@@ -13,10 +13,6 @@ this.dbservice = new productDBService();
 
 const { ProductServiceCategory } = require('../models');
 
-
-
-
-
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};

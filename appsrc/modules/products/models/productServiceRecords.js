@@ -9,8 +9,6 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
-  recordType: { type: Date , default: Date.now, required: true },
-  // service/repair/training/install
   
   serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
   // record configuration used to create this record.
@@ -30,9 +28,22 @@ const docSchema = new Schema({
   decoilers: [{ type: Schema.Types.ObjectId , ref: 'Machine' }],
   // decoiler information attached to machine.
   
-  technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+  technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
   // technician information who performed service process.
-   
+  
+  technicianRemarks: { type: String },
+  // operator comments against this record.
+  
+  checkParams: [{
+    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem'},
+    name: {type: String},
+    paramListTitle: {type: String},
+    checked: {type: Boolean, default: false},
+    value: {type: String},
+    comments: {type: String},
+    files: []
+  }],
+
   serviceNote: { type: String },
   //some notes regarding service/installation/training,
   
@@ -45,8 +56,8 @@ const docSchema = new Schema({
   // files : []
   // list of documents/images related to this record
   
-  operator: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
-  // operator who is training.
+  operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+  // operators who is training.
   
   operatorRemarks: { type: String },
   // operator comments against this record.

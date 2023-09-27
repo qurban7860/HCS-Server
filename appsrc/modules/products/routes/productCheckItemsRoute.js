@@ -7,25 +7,25 @@ const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
 
 const controllers = require('../controllers');
-const controller = controllers.productServiceParamsController;
+const controller = controllers.productCheckItemsController;
 
 const router = express.Router();
 
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/serviceParams`; 
+const baseRouteForObject = `/checkItems`; 
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProductServiceParam);
+router.get(`${baseRouteForObject}/:id`, controller.getProductCheckItem);
 
-router.get(`${baseRouteForObject}/`, controller.getProductServiceParams);
+router.get(`${baseRouteForObject}/`, controller.getProductCheckItems);
 
-router.post(`${baseRouteForObject}/`,  controller.postProductServiceParams);
+router.post(`${baseRouteForObject}/`,  controller.postProductCheckItems);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceParams);
+router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductCheckItems);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceParams);
+router.delete(`${baseRouteForObject}/:id`, controller.deleteProductCheckItems);
 
 module.exports = router;

@@ -15,7 +15,8 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecords, Product, ProductServiceParams } = require('../models');
+const { ProductServiceRecords, Product, ProductCheckItem } = require('../models');
+const { CustomerContact } = require('../../crm/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -29,8 +30,8 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  {path: 'technician', select: 'firstName lastName'},
-  {path: 'operator', select: 'firstName lastName'},
+  {path: 'technician', select: 'name firstName lastName'},
+  // {path: 'operator', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -46,27 +47,32 @@ exports.getProductServiceRecord = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
+      response = JSON.parse(JSON.stringify(response));
+      
+
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response = JSON.parse(JSON.stringify(response));
-        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+        response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
+      }
+      
+      if(Array.isArray(response.operators) && response.operators.length>0) {
+        response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
+      }
+      
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkParams) &&
+        response.serviceRecordConfig.checkParams.length>0) {
 
-        if(response.serviceRecordConfig && 
-          Array.isArray(response.serviceRecordConfig.checkParams) &&
-          response.serviceRecordConfig.checkParams.length>0) {
-
-          let index = 0;
-          for(let checkParam of response.serviceRecordConfig.checkParams) {
-            if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-              let indexP = 0;
-              for(let paramListId of checkParam.paramList) {
-                response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductServiceParams.findById(paramListId).populate('category');
-                indexP++;
-              }
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkParams) {
+          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+            let indexP = 0;
+            for(let paramListId of checkParam.paramList) { 
+              response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
+              indexP++;
             }
-            index++;
           }
+          index++;
         }
-
       }
 
       res.json(response);
@@ -95,6 +101,11 @@ exports.getProductServiceRecords = async (req, res, next) => {
         let index = 0;
         for(let serviceRecord of response) {
 
+
+          if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
+            serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
+          }
+  
           if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
             serviceRecord.decoilers.length>0) {
             serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
@@ -195,10 +206,10 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType){
   const { 
-    recordType, serviceRecordConfig, serviceDate, customer, site, machine, 
+    serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, maintenanceRecommendation, suggestedSpares, operator, operatorRemarks,
-    loginUser, isActive, isArchived
+    serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operators, operatorRemarks,
+    technicianRemarks, loginUser, isActive, isArchived
   } = req.body;
     
   let { decoilers } = req.body;
@@ -207,9 +218,6 @@ function getDocumentFromReq(req, reqType){
     doc = new ProductServiceRecords({});
   }
 
-  if ("recordType" in req.body){
-    doc.recordType = recordType;
-  }
 
   if ("serviceRecordConfig" in req.body){
     doc.serviceRecordConfig = serviceRecordConfig;
@@ -228,10 +236,6 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("decoilers" in req.body){
-
-    if(decoilers.indexOf(',')>-1 && !Array.isArray(decoilers))
-      decoilers = decoilers.split(',');
-    
     doc.decoilers = decoilers;
   }
 
@@ -252,6 +256,11 @@ function getDocumentFromReq(req, reqType){
   if ("punchCyclesParams" in req.body){
     doc.punchCyclesParams = punchCyclesParams;
   }
+
+  if ("checkParams" in req.body){
+    doc.checkParams = checkParams;
+  }
+
   if ("serviceNote" in req.body){
     doc.serviceNote = serviceNote;
   }
@@ -265,15 +274,23 @@ function getDocumentFromReq(req, reqType){
   if ("suggestedSpares" in req.body){
     doc.suggestedSpares = suggestedSpares;
   }
-  if ("operator" in req.body){
-    doc.operator = operator;
+  if ("operators" in req.body){
+    doc.operators = operators;
   }
   if ("operatorRemarks" in req.body){
     doc.operatorRemarks = operatorRemarks;
   }
+
+
+  if ("technicianRemarks" in req.body){
+    doc.technicianRemarks = technicianRemarks;
+  }
+
+  
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
+  
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
