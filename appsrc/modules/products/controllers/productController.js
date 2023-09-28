@@ -689,7 +689,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, installationDate, shippingDate,
+    tools, description, internalTags, customerTags, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
  
   
@@ -747,7 +747,7 @@ function getDocumentFromReq(req, reqType){
   if ("supportExpireDate" in req.body){
     doc.supportExpireDate = supportExpireDate;
   }
-  
+
   if ("operators" in req.body){
     doc.operators = operators;
   }
