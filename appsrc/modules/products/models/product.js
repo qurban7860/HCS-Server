@@ -83,6 +83,9 @@ const docSchema = new Schema({
     internalTags: [{ type: String }],
     // list of tags used for reporting internally (Howick)
 
+    supportExpireDate: { type: Date },
+    // supportExpireDate date
+
     shippingDate: { type: Date },
     // shipping date
 
