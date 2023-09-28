@@ -743,6 +743,11 @@ function getDocumentFromReq(req, reqType){
   if ("shippingDate" in req.body){
     doc.shippingDate = shippingDate;
   }
+
+  if ("supportExpireDate" in req.body){
+    doc.supportExpireDate = supportExpireDate;
+  }
+  
   if ("operators" in req.body){
     doc.operators = operators;
   }
