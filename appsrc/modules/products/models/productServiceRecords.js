@@ -40,6 +40,7 @@ const docSchema = new Schema({
     paramListTitle: {type: String},
     checked: {type: Boolean, default: false},
     value: {type: String},
+    status: {type: String},
     comments: {type: String},
     files: []
   }],
