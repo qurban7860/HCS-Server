@@ -14,7 +14,6 @@ let rtnMsg = require('../../config/static/static')
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerContact } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
