@@ -13,7 +13,7 @@ const docSchema = new Schema({
     // description of Category
     },
     {
-        collection: 'MachineServiceCategories'
+        collection: 'MachineCheckItemCategories'
     }
 );
 docSchema.set('timestamps', true);
