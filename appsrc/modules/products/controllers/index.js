@@ -17,7 +17,7 @@ module.exports = {
     productCheckItemsController: require('./productCheckItemsController'),
     productServiceRecordsConfigController: require('./productServiceRecordsConfigController'),
     productServiceRecordsController: require('./productServiceRecordsController'),
-    productServiceCategoryController: require('./productServiceCategoryController'),
+    productCheckItemCategoryController: require('./productCheckItemCategoryController'),
     productProfileController: require('./productProfileController'),
 
     

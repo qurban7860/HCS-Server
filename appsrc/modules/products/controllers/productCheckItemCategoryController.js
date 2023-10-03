@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceCategory } = require('../models');
+const { ProductCheckItemCategory } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -24,8 +24,8 @@ this.populate = [
 ];
 
 
-exports.getProductServiceCategory = async (req, res, next) => {
-  let response = await this.dbservice.getObjectById(ProductServiceCategory, this.fields, req.params.id, this.populate);
+exports.getProductCheckItemCategory = async (req, res, next) => {
+  let response = await this.dbservice.getObjectById(ProductCheckItemCategory, this.fields, req.params.id, this.populate);
   if (response) {
     response = JSON.parse(JSON.stringify(response))
     let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
@@ -36,13 +36,13 @@ exports.getProductServiceCategory = async (req, res, next) => {
   }
 };
 
-exports.getProductServiceCategories = async (req, res, next) => {
+exports.getProductCheckItemCategories = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };    
   if(this.query && this.query.name) {
     this.query.name = { $regex: this.query.name, $options: 'i' };
   }
-  this.dbservice.getObjectList(ProductServiceCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(ProductCheckItemCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -53,8 +53,8 @@ exports.getProductServiceCategories = async (req, res, next) => {
   }
 };
 
-exports.deleteProductServiceCategory = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductServiceCategory, req.params.id, res, callbackFunc);
+exports.deleteProductCheckItemCategory = async (req, res, next) => {
+  this.dbservice.deleteObject(ProductCheckItemCategory, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -65,7 +65,7 @@ exports.deleteProductServiceCategory = async (req, res, next) => {
   }
 };
 
-exports.postProductServiceCategory = async (req, res, next) => {
+exports.postProductCheckItemCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -89,7 +89,7 @@ exports.postProductServiceCategory = async (req, res, next) => {
   }
 };
 
-exports.patchProductServiceCategory = async (req, res, next) => {
+exports.patchProductCheckItemCategory = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -98,7 +98,7 @@ exports.patchProductServiceCategory = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
 
-    this.dbservice.patchObject(ProductServiceCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(ProductCheckItemCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -132,7 +132,7 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new ProductServiceCategory({});
+    doc = new ProductCheckItemCategory({});
   }
 
   if ("name" in req.body){
