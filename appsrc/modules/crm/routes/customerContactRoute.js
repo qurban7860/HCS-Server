@@ -44,6 +44,8 @@ router.get(`/contacts/search`, controller.searchCustomerContacts);
 // - /api/1.0.0/crm/sp/contacts
 router.get(`/sp/contacts`, controller.getSPCustomerContacts);
 
+// - /api/1.0.0/crm/customers/:customerId/contacts/
+router.post(`${baseRoute}/moveContact`,  controller.moveContact);
 
 
 module.exports = router;

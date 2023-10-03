@@ -611,77 +611,54 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
   res.status(StatusCodes.OK).json(convertedArray);
 };
 
-// exports.transferOwnership = async (req, res, next) => {
-//   const errors = validationResult(req);
-//   if (!errors.isEmpty()) {
-//     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-//   } else {
-//     try {
-//       if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
-//         // validate if an entry already exists with the same customer and parentMachineID
-//         let existingParentMachine = await Product.findOne({ customer: req.body.customer, parentMachineID: req.body.machine, isActive: true, isArchived: false });
-//         if(existingParentMachine){
-//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
-//         }
+exports.moveMachine = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
+        // validate if an entry already exists with the same customer and parentMachineID
         
-//         let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine, isActive: true, isArchived: false});
-//         if(existingMachine){
-//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine cannot be transferred to the same customer', true));          
-//         }
+        let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine, isActive: true, isArchived: false});
+        
+        if(existingMachine)
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine cannot be transferred to the same customer', true));          
+        
 
-//         let customer = await Customer.findById(req.body.customer);
-//         let parentMachine = await Product.findById(req.body.machine);
+        let customer = await Customer.findOne({ _id : req.body.customer, isActive : true, isArchived : false });
+        let machine = await Product.findOne({ _id : req.body.machine,isArchived : false, isActive : true });
+        let installationSite = await CustomerSite.findOne({ _id : req.body.installationSite, isArchived : false, isActive : true });
+        let billingSite = await CustomerSite.findOne({ _id : req.body.billingSite, isArchived : false, isActive : true });
 
-//         if (!customer) {
-//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
-//         }
-//         if (!parentMachine) {
-//           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
-//         }
+        if (!customer ) 
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
 
-//         if (parentMachine && customer) {
-          
-//           req.body.serialNo = parentMachine.serialNo;
-//           req.body.machineModel = parentMachine.machineModel;
-//           req.body.parentMachine = parentMachine.parentMachine;
-//           req.body.parentSerialNo = parentMachine.parentSerialNo;
-//           req.body.parentMachineID = parentMachine._id;
-//           req.body.machineConnections = parentMachine.machineConnections;
+        if (!installationSite ) 
+          return res.status(StatusCodes.BAD_REQUEST).send("Invalid installation Site");
 
-//           // if (customer.mainSite) {
-//           //   req.body.instalationSite = customer.mainSite;
-//           //   req.body.billingSite = customer.mainSite;
-//           // }
+        if (!billingSite ) 
+          return res.status(StatusCodes.BAD_REQUEST).send('Invalid Billing Site');
+        
+        if (!machine) 
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
+        
+        machine.customer = customer._id;
+        machine.installationSite = installationSite._id;
+        machine.billingSite = billingSite._id;
+        machine = await machine.save();
+        return res.status(StatusCodes.OK).json({ Machine: machine });
 
-//           let status = await ProductStatus.findOne({ name: { $regex: /sold\/transferred/i } });
-//           if (!status) {
-//             return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, this.ProductStatus));
-//           } else {
-//             const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-//             if (transferredMachine) {
-//               // update old machine ownsership status
-//               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
-//                 transferredMachine: transferredMachine._id,
-//                 transferredDate: new Date(),
-//                 isActive: false,
-//                 status: status._id
-//               });
-//               if(parentMachineUpdated){
-//                 res.status(StatusCodes.CREATED).json({ Machine: transferredMachine });
-//               }
-//             }
-//           }
-//         }
-//       } else {
-//         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
-//       }
-//     }
-//     catch (error) {
-//       logger.error(new Error(error));
-//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
-//     }
-//   }
-// };
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+      }
+    }
+    catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
 
 
 
