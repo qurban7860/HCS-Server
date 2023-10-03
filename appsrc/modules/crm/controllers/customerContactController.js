@@ -153,7 +153,7 @@ exports.moveContact = async (req, res, next) => {
   else {
     
     if(ObjectId.isValid(req.body.customer) && ObjectId.isValid(req.body.sites)) {
-      let customer = await Customer.findOne({ _id : req.body.customer, isActive : true, isArchived : false });
+      let customer = await Customer.findOne({ _id : req.params.customer, isActive : true, isArchived : false });
       let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
       let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
   
