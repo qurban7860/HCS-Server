@@ -150,32 +150,37 @@ exports.moveContact = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } 
   else {
-    if(ObjectId.isValid(req.params.customerId) && ObjectId.isValid(req.body.sites)) {
+    if(ObjectId.isValid(req.params.customerId)) {
       let customer = await Customer.findOne({ _id : req.params.customerId, isActive : true, isArchived : false });
       let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
       // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
+
+
+      if(contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
+        
+        if (!customer || !contact ) 
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
+
+        if (!contact || 
+          (contact.customer && 
+            (contact.customer.primaryBillingContact==contact._id || contact.customer.primaryTechnicalContact==contact._id))) 
+          return res.status(StatusCodes.BAD_REQUEST).send('Contact Not found or its used in a customer');
+
+        // if(contact.customer && req.body.sites.indexOf(contact.customer.mainSite)>-1) {
+        //   return res.status(StatusCodes.BAD_REQUEST).send('Contact Site is used as main site of customer');
+        // }
+
+        // sites = sites.map( (s) => s._id );
+        
+        contact.customer = customer;
+        contact.sites = [];
       
-      if (!customer ) 
-        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
-
-      if (!contact || 
-        (contact.customer && 
-          (contact.customer.primaryBillingContact==contact._id || contact.customer.primaryTechnicalContact==contact._id))) 
-        return res.status(StatusCodes.BAD_REQUEST).send('Contact Not found or its used in a customer');
-
-      if(contact.customer && req.body.sites.indexOf(contact.customer.mainSite)>-1) {
-        return res.status(StatusCodes.BAD_REQUEST).send('Contact Site is used as main site of customer');
+        contact = await contact.save();
+        
+        return res.status(StatusCodes.OK).json({ Contact: contact });
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send(contact ? "Service provider contact can't be moved!":"Contact not found!");
       }
-
-      // sites = sites.map( (s) => s._id );
-      
-      contact.customer = customer;
-      contact.sites = [];
-    
-      contact = await contact.save();
-      
-      return res.status(StatusCodes.OK).json({ Contact: contact });
-
     } 
     else {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
