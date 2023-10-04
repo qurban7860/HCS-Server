@@ -628,24 +628,41 @@ exports.moveMachine = async (req, res, next) => {
 
         let customer = await Customer.findOne({ _id : req.body.customer, isActive : true, isArchived : false });
         let machine = await Product.findOne({ _id : req.body.machine,isArchived : false, isActive : true });
-        let installationSite = await CustomerSite.findOne({ _id : req.body.installationSite, isArchived : false, isActive : true });
-        let billingSite = await CustomerSite.findOne({ _id : req.body.billingSite, isArchived : false, isActive : true });
+        
+        
+        let installationSite;
+        let billingSite;
+
+        if (req.body.installationSite !== undefined && ObjectId.isValid(req.body.installationSite)) {
+          installationSite = await CustomerSite.findOne({ _id: req.body.installationSite, isArchived: false, isActive: true });
+        }
+
+        if (req.body.billingSite !== undefined && ObjectId.isValid(req.body.billingSite)) {
+          billingSite = await CustomerSite.findOne({ _id: req.body.billingSite, isArchived: false, isActive: true });
+        }
+
 
         if (!customer ) 
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
 
-        if (!installationSite ) 
-          return res.status(StatusCodes.BAD_REQUEST).send("Invalid installation Site");
+          if (req.body.installationSite !== undefined && ObjectId.isValid(req.body.installationSite) && !installationSite) 
+            return res.status(StatusCodes.BAD_REQUEST).send("Invalid installation Site");
 
-        if (!billingSite ) 
-          return res.status(StatusCodes.BAD_REQUEST).send('Invalid Billing Site');
+          if (req.body.billingSite !== undefined && ObjectId.isValid(req.body.billingSite) && !billingSite) 
+            return res.status(StatusCodes.BAD_REQUEST).send('Invalid Billing Site');
         
         if (!machine) 
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
         
         machine.customer = customer._id;
-        machine.installationSite = installationSite._id;
-        machine.billingSite = billingSite._id;
+       
+
+          machine.instalationSite = installationSite?._id || null;
+        
+      
+          machine.billingSite = billingSite?._id || null;
+
+
         machine = await machine.save();
         return res.status(StatusCodes.OK).json({ Machine: machine });
 
