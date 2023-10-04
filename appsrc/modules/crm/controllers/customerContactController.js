@@ -13,7 +13,7 @@ let rtnMsg = require('../../config/static/static')
 
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
-
+const ObjectId = require('mongoose').Types.ObjectId;
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -150,12 +150,11 @@ exports.moveContact = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } 
   else {
-    
-    if(ObjectId.isValid(req.body.customer) && ObjectId.isValid(req.body.sites)) {
-      let customer = await Customer.findOne({ _id : req.params.customer, isActive : true, isArchived : false });
+    if(ObjectId.isValid(req.params.customerId) && ObjectId.isValid(req.body.sites)) {
+      let customer = await Customer.findOne({ _id : req.params.customerId, isActive : true, isArchived : false });
       let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
-      let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
-  
+      // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
+      
       if (!customer ) 
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
 
@@ -164,14 +163,15 @@ exports.moveContact = async (req, res, next) => {
           (contact.customer.primaryBillingContact==contact._id || contact.customer.primaryTechnicalContact==contact._id))) 
         return res.status(StatusCodes.BAD_REQUEST).send('Contact Not found or its used in a customer');
 
-      if(contact.customer && req.body.sites.indexOf(conatct.customer.mainSite)>-1) {
+      if(contact.customer && req.body.sites.indexOf(contact.customer.mainSite)>-1) {
         return res.status(StatusCodes.BAD_REQUEST).send('Contact Site is used as main site of customer');
       }
 
-      sites = sites.map( (s) => s._id );
+      // sites = sites.map( (s) => s._id );
       
       contact.customer = customer;
-      contact.sites = sites;
+      contact.sites = [];
+    
       contact = await contact.save();
       
       return res.status(StatusCodes.OK).json({ Contact: contact });
