@@ -111,7 +111,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   try{
     serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
     
-    let i = 0;
+    // let i = 0;
 
 
     // if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
