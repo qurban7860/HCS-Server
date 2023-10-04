@@ -21,6 +21,7 @@ router.use(checkAuth, checkCustomer);
 router.get(`${baseRouteForObject}/:id`, controller.getProductServiceRecordsConfig);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceRecordsConfigs);
+
 router.get(`/machines/:machineId/serviceRecordsConfig`, controller.getProductServiceRecordsConfigs);
 
 router.post(`${baseRouteForObject}/`,  controller.postProductServiceRecordsConfig);

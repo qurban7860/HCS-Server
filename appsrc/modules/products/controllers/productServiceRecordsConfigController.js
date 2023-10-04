@@ -110,37 +110,39 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
   try{
     serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
+    
     let i = 0;
 
-    if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
 
-      for(let serviceRecordConfig of serviceRecordConfigs) {
+    // if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
 
-        let index = 0;
-        for(let checkParam of serviceRecordConfig.checkParams) {
+    //   for(let serviceRecordConfig of serviceRecordConfigs) {
 
-          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-            let indexP = 0;
-            let paramLists_ = [];
-            for(let paramListId of checkParam.paramList) {
-              let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
+    //     let index = 0;
+    //     for(let checkParam of serviceRecordConfig.checkParams) {
 
-              if(checkItem__) {
-                serviceRecordConfigs[i].checkParams[index].paramList[indexP] = checkItem__;
-                paramLists_.push(checkItem__);
-              }
-              indexP++;
-            }
+    //       if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+    //         let indexP = 0;
+    //         let paramLists_ = [];
+    //         for(let paramListId of checkParam.paramList) {
+    //           let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
 
-            serviceRecordConfigs[i].checkParams[index].paramList = paramLists_;
+    //           if(checkItem__) {
+    //             serviceRecordConfigs[i].checkParams[index].paramList[indexP] = checkItem__;
+    //             paramLists_.push(checkItem__);
+    //           }
+    //           indexP++;
+    //         }
 
-          } 
+    //         serviceRecordConfigs[i].checkParams[index].paramList = paramLists_;
+
+    //       } 
           
-          index++;
-        }
-        i++;
-      }
-    }
+    //       index++;
+    //     }
+    //     i++;
+    //   }
+    // }
     return res.status(StatusCodes.OK).json(serviceRecordConfigs);
 
   }catch(e) {
