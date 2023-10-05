@@ -256,25 +256,42 @@ exports.deleteCustomer = async (req, res, next) => {
 
 exports.postCustomer = async (req, res, next) => {
   const errors = validationResult(req);
+  let CustomerObj;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    var _this = this;
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        _this.dbservice.getObjectById(Customer, _this.fields, response._id, _this.populate, callbackFunc);
-        function callbackFunc(error, response) {
-          if (error) {
-            logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-          } else {
-            res.status(StatusCodes.CREATED).json({ Customer: response });
+    if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
+      let clientCode = "^"+req.body.clientCode.trim()+"$";
+      let queryCustomer = {
+        clientCode: {
+          $regex: clientCode,
+          $options: 'i'
+        }
+      };
+      CustomerObj = await Customer.findOne(queryCustomer);
+    }
+    //, _id: { $ne: ObjectId("651e8e1870e874147c999191") }    
+
+    if(CustomerObj) {
+      res.status(StatusCodes.CONFLICT).send("customer already exists with same client code!");
+    } else {
+      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+      var _this = this;
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+        } else {
+          _this.dbservice.getObjectById(Customer, _this.fields, response._id, _this.populate, callbackFunc);
+          function callbackFunc(error, response) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            } else {
+              res.status(StatusCodes.CREATED).json({ Customer: response });
+            }
           }
         }
       }
@@ -287,57 +304,76 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
-      let customer = await Customer.findById(req.params.id);
-      if (customer.type === 'SP') {
-        const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
-        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
-      }
-    }
+    let CustomerObj;
+    if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
+      let clientCode = "^"+req.body.clientCode.trim()+"$";
+      let queryCustomer = {
+        clientCode: {
+          $regex: clientCode,
+          $options: 'i'
+        }, _id: { $ne: req.params.id }
+      };
+      CustomerObj = await Customer.findOne(queryCustomer);
+    }  
 
-    // ToDo correct spell mistake from front end
-    if(req.body.isVerified ||req.body.isVarified){ 
-      let customer = await Customer.findById(req.params.id); 
-      if(!customer) {
-        return res.status(StatusCodes.BAD_REQUEST).json({message:"Customer Not Found"});
-      }
-  
-      if(!Array.isArray(customer.verifications))
-        customer.verifications = [];
+    if(!CustomerObj) {
+      if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
 
-      for(let verif of customer.verifications) {
-        if(verif.verifiedBy == req.body.loginUser.userId)
-          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
-
+        let customer = await Customer.findById(req.params.id);
+        if (customer.type === 'SP') {
+          const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
+          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
+        }
       }
-      customer.verifications.push({
-        verifiedBy: req.body.loginUser.userId,
-        verifiedDate: new Date()
-      })
-      customer = await customer.save();
-      return res.status(StatusCodes.ACCEPTED).json(customer);
-    }
 
-    this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      // ToDo correct spell mistake from front end
+      if(req.body.isVerified ||req.body.isVarified){ 
+        let customer = await Customer.findById(req.params.id); 
+        if(!customer) {
+          return res.status(StatusCodes.BAD_REQUEST).json({message:"Customer Not Found"});
+        }
+    
+        if(!Array.isArray(customer.verifications))
+          customer.verifications = [];
+
+        for(let verif of customer.verifications) {
+          if(verif.verifiedBy == req.body.loginUser.userId)
+            return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+
+        }
+        customer.verifications.push({
+          verifiedBy: req.body.loginUser.userId,
+          verifiedDate: new Date()
+        })
+        customer = await customer.save();
+        return res.status(StatusCodes.ACCEPTED).json(customer);
       }
+
+      this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+        } else {
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        }
+      }
+    } else {
+      res.status(StatusCodes.CONFLICT).send("customer already exists with same client code!");
     }
   }
 };
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, tradingName, type, siteObj, mainSite, sites, contacts,
+  const { name, clientCode, tradingName, type, mainSite, sites, contacts,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
-    accountManager, projectManager, supportManager, 
+    accountManager, projectManager, supportSubscription, supportManager, 
     isActive, isArchived, loginUser } = req.body;
+
+
 
 
   let doc = {};
@@ -353,6 +389,13 @@ function getDocumentFromReq(req, reqType){
   if ("name" in req.body){
     doc.name = name;
   }
+
+  if ("clientCode" in req.body){
+    doc.clientCode = clientCode;
+  }
+
+  
+
   if ("tradingName" in req.body){
     doc.tradingName = tradingName;
   }
@@ -426,6 +469,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("projectManager" in req.body){
     doc.projectManager = projectManager;
+  }
+
+  if ("supportSubscription" in req.body){
+    doc.supportSubscription = supportSubscription;
   }
 
   if ("supportManager" in req.body){
