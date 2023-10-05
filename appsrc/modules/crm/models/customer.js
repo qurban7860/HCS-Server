@@ -10,6 +10,9 @@ const docSchema = new Schema({
         name: { type: String , required: true },
         // name of organization
         
+        clientCode: { type: String },
+        // This code may help us to identify customer with 3rd party system (ABEL). 
+        
         // tradingName: { type: String },
         tradingName: [{ type: String  }],
 
@@ -43,6 +46,9 @@ const docSchema = new Schema({
         projectManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
         // technical project manager for this customer from Howick Side
         
+        supportSubscription: { type: Boolean , default: false },
+        // support subscription forthis customer from Howick Side
+
         supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
         // support project manager for this customer from Howick Side
 
