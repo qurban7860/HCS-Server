@@ -10,7 +10,7 @@ const docSchema = new Schema({
         name: { type: String , required: true },
         // name of organization
         
-        clientCode: { type: String },
+        clientCode: { type: String, maxlength: 20},
         // This code may help us to identify customer with 3rd party system (ABEL). 
         
         // tradingName: { type: String },

@@ -391,7 +391,7 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("clientCode" in req.body){
-    doc.clientCode = clientCode;
+    doc.clientCode = clientCode.trim();
   }
 
   
