@@ -9,7 +9,11 @@ module.exports = {
     securityNoteController: require('./securityNoteController'),
     securityUserInvitationController: require('./securityUserInvitationController'),
 
-    
+
+    securityConfigUserController: require('./securityConfigUserController'),
+    securityConfigCustomerController: require('./securityConfigCustomerController'),
+    securityConfigWhileListIPController: require('./securityConfigWhiteListIPController'),
+    securityConfigBlackListIPController: require('./securityConfigBlackListIPController'),
 
     // securityInviteController: require('./securityInviteController'),
 }

@@ -12,6 +12,13 @@ const securitySignInLogRoute = require('./securitySignInLogRoute');
 const securityNoteRoute = require('./securityNoteRoute');
 const securityUserInvitationRoute = require('./securityUserInvitationRoute');
 
+
+const securityConfigUserRoute = require('./securityConfigUserRoute');
+const securityConfigCustomerRoute = require('./securityConfigCustomerRoute');
+const securityConfigWhiteListIPRoute = require('./securityConfigWhiteListIPRoute');
+const securityConfigBlackListIPRoute = require('./securityConfigBlackListIPRoute');
+
+
 // const securityInviteRoute = require('./securityInviteRoute');
 
 exports.registerSecurityRoutes = (app, apiPath) => {
@@ -45,6 +52,10 @@ exports.registerSecurityRoutes = (app, apiPath) => {
     app.use(`${rootPathForModule}`, securityUserInvitationRoute);
 
 
+    app.use(`${rootPathForModule}`, securityConfigUserRoute);
+    app.use(`${rootPathForModule}`, securityConfigCustomerRoute);
+    app.use(`${rootPathForModule}`, securityConfigWhiteListIPRoute);
+    app.use(`${rootPathForModule}`, securityConfigBlackListIPRoute);
     
 
 
