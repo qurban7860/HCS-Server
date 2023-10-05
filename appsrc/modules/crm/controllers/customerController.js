@@ -273,7 +273,7 @@ exports.postCustomer = async (req, res, next) => {
     //, _id: { $ne: ObjectId("651e8e1870e874147c999191") }    
 
     if(CustomerObj) {
-      res.status(StatusCodes.CONFLICT).send("customer already exists with same client code!");
+      res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
     } else {
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       var _this = this;
@@ -361,7 +361,7 @@ exports.patchCustomer = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.CONFLICT).send("customer already exists with same client code!");
+      res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
     }
   }
 };
