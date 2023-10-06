@@ -12,7 +12,7 @@ const docSchema = new Schema({
                           
 },
 {
-        collection: 'SecurityConfigUsers'
+        collection: 'SecurityConfigBlockedUsers'
 });
 
 docSchema.set('timestamps', true);
