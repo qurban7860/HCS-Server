@@ -10,8 +10,8 @@ module.exports = {
     securityUserInvitationController: require('./securityUserInvitationController'),
 
 
-    securityConfigUserController: require('./securityConfigUserController'),
-    securityConfigCustomerController: require('./securityConfigCustomerController'),
+    securityConfigBlockedUserController: require('./securityConfigBlockedUserController'),
+    securityConfigBlockedCustomerController: require('./securityConfigBlockedCustomerController'),
     securityConfigWhileListIPController: require('./securityConfigWhiteListIPController'),
     securityConfigBlackListIPController: require('./securityConfigBlackListIPController'),
 

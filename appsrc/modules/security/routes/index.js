@@ -13,8 +13,8 @@ const securityNoteRoute = require('./securityNoteRoute');
 const securityUserInvitationRoute = require('./securityUserInvitationRoute');
 
 
-const securityConfigUserRoute = require('./securityConfigUserRoute');
-const securityConfigCustomerRoute = require('./securityConfigCustomerRoute');
+const securityConfigBlockedUserRoute = require('./securityConfigBlockedUserRoute');
+const securityConfigBlockedCustomerRoute = require('./securityConfigBlockedCustomerRoute');
 const securityConfigWhiteListIPRoute = require('./securityConfigWhiteListIPRoute');
 const securityConfigBlackListIPRoute = require('./securityConfigBlackListIPRoute');
 
@@ -52,8 +52,8 @@ exports.registerSecurityRoutes = (app, apiPath) => {
     app.use(`${rootPathForModule}`, securityUserInvitationRoute);
 
 
-    app.use(`${rootPathForModule}`, securityConfigUserRoute);
-    app.use(`${rootPathForModule}`, securityConfigCustomerRoute);
+    app.use(`${rootPathForModule}`, securityConfigBlockedUserRoute);
+    app.use(`${rootPathForModule}`, securityConfigBlockedCustomerRoute);
     app.use(`${rootPathForModule}`, securityConfigWhiteListIPRoute);
     app.use(`${rootPathForModule}`, securityConfigBlackListIPRoute);
     
