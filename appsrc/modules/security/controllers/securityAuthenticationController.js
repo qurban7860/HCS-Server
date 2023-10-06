@@ -17,7 +17,8 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP } = require('../models');
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -44,6 +45,21 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
+
+    let validateIP = await SecurityConfigBlackListIP.findOne({ blackListIPs: req.ip, isActive: true, isArchived: false });
+
+    if(validateIP) {
+      return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized to access!");
+    } else {
+      let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
+      if(validIps && validIps.length > 0) {
+        if(validIps.indexOf('req.ip') == -1) {
+          return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized to access! (In white Ips");
+        }
+      }
+
+    }
+
     this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
     async function getObjectCallback(error, response) {
 

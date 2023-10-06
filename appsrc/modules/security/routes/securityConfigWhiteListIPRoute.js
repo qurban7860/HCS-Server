@@ -18,7 +18,7 @@ const router = express.Router();
 //  - base route for module
 // - /api/1.0.0/security/configs/whitelistips
 
-const baseRoute = `/configsWhitelistips`;
+const baseRoute = `/configs/Whitelistips`;
 
 router.use(checkAuth, checkCustomer);
 
