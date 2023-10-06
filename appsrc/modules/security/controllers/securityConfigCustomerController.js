@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecurityConfigCustomer } = require('../models');
+const { SecurityConfigBlockedCustomer } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -42,7 +42,7 @@ exports.searchSecurityConfigCustomer = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    this.dbservice.getObjectList(SecurityConfigCustomer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    this.dbservice.getObjectList(SecurityConfigBlockedCustomer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
     
     function callbackFunc(error, securityConfigs) {
 
@@ -75,7 +75,7 @@ exports.searchSecurityConfigCustomer = async (req, res, next) => {
 
 exports.getSecurityConfigCustomer = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  this.dbservice.getObjectById(SecurityConfigCustomer, this.fields, req.params.id, this.populate, callbackFunc);
+  this.dbservice.getObjectById(SecurityConfigBlockedCustomer, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -88,7 +88,7 @@ exports.getSecurityConfigCustomer = async (req, res, next) => {
 
 exports.getSecurityConfigCustomers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  this.dbservice.getObjectList(SecurityConfigCustomer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(SecurityConfigBlockedCustomer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -100,7 +100,7 @@ exports.getSecurityConfigCustomers = async (req, res, next) => {
 };
 
 exports.deleteSecurityConfigCustomer = async (req, res, next) => {
-  this.dbservice.deleteObject(SecurityConfigCustomer, req.params.id, res, callbackFunc);
+  this.dbservice.deleteObject(SecurityConfigBlockedCustomer, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -132,7 +132,7 @@ exports.postSecurityConfigCustomer = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        res.status(StatusCodes.CREATED).json({ SecurityConfigCustomer: response });
+        res.status(StatusCodes.CREATED).json({ SecurityConfigBlockedCustomer: response });
       }
     }
   }
@@ -144,7 +144,7 @@ exports.patchSecurityConfigCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(SecurityConfigCustomer, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(SecurityConfigBlockedCustomer, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -164,7 +164,7 @@ function getDocumentFromReq(req, reqType){
 
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new SecurityConfigCustomer({});
+    doc = new SecurityConfigBlockedCustomer({});
   }
 
   if ("blockedCustomers" in req.body){

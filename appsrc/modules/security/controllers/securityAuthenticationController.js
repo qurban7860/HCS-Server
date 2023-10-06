@@ -17,7 +17,7 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigCustomer, SecurityConfigUser } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser } = require('../models');
 
 
 
@@ -70,13 +70,13 @@ exports.login = async (req, res, next) => {
         const existingUser = response;
 
         //Checking blocked list of customer & users.
-        let blockedCustomer = await SecurityConfigCustomer.findOne({ blockedCustomers: existingUser.customer._id, isActive: true, isArchived: false });
+        let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomers: existingUser.customer._id, isActive: true, isArchived: false });
         
 
         if(blockedCustomer) {
           return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
         } else {
-          let blockedUser = await SecurityConfigUser.findOne({ blockedUsers: existingUser._id, isActive: true, isArchived: false });
+          let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUsers: existingUser._id, isActive: true, isArchived: false });
           if(blockedUser) {
             return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
           }  

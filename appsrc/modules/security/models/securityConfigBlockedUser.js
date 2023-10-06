@@ -21,4 +21,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('SecurityConfigUser', docSchema);
+module.exports = mongoose.model('SecurityConfigBlockedUser', docSchema);
