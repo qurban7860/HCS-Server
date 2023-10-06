@@ -23,12 +23,12 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'},
-  {path: 'blockedCustomers', select: 'name customer roles'} 
+  {path: 'blockedCustomer', select: 'name customer roles'} 
 ];
 
 
 this.populateList = [
-  {path: 'blockedCustomers', select: 'name customer roles'}, 
+  {path: 'blockedCustomer', select: 'name customer roles'}, 
   {path: '', select: ''}
 ];
 
@@ -160,15 +160,15 @@ exports.patchSecurityConfigBlockedCustomer = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { blockedCustomers, loginUser, isActive, isArchived} = req.body;
+  const { blockedCustomer, loginUser, isActive, isArchived} = req.body;
 
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new SecurityConfigBlockedCustomer({});
   }
 
-  if ("blockedCustomers" in req.body){
-    doc.blockedCustomers = blockedCustomers;
+  if ("blockedCustomer" in req.body){
+    doc.blockedCustomer = blockedCustomer;
   }
 
   if ("isActive" in req.body){
