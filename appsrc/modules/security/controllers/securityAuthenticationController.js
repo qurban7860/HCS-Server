@@ -17,7 +17,7 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigCustomer, SecurityConfigUser } = require('../models');
 
 
 
@@ -46,19 +46,19 @@ exports.login = async (req, res, next) => {
   } else {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
 
-    let validateIP = await SecurityConfigBlackListIP.findOne({ blackListIPs: req.ip, isActive: true, isArchived: false });
-
-    if(validateIP) {
+    let blackListIP = await SecurityConfigBlackListIP.findOne({ blackListIPs: req.ip, isActive: true, isArchived: false });
+    if(blackListIP) {
       return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized to access!");
     } else {
       let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
       if(validIps && validIps.length > 0) {
         if(validIps.indexOf('req.ip') == -1) {
-          return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized to access! (In white Ips");
+          return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized to access!");
         }
       }
-
     }
+
+
 
     this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
     async function getObjectCallback(error, response) {
@@ -68,6 +68,20 @@ exports.login = async (req, res, next) => {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
         const existingUser = response;
+
+        //Checking blocked list of customer & users.
+        let blockedCustomer = await SecurityConfigCustomer.findOne({ blockedCustomers: existingUser.customer._id, isActive: true, isArchived: false });
+        
+
+        if(blockedCustomer) {
+          return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
+        } else {
+          let blockedUser = await SecurityConfigUser.findOne({ blockedUsers: existingUser._id, isActive: true, isArchived: false });
+          if(blockedUser) {
+            return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
+          }  
+        }
+        
         if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
 
           let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
