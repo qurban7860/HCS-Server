@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
         
-        blackListIPs: { type: String, unique: true, require: true}
+        blackListIP: { type: String, unique: true, required: true}
         // list of black listed IPs
                           
 },

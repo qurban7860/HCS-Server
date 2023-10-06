@@ -158,7 +158,7 @@ exports.patchSecurityConfigWhiteListIP = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { whiteListIPs, loginUser, isActive, isArchived} = req.body;
+  const { whiteListIP, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -166,8 +166,8 @@ function getDocumentFromReq(req, reqType){
     doc = new SecurityConfigWhiteListIP({});
   }
 
-  if ("whiteListIPs" in req.body){
-    doc.whiteListIPs = whiteListIPs;
+  if ("whiteListIP" in req.body){
+    doc.whiteListIP = whiteListIP;
   }
 
   if ("isActive" in req.body){

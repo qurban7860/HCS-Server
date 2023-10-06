@@ -160,7 +160,7 @@ exports.patchSecurityConfigBlackListIP = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { blackListIPs, loginUser, isActive, isArchived} = req.body;
+  const { blackListIP, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -168,8 +168,8 @@ function getDocumentFromReq(req, reqType){
     doc = new SecurityConfigBlackListIP({});
   }
 
-  if ("blackListIPs" in req.body){
-    doc.blackListIPs = blackListIPs;
+  if ("blackListIP" in req.body){
+    doc.blackListIP = blackListIP;
   }
 
   if ("isActive" in req.body){

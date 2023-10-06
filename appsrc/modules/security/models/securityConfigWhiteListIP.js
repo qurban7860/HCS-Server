@@ -6,7 +6,7 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
-        whiteListIPs: { type: String, require: true},
+        whiteListIP: { type: String, required: true},
         // list of white IPs
 },
 {
