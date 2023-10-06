@@ -11,7 +11,7 @@ const docSchema = new Schema({
         // list of black listed IPs                          
 },
 {
-        collection: 'SecurityConfigCustomers'
+        collection: 'SecurityConfigBlockedCustomers'
 });
 
 docSchema.set('timestamps', true);
