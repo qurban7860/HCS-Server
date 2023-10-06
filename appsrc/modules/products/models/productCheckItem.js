@@ -16,7 +16,7 @@ const docSchema = new Schema({
     printName: { type: String },
     // name/title to print at reports. default is same as name 
     
-    category: { type: Schema.Types.ObjectId , ref: 'MachineServiceCategory' },
+    category: { type: Schema.Types.ObjectId , ref: 'MachineCheckItemCategory' },
     // Category information of machine
       
     description: { type: String },

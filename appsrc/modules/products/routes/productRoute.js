@@ -40,5 +40,7 @@ router.delete(`${baseRouteForObject}/:id`, controller.deleteProduct);
 
 router.post(`${baseRouteForObject}/transferMachine/`, controller.transferOwnership);
 
+router.post(`${baseRouteForObject}/moveMachine/`, controller.moveMachine);
+
 
 module.exports = router;

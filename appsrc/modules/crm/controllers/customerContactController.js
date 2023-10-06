@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customer } = require('../models');
+const { Customer, CustomerSite, CustomerContact } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
 const _ = require('lodash');
@@ -13,8 +13,7 @@ let rtnMsg = require('../../config/static/static')
 
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
-
-const { CustomerContact } = require('../models');
+const ObjectId = require('mongoose').Types.ObjectId;
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -144,38 +143,51 @@ exports.getSPCustomerContacts = async (req, res, next) => {
 };
 
 
-// exports.getSPCustomerContacts = async (req, res, next) => {
-//   const { Customer } = require('../models');
-//   var spFields = { _id: 1 };
-//   var spQuery = { "type": "SP" };
+exports.moveContact = async (req, res, next) => {
+  const errors = validationResult(req);
+  
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } 
+  else {
+    if(ObjectId.isValid(req.params.customerId)) {
+      let customer = await Customer.findOne({ _id : req.params.customerId, isActive : true, isArchived : false });
+      let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
+      // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
 
-//   this.dbservice.getObjectList(Customer, spFields, spQuery, this.orderBy, '', callbackFunc);
 
-//   var _this = this;
-//   function callbackFunc(error, response) {
-//     if (error) {
-//       logger.error(new Error(error));
-//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-//     } else {
-//       _this.queryCustomer = {
-//         customer:
-//         {
-//           $in:
-//             response
-//         }
-//       };
-//       _this.dbservice.getObjectList(CustomerContact, _this.fields, _this.queryCustomer, _this.orderBy, _this.populateObj, callbackFunc);
-//       function callbackFunc(error, response) {
-//         if (error) {
-//           logger.error(new Error(error));
-//           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-//         } else {
-//           res.json(response);
-//         }
-//       }
-//     }
-//   }
-// };
+      if(contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
+        
+        if (!customer || !contact ) 
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
+
+        if (!contact || 
+          (contact.customer && 
+            (contact.customer.primaryBillingContact==contact._id || contact.customer.primaryTechnicalContact==contact._id))) 
+          return res.status(StatusCodes.BAD_REQUEST).send('Contact Not found or its used in a customer');
+
+        // if(contact.customer && req.body.sites.indexOf(contact.customer.mainSite)>-1) {
+        //   return res.status(StatusCodes.BAD_REQUEST).send('Contact Site is used as main site of customer');
+        // }
+
+        // sites = sites.map( (s) => s._id );
+        
+        contact.customer = customer;
+        contact.sites = [];
+      
+        contact = await contact.save();
+        
+        return res.status(StatusCodes.OK).json({ Contact: contact });
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send(contact ? "Service provider contact can't be moved!":"Contact not found!");
+      }
+    } 
+    else {
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+    }
+  }
+
+};
 
 exports.deleteCustomerContact = async (req, res, next) => {
   let id = req.params.id;

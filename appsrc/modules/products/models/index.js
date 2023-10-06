@@ -18,7 +18,7 @@ module.exports = {
     ProductCheckItem: require('./productCheckItem'),
     ProductServiceRecordsConfig: require('./productServiceRecordsConfig'),
     ProductServiceRecords: require('./productServiceRecords'),
-    ProductServiceCategory: require('./productServiceCategory'),
+    ProductCheckItemCategory: require('./productCheckItemCategory'),
     ProductProfile: require('./productProfile'),
 
     

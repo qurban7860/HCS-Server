@@ -13,7 +13,7 @@ const docSchema = new Schema({
     // description of Category
     },
     {
-        collection: 'MachineServiceCategories'
+        collection: 'MachineCheckItemCategories'
     }
 );
 docSchema.set('timestamps', true);
@@ -30,4 +30,4 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineServiceCategory', docSchema);
+module.exports = mongoose.model('MachineCheckItemCategory', docSchema);
