@@ -98,7 +98,7 @@ this.populate = [
     if(user) {
       console.log("----->");
       console.log(user);
-      user.sendUserInvite = true;
+      user.invitationStatus = true;
       user.save();
       let userInvite = new SecurityUserInvite({});
       userInvite.senderInvitationUser = req.body.loginUser.userId;
