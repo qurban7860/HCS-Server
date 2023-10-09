@@ -96,8 +96,8 @@ this.populate = [
     let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
 
     if(user) {
-      user.sendUserInvite = true;
-      user.save();
+      // user.sendUserInvite = true;
+      // user.save();
       let userInvite = new SecurityUserInvite({});
       userInvite.senderInvitationUser = req.body.loginUser.userId;
       userInvite.receiverInvitationUser = req.params.id;
