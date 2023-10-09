@@ -41,6 +41,8 @@ const docSchema = new Schema({
 
         currentEmployee: { type: Boolean, default: false },
         
+        invitationStatus: { type: Boolean, default: false },
+        
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
         ],

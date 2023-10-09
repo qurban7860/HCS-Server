@@ -299,7 +299,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 
 async function getDocumentFromReq(req, reqType){
-  const { customer, customers, contact, name, phone, email, currentEmployee, login, regions, machines,
+  const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, regions, machines,
      password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
 
 
@@ -354,6 +354,13 @@ async function getDocumentFromReq(req, reqType){
   if ("currentEmployee" in req.body){
     doc.currentEmployee = currentEmployee;
   }
+
+  if ("invitationStatus" in req.body){
+    doc.invitationStatus = invitationStatus;
+  }
+
+  
+
 
   if ("expireAt" in req.body){
     doc.expireAt = expireAt;
