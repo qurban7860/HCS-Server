@@ -93,8 +93,8 @@ this.populate = [
   };
 
   exports.sendUserInvite = async (req, res, next) =>{
-    let user = await SecurityUser.findById(req.params.id);
-    
+    let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
+
     if(user) {
       user.sendUserInvite = true;
       user.save();
