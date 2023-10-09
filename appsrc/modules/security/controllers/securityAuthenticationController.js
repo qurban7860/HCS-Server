@@ -382,7 +382,7 @@ exports.forgetPassword = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User is not authorized to login', true));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Unable to locate the system user', true));
     }
   }
 };
