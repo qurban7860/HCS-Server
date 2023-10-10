@@ -20,6 +20,7 @@ const documentRoute  = require ('../documents/routes');
 const emailRoute  = require ('../email/routes');
 const regionRoute  = require ('../regions/routes');
 const configRoute  = require ('../config/routes');
+const logRoute  = require ('../log/routes');
 
 
 const swaggerUi = require('swagger-ui-express');
