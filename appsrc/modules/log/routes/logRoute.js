@@ -16,8 +16,8 @@ router.get(`/`, controller.getLogs);
 router.get(`/:id`, controller.getLog);
 
 
-router.post(`${baseRouteForObject}`, controller.postLog);
+router.post(`/`, controller.postLog);
 
-router.patch(`${baseRouteForObject}/:id`, controller.patchLog);
+router.patch(`/:id`, controller.patchLog);
 
 module.exports = router;
