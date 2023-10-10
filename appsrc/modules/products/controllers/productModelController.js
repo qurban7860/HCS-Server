@@ -101,7 +101,7 @@ exports.patchProductModel = async (req, res, next) => {
   } else {
     let duplicateEntry = await this.dbservice.getObject(ProductModel, {name: req.body.name, isArchived: false}, this.populate);
     if(duplicateEntry && duplicateEntry._id != req.params.id){
-      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
+      return res.status(StatusCodes.CONFLICT).send("Record found with existing name!");
     }else{
       this.dbservice.patchObject(ProductModel, req.params.id, getDocumentFromReq(req), callbackFunc);
       function callbackFunc(error, result) {
