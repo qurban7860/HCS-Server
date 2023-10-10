@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductTool } = require('../models');
+const { ProductTool, ProductToolInstalled } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -89,20 +89,31 @@ exports.postProductTool = async (req, res, next) => {
 
 exports.patchProductTool = async (req, res, next) => {
   const errors = validationResult(req);
-  
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    this.dbservice.patchObject(ProductTool, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+
+  let recordExists = false;
+  if(req.body.isArchived){
+    let toolInstalled = await ProductToolInstalled.findOne({ tool: req.params.id, isActive: true, isArchived: false }).select('machine');
+    if(toolInstalled) {
+      recordExists = true;
+      res.status(StatusCodes.CONFLICT).send("The tool cannot be archived due to its attachment to a specific machine.");  
+    }
+  }
+
+  if(!recordExists) {
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      this.dbservice.patchObject(ProductTool, req.params.id, getDocumentFromReq(req), callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        }
       }
     }
   }
