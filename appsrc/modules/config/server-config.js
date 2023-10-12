@@ -71,6 +71,7 @@ class App {
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     configRoute.registerConfigRoutes(this.app, apiPath);
+    logRoute.registerlogRoutes(this.app, apiPath);
   }
 
 
