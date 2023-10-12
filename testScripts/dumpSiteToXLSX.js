@@ -4,58 +4,55 @@ const { SecurityUser } = require('../appsrc/modules/security/models');
 const mongoose = require('../appsrc/modules/db/dbConnection');
 const fs = require('fs');
 const path = require('path');
-const filePath = path.resolve(__dirname, "Customers.csv");
+const filePath = path.resolve(__dirname, "Sites.csv");
 async function main() {
-	let finalData = ['Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
+	let finalData = ['Name,CustomerID,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID'];
 
-	let customers = await Customer.find({isActive:true,isArchived:false})
-							.populate('mainSite')
+	let sites = await CustomerSite.find({isActive:true,isArchived:false})
+							.populate('customer')
 							.populate('primaryBillingContact')
-							.populate('primaryTechnicalContact')
-							.populate('accountManager')
-							.populate('projectManager')
-							.populate('supportManager');
+							.populate('primaryTechnicalContact');
 
-	customers = JSON.parse(JSON.stringify(customers));
-	for(let customer of customers) {
+	sites = JSON.parse(JSON.stringify(sites));
+	for(let site of sites) {
+		if(site && site.customer && (site.customer.isActive==false || site.customer.isArchived==true)) 
+			continue;
 		
-		if(Array.isArray(customer.sites) && customer.sites.length>0) {
-			customers.sites = await CustomerSite.find({_id:{$in:customer.sites}});
-			customers.sitesName = customers.sites.map((s)=>s.name);
-			customers.sitesName = customers.sitesName.join('- ')
-		}
-
-		if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
-			customers.contacts = await CustomerContact.find({_id:{$in:customer.contacts}});
-			customers.contactsName = customers.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
-			customers.contactsName = customers.contactsName.join('- ')
+		if(Array.isArray(site.contacts) && site.contacts.length>0) {
+			site.contacts = await CustomerContact.find({_id:{$in:site.contacts},isActive:true,isArchived:false});
+			site.contactsName = site.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+			site.contactsName = '"'+site.contactsName+'"'
 		}
 
 		finalDataObj = {
-			name:customer.name?customer.name.replace(',' , '-'):'',
-			clientCode:customer.clientCode?customer.clientCode.replace(',' , '-'):'',
-			tradingName:customer.tradingName?customer.tradingName.join('- ').replace(',' , '-'):'',
-			type:customer.type,
-			mainSite:customer.mainSite?customer.mainSite.name.replace(',' , ' | '):'',
-			mainSiteID:customer.mainSite?customer.mainSite.id:'',
-			sites:customer.sitesName?customer.sitesName.replace(',' , ' | '):'',
-			contacts:customer.contactsName?customer.contactsName.replace(',' , ' | '):'',
-			billingContact:customer.primaryBillingContact?getContactName(customer.primaryBillingContact):'',
-			billingContactID:customer.primaryBillingContact?customer.primaryBillingContact.id:'',
-			technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
-			technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact.id:'',
-			accountManager:customer.accountManager?getContactName(customer.accountManager):'',
-			accountManagerID:customer.accountManager?customer.accountManager.id:'',
-			projectManager:customer.projectManager?getContactName(customer.projectManager):'',
-			projectManagerID:customer.projectManager?customer.projectManager.id:'',
-			supportSubscription:customer.supportSubscription?'Yes':'No',
-			supportManager:customer.supportManager?getContactName(customer.supportManager):'',
-			supportManagerID:customer.supportManager?customer.supportManager.id:'',
+			name:site?'"'+site.name.replace(/"/g,"'")+'"':'',
+			customerId:site.customer?site.customer._id:'',
+			customer:site.customer?'"'+site.customer.name.replace(/"/g,"'")+'"':'',
+			street:site.address?site.address.street?'"'+site.address.street.replace(/"/g,"'")+'"':'':'',
+			suburb:site.address?site.address.suburb?'"'+site.address.suburb.replace(/"/g,"'")+'"':'':'',
+			city:site.address?site.address.city?'"'+site.address.city.replace(/"/g,"'")+'"':'':'',
+			region:site.address?site.address.region?'"'+site.address.region.replace(/"/g,"'")+'"':'':'',
+			postCode:site.address?site.address.postcode?'"'+site.address.postcode.replace(/"/g,"'")+'"':'':'',
+			country:site.address?site.address.country?'"'+site.address.country.replace(/"/g,"'")+'"':'':'',
+			lat:site.lat?'"'+site.lat.replace(/"/g,"'")+'"':'',
+			long:site.long?'"'+site.long.replace(/"/g,"'")+'"':'',
+			contacts:site.contactsName?'"'+site.contactsName.replace(/"/g,"'")+'"':'',
+			billingContact:site.primaryBillingContact?getContactName(site.primaryBillingContact):'',
+			billingContactID:site.primaryBillingContact?site.primaryBillingContact._id:'',
+			technicalContact:site.primaryTechnicalContact?getContactName(site.primaryTechnicalContact):'',
+			technicalContactID:site.primaryTechnicalContact?site.primaryTechnicalContact._id:'',
 		};
 
 		finalDataRow = Object.values(finalDataObj);
+		let index = 0;
 
-		finalDataRow = finalDataRow.join(', ');
+		for(let finalData of finalDataRow) {
+			finalData = finalData.replace(/(\r\n|\r|\n)/g,'');
+			finalDataRow[index] = finalData;
+			index++;
+		}
+
+		finalDataRow = finalDataRow.join(',');
 		finalData.push(finalDataRow);
 
 	}
@@ -73,14 +70,14 @@ async function main() {
 
 
 function getContactName(contact) {
-	let fullName = '';
+	let fullName = '"';
 
 	if(contact && contact.firstName)
-		fullName+= contact.firstName.replace(',','-');
+		fullName+= contact.firstName.replace(/"/g,"'");
 
 	if(contact && contact.lastName)
-		fullName+= contact.lastName.replace(',','-');
+		fullName+= contact.lastName.replace(/"/g,"'");
 
-	return fullName;
+	return fullName+'"';
 }
 main();
