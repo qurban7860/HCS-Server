@@ -9,5 +9,9 @@ module.exports = {
     SecurityNotes: require('./securityNote'),
     SecurityUserInvite: require('./securityUserInvite'),
     
+    SecurityConfigBlockedUser: require('./securityConfigBlockedUser'),
+    SecurityConfigBlockedCustomer: require('./securityConfigBlockedCustomer'),
+    SecurityConfigWhiteListIP: require('./securityConfigWhiteListIP'),
+    SecurityConfigBlackListIP: require('./securityConfigBlackListIP'),
     // SecurityInvite: require('./securityInvite'),
 }

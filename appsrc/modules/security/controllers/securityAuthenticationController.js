@@ -17,7 +17,8 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser } = require('../models');
+const ipRangeCheck = require("ip-range-check");
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -38,94 +39,143 @@ this.populateList = [
 
 exports.login = async (req, res, next) => {
   const errors = validationResult(req);
+  const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   var _this = this;
   console.log("login....");
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
-    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
-    async function getObjectCallback(error, response) {
 
-      if (error) {
-        logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
+
+    let matchedBlackListIps = false;
+    blackListIP.forEach((ipObj) => {
+      if(clientIP == ipObj.blackListIP) {
+        matchedBlackListIps = true;
+      } else if(ipRangeCheck(clientIP, ipObj.blackListIP)){
+        matchedBlackListIps = true;
+      }
+    });
+
+
+    let matchedwhiteListIPs = false;
+    if(!matchedBlackListIps) {
+      let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
+      if(validIps && validIps.length > 0) {
+        validIps.forEach((ipObj) => {
+          if(clientIP == ipObj.whiteListIP) {
+            matchedwhiteListIPs = true;
+          } else if(ipRangeCheck(clientIP, ipObj.whiteListIP)){
+            matchedwhiteListIPs = true;
+          }
+        });  
       } else {
-        const existingUser = response;
-        if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+        matchedwhiteListIPs = true;
+      }
+    }
 
-          let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
+
+    if(matchedwhiteListIPs && !matchedBlackListIps){
+      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
+      async function getObjectCallback(error, response) {
+
+        if (error) {
+          logger.error(new Error(error));
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          const existingUser = response;
+
+          //Checking blocked list of customer & users.
+          let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
           
-          if(passwordsResponse) {
 
-            if (existingUser.multiFactorAuthentication) {
+          if(blockedCustomer) {
+            return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
+          } else {
+            let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
+            if(blockedUser) {
+              return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
+            }  
+          }
+          
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
 
-              // User has enabled MFA, so redirect them to the MFA page
-              // Generate a one time code and send it to the user's email address
-              const code = Math.floor(100000 + Math.random() * 900000);
-              
-              let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
-              sign-in from a device or location you don't usually use. If this was you, 
-              enter the code below to sign in. <br>
-              <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
-              The code will expire in 10 minutes.`;
-              let emailSubject = "Multi-Factor Authentication Code";
+            let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
+            
+            if(passwordsResponse) {
 
-              let params = {
-                to: `${existingUser.email}`,
-                subject: emailSubject,
-                html: true
-              };
-              let hostName = 'portal.howickltd.com';
+              if (existingUser.multiFactorAuthentication) {
 
-              if(process.env.CLIENT_HOST_NAME)
-                hostName = process.env.CLIENT_HOST_NAME;
-              
-              let hostUrl = "https://portal.howickltd.com";
+                // User has enabled MFA, so redirect them to the MFA page
+                // Generate a one time code and send it to the user's email address
+                const code = Math.floor(100000 + Math.random() * 900000);
+                
+                let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
+                sign-in from a device or location you don't usually use. If this was you, 
+                enter the code below to sign in. <br>
+                <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
+                The code will expire in 10 minutes.`;
+                let emailSubject = "Multi-Factor Authentication Code";
 
-              if(process.env.CLIENT_APP_URL)
-                hostUrl = process.env.CLIENT_APP_URL;
-              
-              // console.log("@2");
-              fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
-                params.htmlData = htmlData;
-                let response = await awsService.sendEmail(params);
-              })
-              const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-              _this.dbservice.postObject(emailResponse, callbackFunc);
-              function callbackFunc(error, response) {
-                // console.log("add object -->", response);
-                if (error) {
-                  logger.error(new Error(error));
-                  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                } else {
-                  let userMFAData = {};
-                  userMFAData.multiFactorAuthenticationCode = code;
-                  const currentDate = new Date();
-                  userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-                  _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
-                  
-                  function callbackPatchFunc(error, response) {
-                    return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
+                let params = {
+                  to: `${existingUser.email}`,
+                  subject: emailSubject,
+                  html: true
+                };
+                let hostName = 'portal.howickltd.com';
+
+                if(process.env.CLIENT_HOST_NAME)
+                  hostName = process.env.CLIENT_HOST_NAME;
+                
+                let hostUrl = "https://portal.howickltd.com";
+
+                if(process.env.CLIENT_APP_URL)
+                  hostUrl = process.env.CLIENT_APP_URL;
+                
+                // console.log("@2");
+                fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+                  let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+                  params.htmlData = htmlData;
+                  let response = await awsService.sendEmail(params);
+                })
+                const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
+                _this.dbservice.postObject(emailResponse, callbackFunc);
+                function callbackFunc(error, response) {
+                  // console.log("add object -->", response);
+                  if (error) {
+                    logger.error(new Error(error));
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                  } else {
+                    let userMFAData = {};
+                    userMFAData.multiFactorAuthenticationCode = code;
+                    const currentDate = new Date();
+                    userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
+                    
+                    function callbackPatchFunc(error, response) {
+                      return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
+                    }
                   }
                 }
+                return;  
               }
-              return;  
+
+              return await validateAndLoginUser(req, res, existingUser);
+
             }
-
-            return await validateAndLoginUser(req, res, existingUser);
-
+            else {
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+            }
           }
           else {
-            return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+            return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
           }
+          
         }
-        else {
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
-        }
-        
       }
+    } else {
+      res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
     }
   }
 };

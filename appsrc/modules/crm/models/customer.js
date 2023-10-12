@@ -20,8 +20,7 @@ const docSchema = new Schema({
         
         type: { type: String },
         //its value can be "SP", "Customer"
-
-        
+                
         // site: { type: Schema.Types , ref: 'CustomerSite' },
         // // main site object
 
