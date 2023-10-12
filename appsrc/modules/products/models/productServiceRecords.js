@@ -42,6 +42,7 @@ const docSchema = new Schema({
     value: {type: String},
     status: {type: String},
     comments: {type: String},
+    date: {type: String},
     files: []
   }],
 
