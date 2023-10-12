@@ -18,6 +18,9 @@ const baseRouteForObject = `/customers`;
 
 router.use(checkAuth, checkCustomer);
 
+// - /api/1.0.0/crm/sites/export
+router.get(`${baseRouteForObject}/export`, controller.exportCustomers);
+
 // - /api/1.0.0/crm/customers/get/:flag/:id
 router.get(`${baseRouteForObject}/:id`, controller.getCustomer);
 

@@ -16,6 +16,8 @@ const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 const { Country } = require('../../config/models');
 const _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
 
 
 const customerSiteController = require('./customerSiteController');
@@ -365,6 +367,88 @@ exports.patchCustomer = async (req, res, next) => {
     }
   }
 };
+
+exports.exportCustomers = async (req, res, next) => {
+  let finalData = ['ID,Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
+  const filePath = path.resolve(__dirname, "../../../../uploads/Customers.csv");
+
+  let customers = await Customer.find({isActive:true,isArchived:false})
+              .populate('mainSite')
+              .populate('primaryBillingContact')
+              .populate('primaryTechnicalContact')
+              .populate('accountManager')
+              .populate('projectManager')
+              .populate('supportManager');
+
+  customers = JSON.parse(JSON.stringify(customers));
+  for(let customer of customers) {
+    
+    if(Array.isArray(customer.sites) && customer.sites.length>0) {
+      customer.sites = await CustomerSite.find({_id:{$in:customer.sites},isActive:true,isArchived:false});
+      customer.sitesName = customer.sites.map((s)=>s.name);
+      customer.sitesName = customer.sitesName.join('|')
+    }
+
+    if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
+      customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
+      customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+      customer.contactsName = customer.contactsName.join('|')
+    }
+
+    finalDataObj = {
+      id:customer._id,
+      name:customer.name?'"'+customer.name.replace(/"/g,"'")+'"':'',
+      clientCode:customer.clientCode?'"'+customer.clientCode.replace(/"/g,"'")+'"':'',
+      tradingName:customer.tradingName?'"'+customer.tradingName.join('-').replace(/"/g,"'")+'"':'',
+      type:'"'+customer.type+'"',
+      mainSite:customer.mainSite?'"'+customer.mainSite.name.replace(/"/g,"'")+'"':'',
+      mainSiteID:customer.mainSite?customer.mainSite._id:'',
+      sites:customer.sitesName?'"'+customer.sitesName.replace(/"/g,"'")+'"':'',
+      contacts:customer.contactsName?'"'+customer.contactsName.replace(/"/g,"'")+'"':'',
+      billingContact:customer.primaryBillingContact?getContactName(customer.primaryBillingContact):'',
+      billingContactID:customer.primaryBillingContact?customer.primaryBillingContact._id:'',
+      technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
+      technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
+      accountManager:customer.accountManager?getContactName(customer.accountManager):'',
+      accountManagerID:customer.accountManager?customer.accountManager._id:'',
+      projectManager:customer.projectManager?getContactName(customer.projectManager):'',
+      projectManagerID:customer.projectManager?customer.projectManager._id:'',
+      supportSubscription:customer.supportSubscription?'Yes':'No',
+      supportManager:customer.supportManager?getContactName(customer.supportManager):'',
+      supportManagerID:customer.supportManager?customer.supportManager._id:'',
+    };
+
+    finalDataRow = Object.values(finalDataObj);
+
+    finalDataRow = finalDataRow.join(', ');
+    finalData.push(finalDataRow);
+
+  }
+
+  let csvDataToWrite = finalData.join('\n');
+
+  fs.writeFile(filePath, csvDataToWrite, 'utf8', function (err) {
+    if (err) {
+      console.log('Some error occured - file either not saved or corrupted file saved.');
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else{
+      return res.sendFile(filePath);
+    }
+  });
+}
+
+
+function getContactName(contact) {
+  let fullName = '"';
+
+  if(contact && contact.firstName)
+    fullName+= contact.firstName.replace(/"/g,"'");
+
+  if(contact && contact.lastName)
+    fullName+= contact.lastName.replace(/"/g,"'");
+
+  return fullName+'"';
+}
 
 
 function getDocumentFromReq(req, reqType){
