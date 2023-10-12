@@ -16,6 +16,8 @@ const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 const { Country } = require('../../config/models');
 const _ = require('lodash');
+const fs = require('fs');
+const path = require('path');
 
 
 const customerSiteController = require('./customerSiteController');
@@ -256,25 +258,42 @@ exports.deleteCustomer = async (req, res, next) => {
 
 exports.postCustomer = async (req, res, next) => {
   const errors = validationResult(req);
+  let CustomerObj;
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    var _this = this;
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        _this.dbservice.getObjectById(Customer, _this.fields, response._id, _this.populate, callbackFunc);
-        function callbackFunc(error, response) {
-          if (error) {
-            logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-          } else {
-            res.status(StatusCodes.CREATED).json({ Customer: response });
+    if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
+      let clientCode = "^"+req.body.clientCode.trim()+"$";
+      let queryCustomer = {
+        clientCode: {
+          $regex: clientCode,
+          $options: 'i'
+        }
+      };
+      CustomerObj = await Customer.findOne(queryCustomer);
+    }
+    //, _id: { $ne: ObjectId("651e8e1870e874147c999191") }    
+
+    if(CustomerObj) {
+      res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
+    } else {
+      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+      var _this = this;
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+        } else {
+          _this.dbservice.getObjectById(Customer, _this.fields, response._id, _this.populate, callbackFunc);
+          function callbackFunc(error, response) {
+            if (error) {
+              logger.error(new Error(error));
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            } else {
+              res.status(StatusCodes.CREATED).json({ Customer: response });
+            }
           }
         }
       }
@@ -287,57 +306,158 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
-      let customer = await Customer.findById(req.params.id);
-      if (customer.type === 'SP') {
-        const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
-        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
-      }
-    }
+    let CustomerObj;
+    if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
+      let clientCode = "^"+req.body.clientCode.trim()+"$";
+      let queryCustomer = {
+        clientCode: {
+          $regex: clientCode,
+          $options: 'i'
+        }, _id: { $ne: req.params.id }
+      };
+      CustomerObj = await Customer.findOne(queryCustomer);
+    }  
 
-    // ToDo correct spell mistake from front end
-    if(req.body.isVerified ||req.body.isVarified){ 
-      let customer = await Customer.findById(req.params.id); 
-      if(!customer) {
-        return res.status(StatusCodes.BAD_REQUEST).json({message:"Customer Not Found"});
-      }
-  
-      if(!Array.isArray(customer.verifications))
-        customer.verifications = [];
+    if(!CustomerObj) {
+      if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
 
-      for(let verif of customer.verifications) {
-        if(verif.verifiedBy == req.body.loginUser.userId)
-          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
-
+        let customer = await Customer.findById(req.params.id);
+        if (customer.type === 'SP') {
+          const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
+          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
+        }
       }
-      customer.verifications.push({
-        verifiedBy: req.body.loginUser.userId,
-        verifiedDate: new Date()
-      })
-      customer = await customer.save();
-      return res.status(StatusCodes.ACCEPTED).json(customer);
-    }
 
-    this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      // ToDo correct spell mistake from front end
+      if(req.body.isVerified ||req.body.isVarified){ 
+        let customer = await Customer.findById(req.params.id); 
+        if(!customer) {
+          return res.status(StatusCodes.BAD_REQUEST).json({message:"Customer Not Found"});
+        }
+    
+        if(!Array.isArray(customer.verifications))
+          customer.verifications = [];
+
+        for(let verif of customer.verifications) {
+          if(verif.verifiedBy == req.body.loginUser.userId)
+            return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+
+        }
+        customer.verifications.push({
+          verifiedBy: req.body.loginUser.userId,
+          verifiedDate: new Date()
+        })
+        customer = await customer.save();
+        return res.status(StatusCodes.ACCEPTED).json(customer);
       }
+
+      this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            );
+        } else {
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        }
+      }
+    } else {
+      res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
     }
   }
 };
 
+exports.exportCustomers = async (req, res, next) => {
+  let finalData = ['ID,Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
+  const filePath = path.resolve(__dirname, "../../../../uploads/Customers.csv");
+
+  let customers = await Customer.find({isActive:true,isArchived:false})
+              .populate('mainSite')
+              .populate('primaryBillingContact')
+              .populate('primaryTechnicalContact')
+              .populate('accountManager')
+              .populate('projectManager')
+              .populate('supportManager');
+
+  customers = JSON.parse(JSON.stringify(customers));
+  for(let customer of customers) {
+    
+    if(Array.isArray(customer.sites) && customer.sites.length>0) {
+      customer.sites = await CustomerSite.find({_id:{$in:customer.sites},isActive:true,isArchived:false});
+      customer.sitesName = customer.sites.map((s)=>s.name);
+      customer.sitesName = customer.sitesName.join('|')
+    }
+
+    if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
+      customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
+      customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+      customer.contactsName = customer.contactsName.join('|')
+    }
+
+    finalDataObj = {
+      id:customer._id,
+      name:customer.name?'"'+customer.name.replace(/"/g,"'")+'"':'',
+      clientCode:customer.clientCode?'"'+customer.clientCode.replace(/"/g,"'")+'"':'',
+      tradingName:customer.tradingName?'"'+customer.tradingName.join('-').replace(/"/g,"'")+'"':'',
+      type:'"'+customer.type+'"',
+      mainSite:customer.mainSite?'"'+customer.mainSite.name.replace(/"/g,"'")+'"':'',
+      mainSiteID:customer.mainSite?customer.mainSite._id:'',
+      sites:customer.sitesName?'"'+customer.sitesName.replace(/"/g,"'")+'"':'',
+      contacts:customer.contactsName?'"'+customer.contactsName.replace(/"/g,"'")+'"':'',
+      billingContact:customer.primaryBillingContact?getContactName(customer.primaryBillingContact):'',
+      billingContactID:customer.primaryBillingContact?customer.primaryBillingContact._id:'',
+      technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
+      technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
+      accountManager:customer.accountManager?getContactName(customer.accountManager):'',
+      accountManagerID:customer.accountManager?customer.accountManager._id:'',
+      projectManager:customer.projectManager?getContactName(customer.projectManager):'',
+      projectManagerID:customer.projectManager?customer.projectManager._id:'',
+      supportSubscription:customer.supportSubscription?'Yes':'No',
+      supportManager:customer.supportManager?getContactName(customer.supportManager):'',
+      supportManagerID:customer.supportManager?customer.supportManager._id:'',
+    };
+
+    finalDataRow = Object.values(finalDataObj);
+
+    finalDataRow = finalDataRow.join(', ');
+    finalData.push(finalDataRow);
+
+  }
+
+  let csvDataToWrite = finalData.join('\n');
+
+  fs.writeFile(filePath, csvDataToWrite, 'utf8', function (err) {
+    if (err) {
+      console.log('Some error occured - file either not saved or corrupted file saved.');
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else{
+      return res.sendFile(filePath);
+    }
+  });
+}
+
+
+function getContactName(contact) {
+  let fullName = '"';
+
+  if(contact && contact.firstName)
+    fullName+= contact.firstName.replace(/"/g,"'");
+
+  if(contact && contact.lastName)
+    fullName+= contact.lastName.replace(/"/g,"'");
+
+  return fullName+'"';
+}
+
 
 function getDocumentFromReq(req, reqType){
-  const { name, tradingName, type, siteObj, mainSite, sites, contacts,
+  const { name, clientCode, tradingName, type, mainSite, sites, contacts,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
-    accountManager, projectManager, supportManager, 
+    accountManager, projectManager, supportSubscription, supportManager, 
     isActive, isArchived, loginUser } = req.body;
+
+
 
 
   let doc = {};
@@ -353,6 +473,13 @@ function getDocumentFromReq(req, reqType){
   if ("name" in req.body){
     doc.name = name;
   }
+
+  if ("clientCode" in req.body){
+    doc.clientCode = clientCode.trim();
+  }
+
+  
+
   if ("tradingName" in req.body){
     doc.tradingName = tradingName;
   }
@@ -426,6 +553,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("projectManager" in req.body){
     doc.projectManager = projectManager;
+  }
+
+  if ("supportSubscription" in req.body){
+    doc.supportSubscription = supportSubscription;
   }
 
   if ("supportManager" in req.body){

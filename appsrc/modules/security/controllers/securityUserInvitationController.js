@@ -93,9 +93,11 @@ this.populate = [
   };
 
   exports.sendUserInvite = async (req, res, next) =>{
-    let user = await SecurityUser.findById(req.params.id);
+    let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
 
     if(user) {
+      user.invitationStatus = true;
+      user.save();
       let userInvite = new SecurityUserInvite({});
       userInvite.senderInvitationUser = req.body.loginUser.userId;
       userInvite.receiverInvitationUser = req.params.id;
@@ -220,6 +222,8 @@ this.populate = [
             loginUser.password = await bcrypt.hash(req.body.password, 12);
             loginUser.name = req.body.fullName?req.body.fullName:'';
             loginUser.phone = req.body.phone?req.body.phone:'';
+            
+            loginUser.invitationStatus = false;            
 
             if(!loginUser.contact) {
               let contact = await CustomerContact.create({

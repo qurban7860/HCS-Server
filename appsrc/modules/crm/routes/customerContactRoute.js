@@ -22,6 +22,12 @@ const baseRoute = `/customers/:customerId/contacts`;
 
 router.use(checkAuth, checkCustomer);
 
+// - /api/1.0.0/crm/contacts/search
+router.get(`${baseRoute}/search`, controller.searchCustomerContacts);
+
+// - /api/1.0.0/crm/contacts/export
+router.get(`${baseRoute}/export`, controller.exportContacts);
+
 // - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerContact);
 
@@ -37,8 +43,7 @@ router.patch(`${baseRoute}/:id`, checkCustomerID, verifyDelete, controller.patch
 // - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.delete(`${baseRoute}/:id`, checkCustomerID, controller.deleteCustomerContact);
 
-// - /api/1.0.0/crm/contacts/search
-router.get(`/contacts/search`, controller.searchCustomerContacts);
+
 
 
 // - /api/1.0.0/crm/sp/contacts
