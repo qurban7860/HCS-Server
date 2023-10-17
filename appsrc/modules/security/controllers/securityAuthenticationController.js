@@ -340,7 +340,7 @@ exports.logout = async (req, res, next) => {
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   await SecurityUser.updateOne({_id:req.params.userID},{isOnline : false});
   let existingSignInLog = await SecuritySignInLog.findOne({ user: req.params.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
-  if (!existingSignInLog.logoutTime) {
+  if (existingSignInLog && !existingSignInLog.logoutTime) {
 
     this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date() }, callbackFunc);
     function callbackFunc(error, result) {
