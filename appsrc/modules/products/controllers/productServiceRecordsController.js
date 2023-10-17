@@ -58,22 +58,22 @@ exports.getProductServiceRecord = async (req, res, next) => {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
       
-      if(response.serviceRecordConfig && 
-        Array.isArray(response.serviceRecordConfig.checkParams) &&
-        response.serviceRecordConfig.checkParams.length>0) {
+      // if(response.serviceRecordConfig && 
+      //   Array.isArray(response.serviceRecordConfig.checkParams) &&
+      //   response.serviceRecordConfig.checkParams.length>0) {
 
-        let index = 0;
-        for(let checkParam of response.serviceRecordConfig.checkParams) {
-          if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
-            let indexP = 0;
-            for(let paramListId of checkParam.paramList) { 
-              response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-              indexP++;
-            }
-          }
-          index++;
-        }
-      }
+      //   let index = 0;
+      //   for(let checkParam of response.serviceRecordConfig.checkParams) {
+      //     if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+      //       let indexP = 0;
+      //       for(let paramListId of checkParam.paramList) { 
+      //         response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
+      //         indexP++;
+      //       }
+      //     }
+      //     index++;
+      //   }
+      // }
 
       res.json(response);
     }
