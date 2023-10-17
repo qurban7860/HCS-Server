@@ -401,9 +401,7 @@ exports.forgetPassword = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
 
-          let emailContent = `Hi ${existingUser.name},<br><br>You requested to reset your password.<br>
-                          <br>Please click the link below to reset your password.<br>
-                          <br><a href="${link}">Click here</a>`;
+          
           let emailSubject = "Reset Password";
 
           let params = {
@@ -412,6 +410,7 @@ exports.forgetPassword = async (req, res, next) => {
             html: true
           };
 
+          let username = existingUser.name;
           let hostName = 'portal.howickltd.com';
 
           if(process.env.CLIENT_HOST_NAME)
@@ -421,10 +420,10 @@ exports.forgetPassword = async (req, res, next) => {
 
           if(process.env.CLIENT_APP_URL)
             hostUrl = process.env.CLIENT_APP_URL;
+          
+          fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
 
-          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-
-            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+            let htmlData = render(data,{ hostName, hostUrl, username, link })
             params.htmlData = htmlData;
             let response = await awsService.sendEmail(params);
           })
@@ -491,9 +490,11 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               if(process.env.CLIENT_APP_URL)
                 hostUrl = process.env.CLIENT_APP_URL;
 
+              let username = existingUser.name;
+
               fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
 
-                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
                 params.htmlData = htmlData;
                 let response = await awsService.sendEmail(params);
               })
