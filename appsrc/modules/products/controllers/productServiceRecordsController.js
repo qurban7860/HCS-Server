@@ -15,7 +15,7 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecords, Product, ProductCheckItem } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceRecords, Product, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
 
 
@@ -144,8 +144,34 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
+
+
+
+  console.log("req.body.serviceRecordConfig", req.body.serviceRecordConfig);
+  req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
+
+  console.log(req.body.serviceRecordConfig);
   
+  if(req.body.serviceRecordConfig && 
+    Array.isArray(req.body.serviceRecordConfig.checkParams) &&
+    req.body.serviceRecordConfig.checkParams.length>0) {
+
+    let index = 0;
+    for(let checkParam of req.body.serviceRecordConfig.checkParams) {
+      if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+        let indexP = 0;
+        for(let paramListId of checkParam.paramList) { 
+          req.body.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
+          console.log(req.body.serviceRecordConfig.checkParams[index].paramList[indexP]);
+          indexP++;
+        }
+      }
+      index++;
+    }
+  }
+
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

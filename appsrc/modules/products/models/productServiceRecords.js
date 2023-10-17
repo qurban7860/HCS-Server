@@ -9,9 +9,86 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
+
+  serviceRecordConfig: {  
+    recordType: {type: String, required: true},
+    // service/repair/training/install 
+    
+    machineModel: { type: Schema.Types.ObjectId , ref: 'MachineModel' },
+    // Model information of machine
   
-  serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
-  // record configuration used to create this record.
+    category: { type: Schema.Types.ObjectId , ref: 'MachineCategory' },
+    // Category information of machine
+    
+    docTitle: { type: String },
+    // name/title of document/screen
+    
+    textBeforeCheckItems: { type: String },
+    // display this text before fields  
+    
+    checkParams : [{
+      paramListTitle: { type: String },
+      paramList : [
+          {  
+    
+            name: { type: String },
+            // name/title of field
+            
+            printName: { type: String },
+            // name/title to print at reports. default is same as name 
+            
+            category: { type: Schema.Types.ObjectId , ref: 'MachineCheckItemCategory' },
+            // Category information of machine
+              
+            isRequired: {type: Boolean, default: false},
+            // if true, it value must be required
+            
+            inputType: {type: String, required: true},
+            // shortText, longText (multiline input), Number, Boolean
+            
+            unitType: {type: String},
+            // like Meter, Cycle, Kg, etc
+            
+            minValidation: {type: String, maxLength: 100},
+            maxValidation: {type: String, maxLength: 100},
+            // Used for validatioin. like for 0-100, MinValiidation = 0, and maxVaidation = 100
+            // For text value, The length of value can be 0 to 100. 
+        }
+      ],
+    }],
+    
+    textAfterCheckItems: { type: String },
+    // display this text before fields
+    
+    isOperatorSignatureRequired: { type: Boolean, default: false},
+    // true if operator signature is required
+    
+    enableNote: { type: Boolean, default: false},
+    // enable Service Note at input screen
+    
+    enableMaintenanceRecommendations: { type: Boolean, default: false},
+    // enable Maintenance Recommendations at input screen
+    
+    enableSuggestedSpares: { type: Boolean, default: false},
+    // enable Suggested Spares at input screen
+    
+    header: {
+      type: {type: String, default: 'text'},
+      // it can be text or image. default is text
+      leftText: {type: String},
+      centerText: {type: String},
+      rightText: {type: String}
+      // for page number, use value pgNo.
+    },
+    footer: {
+      type: {type: String, default: 'text'},
+      // it can be text or image. default is text
+      leftText: {type: String},
+      centerText: {type: String},
+      rightText: {type: String}
+      // for page number, use value pgNo. 
+    }
+  },
   
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
