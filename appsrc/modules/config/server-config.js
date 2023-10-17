@@ -3,9 +3,22 @@ const apiPath = process.env.API_ROOT;
 const fs         = require('fs');
 const path       = require('path');
 const express = require('express');
-const bodyParser = require('body-parser');
-var cors = require('cors')
 
+const bodyParser = require('body-parser');
+const cors = require('cors')
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
+
+let dburl = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`
+
+if (process.env.MONGODB_HOST_TYPE && process.env.MONGODB_HOST_TYPE == "mongocloud"){
+    dburl = `mongodb+srv://${ process.env.MONGODB_USERNAME }:${ process.env.MONGODB_PASSWD }@${ process.env.MONGODB_HOST }/${ process.env.MONGODB_NAME }?retryWrites=true&w=majority`;
+}
+
+const store = new MongoDBStore({
+    uri: dburl,
+    collection: 'Sessions'
+});
 
 // MIDDLEWARE
 const setHeaders = require('../../middleware/set-header');
@@ -21,6 +34,7 @@ const emailRoute  = require ('../email/routes');
 const regionRoute  = require ('../regions/routes');
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
+
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -48,6 +62,13 @@ class App {
     this.app.use(bodyParser.json());
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
+    
+    this.app.use(session({
+      secret: process.env.SESSION_SECRETKEY,
+      resave: false,
+      store: store
+    }));
+
     this.registerRoutes();
     this.app.use(cors({
         origin: '*'
