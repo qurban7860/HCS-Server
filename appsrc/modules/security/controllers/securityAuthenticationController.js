@@ -101,6 +101,12 @@ exports.login = async (req, res, next) => {
           
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
 
+
+            if(existingUser.isOnline===true) {
+              return res.status(StatusCodes.BAD_REQUEST).json({
+                MessageCode:StatusCodes.BAD_REQUEST,isError:true,Message:"This Account is already logged in on other device."});
+            }
+
             let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
             
             if(passwordsResponse) {
@@ -187,7 +193,8 @@ async function validateAndLoginUser(req, res, existingUser) {
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
-   
+    
+    updatedToken['isOnline'] = true;
     dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
     async function callbackPatchFunc(error, response) {
       if (error) {
@@ -202,6 +209,7 @@ async function validateAndLoginUser(req, res, existingUser) {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
+          req.session.isLoggedIn = true;
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -330,8 +338,10 @@ function isValidRole(roles) {
 
 exports.logout = async (req, res, next) => {
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+  await SecurityUser.updateOne({_id:req.params.userID},{isOnline : false});
   let existingSignInLog = await SecuritySignInLog.findOne({ user: req.params.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
   if (!existingSignInLog.logoutTime) {
+
     this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date() }, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
@@ -341,7 +351,10 @@ exports.logout = async (req, res, next) => {
     }
   }
 
-  res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+  req.session.destroy(() => {
+    return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+  })
+
 
   // const currentTime = Date.now;
   // var signOutLog = {

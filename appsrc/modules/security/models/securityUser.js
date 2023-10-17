@@ -69,7 +69,9 @@ const docSchema = new Schema({
           // Date/Time for token  creation.
           tokenExpiry: { type: Date}
           // Date/Time for token expiry.
-        }
+        },
+
+        isOnline: {type: Boolean, default: false},
                           
 },
 {
