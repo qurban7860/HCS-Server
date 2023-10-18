@@ -204,12 +204,21 @@ async function validateAndLoginUser(req, res, existingUser) {
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
       const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
-      function callbackFunc(error, response) {
+      async function callbackFunc(error, response) {
         if (error) {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           req.session.isLoggedIn = true;
+          req.session.userId = existingUser.id;
+
+          try {
+              await req.session.save();
+          } catch (err) {
+              console.error('Error saving to session storage: ', err);
+              return next(new Error('Error creating user'));
+          }
+
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -351,9 +360,20 @@ exports.logout = async (req, res, next) => {
     }
   }
 
-  req.session.destroy(() => {
-    return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
-  })
+  console.log("req.session",req.session)
+
+  if(req.session) {
+    req.session.isLoggedIn = false;
+
+    req.session.destroy((a,b,c) => {
+      console.log("destroy",a,b,c);
+      return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+    })
+  }
+  else {
+      return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+
+  }
 
 
   // const currentTime = Date.now;
