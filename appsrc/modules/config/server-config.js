@@ -63,9 +63,10 @@ class App {
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
     
-    this.app.use(session({
+    console.log('constructor called ----------------------------')
+    this.app.use('/api/1.0.0/security/getToken/',session({
       secret: process.env.SESSION_SECRETKEY,
-      resave: false,
+      resave: true,
       store: store
     }));
 
@@ -80,6 +81,7 @@ class App {
       swaggerUi.serve,
       swaggerUi.setup(swaggerDocument)
     );
+
     this.app.use(errorHandler);
   }
 
