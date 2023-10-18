@@ -13,11 +13,43 @@ const docSchema = new Schema({
   serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord' },
   // UID of machine service record.
 
+  serviceParam : { type: Schema.Types.ObjectId , ref: 'MachineCheckItem' },
+
   name: { type: String },
   // name/title of field
   
-  printName: { type: String },
+  paramListTitle: { type: String },
+  // name/title of field
+
+  checked: {type: Boolean, default: false},
+  // name/title of field
+
+  value: { type: String },
+  // name/title of field
+
+  status: { type: String },
+  // name/title of field
+
+  comments: { type: String },
+  // name/title of field
+
+  date: { type: Date },
   // name/title to print at reports. default is same as name 
+
+  files : [
+    {  
+      name: { type: String },
+      // name/title of field
+      path: { type: String },
+      // file path 
+      fileType: {type: String, required: true},
+      // image, video, text, word, excel, pdf , etc. 
+      extension: {type: String},
+      // file extension.
+
+      thumbnail: {type: String},
+    }
+  ],
   
   category: { type: Schema.Types.ObjectId , ref: 'MachineCheckItemCategory' },
   // Category information of machine
