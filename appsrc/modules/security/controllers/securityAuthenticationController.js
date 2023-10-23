@@ -102,10 +102,10 @@ exports.login = async (req, res, next) => {
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
 
 
-            if(existingUser.isOnline===true) {
-              return res.status(StatusCodes.BAD_REQUEST).json({
-                MessageCode:StatusCodes.BAD_REQUEST,isError:true,Message:"This Account is already logged in on other device."});
-            }
+            // if(existingUser.isOnline===true) {
+            //   return res.status(StatusCodes.BAD_REQUEST).json({
+            //     MessageCode:StatusCodes.BAD_REQUEST,isError:true,Message:"This Account is already logged in on other device."});
+            // }
 
             let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
             
