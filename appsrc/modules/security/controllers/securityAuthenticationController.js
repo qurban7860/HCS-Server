@@ -129,6 +129,10 @@ exports.login = async (req, res, next) => {
                   subject: emailSubject,
                   html: true
                 };
+
+                
+                let username = existingUser.name;
+
                 let hostName = 'portal.howickltd.com';
 
                 if(process.env.CLIENT_HOST_NAME)
@@ -140,7 +144,7 @@ exports.login = async (req, res, next) => {
                   hostUrl = process.env.CLIENT_APP_URL;
                 
                 fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                  let htmlData = render(data,{ existingUser.name, emailSubject, emailContent, hostName, hostUrl })
+                  let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
                   params.htmlData = htmlData;
                   let response = await awsService.sendEmail(params);
                 })
