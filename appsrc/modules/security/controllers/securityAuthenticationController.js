@@ -117,11 +117,11 @@ exports.login = async (req, res, next) => {
                 // Generate a one time code and send it to the user's email address
                 const code = Math.floor(100000 + Math.random() * 900000);
                 
-                let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
+                let emailContent = `We detected an unusual 
                 sign-in from a device or location you don't usually use. If this was you, 
                 enter the code below to sign in. <br>
                 <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
-                The code will expire in 10 minutes.`;
+                The code will expire in <b>10</b> minutes.`;
                 let emailSubject = "Multi-Factor Authentication Code";
 
                 let params = {
@@ -139,16 +139,14 @@ exports.login = async (req, res, next) => {
                 if(process.env.CLIENT_APP_URL)
                   hostUrl = process.env.CLIENT_APP_URL;
                 
-                // console.log("@2");
                 fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                  let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+                  let htmlData = render(data,{ existingUser.name, emailSubject, emailContent, hostName, hostUrl })
                   params.htmlData = htmlData;
                   let response = await awsService.sendEmail(params);
                 })
                 const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
                 _this.dbservice.postObject(emailResponse, callbackFunc);
                 function callbackFunc(error, response) {
-                  // console.log("add object -->", response);
                   if (error) {
                     logger.error(new Error(error));
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
