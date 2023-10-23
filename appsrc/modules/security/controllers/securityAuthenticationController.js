@@ -488,7 +488,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
 
-              let emailContent = `Hi ${existingUser.name},<br><br>Your password has been update successfully.<br>
+              let emailContent = `Hi ${existingUser.name},<br><br>Your password has been updated successfully.<br>
                               <br>Please sign in to access your account<br>`;
                               
               let emailSubject = "Password Reset Successful";
