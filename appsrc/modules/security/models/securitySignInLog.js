@@ -15,7 +15,10 @@ const docSchema = new Schema({
     logoutTime: { type: Date  },
     // logout time of user
     
-    loginIP: { type: String }
+    loginIP: { type: String },
+
+    statusCode: { type: Number },
+ 
     // information of IP address from where action is performed
 
     // information of IP address from where action is performed

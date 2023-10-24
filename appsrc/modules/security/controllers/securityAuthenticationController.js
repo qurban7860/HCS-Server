@@ -107,74 +107,179 @@ exports.login = async (req, res, next) => {
             //     MessageCode:StatusCodes.BAD_REQUEST,isError:true,Message:"This Account is already logged in on other device."});
             // }
 
-            let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
+
+
+
+            var now = new Date();
+            var fiveMinutesAgo = new Date(now - 5 * 60 * 1000); // Calculate the date 5 minutes ago
             
-            if(passwordsResponse) {
 
-              if (existingUser.multiFactorAuthentication) {
+            let QuerysecurityLog = {
+              user: existingUser._id,
+              _id: { $gt: ObjectId(Math.floor(fiveMinutesAgo / 1000).toString(16) + '0000000000000000') }
+            };
 
-                // User has enabled MFA, so redirect them to the MFA page
-                // Generate a one time code and send it to the user's email address
-                const code = Math.floor(100000 + Math.random() * 900000);
-                
-                let emailContent = `We detected an unusual 
-                sign-in from a device or location you don't usually use. If this was you, 
-                enter the code below to sign in. <br>
-                <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
-                The code will expire in <b>10</b> minutes.`;
-                let emailSubject = "Multi-Factor Authentication Code";
+            let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
 
-                let params = {
-                  to: `${existingUser.email}`,
-                  subject: emailSubject,
-                  html: true
-                };
+              let successfullyLogin = false;
 
-                
-                let username = existingUser.name;
+              console.log("5 minutes", listLogs);
 
-                let hostName = 'portal.howickltd.com';
-
-                if(process.env.CLIENT_HOST_NAME)
-                  hostName = process.env.CLIENT_HOST_NAME;
-                
-                let hostUrl = "https://portal.howickltd.com";
-
-                if(process.env.CLIENT_APP_URL)
-                  hostUrl = process.env.CLIENT_APP_URL;
-                
-                fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                  let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
-                  params.htmlData = htmlData;
-                  let response = await awsService.sendEmail(params);
-                })
-                const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-                _this.dbservice.postObject(emailResponse, callbackFunc);
-                function callbackFunc(error, response) {
-                  if (error) {
-                    logger.error(new Error(error));
-                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                  } else {
-                    let userMFAData = {};
-                    userMFAData.multiFactorAuthenticationCode = code;
-                    const currentDate = new Date();
-                    userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-                    _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
-                    
-                    function callbackPatchFunc(error, response) {
-                      return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
-                    }
+              if(listLogs && listLogs.length) {
+                for (const logEntry of listLogs) {
+                  if (logEntry.statusCode === 200) {
+                    successfullyLogin = true;
+                    break;
                   }
                 }
-                return;  
+              } else {
+                successfullyLogin = true;
               }
 
-              return await validateAndLoginUser(req, res, existingUser);
+              let reattamptRequestInSec = 900;
+              let preventToRequest = false;
+              console.log("successfullyLogin", successfullyLogin);
+              if(!successfullyLogin) {
 
-            }
-            else {
-              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
-            }
+                if (listLogs && listLogs.length && !successfullyLogin) {
+                  let login_time = new Date(listLogs[0].loginTime);
+                  let current_time = new Date();
+                  let time_difference = (current_time - login_time) / 1000; // in seconds
+                
+  
+                  if (time_difference < reattamptRequestInSec) {
+                    preventToRequest = true;
+                    console.log("The login time is within the last 15 minutes.");
+                  } else {
+                    successfullyLogin = true;
+                  }
+                }
+              }
+
+
+              console.log("@1");
+
+
+              if(preventToRequest){
+                console.log("@2");
+                var now = new Date();
+                var twentyMinutesAgo = new Date(now - 20 * 60 * 1000); // Calculate the date 5 minutes ago
+                console.log("@3");
+    
+                let QuerysecurityLog = {
+                  user: existingUser._id,
+                  _id: { $gt: ObjectId(Math.floor(twentyMinutesAgo / 1000).toString(16) + '0000000000000000') }
+                };
+
+                console.log("@4");
+                let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(6).sort({_id: -1});
+
+                let reqSuccLogin = false;
+                console.log("@5");
+                console.log("20 minutes list.", listLogs);
+                if(listLogs && listLogs.length > 5) {
+                  for (const logEntry of listLogs) {
+                    if (logEntry.statusCode === 200) {
+                      reqSuccLogin = true;
+                      break;
+                    }
+                  }
+                } else {
+                  reqSuccLogin = true;
+                }
+
+                if(!reqSuccLogin) {
+                  console.log("red alert.......................................");
+                }
+
+              }
+              
+
+            
+
+
+              if (successfullyLogin) {
+                console.log("---------------------in funciton.");
+                let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
+                if(passwordsResponse) {
+  
+                  if (existingUser.multiFactorAuthentication) {
+  
+                    // User has enabled MFA, so redirect them to the MFA page
+                    // Generate a one time code and send it to the user's email address
+                    const code = Math.floor(100000 + Math.random() * 900000);
+                    
+                    let emailContent = `We detected an unusual 
+                    sign-in from a device or location you don't usually use. If this was you, 
+                    enter the code below to sign in. <br>
+                    <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
+                    The code will expire in <b>10</b> minutes.`;
+                    let emailSubject = "Multi-Factor Authentication Code";
+  
+                    let params = {
+                      to: `${existingUser.email}`,
+                      subject: emailSubject,
+                      html: true
+                    };
+  
+                    
+                    let username = existingUser.name;
+  
+                    let hostName = 'portal.howickltd.com';
+  
+                    if(process.env.CLIENT_HOST_NAME)
+                      hostName = process.env.CLIENT_HOST_NAME;
+                    
+                    let hostUrl = "https://portal.howickltd.com";
+  
+                    if(process.env.CLIENT_APP_URL)
+                      hostUrl = process.env.CLIENT_APP_URL;
+                    
+                    fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+                      let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
+                      params.htmlData = htmlData;
+                      let response = await awsService.sendEmail(params);
+                    })
+                    const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
+                    _this.dbservice.postObject(emailResponse, callbackFunc);
+                    function callbackFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                      } else {
+                        let userMFAData = {};
+                        userMFAData.multiFactorAuthenticationCode = code;
+                        const currentDate = new Date();
+                        userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
+                        _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
+                        
+                        function callbackPatchFunc(error, response) {
+                          return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
+                        }
+                      }
+                    }
+                    return;  
+                  }
+  
+                  return await validateAndLoginUser(req, res, existingUser);
+  
+                }
+                else {
+                  const securityLogs = await addAccessLog('invalidCredentials', existingUser._id, clientIP);
+                  console.log("securityLogs", securityLogs);
+                  dbService.postObject(securityLogs, callbackFunc);
+                  async function callbackFunc(error, response) {
+                    if (error) {
+                      logger.error(new Error(error));
+                      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                    } else {
+                      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+                    } 
+                  }
+                }
+              } else {
+                return res.status(StatusCodes.UNAUTHORIZED).send(`You've submitted three consecutive failed requests, so kindly wait for ${reattamptRequestInSec/60} minutes to allow processing.`);
+              }
           }
           else {
             return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
@@ -625,7 +730,18 @@ async function addAccessLog(actionType, userID, ip = null) {
   if (actionType == 'login') {
     var signInLog = {
       user: userID,
-      loginIP: ip
+      loginIP: ip,
+      statusCode: 200
+    };
+    var reqSignInLog = {};
+    reqSignInLog.body = signInLog;
+    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
+    return res;
+  } else if (actionType == 'invalidCredentials') {
+    var signInLog = {
+      user: userID,
+      loginIP: ip,
+      statusCode: StatusCodes.UNAUTHORIZED
     };
     var reqSignInLog = {};
     reqSignInLog.body = signInLog;
