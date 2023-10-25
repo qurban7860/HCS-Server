@@ -88,7 +88,7 @@ exports.login = async (req, res, next) => {
 
 
           
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && !existingUser.userLocked) {
             //Checking blocked list of customer & users.
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
             
