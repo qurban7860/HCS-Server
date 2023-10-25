@@ -234,8 +234,8 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, maintenanceRecommendation, checkItemLists, suggestedSpares, operators, operatorRemarks,
-    technicianRemarks, loginUser, isActive, isArchived
+    serviceNote, recommendationNote, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
+    technicianNotes, textBeforeCheckItems, textAfterCheckItems, loginUser, isActive, isArchived
   } = req.body;
     
   let { decoilers } = req.body;
@@ -294,24 +294,32 @@ function getDocumentFromReq(req, reqType){
   if ("serviceDate" in req.body){
     doc.serviceDate = serviceDate;
   }
-  if ("maintenanceRecommendation" in req.body){
-    doc.maintenanceRecommendation = maintenanceRecommendation;
+  if ("recommendationNote" in req.body){
+    doc.recommendationNote = recommendationNote;
   }
   if ("suggestedSpares" in req.body){
     doc.suggestedSpares = suggestedSpares;
   }
+  if ("internalNote" in req.body){
+    doc.internalNote = internalNote;
+  }
   if ("operators" in req.body){
     doc.operators = operators;
   }
-  if ("operatorRemarks" in req.body){
-    doc.operatorRemarks = operatorRemarks;
+  if ("operatorNotes" in req.body){
+    doc.operatorNotes = operatorNotes;
+  }
+  if ("technicianNotes" in req.body){
+    doc.technicianNotes = technicianNotes;
   }
 
-
-  if ("technicianRemarks" in req.body){
-    doc.technicianRemarks = technicianRemarks;
+  if ("textBeforeCheckItems" in req.body){
+    doc.textBeforeCheckItems = textBeforeCheckItems;
   }
-
+  
+  if ("textAfterCheckItems" in req.body){
+    doc.textAfterCheckItems = textAfterCheckItems;
+  }
   
   if ("isActive" in req.body){
     doc.isActive = isActive;
