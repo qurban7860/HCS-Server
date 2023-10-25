@@ -71,7 +71,6 @@ const docSchema = new Schema({
           // Date/Time for token expiry.
         },
 
-        isOnline: {type: Boolean, default: false},
 
         userLocked : {type: Boolean, default: false},
         lockUntil : {type: Date},

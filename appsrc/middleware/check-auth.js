@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 
 const HttpError = require('../modules/config/models/http-error');
+const { Session } = require('../modules/security/models');
 
-module.exports = (req, res, next) => {
+module.exports = async (req, res, next) => {
 
   if (req.method === 'OPTIONS' || 
   req.url.toLowerCase() === '/gettoken' || 
@@ -15,16 +16,46 @@ module.exports = (req, res, next) => {
   try {
     
     const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:''; // Authorization: 'Bearer TOKEN'
-    //console.log(`token: ${token}`);
-    
+    // console.log(`token: ${token}`);
+        
 
     if (!token || token.length == 0) {
-      throw new Error('Authentication failed!');
-    }
+      throw new Error('AuthError');
+      return next();
+
+    } 
+    
     //console.log(`process.env.JWT_SECRETKEY: ${process.env.JWT_SECRETKEY}`);
     const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-    //console.log(`decodedToken: ${ JSON.stringify(decodedToken)}`);
+    // console.log(`decodedToken: ${ JSON.stringify(decodedToken)}`);
     
+    if(decodedToken && decodedToken.userId) {
+
+      let session = await Session.findOne({"session.user":decodedToken.userId});
+
+      if(decodedToken.sessionId && session.sessionId!=decodedToken.sessionId) {
+        throw new Error('AuthError');
+        return next();
+      }
+
+      if(session) {
+        let expireAt = new Date(session.expires);
+        let timeDifference = Math.ceil(expireAt.getTime() - new Date().getTime());
+
+        if(timeDifference<1) {
+          await Session.deleteMany({"session.user":decodedToken.userId});
+          await Session.deleteMany({"session.user":{$exists:false}});
+          throw new Error('AuthError');
+          return next()
+        }
+      }
+      else {
+        throw new Error('AuthError');
+        return next()
+      }
+     
+    }
+
     const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
     decodedToken.userIP = clientIP;
     //console.log(`The client's IP Address is: ${clientIP}`);

@@ -13,5 +13,6 @@ module.exports = {
     SecurityConfigBlockedCustomer: require('./securityConfigBlockedCustomer'),
     SecurityConfigWhiteListIP: require('./securityConfigWhiteListIP'),
     SecurityConfigBlackListIP: require('./securityConfigBlackListIP'),
+    Session: require('./session'),
     // SecurityInvite: require('./securityInvite'),
 }
