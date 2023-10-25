@@ -37,7 +37,7 @@ exports.getProductCheckItem = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       response = JSON.parse(JSON.stringify(response));
-      let serviceRecordConfigs = await ProductServiceRecordsConfig.find({"checkParams.paramList":req.params.id, isArchived:false, isActive:true},{'docTitle':1});
+      let serviceRecordConfigs = await ProductServiceRecordsConfig.find({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{'docTitle':1});
       response.serviceRecordConfigs = serviceRecordConfigs;
       
       return res.json(response);
@@ -115,7 +115,7 @@ exports.patchProductCheckItems = async (req, res, next) => {
     
     
     if(req.body.isArchived==true) {
-      let serviceRecordConfigs = await ProductServiceRecordsConfig.findOne({"checkParams.paramList":req.params.id, isArchived:false, isActive:true},{_id:1});
+      let serviceRecordConfigs = await ProductServiceRecordsConfig.findOne({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{_id:1});
       if(serviceRecordConfigs) {
         return res.status(StatusCodes.BAD_REQUEST).send('Can not delete check item as its used in configurations doc');
       }

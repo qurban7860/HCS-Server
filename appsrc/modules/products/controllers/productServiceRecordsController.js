@@ -59,15 +59,15 @@ exports.getProductServiceRecord = async (req, res, next) => {
       }
       
       // if(response.serviceRecordConfig && 
-      //   Array.isArray(response.serviceRecordConfig.checkParams) &&
-      //   response.serviceRecordConfig.checkParams.length>0) {
+      //   Array.isArray(response.serviceRecordConfig.checkItemLists) &&
+      //   response.serviceRecordConfig.checkItemLists.length>0) {
 
       //   let index = 0;
-      //   for(let checkParam of response.serviceRecordConfig.checkParams) {
-      //     if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+      //   for(let checkParam of response.serviceRecordConfig.checkItemLists) {
+      //     if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
       //       let indexP = 0;
-      //       for(let paramListId of checkParam.paramList) { 
-      //         response.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
+      //       for(let paramListId of checkParam.checkItems) { 
+      //         response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
       //         indexP++;
       //       }
       //     }
@@ -153,16 +153,16 @@ exports.postProductServiceRecord = async (req, res, next) => {
   console.log(req.body.serviceRecordConfig);
   
   if(req.body.serviceRecordConfig && 
-    Array.isArray(req.body.serviceRecordConfig.checkParams) &&
-    req.body.serviceRecordConfig.checkParams.length>0) {
+    Array.isArray(req.body.serviceRecordConfig.checkItemLists) &&
+    req.body.serviceRecordConfig.checkItemLists.length>0) {
 
     let index = 0;
-    for(let checkParam of req.body.serviceRecordConfig.checkParams) {
-      if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+    for(let checkParam of req.body.serviceRecordConfig.checkItemLists) {
+      if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
         let indexP = 0;
-        for(let paramListId of checkParam.paramList) { 
-          req.body.serviceRecordConfig.checkParams[index].paramList[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-          console.log(req.body.serviceRecordConfig.checkParams[index].paramList[indexP]);
+        for(let paramListId of checkParam.checkItems) { 
+          req.body.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
+          console.log(req.body.serviceRecordConfig.checkItemLists[index].checkItems[indexP]);
           indexP++;
         }
       }
@@ -234,7 +234,7 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceRecordConfig, serviceDate, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, maintenanceRecommendation, checkParams, suggestedSpares, operators, operatorRemarks,
+    serviceNote, maintenanceRecommendation, checkItemLists, suggestedSpares, operators, operatorRemarks,
     technicianRemarks, loginUser, isActive, isArchived
   } = req.body;
     
@@ -283,8 +283,8 @@ function getDocumentFromReq(req, reqType){
     doc.punchCyclesParams = punchCyclesParams;
   }
 
-  if ("checkParams" in req.body){
-    doc.checkParams = checkParams;
+  if ("checkItemLists" in req.body){
+    doc.checkItemLists = checkItemLists;
   }
 
   if ("serviceNote" in req.body){

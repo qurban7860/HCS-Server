@@ -18,7 +18,7 @@ const docSchema = new Schema({
   name: { type: String },
   // name/title of field
   
-  paramListTitle: { type: String },
+  ListTitle: { type: String },
   // name/title of field
 
   checked: {type: Boolean, default: false},

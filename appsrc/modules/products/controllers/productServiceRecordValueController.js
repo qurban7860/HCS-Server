@@ -256,7 +256,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { serviceParam, serviceRecord, name, paramListTitle, checked, value, status, comments, date,
+  const { serviceParam, serviceRecord, name, ListTitle, checked, value, status, comments, date,
     files, category, isRequired, inputType, unitType, minValidation, maxValidation,isArchived, 
     loginUser } = req.body;
   
@@ -277,8 +277,8 @@ function getDocumentFromReq(req, reqType){
     doc.name = name;
   }
   
-  if ("paramListTitle" in req.body) {
-    doc.paramListTitle = paramListTitle;
+  if ("ListTitle" in req.body) {
+    doc.ListTitle = ListTitle;
   }
   
   if ("checked" in req.body) {

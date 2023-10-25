@@ -26,9 +26,9 @@ const docSchema = new Schema({
     textBeforeCheckItems: { type: String },
     // display this text before fields  
     
-    checkParams : [{
-      paramListTitle: { type: String },
-      paramList : [
+    checkItemLists : [{
+      ListTitle: { type: String },
+      checkItems : [
           {  
     
             name: { type: String },
@@ -111,10 +111,10 @@ const docSchema = new Schema({
   technicianRemarks: { type: String },
   // operator comments against this record.
   
-  checkParams: [{
+  checkItemLists: [{
     serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem'},
     name: {type: String},
-    paramListTitle: {type: String},
+    ListTitle: {type: String},
     checked: {type: Boolean, default: false},
     value: {type: String},
     status: {type: String},
