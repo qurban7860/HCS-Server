@@ -10,63 +10,25 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
   
-  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord' },
-  // UID of machine service record.
-
-  serviceParam : { type: Schema.Types.ObjectId , ref: 'MachineCheckItem' },
-
-  name: { type: String },
-  // name/title of field
+  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' },
+  // service record id.
   
-  ListTitle: { type: String },
-  // name/title of field
-
-  checked: {type: Boolean, default: false},
-  // name/title of field
-
-  value: { type: String },
-  // name/title of field
-
-  status: { type: String },
-  // name/title of field
-
-  comments: { type: String },
-  // name/title of field
-
-  date: { type: Date },
-  // name/title to print at reports. default is same as name 
-
-  files : [
-    {  
-      name: { type: String },
-      // name/title of field
-      path: { type: String },
-      // file path 
-      fileType: {type: String, required: true},
-      // image, video, text, word, excel, pdf , etc. 
-      extension: {type: String},
-      // file extension.
-
-      thumbnail: {type: String},
-    }
-  ],
+  machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems'},
+  //checkitem reference id
   
-  category: { type: Schema.Types.ObjectId , ref: 'MachineCheckItemCategory' },
-  // Category information of machine
-    
-  isRequired: {type: Boolean, default: false},
-  // if true, it value must be required
+  checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig.checkItemLists'}, 
+  //this will refer to the list to which checkitem is belong to,
+
+  checkItemValue: {type: String},
+  // if checked, then value will be considered
   
-  inputType: {type: String, required: true},
-  // shortText, longText (multiline input), Number, Boolean
+  comments: {type: String}, 
+  // comments against this checkitem
   
-  unitType: {type: String},
-  // like Meter, Cycle, Kg, etc
-  
-  minValidation: {type: String, maxLength: 100},
-  maxValidation: {type: String, maxLength: 100},
-  // Used for validatioin. like for 0-100, MinValiidation = 
-},
+  files : []
+  // list of documents/images related to this checkitem
+
+  },
 {
     collection: 'MachineServiceRecordValues'
 });
