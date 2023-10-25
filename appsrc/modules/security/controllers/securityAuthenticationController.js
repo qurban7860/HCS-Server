@@ -17,7 +17,7 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, Session } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser } = require('../models');
 const ipRangeCheck = require("ip-range-check");
 
 
@@ -41,7 +41,7 @@ exports.login = async (req, res, next) => {
   const errors = validationResult(req);
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   var _this = this;
-
+  console.log("login....");
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -86,20 +86,30 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
-          //Checking blocked list of customer & users.
-          let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
-          
 
-          if(blockedCustomer) {
-            return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
-          } else {
-            let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
-            if(blockedUser) {
-              return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
-            }  
-          }
           
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && !existingUser.userLocked) {
+            //Checking blocked list of customer & users.
+            let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
+            
+
+            if(blockedCustomer) {
+              return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
+            } else {
+              let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
+              if(blockedUser) {
+                return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
+              }  
+            }
+            
+
+            // if(existingUser.isOnline===true) {
+            //   return res.status(StatusCodes.BAD_REQUEST).json({
+            //     MessageCode:StatusCodes.BAD_REQUEST,isError:true,Message:"This Account is already logged in on other device."});
+            // }
+
+
+
 
             let logging = true;
             var now = new Date();
@@ -313,6 +323,7 @@ async function validateAndLoginUser(req, res, existingUser) {
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
     
+    updatedToken['isOnline'] = true;
     dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
     async function callbackPatchFunc(error, response) {
       if (error) {
@@ -327,12 +338,19 @@ async function validateAndLoginUser(req, res, existingUser) {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
-          let session = await removeAndCreateNewSession(req,existingUser.id);
-         
+          req.session.isLoggedIn = true;
+          req.session.userId = existingUser.id;
+
+          try {
+              await req.session.save();
+          } catch (err) {
+              console.error('Error saving to session storage: ', err);
+              return next(new Error('Error creating user'));
+          }
+
           return res.json({
             accessToken,
             userId: existingUser.id,
-            sessionId:session.sessionId,
             user: {
               login: existingUser.login,
               email: existingUser.email,
@@ -349,32 +367,6 @@ async function validateAndLoginUser(req, res, existingUser) {
   }
   
 }
-
-
-async function removeAndCreateNewSession(req, userId) {
-
-  try {
-    await removeSessionFromDB(userId);
-
-    req.session.cookie.expires = false;
-    let maxAge = process.env.TOKEN_EXP_TIME || "48h";
-    maxAge = maxAge.replace(/\D/g,'');
-
-    req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
-    req.session.isLoggedIn = true;
-    req.session.user = userId;
-    req.sessionId = req.sessionID;
-
-    await req.session.save();
-    return await Session.findOne({"session.user":userId});
-
-  } catch (err) {
-    console.error('Error saving to session storage: ', err);
-    return next(new Error('Error creating user session'));
-  }
-}
-
-exports.removeAndCreateNewSession = removeAndCreateNewSession;
 
 exports.multifactorverifyCode = async (req, res, next) => {
   const errors = validationResult(req);
@@ -408,6 +400,13 @@ exports.multifactorverifyCode = async (req, res, next) => {
     }
   }
 };
+
+
+
+
+
+
+
 
 exports.refreshToken = async (req, res, next) => {
   const errors = validationResult(req);
@@ -475,13 +474,9 @@ function isValidRole(roles) {
   return true;
 }
 
-async function removeSessionFromDB(userId) {
-  await Session.deleteMany({"session.user":userId});
-  await Session.deleteMany({"session.user":{$exists:false}});
-}
-
 exports.logout = async (req, res, next) => {
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+  await SecurityUser.updateOne({_id:req.params.userID},{isOnline : false});
   let existingSignInLog = await SecuritySignInLog.findOne({ user: req.params.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
   if (existingSignInLog && !existingSignInLog.logoutTime) {
 
@@ -494,7 +489,8 @@ exports.logout = async (req, res, next) => {
     }
   }
 
-  await removeSessionFromDB(req.params.userID);
+  console.log("req.session",req.session)
+
   if(req.session) {
     req.session.isLoggedIn = false;
 
