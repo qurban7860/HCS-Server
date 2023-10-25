@@ -27,7 +27,7 @@ this.populate = [
 
 
 this.populateList = [ 
-  {path: '', select: ''}
+  {path: 'createdBy', select: 'name'}
 ];
 
 exports.searchSecurityConfigWhiteListIP = async (req, res, next) => {
