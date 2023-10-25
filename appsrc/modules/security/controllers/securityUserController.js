@@ -390,7 +390,17 @@ async function getDocumentFromReq(req, reqType){
     doc.isArchived = isArchived;
   }
 
+  if ("userLocked" in req.body){
+    doc.userLocked = userLocked;
+  }
 
+  if ("lockUntil" in req.body){
+    doc.lockUntil = lockUntil;
+  }
+
+  if ("lockedBy" in req.body){
+    doc.lockedBy = lockedBy;
+  }
 
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = req.body.loginUser.userId;

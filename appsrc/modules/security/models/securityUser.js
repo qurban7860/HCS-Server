@@ -72,7 +72,10 @@ const docSchema = new Schema({
         },
 
         isOnline: {type: Boolean, default: false},
-                          
+
+        userLocked : {type: Boolean, default: false},
+        lockUntil : {type: Date},
+        lockedBy: {type: String, enum: ['SYSTEM','ADMIN'], default: ""}                          
 },
 {
         collection: 'SecurityUsers'
