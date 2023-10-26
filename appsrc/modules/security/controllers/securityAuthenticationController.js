@@ -724,10 +724,14 @@ async function comparePasswords(encryptedPass, textPass, next) {
 
 async function issueToken(userID, userEmail) {
   let token;
+  let session = await Session.findOne({"session.user":userID});
+  let tokenData = { userId: userID, email: userEmail };
+  if(session)
+    tokenData.session = session.sessionId;
   try {
+
     token = jwt.sign(
-      { userId: userID, email: userEmail },
-      //'supersecret_dont_share',
+      tokenData,
       process.env.JWT_SECRETKEY,
       { expiresIn: process.env.TOKEN_EXP_TIME || '48h'}
     );

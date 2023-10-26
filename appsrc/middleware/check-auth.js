@@ -16,7 +16,7 @@ module.exports = async (req, res, next) => {
   try {
     
     const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:''; // Authorization: 'Bearer TOKEN'
-    // console.log(`token: ${token}`);
+    console.log(`token: ${token}`);
         
 
     if (!token || token.length == 0) {
@@ -25,15 +25,16 @@ module.exports = async (req, res, next) => {
 
     } 
     
-    //console.log(`process.env.JWT_SECRETKEY: ${process.env.JWT_SECRETKEY}`);
+    console.log(`process.env.JWT_SECRETKEY: ${process.env.JWT_SECRETKEY}`);
     const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-    // console.log(`decodedToken: ${ JSON.stringify(decodedToken)}`);
+    console.log(`decodedToken: ${ JSON.stringify(decodedToken)}`);
     
     if(decodedToken && decodedToken.userId) {
 
       let session = await Session.findOne({"session.user":decodedToken.userId});
 
       if(decodedToken.sessionId && session.sessionId!=decodedToken.sessionId) {
+        console.log(decodedToken.sessionId,session.sessionId,'here1');
         throw new Error('AuthError');
         return next();
       }
@@ -41,15 +42,20 @@ module.exports = async (req, res, next) => {
       if(session) {
         let expireAt = new Date(session.expires);
         let timeDifference = Math.ceil(expireAt.getTime() - new Date().getTime());
+        console.log(timeDifference,'here2',session.expires,expireAt.getTime(),new Date().getTime());
 
         if(timeDifference<1) {
           await Session.deleteMany({"session.user":decodedToken.userId});
           await Session.deleteMany({"session.user":{$exists:false}});
+          console.log('here3');
+
           throw new Error('AuthError');
           return next()
         }
       }
       else {
+        console.log('here4');
+
         throw new Error('AuthError');
         return next()
       }
@@ -63,8 +69,8 @@ module.exports = async (req, res, next) => {
     req.body.loginUser = decodedToken;
     next();
   } catch (err) {
-    console.log('middleware------------------------');
-    //console.log(err);
+    console.log('middleware------------------------111');
+    console.log(err);
     const error = new HttpError('Authentication failed!', 403);
     return next(error);
   }
