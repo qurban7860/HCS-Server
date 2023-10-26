@@ -305,9 +305,15 @@ exports.changeLockedStatus = async (req, res, next) => {
           userLocked: req.params.status
         }
 
-        if(req.params.status) {
+        console.log("req.params.status", req.params.status);
+
+        if(req.params.status == true) {
           fieldToUpdate.lockedBy = "ADMIN";
-        }
+        } else {
+          fieldToUpdate.lockedBy = "SYSTEM",
+          fieldToUpdate.lockUntil = ""
+        };
+
 
         _this.dbservice.patchObject(SecurityUser, req.params.id, fieldToUpdate, callbackFunc);
         function callbackFunc(error, result) {

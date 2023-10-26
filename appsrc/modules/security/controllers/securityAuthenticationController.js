@@ -100,75 +100,66 @@ exports.login = async (req, res, next) => {
           }
           
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && !existingUser.userLocked) {
-
             let logging = true;
-            var now = new Date();
-            var Minutes = 5;
-            var timeInMinutes = new Date(now - Minutes * 60 * 1000); // Calculate the date by deducting minutes ago
-            let QuerysecurityLog = {
-              user: existingUser._id,
-              _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') }
-            };
-            let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
+            let minutesToWaitUntil = 15;
+            let lockUntil = existingUser.lockUntil;
+            let current_time = new Date();
 
-              let successfullyLogin = false;
+            console.log(lockUntil, "lockUntil");
+            console.log(current_time, "current_time", current_time < lockUntil);
+            let successfullyLogin = false;
+            
 
-              if(logging)
-              console.log("5 minutes", listLogs);
-
-              if(listLogs && listLogs.length && listLogs.length > 2) {
-                for (const logEntry of listLogs) {
-                  if (logEntry.statusCode === 200) {
-                    successfullyLogin = true;
-                    break;
-                  }
-                }
-              } else {
-                successfullyLogin = true;
-              }
-
-
-
-                // var lockUntil = new Date(now + 15 * 60 * 1000);
-                // let updateUser = {
-                //   lockUntil : lockUntil,
-                // };
-
-                // _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
-                // async function callbackPatchFunc(error, response) {
-                //   if (error) {
-                //     logger.error(new Error(error));
-                //   }
-                // }
-
-              let reattamptRequestInSec = 900;
-              let timeExceeded = false;
-              if(!successfullyLogin) {
-                if(logging)
-                console.log("successfullyLogin is false");
-
-                if (listLogs && listLogs.length && listLogs.length > 2) {
-                  let login_time = new Date(listLogs[0].loginTime);
-                  let current_time = new Date();
-                  let time_difference = (current_time - login_time) / 1000; // in seconds
-
-                  if(logging)
-                  console.log("time_difference", time_difference, reattamptRequestInSec);
+            
+            if(typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || current_time < lockUntil) {
+              
+              var now = new Date();
+              var Minutes = 5;
+              var timeInMinutes = new Date(now - Minutes * 60 * 1000); // Calculate the date by deducting minutes ago
+              let QuerysecurityLog = {
+                user: existingUser._id,
+                _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') }
+              };
+              let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
+  
                 
   
-                  if (time_difference < reattamptRequestInSec) {
-                    if(logging)
-                    console.log("The login time is within the last 15 minutes.");
-                  } else {
-                    successfullyLogin = true;
-                    timeExceeded = true;
+                if(logging)
+                console.log("5 minutes", listLogs);
+  
+                if(listLogs && listLogs.length && listLogs.length > 2) {
+                  for (const logEntry of listLogs) {
+                    if (logEntry.statusCode === 200) {
+                      successfullyLogin = true;
+                      break;
+                    }
+                  }
+                } else {
+                  successfullyLogin = true;
+                }
+
+
+                
+                if(!successfullyLogin && !existingUser.lockUntil) {
+                  var now = new Date();
+                  lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
+                  console.log("locked function executed: lockUntil", lockUntil);
+                  
+                  let updateUser = {
+                    lockUntil : lockUntil,
+                  };
+  
+                  _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                  async function callbackPatchFunc(error, response) {
+                    if (error) {
+                      logger.error(new Error(error));
+                    }
                   }
                 }
-              }
+            } else {successfullyLogin = true;}
 
+            console.log("successfullyLogin --->", successfullyLogin);
 
-              if(logging)
-              console.log("successfullyLogin ->", successfullyLogin);
 
               let checkStatusLstSixReq = false;
               var now = new Date();
@@ -182,8 +173,9 @@ exports.login = async (req, res, next) => {
               let listLastLogs = await SecuritySignInLog.find(querysecurityLog).limit(6).sort({_id: -1});
 
 
-              if(logging)
-              console.log("20 minutes list. ************ ", listLastLogs);
+              // if(logging)
+              // console.log("20 minutes list. ************ ", listLastLogs);
+
               if(listLastLogs && listLastLogs.length > 5) {
                 for (const logEntry of listLastLogs) {
                   if (logEntry.statusCode === 200) {
@@ -283,11 +275,8 @@ exports.login = async (req, res, next) => {
                   if(logging)
                   console.log("Blocked User ............");
 
-                  var lockUntil = new Date(now + 120 * 60 * 1000);
-
                   let updateUser = {
                     userLocked : true,
-                    lockUntil : lockUntil,
                     lockedBy : "SYSTEM"
                   };
 
@@ -303,7 +292,7 @@ exports.login = async (req, res, next) => {
                   }
                   
                 } else {
-                  return res.status(StatusCodes.UNAUTHORIZED).send(`You've submitted three consecutive failed requests, so kindly wait for ${reattamptRequestInSec/60} minutes to allow processing.`);
+                  return res.status(StatusCodes.UNAUTHORIZED).send(`You've submitted three consecutive failed requests, so kindly wait for ${minutesToWaitUntil} minutes to allow processing.`);
                 }
               }
           }
