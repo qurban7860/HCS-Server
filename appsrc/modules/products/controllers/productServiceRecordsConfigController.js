@@ -41,22 +41,22 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
         response = JSON.parse(JSON.stringify(response));
         if(response) {
           let index = 0;
-          for(let checkParam of response.checkParams) {
-            if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+          for(let checkParam of response.checkItemLists) {
+            if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
               let indexP = 0;
               let paramLists_ = [];
 
-              for(let paramListId of checkParam.paramList) {
+              for(let paramListId of checkParam.checkItems) {
                 let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
                 
                 if(checkItem__) {
-                  response.checkParams[index].paramList[indexP] = checkItem__;
+                  response.checkItemLists[index].checkItems[indexP] = checkItem__;
                   paramLists_.push(checkItem__);
                 }
                 
                 indexP++;
               }
-              response.checkParams[index].paramList = paramLists_;
+              response.checkItemLists[index].checkItems = paramLists_;
             }
             index++;
           }
@@ -119,22 +119,22 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
     //   for(let serviceRecordConfig of serviceRecordConfigs) {
 
     //     let index = 0;
-    //     for(let checkParam of serviceRecordConfig.checkParams) {
+    //     for(let checkParam of serviceRecordConfig.checkItemLists) {
 
-    //       if(Array.isArray(checkParam.paramList) && checkParam.paramList.length>0) {
+    //       if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
     //         let indexP = 0;
     //         let paramLists_ = [];
-    //         for(let paramListId of checkParam.paramList) {
+    //         for(let paramListId of checkParam.checkItems) {
     //           let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
 
     //           if(checkItem__) {
-    //             serviceRecordConfigs[i].checkParams[index].paramList[indexP] = checkItem__;
+    //             serviceRecordConfigs[i].checkItemLists[index].checkItems[indexP] = checkItem__;
     //             paramLists_.push(checkItem__);
     //           }
     //           indexP++;
     //         }
 
-    //         serviceRecordConfigs[i].checkParams[index].paramList = paramLists_;
+    //         serviceRecordConfigs[i].checkItemLists[index].checkItems = paramLists_;
 
     //       } 
           
@@ -241,11 +241,11 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { category, recordType, machineModel, docTitle, textBeforeCheckItems, paramsTitle, params, 
-    checkParams, enableAdditionalParams, additionalParamsTitle, additionalParams, 
+  const { machineCategory, recordType, machineModel, status, parentConfig, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
+    checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
-    enableSuggestedSpares, header, footer, loginUser, isActive, isArchived
+    enableSuggestedSpares, header, footer, NoOfApprovalsRequired, Approvals, loginUser, isActive, isArchived
 } = req.body;
   
   let doc = {};
@@ -257,18 +257,32 @@ function getDocumentFromReq(req, reqType){
     doc.recordType = recordType;
   }
 
-  if ("category" in req.body){
-    doc.category = category;
+  if ("machineCategory" in req.body){
+    doc.machineCategory = machineCategory;
   }
 
 
   if ("machineModel" in req.body){
     doc.machineModel = machineModel;
   }
+  
+  if ("status" in req.body){
+    doc.status = status;
+  }
+  
+  if ("parentConfig" in req.body){
+    doc.parentConfig = parentConfig;
+  }
 
   if ("docTitle" in req.body){
     doc.docTitle = docTitle;
   }
+
+  if ("docVersionNo" in req.body){
+    doc.docVersionNo = docVersionNo;
+  }
+
+  
 
   if ("textBeforeCheckItems" in req.body){
     doc.textBeforeCheckItems = textBeforeCheckItems;
@@ -282,8 +296,8 @@ function getDocumentFromReq(req, reqType){
     doc.params = params;
   }
 
-  if ("checkParams" in req.body){
-    doc.checkParams = checkParams;
+  if ("checkItemLists" in req.body){
+    doc.checkItemLists = checkItemLists;
   }
 
   if ("enableAdditionalParams" in req.body){
@@ -317,6 +331,7 @@ function getDocumentFromReq(req, reqType){
   if ("textAfterCheckItems" in req.body){
     doc.textAfterCheckItems = textAfterCheckItems;
   }
+  
   if ("isOperatorSignatureRequired" in req.body){
     doc.isOperatorSignatureRequired = isOperatorSignatureRequired;
   }
@@ -335,6 +350,22 @@ function getDocumentFromReq(req, reqType){
   if ("footer" in req.body){
     doc.footer = footer;
   }
+  
+  if ("NoOfApprovalsRequired" in req.body){
+    doc.NoOfApprovalsRequired = NoOfApprovalsRequired;
+  }
+  if ("Approvals" in req.body){
+    doc.Approvals = Approvals;
+
+
+    if (reqType && reqType === "new") {
+      for (let i = 0; i < doc.Approvals.length; i++) {
+          doc.Approvals[i].approvedFrom = loginUser.userIP;
+      }
+    }
+  
+  }
+  
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
@@ -352,6 +383,8 @@ function getDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 
+
+  
 
   //console.log("doc in http req: ", doc);
   return doc;

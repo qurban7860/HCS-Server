@@ -73,10 +73,10 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let alreadyExists = await ProductServiceRecordValue.findOne({name:req.body.name});
-    if(alreadyExists) {
-      return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
-    }
+    // let alreadyExists = await ProductServiceRecordValue.findOne({name:req.body.name});
+    // if(alreadyExists) {
+    //   return res.status(StatusCodes.BAD_REQUEST).send('Product Service Record with this name already Exists!');
+    // }
 
     if(!req.body.loginUser){
       req.body.loginUser = await getToken(req);
@@ -105,6 +105,7 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
     }
     
 
+    console.log("before post..");
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -128,7 +129,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
   } else {
     let alreadyExists = await ProductServiceRecordValue.findOne({name:req.body.name,_id:{$ne:req.params.id}});
     if(alreadyExists) {
-      return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
+      return res.status(StatusCodes.BAD_REQUEST).send('Product Service Record with this name already Exists!');
     }
 
      if(!req.body.loginUser){
@@ -256,8 +257,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { serviceParam, serviceRecord, name, paramListTitle, checked, value, status, comments, date,
-    files, category, isRequired, inputType, unitType, minValidation, maxValidation,isArchived, 
+  const { serviceRecord, machineCheckItem, checkItemListId, checkItemValue, comments, files , isActive, isArchived, 
     loginUser } = req.body;
   
   let doc = {};
@@ -269,66 +269,26 @@ function getDocumentFromReq(req, reqType){
     doc.serviceRecord = serviceRecord;
   }
 
-  if ("serviceParam" in req.body) {
-    doc.serviceParam = serviceParam;
+  if ("machineCheckItem" in req.body) {
+    doc.machineCheckItem = machineCheckItem;
   }
   
-  if ("name" in req.body) {
-    doc.name = name;
+  if ("checkItemListId" in req.body) {
+    doc.checkItemListId = checkItemListId;
   }
   
-  if ("paramListTitle" in req.body) {
-    doc.paramListTitle = paramListTitle;
-  }
-  
-  if ("checked" in req.body) {
-    doc.checked = checked;
-  }
-  
-  if ("value" in req.body) {
-    doc.value = value;
-  }
-  
-  if ("status" in req.body) {
-    doc.status = status;
+  if ("checkItemValue" in req.body) {
+    doc.checkItemValue = checkItemValue;
   }
   
   if ("comments" in req.body) {
     doc.comments = comments;
   }
   
-  if ("date" in req.body) {
-    doc.date = date;
-  }
-  
   if ("files" in req.body) {
     doc.files = files;
   }
-
-  if ("category" in req.body) {
-    doc.category = category;
-  }
-
-  if ("isRequired" in req.body) {
-    doc.isRequired = isRequired;
-  }
-
-  if ("unitType" in req.body) {
-    doc.unitType = unitType;
-  }
-
-  if ("inputType" in req.body) {
-    doc.inputType = inputType;
-  }
-
-  if ("minValidation" in req.body) {
-    doc.minValidation = minValidation;
-  }
-
-  if ("maxValidation" in req.body) {
-    doc.maxValidation = maxValidation;
-  }
-
+  
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }

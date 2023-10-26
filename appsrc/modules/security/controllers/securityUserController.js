@@ -285,6 +285,44 @@ exports.patchSecurityUser = async (req, res, next) => {
 };
 
 
+
+
+
+exports.unlockedUser = async (req, res, next) => {
+  console.log("in unlocked user function.", );
+  const errors = validationResult(req);
+  var _this = this;
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    if (ObjectId.isValid(req.params.id)) {
+      let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
+      const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+
+      if (hasSuperAdminRole) {
+
+        let fieldToUpdate = {
+          userLocked: req.params.status
+        }
+        _this.dbservice.patchObject(SecurityUser, req.params.id, fieldToUpdate, callbackFunc);
+        function callbackFunc(error, result) {
+          if (error) {
+            logger.error(new Error(error));
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          } else {
+            return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "User unlocked successfully"));
+          }
+        }   
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send("Super user previligies not found!");
+      }
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
+    }
+  }
+};
+
+
 async function comparePasswords(encryptedPass, textPass, next){
   let isValidPassword = false;
   try {

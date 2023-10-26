@@ -724,6 +724,7 @@ async function comparePasswords(encryptedPass, textPass, next) {
 
 async function issueToken(userID, userEmail) {
   let token;
+  console.log("Session",Session);
   let session = await Session.findOne({"session.user":userID});
   let tokenData = { userId: userID, email: userEmail };
   if(session)
