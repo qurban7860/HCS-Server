@@ -99,7 +99,7 @@ exports.login = async (req, res, next) => {
             }  
           }
           
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && !existingUser.userLocked) {
 
             let logging = true;
             var now = new Date();
@@ -126,6 +126,20 @@ exports.login = async (req, res, next) => {
               } else {
                 successfullyLogin = true;
               }
+
+
+
+                // var lockUntil = new Date(now + 15 * 60 * 1000);
+                // let updateUser = {
+                //   lockUntil : lockUntil,
+                // };
+
+                // _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                // async function callbackPatchFunc(error, response) {
+                //   if (error) {
+                //     logger.error(new Error(error));
+                //   }
+                // }
 
               let reattamptRequestInSec = 900;
               let timeExceeded = false;
