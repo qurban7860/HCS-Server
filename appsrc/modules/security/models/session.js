@@ -15,9 +15,9 @@ const docSchema = new Schema({
             sameSite : {type:Boolean}
         },
         isLoggedIn : {type:Boolean},
-        userId : { type: Schema.ObjectId , ref: "SecurityUser" }
+        userId : { type: Schema.ObjectId , ref: "SecurityUser" },
+        sessionId:{type:String}
     },
-    sessionId:{type:String}
                           
 },
 {
