@@ -100,13 +100,10 @@ exports.login = async (req, res, next) => {
           }
           
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && !existingUser.userLocked) {
-            let logging = true;
             let minutesToWaitUntil = 15;
             let lockUntil = existingUser.lockUntil;
             let current_time = new Date();
 
-            console.log(lockUntil, "lockUntil");
-            console.log(current_time, "current_time", current_time < lockUntil);
             let successfullyLogin = false;
             
 
@@ -121,12 +118,6 @@ exports.login = async (req, res, next) => {
                 _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') }
               };
               let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
-  
-                
-  
-                if(logging)
-                console.log("5 minutes", listLogs);
-  
                 if(listLogs && listLogs.length && listLogs.length > 2) {
                   for (const logEntry of listLogs) {
                     if (logEntry.statusCode === 200) {
@@ -143,8 +134,6 @@ exports.login = async (req, res, next) => {
                 if(!successfullyLogin && !existingUser.lockUntil) {
                   var now = new Date();
                   lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
-                  console.log("locked function executed: lockUntil", lockUntil);
-                  
                   let updateUser = {
                     lockUntil : lockUntil,
                   };
@@ -158,9 +147,6 @@ exports.login = async (req, res, next) => {
                 }
             } else {successfullyLogin = true;}
 
-            console.log("successfullyLogin --->", successfullyLogin);
-
-
               let checkStatusLstSixReq = false;
               if(!await comparePasswords(req.body.password, existingUser.password)) {
                 
@@ -173,10 +159,6 @@ exports.login = async (req, res, next) => {
                 };
 
                 let listLastLogs = await SecuritySignInLog.find(querysecurityLog).limit(6).sort({_id: -1});
-
-
-                // if(logging)
-                // console.log("20 minutes list. ************ ", listLastLogs);
 
                 if(listLastLogs && listLastLogs.length > 5) {
                   for (const logEntry of listLastLogs) {
@@ -195,8 +177,6 @@ exports.login = async (req, res, next) => {
 
 
               if (successfullyLogin && checkStatusLstSixReq) {
-                if(logging)
-                console.log("Login Function. **");
                 let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
                 if(passwordsResponse) {
   
@@ -266,8 +246,6 @@ exports.login = async (req, res, next) => {
                 }
                 else {
                   const securityLogs = await addAccessLog('invalidCredentials', existingUser._id, clientIP);
-                  if(logging)
-                  console.log("securityLogs", securityLogs);
                   dbService.postObject(securityLogs, callbackFunc);
                   async function callbackFunc(error, response) {
                     if (error) {
@@ -280,9 +258,6 @@ exports.login = async (req, res, next) => {
                 }
               } else {
                 if(!checkStatusLstSixReq) {
-                  if(logging)
-                  console.log("Blocked User ............");
-
                   let updateUser = {
                     userLocked : true,
                     lockedBy : "SYSTEM"

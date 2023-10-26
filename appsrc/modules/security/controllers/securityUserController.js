@@ -289,7 +289,6 @@ exports.patchSecurityUser = async (req, res, next) => {
 
 
 exports.changeLockedStatus = async (req, res, next) => {
-  console.log("in unlocked user function.", );
   const errors = validationResult(req);
   var _this = this;
   if (!errors.isEmpty()) {
@@ -304,8 +303,6 @@ exports.changeLockedStatus = async (req, res, next) => {
         let fieldToUpdate = {
           userLocked: req.params.status
         }
-
-        console.log("req.params.status", req.params.status);
 
         if(req.params.status === 'true') {
           fieldToUpdate.lockedBy = "ADMIN";
