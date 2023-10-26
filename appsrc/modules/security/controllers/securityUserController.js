@@ -307,7 +307,7 @@ exports.changeLockedStatus = async (req, res, next) => {
 
         console.log("req.params.status", req.params.status);
 
-        if(req.params.status == true) {
+        if(req.params.status === 'true') {
           fieldToUpdate.lockedBy = "ADMIN";
         } else {
           fieldToUpdate.lockedBy = "SYSTEM",
