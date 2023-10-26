@@ -308,7 +308,8 @@ exports.login = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   
-  const accessToken = await issueToken(existingUser._id, existingUser.login);
+
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID);
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -332,7 +333,7 @@ async function validateAndLoginUser(req, res, existingUser) {
           return res.json({
             accessToken,
             userId: existingUser.id,
-            sessionId:session.sessionId,
+            sessionId:session.session.sessionId,
             user: {
               login: existingUser.login,
               email: existingUser.email,
@@ -363,7 +364,7 @@ async function removeAndCreateNewSession(req, userId) {
     req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
     req.session.isLoggedIn = true;
     req.session.user = userId;
-    req.sessionId = req.sessionID;
+    req.session.sessionId = req.sessionID;
 
     await req.session.save();
     return await Session.findOne({"session.user":userId});
@@ -417,7 +418,7 @@ exports.refreshToken = async (req, res, next) => {
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
     if(existingUser){
-    const accessToken = await issueToken(existingUser._id, existingUser.login);
+    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID);
     if (accessToken) {
       updatedToken = updateUserToken(accessToken);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -499,7 +500,7 @@ exports.logout = async (req, res, next) => {
     req.session.isLoggedIn = false;
 
     req.session.destroy((a,b,c) => {
-      console.log("destroy",a,b,c);
+      // console.log("destroy",a,b,c);
       return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     })
   }
@@ -722,13 +723,11 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail) {
+async function issueToken(userID, userEmail, sessionID) {
   let token;
-  console.log("Session",Session);
-  let session = await Session.findOne({"session.user":userID});
-  let tokenData = { userId: userID, email: userEmail };
-  if(session)
-    tokenData.session = session.sessionId;
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID };
+  // console.log("tokenData",tokenData);
+
   try {
 
     token = jwt.sign(
