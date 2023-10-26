@@ -162,26 +162,31 @@ exports.login = async (req, res, next) => {
 
 
               let checkStatusLstSixReq = false;
-              var now = new Date();
-              var twentyMinutesAgo = new Date(now - 20 * 60 * 1000);
-              
-              let querysecurityLog = {
-                user: existingUser._id,
-                _id: { $gt: ObjectId(Math.floor(twentyMinutesAgo / 1000).toString(16) + '0000000000000000') }
-              };
+              if(!await comparePasswords(req.body.password, existingUser.password)) {
+                
+                var now = new Date();
+                var twentyMinutesAgo = new Date(now - 20 * 60 * 1000);
+                
+                let querysecurityLog = {
+                  user: existingUser._id,
+                  _id: { $gt: ObjectId(Math.floor(twentyMinutesAgo / 1000).toString(16) + '0000000000000000') }
+                };
 
-              let listLastLogs = await SecuritySignInLog.find(querysecurityLog).limit(6).sort({_id: -1});
+                let listLastLogs = await SecuritySignInLog.find(querysecurityLog).limit(6).sort({_id: -1});
 
 
-              // if(logging)
-              // console.log("20 minutes list. ************ ", listLastLogs);
+                // if(logging)
+                // console.log("20 minutes list. ************ ", listLastLogs);
 
-              if(listLastLogs && listLastLogs.length > 5) {
-                for (const logEntry of listLastLogs) {
-                  if (logEntry.statusCode === 200) {
-                    checkStatusLstSixReq = true;
-                    break;
+                if(listLastLogs && listLastLogs.length > 5) {
+                  for (const logEntry of listLastLogs) {
+                    if (logEntry.statusCode === 200) {
+                      checkStatusLstSixReq = true;
+                      break;
+                    }
                   }
+                } else {
+                  checkStatusLstSixReq = true;
                 }
               } else {
                 checkStatusLstSixReq = true;
@@ -243,6 +248,9 @@ exports.login = async (req, res, next) => {
                         userMFAData.multiFactorAuthenticationCode = code;
                         const currentDate = new Date();
                         userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
+                        
+
+
                         _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
                         
                         function callbackPatchFunc(error, response) {
