@@ -24,7 +24,7 @@ this.populate = [
 
 
 this.populateList = [
-  {path: 'user'}
+  {path: 'user', select: 'name email login'}
 ];
 
 
