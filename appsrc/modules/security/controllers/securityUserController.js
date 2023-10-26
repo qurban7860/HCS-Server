@@ -288,7 +288,7 @@ exports.patchSecurityUser = async (req, res, next) => {
 
 
 
-exports.unlockedUser = async (req, res, next) => {
+exports.changeLockedStatus = async (req, res, next) => {
   console.log("in unlocked user function.", );
   const errors = validationResult(req);
   var _this = this;
@@ -304,6 +304,11 @@ exports.unlockedUser = async (req, res, next) => {
         let fieldToUpdate = {
           userLocked: req.params.status
         }
+
+        if(req.params.status) {
+          fieldToUpdate.lockedBy = "ADMIN";
+        }
+
         _this.dbservice.patchObject(SecurityUser, req.params.id, fieldToUpdate, callbackFunc);
         function callbackFunc(error, result) {
           if (error) {
