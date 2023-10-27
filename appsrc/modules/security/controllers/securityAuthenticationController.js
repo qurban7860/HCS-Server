@@ -101,9 +101,11 @@ exports.login = async (req, res, next) => {
           
 
 
-          typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || (new Date() < lockUntil)
-
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+          console.log(typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil ? "gone":"not gone");
+          
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil
+          ) {
             let minutesToWaitUntil = 15;
 
 
@@ -258,26 +260,7 @@ exports.login = async (req, res, next) => {
                   }
                 }
               } else {
-                if(!checkStatusLstSixReq) {
-                  let updateUser = {
-                    userLocked : true,
-                    lockedBy : "SYSTEM"
-                  };
-
-                  _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
-                  async function callbackPatchFunc(error, response) {
-                    if (error) {
-                      logger.error(new Error(error));
-                      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                    }
-                    else {
-                      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("user blocked!");
-                    }
-                  }
-                  
-                } else {
-                  return res.status(StatusCodes.UNAUTHORIZED).send(`You've submitted three consecutive failed requests, so kindly wait for ${minutesToWaitUntil} minutes to allow processing.`);
-                }
+                return res.status(StatusCodes.UNAUTHORIZED).send(`You've submitted three consecutive failed requests, so kindly wait for ${minutesToWaitUntil} minutes to allow processing.`);
               }
           }
           else {
