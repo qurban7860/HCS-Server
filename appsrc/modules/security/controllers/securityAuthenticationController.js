@@ -86,14 +86,11 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
-
-
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          if (Object.keys(existingUser).length > 0 && !(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil
           ) {
-            
+
             //Checking blocked list of customer & users.
-            console.log("existingUser", existingUser);
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
             
 
