@@ -136,6 +136,7 @@ exports.login = async (req, res, next) => {
                 lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
                 let updateUser = {
                   lockUntil : lockUntil,
+                  lockedBy : "System"
                 };
 
                 _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
