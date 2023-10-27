@@ -102,7 +102,7 @@ exports.login = async (req, res, next) => {
 
 
           console.log(typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil ? "gone":"not gone");
-          
+
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil
           ) {
@@ -149,37 +149,7 @@ exports.login = async (req, res, next) => {
                 }
               }
 
-              let checkStatusLstSixReq = false;
-              if(!await comparePasswords(req.body.password, existingUser.password)) {
-                
-                var now = new Date();
-                var twentyMinutesAgo = new Date(now - 20 * 60 * 1000);
-                
-                let querysecurityLog = {
-                  user: existingUser._id,
-                  _id: { $gt: ObjectId(Math.floor(twentyMinutesAgo / 1000).toString(16) + '0000000000000000') },
-                  considerLog: true
-                };
-
-                let listLastLogs = await SecuritySignInLog.find(querysecurityLog).limit(6).sort({_id: -1});
-
-                if(listLastLogs && listLastLogs.length > 5) {
-                  for (const logEntry of listLastLogs) {
-                    if (logEntry.statusCode === 200) {
-                      checkStatusLstSixReq = true;
-                      break;
-                    }
-                  }
-                } else {
-                  checkStatusLstSixReq = true;
-                }
-              } else {
-                checkStatusLstSixReq = true;
-              }
-              
-
-
-              if (successfullyLogin && checkStatusLstSixReq) {
+              if (successfullyLogin) {
                 let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
                 if(passwordsResponse) {
   
