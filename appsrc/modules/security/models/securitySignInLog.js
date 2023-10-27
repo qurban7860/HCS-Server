@@ -18,6 +18,8 @@ const docSchema = new Schema({
     loginIP: { type: String },
 
     statusCode: { type: Number },
+
+    considerLog: { type: Boolean , default: true },
  
     // information of IP address from where action is performed
 
