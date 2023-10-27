@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecurityUser, SecurityRole } = require('../models');
+const { SecurityUser, SecurityRole, SecuritySignInLog } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
@@ -301,13 +301,29 @@ exports.changeLockedStatus = async (req, res, next) => {
       if (hasSuperAdminRole) {
 
         let fieldToUpdate = {
-          userLocked: req.params.status
         }
 
+        var now = new Date();
+
+        let lockUntil = 0;
+        if(!isNaN(req.params.minutes)) {
+          if(req.params.minutes > 0) {
+            lockUntil = new Date(now.getTime() + req.params.minutes * 60 * 1000);
+          } else {
+            lockUntil = new Date(now.getTime() + req.params.minutes * 60 * 1000);
+            now.setFullYear(now.getFullYear() + 100);
+            lockUntil = now;
+          }
+        } else {
+            lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
+        }
+
+      
         if(req.params.status === 'true') {
           fieldToUpdate.lockedBy = "ADMIN";
+          fieldToUpdate.lockUntil = lockUntil
         } else {
-          fieldToUpdate.lockedBy = "SYSTEM",
+          fieldToUpdate.lockedBy = "",
           fieldToUpdate.lockUntil = ""
         };
 
@@ -318,6 +334,22 @@ exports.changeLockedStatus = async (req, res, next) => {
             logger.error(new Error(error));
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
           } else {
+            if(req.params.status !== 'true') {
+              var now = new Date();
+              var Minutes = 20;
+              var timeInMinutes = new Date(now - Minutes * 60 * 1000); // Calculate the date by deducting minutes ago
+              let QuerysecurityLog = {
+                user: req.params.id,
+                _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') }
+              };
+              SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { considerLog: false } }, (err, result) => {
+                if (err) {
+                  console.error(err);
+                } else {
+                  console.log(result); // Information about the update operation
+                }
+              });
+            }
             return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "User unlocked successfully"));
           }
         }   

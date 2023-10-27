@@ -185,7 +185,7 @@ exports.patchCustomerSite = async (req, res, next) => {
 exports.exportSites = async (req, res, next) => {
   let finalData = ['Name,CustomerID,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID'];
 
-  let sites = await CustomerSite.find({isActive:true,isArchived:false})
+  let sites = await CustomerSite.find({customer: req.params.customerId, isActive:true,isArchived:false})
               .populate('customer')
               .populate('primaryBillingContact')
               .populate('primaryTechnicalContact');

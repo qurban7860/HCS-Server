@@ -72,7 +72,6 @@ const docSchema = new Schema({
         },
 
 
-        userLocked : {type: Boolean, default: false},
         lockUntil : {type: Date},
         lockedBy: {type: String, enum: ['SYSTEM','ADMIN']}                          
 },

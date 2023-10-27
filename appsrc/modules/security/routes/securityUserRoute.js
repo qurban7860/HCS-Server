@@ -28,7 +28,7 @@ router.get(`${baseRoute}/:id`, controller.getSecurityUser);
 router.get(`${baseRoute}/`, controller.getSecurityUsers);
 
 // - /api/1.0.0/security/users
-router.get(`${baseRoute}/changeUserStatus/:id/:status`, controller.changeLockedStatus);
+router.get(`${baseRoute}/changeUserStatus/:id/:status/:minutes`, controller.changeLockedStatus);
 
 
 // - /api/1.0.0/security/users

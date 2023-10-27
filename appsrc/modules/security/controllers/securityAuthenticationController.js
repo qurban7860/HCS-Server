@@ -99,53 +99,52 @@ exports.login = async (req, res, next) => {
             }  
           }
           
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && !existingUser.userLocked) {
+
+
+          typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || (new Date() < lockUntil)
+
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
             let minutesToWaitUntil = 15;
-            let lockUntil = existingUser.lockUntil;
-            let current_time = new Date();
 
-            let successfullyLogin = false;
-            
 
-            
-            if(typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || current_time < lockUntil) {
+            let successfullyLogin = false;           
               
-              var now = new Date();
-              var Minutes = 5;
-              var timeInMinutes = new Date(now - Minutes * 60 * 1000); // Calculate the date by deducting minutes ago
-              let QuerysecurityLog = {
-                user: existingUser._id,
-                _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') }
-              };
-              let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
-                if(listLogs && listLogs.length && listLogs.length > 2) {
-                  for (const logEntry of listLogs) {
-                    if (logEntry.statusCode === 200) {
-                      successfullyLogin = true;
-                      break;
-                    }
-                  }
-                } else {
-                  successfullyLogin = true;
-                }
-
-
-                
-                if(!successfullyLogin && !existingUser.lockUntil) {
-                  var now = new Date();
-                  lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
-                  let updateUser = {
-                    lockUntil : lockUntil,
-                  };
-  
-                  _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
-                  async function callbackPatchFunc(error, response) {
-                    if (error) {
-                      logger.error(new Error(error));
-                    }
+            var now = new Date();
+            var Minutes = 5;
+            var timeInMinutes = new Date(now - Minutes * 60 * 1000); // Calculate the date by deducting minutes ago
+            let QuerysecurityLog = {
+              user: existingUser._id,
+              _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') },
+              considerLog: true
+            };
+            let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
+              if(listLogs && listLogs.length && listLogs.length > 2) {
+                for (const logEntry of listLogs) {
+                  if (logEntry.statusCode === 200) {
+                    successfullyLogin = true;
+                    break;
                   }
                 }
-            } else {successfullyLogin = true;}
+              } else {
+                successfullyLogin = true;
+              }
+
+
+              
+              if(!successfullyLogin && !existingUser.lockUntil) {
+                var now = new Date();
+                lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
+                let updateUser = {
+                  lockUntil : lockUntil,
+                };
+
+                _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                async function callbackPatchFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                  }
+                }
+              }
 
               let checkStatusLstSixReq = false;
               if(!await comparePasswords(req.body.password, existingUser.password)) {
@@ -155,7 +154,8 @@ exports.login = async (req, res, next) => {
                 
                 let querysecurityLog = {
                   user: existingUser._id,
-                  _id: { $gt: ObjectId(Math.floor(twentyMinutesAgo / 1000).toString(16) + '0000000000000000') }
+                  _id: { $gt: ObjectId(Math.floor(twentyMinutesAgo / 1000).toString(16) + '0000000000000000') },
+                  considerLog: true
                 };
 
                 let listLastLogs = await SecuritySignInLog.find(querysecurityLog).limit(6).sort({_id: -1});

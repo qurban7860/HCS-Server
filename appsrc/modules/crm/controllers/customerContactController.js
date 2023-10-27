@@ -311,7 +311,7 @@ exports.patchCustomerContact = async (req, res, next) => {
 exports.exportContacts = async (req, res, next) => {
   let finalData = ['ID,Name,Title,Type,Customer ID,Customer,Phone,Email,Sites'];
 
-  let contacts = await CustomerContact.find({isActive:true,isArchived:false})
+  let contacts = await CustomerContact.find({customer: req.params.customerId, isActive:true,isArchived:false})
               .populate('customer');
 
   const filePath = path.resolve(__dirname, "../../../../uploads/Contacts.csv");
