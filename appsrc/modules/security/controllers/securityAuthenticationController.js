@@ -86,27 +86,26 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
-          //Checking blocked list of customer & users.
-          console.log("existingUser", existingUser);
-          let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
-          
 
-          if(blockedCustomer) {
-            return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
-          } else {
-            let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
-            if(blockedUser) {
-              return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
-            }  
-          }
-          
-
-
-          console.log(typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil ? "gone":"not gone");
 
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil
           ) {
+            
+            //Checking blocked list of customer & users.
+            console.log("existingUser", existingUser);
+            let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
+            
+
+            if(blockedCustomer) {
+              return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
+            } else {
+              let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
+              if(blockedUser) {
+                return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
+              }  
+            }
+
             let minutesToWaitUntil = 15;
 
 
