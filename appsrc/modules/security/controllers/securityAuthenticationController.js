@@ -87,6 +87,7 @@ exports.login = async (req, res, next) => {
           const existingUser = response;
 
           //Checking blocked list of customer & users.
+          console.log("existingUser", existingUser);
           let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
           
 
