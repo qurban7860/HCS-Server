@@ -31,7 +31,7 @@ this.populate = [
 this.populateList = [
   {path: 'createdBy', select: 'name'},
   {path: 'blockedUser', select: 'name type email customer'},
-  {path: 'blockedCustomers', select: 'name customer roles'}
+  {path: 'customer', select: 'name'}
 ];
 
 exports.searchSecurityConfigBlockedUser = async (req, res, next) => {
