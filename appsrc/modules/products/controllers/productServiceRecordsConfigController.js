@@ -22,7 +22,9 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
+  {path: 'machineCategory', select: 'name'},
   {path: 'machineModel', select: 'name category'},
+  
   {path: 'category', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
