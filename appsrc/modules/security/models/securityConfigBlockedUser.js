@@ -6,10 +6,10 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
-        
+
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true},
+
         blockedUser: { type: Schema.Types.ObjectId, ref: 'SecurityUser', required: true},
-        // list of black listed IPs
-                          
 },
 {
         collection: 'SecurityConfigBlockedUsers'
