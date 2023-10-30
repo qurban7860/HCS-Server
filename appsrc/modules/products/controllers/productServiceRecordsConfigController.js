@@ -205,6 +205,29 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
+
+    if(req.body.isApproved){ 
+      let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
+      if(!productServiceRecordsConfig) {
+        return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config Not Found"});
+      }
+  
+      if(!Array.isArray(productServiceRecordsConfig.Approvals))
+        productServiceRecordsConfig.Approvals = [];
+
+      for(let verif of productServiceRecordsConfig.Approvals) {
+        if(verif.approvedBy == req.body.loginUser.userId)
+          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+      }
+
+      productServiceRecordsConfig.Approvals.push({
+        approvedBy: req.body.loginUser.userId,
+        approvedDate: new Date(),
+        approvedFrom: req.body.loginUser.userIP
+      })
+      productServiceRecordsConfig = await productServiceRecordsConfig.save();
+      return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
+    }
     
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
