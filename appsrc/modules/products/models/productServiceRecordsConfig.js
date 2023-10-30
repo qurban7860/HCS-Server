@@ -9,7 +9,7 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
-  recordType: { type: String, enum: ['service','repair', 'training', 'install'], default: 'service' },
+  recordType: { type: String, enum: ['SERVICE','REPAIR', 'TRAINING', 'PRE-INSTALL', 'INSTALL'], default: 'service' },
   
   machineCategory: { type: Schema.Types.ObjectId , ref: 'MachineCategory' },
   // Category information of machine
