@@ -22,22 +22,22 @@ const baseRoute = `/configs/blockedusers`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRoute}/search`, controller.searchSecurityConfigUser);
+router.get(`${baseRoute}/search`, controller.searchSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/:id
-router.get(`${baseRoute}/:id`, controller.getsecurityConfigUser);
+router.get(`${baseRoute}/:id`, controller.getsecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers
-router.get(`${baseRoute}/`, controller.getSecurityConfigUsers);
+router.get(`${baseRoute}/`, controller.getSecurityConfigBlockedUsers);
 
 // - /api/1.0.0/security/configs/blockedusers
-router.post(`${baseRoute}/`, controller.postSecurityConfigUser);
+router.post(`${baseRoute}/`, controller.postSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/:id
-router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSecurityConfigUser);
+router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/:id
-router.delete(`${baseRoute}/:id`, controller.deleteSecurityConfigUser);
+router.delete(`${baseRoute}/:id`, controller.deleteSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/search
 

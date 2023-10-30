@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecurityConfigBlockedUser } = require('../models');
+const { SecurityConfigBlockedUser, SecurityUser } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -23,18 +23,18 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'},
-  {path: 'blockedUser', select: 'name type'},
+  {path: 'blockedUser', select: 'name type customer'},
   {path: 'blockedCustomers', select: 'name customer roles'} 
 ];
 
 
 this.populateList = [
   {path: 'createdBy', select: 'name'},
-  {path: 'blockedUser', select: 'name type'},
-  {path: 'blockedCustomers', select: 'name customer roles'}
+  {path: 'blockedUser', select: 'name type email customer'},
+  {path: 'customer', select: 'name'}
 ];
 
-exports.searchSecurityConfigUser = async (req, res, next) => {
+exports.searchSecurityConfigBlockedUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log(errors);
@@ -75,7 +75,7 @@ exports.searchSecurityConfigUser = async (req, res, next) => {
 }
 
 
-exports.getsecurityConfigUser = async (req, res, next) => {
+exports.getsecurityConfigBlockedUser = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectById(SecurityConfigBlockedUser, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, response) {
@@ -88,7 +88,7 @@ exports.getsecurityConfigUser = async (req, res, next) => {
   }
 };
 
-exports.getSecurityConfigUsers = async (req, res, next) => {
+exports.getSecurityConfigBlockedUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObjectList(SecurityConfigBlockedUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
@@ -101,7 +101,7 @@ exports.getSecurityConfigUsers = async (req, res, next) => {
   }
 };
 
-exports.deleteSecurityConfigUser = async (req, res, next) => {
+exports.deleteSecurityConfigBlockedUser = async (req, res, next) => {
   this.dbservice.deleteObject(SecurityConfigBlockedUser, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
@@ -113,7 +113,7 @@ exports.deleteSecurityConfigUser = async (req, res, next) => {
   }
 };
 
-exports.postSecurityConfigUser = async (req, res, next) => {
+exports.postSecurityConfigBlockedUser = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -125,22 +125,29 @@ exports.postSecurityConfigUser = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.CREATED).json({ SecurityConfigBlockedUser: response });
+    let securityuser = await SecurityUser.findOne({_id: req.body.blockedUser, isActive:true,isArchived:false});
+    
+    if(securityuser && req.body.blockedUser != req.body.loginUser.userId) {
+      req.body.customer = securityuser.customer;
+      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          res.status(StatusCodes.CREATED).json({ SecurityConfigBlockedUser: response });
+        }
       }
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
   }
 };
 
-exports.patchSecurityConfigUser = async (req, res, next) => {
+exports.patchSecurityConfigBlockedUser = async (req, res, next) => {
   const errors = validationResult(req);
   //console.log('calling patchsecurityConfigUser');
   if (!errors.isEmpty()) {
@@ -162,7 +169,7 @@ exports.patchSecurityConfigUser = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { blockedUser, loginUser, isActive, isArchived} = req.body;
+  const { customer, blockedUser, loginUser, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -171,6 +178,10 @@ function getDocumentFromReq(req, reqType){
   }
   if ("blockedUser" in req.body){
     doc.blockedUser = blockedUser;
+  }
+
+  if ("customer" in req.body){
+    doc.customer = customer;
   }
 
   if ("isActive" in req.body){
