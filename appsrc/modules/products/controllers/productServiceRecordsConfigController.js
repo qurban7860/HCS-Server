@@ -208,24 +208,29 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
 
-    if(req.body.isApproved){ 
+    if(req.body.isVerified){ 
       let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
       if(!productServiceRecordsConfig) {
         return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config Not Found"});
       }
+      
+      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED') {
+        return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config is in SUBMITTED state!"});
+      }
+      
   
-      if(!Array.isArray(productServiceRecordsConfig.Approvals))
-        productServiceRecordsConfig.Approvals = [];
+      if(!Array.isArray(productServiceRecordsConfig.verifications))
+        productServiceRecordsConfig.verifications = [];
 
-      for(let verif of productServiceRecordsConfig.Approvals) {
-        if(verif.approvedBy == req.body.loginUser.userId)
+      for(let verif of productServiceRecordsConfig.verifications) {
+        if(verif.verifiedBy == req.body.loginUser.userId)
           return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
       }
 
-      productServiceRecordsConfig.Approvals.push({
-        approvedBy: req.body.loginUser.userId,
-        approvedDate: new Date(),
-        approvedFrom: req.body.loginUser.userIP
+      productServiceRecordsConfig.verifications.push({
+        verifiedBy: req.body.loginUser.userId,
+        verifiedDate: new Date(),
+        verifiedFrom: req.body.loginUser.userIP
       })
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
       return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);

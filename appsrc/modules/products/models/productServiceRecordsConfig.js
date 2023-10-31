@@ -81,14 +81,15 @@ const docSchema = new Schema({
   NoOfApprovalsRequired: { type: Number, required: true,  default: '1' },
   // Number of approvals required
   
-  Approvals:[{
-    approvedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
-    // user who will approve this document
-    approvedFrom: {type: String},
+  verifications:[{
+    verifiedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+    // user who will verified this document
+    verifiedFrom: {type: String},
     //user ip address
-    approvedDate: { type: Date, default: Date.now }
-    // date of Approval
+    verifiedDate: { type: Date, default: Date.now }
+    // Date of Verification
   }]
+  
 
 },
 
