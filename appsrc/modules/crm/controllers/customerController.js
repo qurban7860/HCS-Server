@@ -463,7 +463,7 @@ exports.exportCustomers = async (req, res, next) => {
 
 
 function getContactName(contact) {
-  let fullName = '"';
+  let fullName = '';
 
   if(contact && contact.firstName)
     fullName+= contact.firstName.replace(/"/g,"'");
@@ -471,7 +471,7 @@ function getContactName(contact) {
   if(contact && contact.lastName)
     fullName+= contact.lastName.replace(/"/g,"'");
 
-  return fullName+'"';
+  return fullName+'';
 }
 
 
