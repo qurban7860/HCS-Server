@@ -235,7 +235,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     if(req.body.isVerified){ 
 
       if(!productServiceRecordsConfig) {
-        return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config Not Found"});
+        return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
       }
       
       if(!Array.isArray(productServiceRecordsConfig.verifications))
@@ -243,7 +243,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
       for(let verif of productServiceRecordsConfig.verifications) {
         if(verif.verifiedBy == req.body.loginUser.userId)
-          return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
+          return res.status(StatusCodes.BAD_REQUEST).send("Already verified");
       }
 
       productServiceRecordsConfig.verifications.push({
@@ -257,16 +257,16 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
 
     if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'APPROVED') {
-      return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config is in APPROVED state!"});
+      return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config is in APPROVED state!");
     }
 
     if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.status != 'SUBMITTED') {
-      return res.status(StatusCodes.BAD_REQUEST).json({message:`Status should be SUBMITTED to APPROVED configuration`});
+      return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
     }
     
 
     if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired < productServiceRecordsConfig.verifications.length) {
-      return res.status(StatusCodes.BAD_REQUEST).json({message:`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `});
+      return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
     
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
