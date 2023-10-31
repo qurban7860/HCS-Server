@@ -339,23 +339,23 @@ exports.exportContacts = async (req, res, next) => {
       finalDataObj = {
         id:contact._id,
         name:contact?getContactName(contact):'',
-        title:contact.title?'"'+contact.title.replace(/"/g,"'")+'"':'',
-        types:contact.contactTypes?'"'+contact.contactTypes.join('|').replace(/"/g,"'")+'"':'',
+        title:contact.title?''+contact.title.replace(/"/g,"'")+'':'',
+        types:contact.contactTypes?''+contact.contactTypes.join('|').replace(/"/g,"'")+'':'',
         customerID:contact.customer?contact.customer._id:'',
-        customer:contact.customer?'"'+contact.customer.name.replace(/"/g,"'")+'"':'',
-        phone:contact.phone?'"'+contact.phone.replace(/"/g,"'")+'"':'',
-        email:contact.email?'"'+contact.email.replace(/"/g,"'")+'"':'',
-        sites:contact.sitesName?'"'+contact.sitesName.replace(/"/g,"'")+'"':'',
+        customer:contact.customer?''+contact.customer.name.replace(/"/g,"'")+'':'',
+        phone:contact.phone?''+contact.phone.replace(/"/g,"'")+'':'',
+        email:contact.email?''+contact.email.replace(/"/g,"'")+'':'',
+        sites:contact.sitesName?''+contact.sitesName.replace(/"/g,"'")+'':'',
       };  
     } else {
       finalDataObj = {
         name:contact?getContactName(contact):'',
-        title:contact.title?'"'+contact.title.replace(/"/g,"'")+'"':'',
-        types:contact.contactTypes?'"'+contact.contactTypes.join('|').replace(/"/g,"'")+'"':'',
-        customer:contact.customer?'"'+contact.customer.name.replace(/"/g,"'")+'"':'',
-        phone:contact.phone?'"'+contact.phone.replace(/"/g,"'")+'"':'',
-        email:contact.email?'"'+contact.email.replace(/"/g,"'")+'"':'',
-        sites:contact.sitesName?'"'+contact.sitesName.replace(/"/g,"'")+'"':'',
+        title:contact.title?''+contact.title.replace(/"/g,"'")+'':'',
+        types:contact.contactTypes?''+contact.contactTypes.join('|').replace(/"/g,"'")+'':'',
+        customer:contact.customer?''+contact.customer.name.replace(/"/g,"'")+'':'',
+        phone:contact.phone?''+contact.phone.replace(/"/g,"'")+'':'',
+        email:contact.email?''+contact.email.replace(/"/g,"'")+'':'',
+        sites:contact.sitesName?''+contact.sitesName.replace(/"/g,"'")+'':'',
       };  
     }
 
