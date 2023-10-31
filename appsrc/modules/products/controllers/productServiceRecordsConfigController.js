@@ -14,6 +14,8 @@ this.dbservice = new productDBService();
 
 const { ProductServiceRecordsConfig, ProductCheckItem, ProductModel, Product } = require('../models');
 
+const { SecurityUser } = require('../../security/models');
+
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -42,6 +44,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
       try{
         response = JSON.parse(JSON.stringify(response));
         if(response) {
+          const serviceRecordsConfig = JSON.parse(JSON.stringify(response));
           let index = 0;
           for(let checkParam of response.checkItemLists) {
             if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
@@ -62,10 +65,30 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
             }
             index++;
           }
-        }
-        return res.json(response);
 
+          
+          if(Array.isArray(response.verifications) && response.verifications.length>0 ) {
+            let serviceRecordsConfigVerifications = [];
+    
+            for(let verification of response.verifications) {
+    
+    
+              let user = await SecurityUser.findOne({ _id: verification.verifiedBy}).select('name');
+    
+              if(user) {
+                verification.verifiedBy = user;
+                serviceRecordsConfigVerifications.push(verification);
+              }
+    
+            }
+            response.verifications = serviceRecordsConfigVerifications;
+          }
+          return res.json(response);
+        } else {
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        }
       }catch(e) {
+        console.log("Exception:", e);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       }
     }
