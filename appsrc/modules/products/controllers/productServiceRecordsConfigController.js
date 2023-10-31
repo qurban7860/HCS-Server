@@ -208,17 +208,13 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
 
+    let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
     if(req.body.isVerified){ 
-      let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
+
       if(!productServiceRecordsConfig) {
         return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config Not Found"});
       }
       
-      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED') {
-        return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config is in SUBMITTED state!"});
-      }
-      
-  
       if(!Array.isArray(productServiceRecordsConfig.verifications))
         productServiceRecordsConfig.verifications = [];
 
@@ -234,6 +230,20 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       })
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
       return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
+    }
+
+
+    if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'APPROVED') {
+      return res.status(StatusCodes.BAD_REQUEST).json({message:"Product Service Records Config is in APPROVED state!"});
+    }
+
+    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.status != 'SUBMITTED') {
+      return res.status(StatusCodes.BAD_REQUEST).json({message:`Status should be SUBMITTED to APPROVED configuration`});
+    }
+    
+
+    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired < productServiceRecordsConfig.verifications.length) {
+      return res.status(StatusCodes.BAD_REQUEST).json({message:`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `});
     }
     
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
@@ -275,7 +285,7 @@ function getDocumentFromReq(req, reqType){
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
-    enableSuggestedSpares, header, footer, NoOfApprovalsRequired, Approvals, loginUser, isActive, isArchived
+    enableSuggestedSpares, header, footer, noOfVerificationsRequired, verifications, loginUser, isActive, isArchived
 } = req.body;
   
   let doc = {};
@@ -381,19 +391,18 @@ function getDocumentFromReq(req, reqType){
     doc.footer = footer;
   }
   
-  if ("NoOfApprovalsRequired" in req.body){
-    doc.NoOfApprovalsRequired = NoOfApprovalsRequired;
+  if ("noOfVerificationsRequired" in req.body){
+    doc.noOfVerificationsRequired = noOfVerificationsRequired;
   }
-  if ("Approvals" in req.body){
-    doc.Approvals = Approvals;
+  if ("verifications" in req.body){
+    doc.verifications = verifications;
 
 
     if (reqType && reqType === "new") {
-      for (let i = 0; i < doc.Approvals.length; i++) {
-          doc.Approvals[i].approvedFrom = loginUser.userIP;
+      for (let i = 0; i < doc.verifications.length; i++) {
+          doc.verifications[i].verifiedFrom = loginUser.userIP;
       }
     }
-  
   }
   
   if ("isActive" in req.body){

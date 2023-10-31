@@ -78,7 +78,7 @@ const docSchema = new Schema({
     // for page number, use value pgNo. 
   },
 
-  NoOfApprovalsRequired: { type: Number, required: true,  default: '1' },
+  noOfVerificationsRequired: { type: Number, required: true,  default: '1' },
   // Number of approvals required
   
   verifications:[{
