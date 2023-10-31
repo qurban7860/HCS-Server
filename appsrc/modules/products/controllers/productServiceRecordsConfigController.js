@@ -200,9 +200,12 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
+  console.log("req.body.parentConfig", req.body.parentConfig);
   if(req.body.parentConfig) {
     let totalCounts = await ProductServiceRecordsConfig.find({"parentConfig": req.body.parentConfig}).count() ;
-    req.body.docVersionNo = totalCounts + 1;
+    console.log("totalCounts", totalCounts);
+    req.body.docVersionNo = totalCounts + 2;
+    console.log("req.body.docVersionNo", req.body.docVersionNo);
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
