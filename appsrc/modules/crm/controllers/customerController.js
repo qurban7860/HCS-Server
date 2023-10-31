@@ -369,9 +369,14 @@ exports.patchCustomer = async (req, res, next) => {
 };
 
 exports.exportCustomers = async (req, res, next) => {
-  let finalData = ['ID,Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
+  let finalData = ['Name,Code,Trading Name,Type,Main Site,Sites,Contacts,Billing Contact,Technical Contact,Account Manager,Project Manager,Support Subscription, Support Manager'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Customers.csv");
 
+  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false; 
+  if(EXPORT_UUID) {
+    finalData = ['ID,Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
+  }
+  
   let customers = await Customer.find({isActive:true,isArchived:false})
               .populate('mainSite')
               .populate('primaryBillingContact')
@@ -379,6 +384,7 @@ exports.exportCustomers = async (req, res, next) => {
               .populate('accountManager')
               .populate('projectManager')
               .populate('supportManager');
+
 
   customers = JSON.parse(JSON.stringify(customers));
   for(let customer of customers) {
@@ -395,28 +401,46 @@ exports.exportCustomers = async (req, res, next) => {
       customer.contactsName = customer.contactsName.join('|')
     }
 
-    finalDataObj = {
-      id:customer._id,
-      name:customer.name?'"'+customer.name.replace(/"/g,"'")+'"':'',
-      clientCode:customer.clientCode?'"'+customer.clientCode.replace(/"/g,"'")+'"':'',
-      tradingName:customer.tradingName?'"'+customer.tradingName.join('-').replace(/"/g,"'")+'"':'',
-      type:'"'+customer.type+'"',
-      mainSite:customer.mainSite?'"'+customer.mainSite.name.replace(/"/g,"'")+'"':'',
-      mainSiteID:customer.mainSite?customer.mainSite._id:'',
-      sites:customer.sitesName?'"'+customer.sitesName.replace(/"/g,"'")+'"':'',
-      contacts:customer.contactsName?'"'+customer.contactsName.replace(/"/g,"'")+'"':'',
-      billingContact:customer.primaryBillingContact?getContactName(customer.primaryBillingContact):'',
-      billingContactID:customer.primaryBillingContact?customer.primaryBillingContact._id:'',
-      technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
-      technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
-      accountManager:customer.accountManager?getContactName(customer.accountManager):'',
-      accountManagerID:customer.accountManager?customer.accountManager._id:'',
-      projectManager:customer.projectManager?getContactName(customer.projectManager):'',
-      projectManagerID:customer.projectManager?customer.projectManager._id:'',
-      supportSubscription:customer.supportSubscription?'Yes':'No',
-      supportManager:customer.supportManager?getContactName(customer.supportManager):'',
-      supportManagerID:customer.supportManager?customer.supportManager._id:'',
-    };
+    if(EXPORT_UUID) {
+      finalDataObj = {
+        id:customer._id,
+        name:customer.name?'"'+customer.name.replace(/"/g,"'")+'"':'',
+        clientCode:customer.clientCode?'"'+customer.clientCode.replace(/"/g,"'")+'"':'',
+        tradingName:customer.tradingName?'"'+customer.tradingName.join('-').replace(/"/g,"'")+'"':'',
+        type:'"'+customer.type+'"',
+        mainSite:customer.mainSite?'"'+customer.mainSite.name.replace(/"/g,"'")+'"':'',
+        mainSiteID:customer.mainSite?customer.mainSite._id:'',
+        sites:customer.sitesName?'"'+customer.sitesName.replace(/"/g,"'")+'"':'',
+        contacts:customer.contactsName?'"'+customer.contactsName.replace(/"/g,"'")+'"':'',
+        billingContact:customer.primaryBillingContact?getContactName(customer.primaryBillingContact):'',
+        billingContactID:customer.primaryBillingContact?customer.primaryBillingContact._id:'',
+        technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
+        technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
+        accountManager:customer.accountManager?getContactName(customer.accountManager):'',
+        accountManagerID:customer.accountManager?customer.accountManager._id:'',
+        projectManager:customer.projectManager?getContactName(customer.projectManager):'',
+        projectManagerID:customer.projectManager?customer.projectManager._id:'',
+        supportSubscription:customer.supportSubscription?'Yes':'No',
+        supportManager:customer.supportManager?getContactName(customer.supportManager):'',
+        supportManagerID:customer.supportManager?customer.supportManager._id:'',
+      };
+    } else {
+      finalDataObj = {
+        name:customer.name?'"'+customer.name.replace(/"/g,"'")+'"':'',
+        clientCode:customer.clientCode?'"'+customer.clientCode.replace(/"/g,"'")+'"':'',
+        tradingName:customer.tradingName?'"'+customer.tradingName.join('-').replace(/"/g,"'")+'"':'',
+        type:'"'+customer.type+'"',
+        mainSite:customer.mainSite?'"'+customer.mainSite.name.replace(/"/g,"'")+'"':'',
+        sites:customer.sitesName?'"'+customer.sitesName.replace(/"/g,"'")+'"':'',
+        contacts:customer.contactsName?'"'+customer.contactsName.replace(/"/g,"'")+'"':'',
+        billingContact:customer.primaryBillingContact?getContactName(customer.primaryBillingContact):'',
+        technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
+        accountManager:customer.accountManager?getContactName(customer.accountManager):'',
+        projectManager:customer.projectManager?getContactName(customer.projectManager):'',
+        supportSubscription:customer.supportSubscription?'Yes':'No',
+        supportManager:customer.supportManager?getContactName(customer.supportManager):'',
+      };
+    }
 
     finalDataRow = Object.values(finalDataObj);
 
