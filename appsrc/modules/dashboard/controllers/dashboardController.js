@@ -73,6 +73,7 @@ exports.getMachineByCountries = async (req, res, next) => {
       { $unwind: "$instalationSite" },
       { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
       { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+      { '$addFields': { count: { $toString: '$count' } } },
       { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
@@ -90,6 +91,8 @@ exports.getMachineByModels = async (req, res, next) => {
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
     { $match: { "machineCategory.connections": {$ne:true}} },
   ]);
+
+
   let modelsIds = machineModels.map(m => m._id);
 
   let matchQuery = { isArchived: false, isActive: true, machineModel:{$in:modelsIds} };
@@ -145,6 +148,7 @@ exports.getMachineByModels = async (req, res, next) => {
     { $unwind: "$machineModel" },
     { $match: { "machineModel": { $nin: ["", null] } } },
     { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
+    { '$addFields': { count: { $toString: '$count' } } },
     { $sort: { count: -1 } },
     { $limit: 20 }
   ]);
