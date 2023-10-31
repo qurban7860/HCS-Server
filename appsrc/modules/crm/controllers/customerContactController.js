@@ -22,6 +22,7 @@ const path = require('path');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
+
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
@@ -309,7 +310,13 @@ exports.patchCustomerContact = async (req, res, next) => {
 
 
 exports.exportContacts = async (req, res, next) => {
-  let finalData = ['ID,Name,Title,Type,Customer ID,Customer,Phone,Email,Sites'];
+  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false;
+
+  let finalData = ['Name,Title,Type,Customer,Phone,Email,Sites'];
+
+  if(EXPORT_UUID) {
+    finalData = ['ID,Name,Title,Type,Customer ID,Customer,Phone,Email,Sites'];
+  }
 
   let contacts = await CustomerContact.find({customer: req.params.customerId, isActive:true,isArchived:false})
               .populate('customer');
@@ -328,17 +335,29 @@ exports.exportContacts = async (req, res, next) => {
       contact.sitesName = contact.sitesName.join('- ')
     }
 
-    finalDataObj = {
-      id:contact._id,
-      name:contact?getContactName(contact):'',
-      title:contact.title?'"'+contact.title.replace(/"/g,"'")+'"':'',
-      types:contact.contactTypes?'"'+contact.contactTypes.join('|').replace(/"/g,"'")+'"':'',
-      customerID:contact.customer?contact.customer._id:'',
-      customer:contact.customer?'"'+contact.customer.name.replace(/"/g,"'")+'"':'',
-      phone:contact.phone?'"'+contact.phone.replace(/"/g,"'")+'"':'',
-      email:contact.email?'"'+contact.email.replace(/"/g,"'")+'"':'',
-      sites:contact.sitesName?'"'+contact.sitesName.replace(/"/g,"'")+'"':'',
-    };
+    if(EXPORT_UUID) { 
+      finalDataObj = {
+        id:contact._id,
+        name:contact?getContactName(contact):'',
+        title:contact.title?'"'+contact.title.replace(/"/g,"'")+'"':'',
+        types:contact.contactTypes?'"'+contact.contactTypes.join('|').replace(/"/g,"'")+'"':'',
+        customerID:contact.customer?contact.customer._id:'',
+        customer:contact.customer?'"'+contact.customer.name.replace(/"/g,"'")+'"':'',
+        phone:contact.phone?'"'+contact.phone.replace(/"/g,"'")+'"':'',
+        email:contact.email?'"'+contact.email.replace(/"/g,"'")+'"':'',
+        sites:contact.sitesName?'"'+contact.sitesName.replace(/"/g,"'")+'"':'',
+      };  
+    } else {
+      finalDataObj = {
+        name:contact?getContactName(contact):'',
+        title:contact.title?'"'+contact.title.replace(/"/g,"'")+'"':'',
+        types:contact.contactTypes?'"'+contact.contactTypes.join('|').replace(/"/g,"'")+'"':'',
+        customer:contact.customer?'"'+contact.customer.name.replace(/"/g,"'")+'"':'',
+        phone:contact.phone?'"'+contact.phone.replace(/"/g,"'")+'"':'',
+        email:contact.email?'"'+contact.email.replace(/"/g,"'")+'"':'',
+        sites:contact.sitesName?'"'+contact.sitesName.replace(/"/g,"'")+'"':'',
+      };  
+    }
 
     finalDataRow = Object.values(finalDataObj);
 

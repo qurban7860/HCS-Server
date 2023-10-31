@@ -372,7 +372,7 @@ exports.exportCustomers = async (req, res, next) => {
   let finalData = ['Name,Code,Trading Name,Type,Main Site,Sites,Contacts,Billing Contact,Technical Contact,Account Manager,Project Manager,Support Subscription, Support Manager'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Customers.csv");
 
-  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false; 
+  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false;
   if(EXPORT_UUID) {
     finalData = ['ID,Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
   }

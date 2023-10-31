@@ -183,7 +183,12 @@ exports.patchCustomerSite = async (req, res, next) => {
 };
 
 exports.exportSites = async (req, res, next) => {
-  let finalData = ['Name,CustomerID,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID'];
+  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false;
+  let finalData = ['Name,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Technical Contact'];
+
+  if(EXPORT_UUID) {
+    finalData = ['Name,CustomerID,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID'];
+  }
 
   let sites = await CustomerSite.find({customer: req.params.customerId, isActive:true,isArchived:false})
               .populate('customer')
@@ -204,24 +209,43 @@ exports.exportSites = async (req, res, next) => {
       site.contactsName = '"'+site.contactsName+'"'
     }
 
-    finalDataObj = {
-      name:site?'"'+site.name.replace(/"/g,"'")+'"':'',
-      customerId:site.customer?site.customer._id:'',
-      customer:site.customer?'"'+site.customer.name.replace(/"/g,"'")+'"':'',
-      street:site.address?site.address.street?'"'+site.address.street.replace(/"/g,"'")+'"':'':'',
-      suburb:site.address?site.address.suburb?'"'+site.address.suburb.replace(/"/g,"'")+'"':'':'',
-      city:site.address?site.address.city?'"'+site.address.city.replace(/"/g,"'")+'"':'':'',
-      region:site.address?site.address.region?'"'+site.address.region.replace(/"/g,"'")+'"':'':'',
-      postCode:site.address?site.address.postcode?'"'+site.address.postcode.replace(/"/g,"'")+'"':'':'',
-      country:site.address?site.address.country?'"'+site.address.country.replace(/"/g,"'")+'"':'':'',
-      lat:site.lat?'"'+site.lat.replace(/"/g,"'")+'"':'',
-      long:site.long?'"'+site.long.replace(/"/g,"'")+'"':'',
-      contacts:site.contactsName?'"'+site.contactsName.replace(/"/g,"'")+'"':'',
-      billingContact:site.primaryBillingContact?getContactName(site.primaryBillingContact):'',
-      billingContactID:site.primaryBillingContact?site.primaryBillingContact._id:'',
-      technicalContact:site.primaryTechnicalContact?getContactName(site.primaryTechnicalContact):'',
-      technicalContactID:site.primaryTechnicalContact?site.primaryTechnicalContact._id:'',
-    };
+    if(EXPORT_UUID) { 
+      finalDataObj = {
+        name:site?'"'+site.name.replace(/"/g,"'")+'"':'',
+        customerId:site.customer?site.customer._id:'',
+        customer:site.customer?'"'+site.customer.name.replace(/"/g,"'")+'"':'',
+        street:site.address?site.address.street?'"'+site.address.street.replace(/"/g,"'")+'"':'':'',
+        suburb:site.address?site.address.suburb?'"'+site.address.suburb.replace(/"/g,"'")+'"':'':'',
+        city:site.address?site.address.city?'"'+site.address.city.replace(/"/g,"'")+'"':'':'',
+        region:site.address?site.address.region?'"'+site.address.region.replace(/"/g,"'")+'"':'':'',
+        postCode:site.address?site.address.postcode?'"'+site.address.postcode.replace(/"/g,"'")+'"':'':'',
+        country:site.address?site.address.country?'"'+site.address.country.replace(/"/g,"'")+'"':'':'',
+        lat:site.lat?'"'+site.lat.replace(/"/g,"'")+'"':'',
+        long:site.long?'"'+site.long.replace(/"/g,"'")+'"':'',
+        contacts:site.contactsName?'"'+site.contactsName.replace(/"/g,"'")+'"':'',
+        billingContact:site.primaryBillingContact?getContactName(site.primaryBillingContact):'',
+        billingContactID:site.primaryBillingContact?site.primaryBillingContact._id:'',
+        technicalContact:site.primaryTechnicalContact?getContactName(site.primaryTechnicalContact):'',
+        technicalContactID:site.primaryTechnicalContact?site.primaryTechnicalContact._id:'',
+      };
+    } else {
+      finalDataObj = {
+        name:site?'"'+site.name.replace(/"/g,"'")+'"':'',
+        customer:site.customer?'"'+site.customer.name.replace(/"/g,"'")+'"':'',
+        street:site.address?site.address.street?'"'+site.address.street.replace(/"/g,"'")+'"':'':'',
+        suburb:site.address?site.address.suburb?'"'+site.address.suburb.replace(/"/g,"'")+'"':'':'',
+        city:site.address?site.address.city?'"'+site.address.city.replace(/"/g,"'")+'"':'':'',
+        region:site.address?site.address.region?'"'+site.address.region.replace(/"/g,"'")+'"':'':'',
+        postCode:site.address?site.address.postcode?'"'+site.address.postcode.replace(/"/g,"'")+'"':'':'',
+        country:site.address?site.address.country?'"'+site.address.country.replace(/"/g,"'")+'"':'':'',
+        lat:site.lat?'"'+site.lat.replace(/"/g,"'")+'"':'',
+        long:site.long?'"'+site.long.replace(/"/g,"'")+'"':'',
+        contacts:site.contactsName?'"'+site.contactsName.replace(/"/g,"'")+'"':'',
+        billingContact:site.primaryBillingContact?getContactName(site.primaryBillingContact):'',
+        technicalContact:site.primaryTechnicalContact?getContactName(site.primaryTechnicalContact):'',
+      };
+    }
+
 
     finalDataRow = Object.values(finalDataObj);
     let index = 0;
