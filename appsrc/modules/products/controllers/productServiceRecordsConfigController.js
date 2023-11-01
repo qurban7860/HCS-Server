@@ -202,9 +202,17 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
 
   console.log("req.body.parentConfig", req.body.parentConfig);
   if(req.body.parentConfig) {
-    let totalCounts = await ProductServiceRecordsConfig.find({"parentConfig": req.body.parentConfig}).count() ;
+    let whereClause  = {
+      $or: [{
+        _id: req.body.parentConfig
+      }, {
+        parentConfig: req.body.parentConfig
+      }]
+    };
+
+    let totalCounts = await ProductServiceRecordsConfig.find(whereClause).count() ;
     console.log("totalCounts", totalCounts);
-    req.body.docVersionNo = totalCounts + 2;
+    req.body.docVersionNo = totalCounts + 1;
     console.log("req.body.docVersionNo", req.body.docVersionNo);
   }
 
