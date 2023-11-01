@@ -107,9 +107,13 @@ exports.getMachineByModels = async (req, res, next) => {
       }
     }
     else if(matchQuery.machineModel && matchQuery.machineModel['$in']) {
-      console.log("@1");
+      console.log("@1", matchQuery.machineModel['$in']);
+      let abc = {category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } };
+      console.log("abc", abc);
       let machineModels = await ProductModel.find({category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } } );
+      console.log(machineModels);
       modelsIds = machineModels.map(m => m._id);
+      console.log("modelsIds", modelsIds);
       matchQuery.machineModel = { $in : modelsIds };
     } 
   }
