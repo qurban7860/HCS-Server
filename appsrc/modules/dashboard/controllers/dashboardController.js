@@ -86,7 +86,7 @@ exports.getMachineByCountries = async (req, res, next) => {
 
 exports.getMachineByModels = async (req, res, next) => {
 
-  console.log(req.query)
+  // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
     { $match: { "machineCategory.connections": {$ne:true}} },
@@ -94,8 +94,6 @@ exports.getMachineByModels = async (req, res, next) => {
 
 
   let modelsIds = machineModels.map(m => m._id);
-
-  console.log("modelsIds", modelsIds);
 
   let matchQuery = { isArchived: false, isActive: true, machineModel:{$in:modelsIds} };
 
@@ -107,18 +105,12 @@ exports.getMachineByModels = async (req, res, next) => {
       }
     }
     else if(matchQuery.machineModel && matchQuery.machineModel['$in']) {
-      console.log("@1", matchQuery.machineModel['$in']);
-      let abc = {category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } };
-      console.log("abc", abc);
       let machineModels = await ProductModel.find({category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } } );
-      console.log(machineModels);
       modelsIds = machineModels.map(m => m._id);
-      console.log("modelsIds", modelsIds);
       matchQuery.machineModel = { $in : modelsIds };
     } 
   }
 
-  console.log("2", matchQuery);
   if(Array.isArray(req.query.country) && req.query.country.length>0) {
     let countries = await Country.find( { country_code : { $in : req.query.country } } );
     let countriesNames = countries.map(c => c.country_name);
@@ -139,8 +131,6 @@ exports.getMachineByModels = async (req, res, next) => {
     
   }
 
-  console.log("3", matchQuery);
-
   if(!isNaN(req.query.year)) {
     const fromDate = new Date();
     fromDate.setFullYear(req.query.year, 0, 1);
@@ -149,7 +139,7 @@ exports.getMachineByModels = async (req, res, next) => {
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
 
-  console.log("4", matchQuery);
+  // console.log(matchQuery);
 
   let modelWiseMachineCount = await Product.aggregate([
     { $match: matchQuery }, 
