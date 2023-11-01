@@ -73,7 +73,7 @@ exports.getMachineByCountries = async (req, res, next) => {
       { $unwind: "$instalationSite" },
       { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
       { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
-      { '$addFields': { count: { $toString: '$count' } } },
+      // { '$addFields': { count: { $toString: '$count' } } },
       { $sort: { count: -1 } },
       { $limit: 20 }
     ]);
@@ -148,7 +148,7 @@ exports.getMachineByModels = async (req, res, next) => {
     { $unwind: "$machineModel" },
     { $match: { "machineModel": { $nin: ["", null] } } },
     { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
-    { '$addFields': { count: { $toString: '$count' } } },
+    // { '$addFields': { count: { $toString: '$count' } } },
     { $sort: { count: -1 } },
     { $limit: 20 }
   ]);
