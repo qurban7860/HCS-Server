@@ -107,12 +107,14 @@ exports.getMachineByModels = async (req, res, next) => {
       }
     }
     else if(matchQuery.machineModel && matchQuery.machineModel['$in']) {
+      console.log("@1");
       let machineModels = await ProductModel.find({category:req.query.category , _id : { $in : matchQuery.machineModel['$in'] } } );
       modelsIds = machineModels.map(m => m._id);
       matchQuery.machineModel = { $in : modelsIds };
     } 
   }
 
+  console.log("2", matchQuery);
   if(Array.isArray(req.query.country) && req.query.country.length>0) {
     let countries = await Country.find( { country_code : { $in : req.query.country } } );
     let countriesNames = countries.map(c => c.country_name);
@@ -133,6 +135,8 @@ exports.getMachineByModels = async (req, res, next) => {
     
   }
 
+  console.log("3", matchQuery);
+
   if(!isNaN(req.query.year)) {
     const fromDate = new Date();
     fromDate.setFullYear(req.query.year, 0, 1);
@@ -141,7 +145,7 @@ exports.getMachineByModels = async (req, res, next) => {
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
 
-  console.log(matchQuery);
+  console.log("4", matchQuery);
 
   let modelWiseMachineCount = await Product.aggregate([
     { $match: matchQuery }, 
