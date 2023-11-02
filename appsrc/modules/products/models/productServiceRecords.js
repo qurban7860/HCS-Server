@@ -12,9 +12,15 @@ const docSchema = new Schema({
 
   serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
   // record configuration used to create this record.
+
+  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' },
+  // purpose is to maintain parent service record config uuid
   
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
+
+  versionNo: { type: Number,  required: true,  default: '1'},
+  // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
   // customer information.
@@ -46,6 +52,10 @@ const docSchema = new Schema({
   
   recommendationNote: { type: String },
   //recommendations if required
+  
+  internalComments: { type: String },
+  //Internal comments in machine service record . this comments will not be printed at PDF and not visible to customer
+
   
   suggestedSpares: { type: String },
   //detail of suggested spares
