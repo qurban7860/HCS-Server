@@ -269,7 +269,10 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
 
       console.log("length -> ", productServiceRecordsConfig.verifications.length , productServiceRecordsConfig.noOfVerificationsRequired);
-      if(productServiceRecordsConfig && req.body.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
+
+      console.log(productServiceRecordsConfig , productServiceRecordsConfig.status === 'SUBMITTED' , productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired);
+
+      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
         req.body.status === 'APPROVED';
       }
 
