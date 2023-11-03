@@ -6,8 +6,18 @@ app.start();
 
 global.wss = app.wss;
 
-const {  emitSocketEvent, broadCastSocketEvent, getSocketConnectionByUserId } = require('./websockets/index');
+global.getSocketConnectionByUserId = function getSocketConnectionByUserId(userId) {
+    let wsConnection = [];
 
-global.getSocketConnectionByUserId = getSocketConnectionByUserId;
+    wss.clients.forEach((client)=> {
+        if(client.userId==userId ) {
+            wsConnection.push(client);
+        }
+    });
+    
+    return wsConnection;
+}
+const {  emitSocketEvent, broadCastSocketEvent } = require('./websockets/index');
+
 global.emitSocketEvent = emitSocketEvent;
 global.broadCastSocketEvent = broadCastSocketEvent;
