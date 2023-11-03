@@ -103,23 +103,10 @@ function broadcastEvent(wss, ws, sendEventData = {},socialStats) {
   });
 }
 
-function getSocketConnectionByUserId(userId) {
-    let wsConnection = [];
 
-    const WebSocket = wss;
-
-    WebSocket.clients.forEach((client)=> {
-        if(client.userId==userId ) {
-            wsConnection.push(client);
-        }
-    });
-    
-    return wsConnection;
-}
 
 exports = {
     WebSocket,
     emitEvent,
-    broadcastEvent,
-    getSocketConnectionByUserId
+    broadcastEvent
 }
