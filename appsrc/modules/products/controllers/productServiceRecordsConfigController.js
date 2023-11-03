@@ -249,7 +249,6 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
     let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
     if(req.body.isVerified){ 
-
       if(!productServiceRecordsConfig) {
         return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
       }
@@ -267,6 +266,12 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         verifiedDate: new Date(),
         verifiedFrom: req.body.loginUser.userIP
       })
+
+
+      if(productServiceRecordsConfig && req.body.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
+        req.body.status === 'APPROVED';
+      }
+      
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
       return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
     }
@@ -284,6 +289,9 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired > productServiceRecordsConfig.verifications.length) {
       return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
+
+
+
     
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {

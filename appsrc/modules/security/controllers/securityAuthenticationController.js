@@ -259,6 +259,20 @@ async function validateAndLoginUser(req, res, existingUser) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
       }
+
+      let QuerysecurityLog = {
+        user: existingUser.id,
+        logoutTime: {$exists: false}
+      };
+
+      SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date()} }, (err, result) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log(result);
+        }
+      });
+
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
       const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
