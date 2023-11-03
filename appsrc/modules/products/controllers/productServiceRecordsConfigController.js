@@ -267,13 +267,8 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         verifiedFrom: req.body.loginUser.userIP
       })
 
-
-      console.log("length -> ", productServiceRecordsConfig.verifications.length , productServiceRecordsConfig.noOfVerificationsRequired);
-
-      console.log(productServiceRecordsConfig , productServiceRecordsConfig.status === 'SUBMITTED' , productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired);
-
       if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
-        productServiceRecordsConfig.status === 'APPROVED';
+        productServiceRecordsConfig.status = 'APPROVED';
       }
 
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
