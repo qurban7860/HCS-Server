@@ -19,7 +19,7 @@ if (process.env.MONGODB_HOST_TYPE && process.env.MONGODB_HOST_TYPE == "mongoclou
 
 const store = new MongoDBStore({
     uri: dburl,
-    collection: 'Sessions'
+    collection: 'SecuritySessions'
 });
 
 // MIDDLEWARE

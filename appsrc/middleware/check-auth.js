@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 
 const HttpError = require('../modules/config/models/http-error');
-const { Session } = require('../modules/security/models');
+const { SecuritySession } = require('../modules/security/models');
 
 module.exports = async (req, res, next) => {
 
@@ -31,7 +31,7 @@ module.exports = async (req, res, next) => {
     
     if(decodedToken && decodedToken.userId) {
 
-      let session = await Session.findOne({"session.user":decodedToken.userId});
+      let session = await SecuritySession.findOne({"session.user":decodedToken.userId});
 
       if(decodedToken.sessionId && session.session.sessionId!=decodedToken.sessionId) {
         // console.log(decodedToken.sessionId,session.session.sessionId,'here1');
@@ -45,8 +45,8 @@ module.exports = async (req, res, next) => {
         // console.log(timeDifference,'here2',session.expires,expireAt.getTime(),new Date().getTime());
 
         if(timeDifference<1) {
-          await Session.deleteMany({"session.user":decodedToken.userId});
-          await Session.deleteMany({"session.user":{$exists:false}});
+          await SecuritySession.deleteMany({"session.user":decodedToken.userId});
+          await SecuritySession.deleteMany({"session.user":{$exists:false}});
           // console.log('here3');
 
           throw new Error('AuthError');

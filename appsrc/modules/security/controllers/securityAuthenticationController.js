@@ -18,7 +18,7 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, Session } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, SecuritySession } = require('../models');
 const ipRangeCheck = require("ip-range-check");
 
 
@@ -307,7 +307,7 @@ async function removeAndCreateNewSession(req, userId) {
     req.session.sessionId = req.sessionID;
 
     await req.session.save();
-    return await Session.findOne({"session.user":userId});
+    return await SecuritySession.findOne({"session.user":userId});
 
   } catch (err) {
     console.error('Error saving to session storage: ', err);
@@ -417,8 +417,8 @@ function isValidRole(roles) {
 }
 
 async function removeSessions(userId) {
-  await Session.deleteMany({"session.user":userId});
-  await Session.deleteMany({"session.user":{$exists:false}});
+  await SecuritySession.deleteMany({"session.user":userId});
+  await SecuritySession.deleteMany({"session.user":{$exists:false}});
   const wss = getSocketConnectionByUserId(userId);
   wss.map((ws)=> ws.terminate());
 }
