@@ -1,6 +1,7 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 var ObjectId = require('mongoose').Types.ObjectId;
@@ -17,7 +18,7 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, Session } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, SecuritySession } = require('../models');
 const ipRangeCheck = require("ip-range-check");
 
 
@@ -268,7 +269,7 @@ async function validateAndLoginUser(req, res, existingUser) {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           let session = await removeAndCreateNewSession(req,existingUser.id);
-         
+
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -294,7 +295,7 @@ async function validateAndLoginUser(req, res, existingUser) {
 async function removeAndCreateNewSession(req, userId) {
 
   try {
-    await removeSessionFromDB(userId);
+    await removeSessions(userId);
 
     req.session.cookie.expires = false;
     let maxAge = process.env.TOKEN_EXP_TIME || "48h";
@@ -306,7 +307,7 @@ async function removeAndCreateNewSession(req, userId) {
     req.session.sessionId = req.sessionID;
 
     await req.session.save();
-    return await Session.findOne({"session.user":userId});
+    return await SecuritySession.findOne({"session.user":userId});
 
   } catch (err) {
     console.error('Error saving to session storage: ', err);
@@ -415,9 +416,11 @@ function isValidRole(roles) {
   return true;
 }
 
-async function removeSessionFromDB(userId) {
-  await Session.deleteMany({"session.user":userId});
-  await Session.deleteMany({"session.user":{$exists:false}});
+async function removeSessions(userId) {
+  await SecuritySession.deleteMany({"session.user":userId});
+  await SecuritySession.deleteMany({"session.user":{$exists:false}});
+  const wss = getSocketConnectionByUserId(userId);
+  wss.map((ws)=> ws.terminate());
 }
 
 exports.logout = async (req, res, next) => {
@@ -434,7 +437,10 @@ exports.logout = async (req, res, next) => {
     }
   }
 
-  await removeSessionFromDB(req.params.userID);
+  await removeSessions(req.params.userID);
+
+
+  
   if(req.session) {
     req.session.isLoggedIn = false;
 
@@ -448,30 +454,6 @@ exports.logout = async (req, res, next) => {
 
   }
 
-
-  // const currentTime = Date.now;
-  // var signOutLog = {
-  //   user: userID,
-  //   logOutTime: currentTime,
-  // };
-
-  // const diffInMilliseconds = Math.abs(currentTime - user.loginTime);
-  // const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
-
-  // if (diffInHours >= 2) {
-  //   console.log("Time diff is greater than or equal to 2 hours");
-  // var reqSignOutLog = {};
-  // reqSignOutLog.body = signOutLog;
-  // const res = await securitySignInLogController.getDocumentFromReq(reqSignOutLog);
-
-
-  // } 
-  // else {
-  //   console.log("time diff < 2 hours");
-  //   var reqSignOutLog = {};
-  //   reqSignOutLog.body = signOutLog;
-  // }
-  // return res;
 };
 
 exports.forgetPassword = async (req, res, next) => {

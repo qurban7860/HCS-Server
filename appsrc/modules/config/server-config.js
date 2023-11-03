@@ -3,6 +3,8 @@ const apiPath = process.env.API_ROOT;
 const fs         = require('fs');
 const path       = require('path');
 const express = require('express');
+const { WebSocketServer, WebSocket } = require('ws');
+const http = require('http');
 
 const bodyParser = require('body-parser');
 const cors = require('cors')
@@ -17,7 +19,7 @@ if (process.env.MONGODB_HOST_TYPE && process.env.MONGODB_HOST_TYPE == "mongoclou
 
 const store = new MongoDBStore({
     uri: dburl,
-    collection: 'Sessions'
+    collection: 'SecuritySessions'
 });
 
 // MIDDLEWARE
@@ -57,6 +59,7 @@ class App {
    */
   constructor() {
     this.app = express();
+
     this.MORGAN_FORMAT = process.env.MORGAN_FORMAT != undefined && process.env.MORGAN_FORMAT != null && process.env.MORGAN_FORMAT.length > 0 ? process.env.MORGAN_FORMAT : 'common' ;
     this.app.use(morgan(this.MORGAN_FORMAT));  
     this.app.use(bodyParser.json());
@@ -101,14 +104,18 @@ class App {
 
 
   start(){
-        try {
-          this.app.listen({port: process.env.PORT || 3001}, () => {
-            console.log(`Listening at  http://${process.env.HOST_NAME}:${process.env.PORT}/`)
-          })
+    try {
+      this.app.listen({port: process.env.PORT || 3001}, () => {
+        console.log(`Listening at  http://${process.env.HOST_NAME}:${process.env.PORT}/`)
+      });
 
-        } catch (error) {
-          console.log(error);
-        }    
+      this.wss = new WebSocketServer({
+        port:5001
+      });
+
+    } catch (error) {
+      console.log(error);
+    }    
   }
 }
 
