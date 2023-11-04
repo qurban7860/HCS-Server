@@ -147,7 +147,7 @@ exports.patchSignInLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { user, loginTime, logoutTime, loginIP, statusCode, considerLog } = req.body;
+  const { user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
 
   let doc = {};
   
@@ -163,6 +163,11 @@ function getDocumentFromReq(req, reqType){
   if ("logoutTime" in req.body){
     doc.logoutTime = logoutTime;
   }
+
+  if ("loggedOutBy" in req.body){
+    doc.loggedOutBy = loggedOutBy;
+  }
+
   if ("loginIP" in req.body){
     doc.loginIP = loginIP;
   }

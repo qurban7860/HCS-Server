@@ -200,20 +200,20 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  console.log("req.body.parentConfig", req.body.parentConfig);
   if(req.body.parentConfig) {
     let whereClause  = {
       $or: [{
         _id: req.body.parentConfig
       }, {
         parentConfig: req.body.parentConfig
-      }]
+      }], status: "APPROVED", 
     };
 
-    let totalCounts = await ProductServiceRecordsConfig.find(whereClause).count() ;
-    console.log("totalCounts", totalCounts);
-    req.body.docVersionNo = totalCounts + 1;
-    console.log("req.body.docVersionNo", req.body.docVersionNo);
+    let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
+    if(proSerObj)
+      req.body.docVersionNo = proSerObj.docVersionNo + 1;
+    else 
+      delete req.body.parentConfig
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -284,7 +284,6 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
     }
     
-   
     if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired > productServiceRecordsConfig.verifications.length) {
       return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
