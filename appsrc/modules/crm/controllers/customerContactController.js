@@ -4,6 +4,8 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { Customer, CustomerSite, CustomerContact } = require('../models');
+const { Config } = require('../../config/models');
+
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
 const _ = require('lodash');
@@ -310,7 +312,10 @@ exports.patchCustomerContact = async (req, res, next) => {
 
 
 exports.exportContacts = async (req, res, next) => {
-  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false;
+
+  const regex = new RegExp("^EXPORT_UUID$", "i");
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "NORMAL-CONFIG", isArchived: false, isActive: true}).select('value');
+  EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   let finalData = ['Name,Title,Type,Customer,Phone,Email,Sites'];
 
