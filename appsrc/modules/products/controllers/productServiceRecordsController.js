@@ -166,11 +166,15 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
 
 
+        console.log("Before Value", req.body.checkItemRecordValues);
         if(req.body.serviceRecordConfig && 
           Array.isArray(req.body.checkItemRecordValues) &&
           req.body.checkItemRecordValues.length>0) {
+            console.log("Before Value @1");
           if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+            console.log("Before Value @2");
             for(let recordValue of req.body.checkItemRecordValues) {
+                console.log("recordValue", recordValue);
                 recordValue.loginUser = req.body.loginUser;
                 recordValue.serviceRecord = response._id;
                 let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
