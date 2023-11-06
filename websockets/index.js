@@ -1,6 +1,6 @@
 const url = require('url');
 const mongoose = require('mongoose');
-
+const jwt = require('jsonwebtoken');
 const WebSocket = wss;
 
 const { SecurityUser, SecuritySession, SecurityNotification } = require('../appsrc/modules/security/models');
@@ -9,9 +9,10 @@ WebSocket.on('connection', async function(ws, req) {
     let queryString = url.parse(req.url,true).query;
     let isValid = true;
 
-    let userId = queryString['userId'];
-    let sessionId = queryString['sessionId'];
-
+    const token = queryString['accessToken'];
+    const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
+    const userId = decodedToken['userId'];
+    const sessionId = decodedToken['sessionId'];
     if(userId && mongoose.Types.ObjectId.isValid(userId) && sessionId) {
         const user = await SecurityUser.findById(userId);
         if(!user) {
