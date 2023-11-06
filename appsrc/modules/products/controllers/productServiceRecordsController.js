@@ -163,34 +163,31 @@ exports.postProductServiceRecord = async (req, res, next) => {
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response = JSON.parse(JSON.stringify(response));
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-
-
-
-        console.log("Before Value", req.body.checkItemRecordValues);
-        if(req.body.serviceRecordConfig && 
-          Array.isArray(req.body.checkItemRecordValues) &&
-          req.body.checkItemRecordValues.length>0) {
-            console.log("Before Value @1");
-          if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-            console.log("Before Value @2");
-            for(let recordValue of req.body.checkItemRecordValues) {
-                console.log("recordValue", recordValue);
-                recordValue.loginUser = req.body.loginUser;
-                recordValue.serviceRecord = response._id;
-                let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                  let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
-                  if (error) {
-                    console.error(error);
-                  } else {
-      
-                  }
-                });
-              }
-            }
-          }
-
-
       }
+
+      console.log("Before Value", req.body.checkItemRecordValues);
+      if(req.body.serviceRecordConfig && 
+        Array.isArray(req.body.checkItemRecordValues) &&
+        req.body.checkItemRecordValues.length>0) {
+          console.log("Before Value @1");
+        if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+        console.log("Before Value @2");
+        for(let recordValue of req.body.checkItemRecordValues) {
+            console.log("recordValue", recordValue);
+            recordValue.loginUser = req.body.loginUser;
+            recordValue.serviceRecord = response._id;
+            let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+              let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
+              if (error) {
+                console.error(error);
+              } else {
+
+              }
+            });
+          }
+        }
+      }
+
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
