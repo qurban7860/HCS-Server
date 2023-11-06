@@ -77,9 +77,32 @@ exports.getProductServiceRecord = async (req, res, next) => {
           if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
             let indexP = 0;
             for(let paramListId of checkParam.checkItems) { 
-              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId);
+              let productCheckItemObject = await ProductCheckItem.findById(paramListId);
+              
+              productCheckItemObject = JSON.parse(JSON.stringify(productCheckItemObject));
 
-              // db.getCollection('MachineServiceRecordValues').find({machineCheckItem: ObjectId("652d15e9c0a4423d84061dad"), serviceRecord: ObjectId("65489e7e42114d1b0cf79ddf"), serviceId: ObjectId("65489e7e42114d1b0cf79ddf"), checkItemListId: ObjectId("6538eeac94ad1c2ea03b298d"), isActive: true, isArchived: false})
+              
+              console.log("paramListId", paramListId);
+
+              let queryString = {
+                machineCheckItem: productCheckItemObject._id,
+                checkItemListId: paramListId._id,
+                serviceRecord: response._id,
+                serviceId: response._id,
+                isActive: true, isArchived: false
+              };
+
+              productCheckItemObject.checkItemValue = "20";
+              productCheckItemObject.comments = "Comments";
+
+              console.log("queryString", queryString);
+              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString);
+              if(productServiceRecordValueObject) {
+                productCheckItemObject.checkItemValue = productServiceRecordValueObject.checkItemValue;
+                productCheckItemObject.comments = productServiceRecordValueObject.comments;
+              }
+
+              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
 
               indexP++;
             }
