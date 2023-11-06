@@ -100,6 +100,7 @@ exports.patchConfig = async (req, res, next) => {
       const result = await this.dbservice.patchObject(Config, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
+      console.log("error", error);
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
     }

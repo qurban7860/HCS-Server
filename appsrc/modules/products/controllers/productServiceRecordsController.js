@@ -27,7 +27,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
-  {path: 'serviceRecordConfig', select: ''},
+  {path: 'serviceRecordConfig', select: 'docTitle recordType'},
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
@@ -40,8 +40,18 @@ this.populate = [
 
 
 exports.getProductServiceRecord = async (req, res, next) => {
-  
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populate, callbackFunc);
+  let populateObject = [
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+    {path: 'customer', select: 'name'},
+    {path: 'site', select: 'name'},
+    {path: 'machine', select: 'name serialNo'},
+    {path: 'technician', select: 'name firstName lastName'},
+    // {path: 'operator', select: 'firstName lastName'},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'}
+  ];
+
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, populateObject, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -59,22 +69,47 @@ exports.getProductServiceRecord = async (req, res, next) => {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
       
-      // if(response.serviceRecordConfig && 
-      //   Array.isArray(response.serviceRecordConfig.checkItemLists) &&
-      //   response.serviceRecordConfig.checkItemLists.length>0) {
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
+        response.serviceRecordConfig.checkItemLists.length>0) {
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
+          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
+            let indexP = 0;
+            for(let paramListId of checkParam.checkItems) { 
+              let productCheckItemObject = await ProductCheckItem.findById(paramListId);
+              
+              productCheckItemObject = JSON.parse(JSON.stringify(productCheckItemObject));
 
-      //   let index = 0;
-      //   for(let checkParam of response.serviceRecordConfig.checkItemLists) {
-      //     if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-      //       let indexP = 0;
-      //       for(let paramListId of checkParam.checkItems) { 
-      //         response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-      //         indexP++;
-      //       }
-      //     }
-      //     index++;
-      //   }
-      // }
+              
+              console.log("paramListId", paramListId);
+
+              let queryString = {
+                machineCheckItem: productCheckItemObject._id,
+                checkItemListId: paramListId._id,
+                serviceRecord: response._id,
+                serviceId: response._id,
+                isActive: true, isArchived: false
+              };
+
+              productCheckItemObject.checkItemValue = "20";
+              productCheckItemObject.comments = "Comments";
+
+              console.log("queryString", queryString);
+              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString);
+              if(productServiceRecordValueObject) {
+                productCheckItemObject.checkItemValue = productServiceRecordValueObject.checkItemValue;
+                productCheckItemObject.comments = productServiceRecordValueObject.comments;
+              }
+
+              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
+
+              indexP++;
+            }
+          }
+          index++;
+        }
+      }
 
       res.json(response);
     }
@@ -84,6 +119,8 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
+
+  console.log("query", this.query);
   // this.orderBy = { name: 1 };
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
@@ -92,30 +129,31 @@ exports.getProductServiceRecords = async (req, res, next) => {
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
+      console.log("error", error);
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-      if(response && Array.isArray(response) && response.length>0) {
-        response = JSON.parse(JSON.stringify(response));
+      // if(response && Array.isArray(response) && response.length>0) {
+      //   response = JSON.parse(JSON.stringify(response));
 
-        let index = 0;
-        for(let serviceRecord of response) {
+      //   let index = 0;
+      //   for(let serviceRecord of response) {
 
 
-          if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
-            serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
-          }
+      //     if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
+      //       serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
+      //     }
   
-          if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
-            serviceRecord.decoilers.length>0) {
-            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+      //     if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
+      //       serviceRecord.decoilers.length>0) {
+      //       serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
 
-          }
-          response[index] = serviceRecord;
-          index++;
-        }
-      }
+      //     }
+      //     response[index] = serviceRecord;
+      //     index++;
+      //   }
+      // }
       res.json(response);
     }
   }
@@ -137,7 +175,7 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
 
-  req.body.machine = req.params.machineId;
+  // req.body.machine = req.params.machineId;
 
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -145,12 +183,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-
-
-
- 
-  req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
-
+  // req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -165,30 +198,31 @@ exports.postProductServiceRecord = async (req, res, next) => {
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response = JSON.parse(JSON.stringify(response));
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-
-
-
-        if(req.body.serviceRecordConfig && 
-          Array.isArray(req.body.checkItemRecordValues) &&
-          req.body.checkItemRecordValues.length>0) {
-          if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-            for(let recordValue of req.body.checkItemRecordValues) {
-                recordValue.loginUser = req.body.loginUser;
-                recordValue.serviceRecord = response._id;
-                let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                  let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
-                  if (error) {
-                    console.error(error);
-                  } else {
-      
-                  }
-                });
-              }
-            }
-          }
-
-
       }
+
+      console.log("Before Value", req.body.checkItemRecordValues);
+      if(req.body.serviceRecordConfig && 
+        Array.isArray(req.body.checkItemRecordValues) &&
+        req.body.checkItemRecordValues.length>0) {
+          console.log("Before Value @1");
+        if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+        console.log("Before Value @2");
+        for(let recordValue of req.body.checkItemRecordValues) {
+            console.log("recordValue", recordValue);
+            recordValue.loginUser = req.body.loginUser;
+            recordValue.serviceRecord = response._id;
+            let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+              let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
+              if (error) {
+                console.error(error);
+              } else {
+
+              }
+            });
+          }
+        }
+      }
+
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
