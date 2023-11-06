@@ -3,6 +3,7 @@ APP_NAME=Howick Cloud Services Backend
 ENV=dev
 HOST_NAME=localhost
 PORT=3001
+SOCKET_PORT=5001
 SSL_Enabled_domain=
 
 

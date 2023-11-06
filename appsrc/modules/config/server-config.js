@@ -110,7 +110,7 @@ class App {
       });
 
       this.wss = new WebSocketServer({
-        port:5001
+        port:process.env.SOCKET_PORT || 5001
       });
 
     } catch (error) {
