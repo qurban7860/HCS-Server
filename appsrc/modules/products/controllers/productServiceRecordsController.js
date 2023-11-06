@@ -27,7 +27,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
-  {path: 'serviceRecordConfig', select: ''},
+  {path: 'serviceRecordConfig', select: 'docTitle recordType'},
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
@@ -91,19 +91,6 @@ exports.getProductServiceRecords = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
   this.query.machine = req.params.machineId;
-  
-
-  this.populate = [
-    {path: 'serviceRecordConfig', select: 'docTitle'},
-    {path: 'customer', select: 'name'},
-    {path: 'site', select: 'name'},
-    {path: 'machine', select: 'name serialNo'},
-    {path: 'technician', select: 'name firstName lastName'},
-    // {path: 'operator', select: 'firstName lastName'},
-    {path: 'createdBy', select: 'name'},
-    {path: 'updatedBy', select: 'name'}
-  ];
-
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
