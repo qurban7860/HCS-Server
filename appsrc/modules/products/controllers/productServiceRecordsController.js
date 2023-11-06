@@ -90,10 +90,7 @@ exports.getProductServiceRecords = async (req, res, next) => {
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
-  // this.query.machine = req.params.machineId;
-
-  console.log(this.fields);
-  console.log(this.query);
+  this.query.machine = req.params.machineId;
   
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
@@ -102,26 +99,26 @@ exports.getProductServiceRecords = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-      if(response && Array.isArray(response) && response.length>0) {
-        response = JSON.parse(JSON.stringify(response));
+      // if(response && Array.isArray(response) && response.length>0) {
+      //   response = JSON.parse(JSON.stringify(response));
 
-        let index = 0;
-        for(let serviceRecord of response) {
+      //   let index = 0;
+      //   for(let serviceRecord of response) {
 
 
-          if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
-            serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
-          }
+      //     if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
+      //       serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
+      //     }
   
-          if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
-            serviceRecord.decoilers.length>0) {
-            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+      //     if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
+      //       serviceRecord.decoilers.length>0) {
+      //       serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
 
-          }
-          response[index] = serviceRecord;
-          index++;
-        }
-      }
+      //     }
+      //     response[index] = serviceRecord;
+      //     index++;
+      //   }
+      // }
       res.json(response);
     }
   }
