@@ -40,8 +40,18 @@ this.populate = [
 
 
 exports.getProductServiceRecord = async (req, res, next) => {
-  
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populate, callbackFunc);
+  let populateObject = [
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+    {path: 'customer', select: 'name'},
+    {path: 'site', select: 'name'},
+    {path: 'machine', select: 'name serialNo'},
+    {path: 'technician', select: 'name firstName lastName'},
+    // {path: 'operator', select: 'firstName lastName'},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'}
+  ];
+
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, populateObject, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -59,22 +69,24 @@ exports.getProductServiceRecord = async (req, res, next) => {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
       
-      // if(response.serviceRecordConfig && 
-      //   Array.isArray(response.serviceRecordConfig.checkItemLists) &&
-      //   response.serviceRecordConfig.checkItemLists.length>0) {
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
+        response.serviceRecordConfig.checkItemLists.length>0) {
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
+          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
+            let indexP = 0;
+            for(let paramListId of checkParam.checkItems) { 
+              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId);
 
-      //   let index = 0;
-      //   for(let checkParam of response.serviceRecordConfig.checkItemLists) {
-      //     if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-      //       let indexP = 0;
-      //       for(let paramListId of checkParam.checkItems) { 
-      //         response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-      //         indexP++;
-      //       }
-      //     }
-      //     index++;
-      //   }
-      // }
+              // db.getCollection('MachineServiceRecordValues').find({machineCheckItem: ObjectId("652d15e9c0a4423d84061dad"), serviceRecord: ObjectId("65489e7e42114d1b0cf79ddf"), serviceId: ObjectId("65489e7e42114d1b0cf79ddf"), checkItemListId: ObjectId("6538eeac94ad1c2ea03b298d"), isActive: true, isArchived: false})
+
+              indexP++;
+            }
+          }
+          index++;
+        }
+      }
 
       res.json(response);
     }
