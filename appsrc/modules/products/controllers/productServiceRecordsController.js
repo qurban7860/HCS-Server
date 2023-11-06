@@ -92,9 +92,10 @@ exports.getProductServiceRecords = async (req, res, next) => {
 
   this.query.machine = req.params.machineId;
   
-  this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, [], callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
+      console.log("error", error);
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
