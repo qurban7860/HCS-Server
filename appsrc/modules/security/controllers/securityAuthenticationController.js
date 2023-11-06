@@ -275,10 +275,12 @@ async function validateAndLoginUser(req, res, existingUser) {
       let QuerysecurityLog = {
         user: existingUser.id,
         logoutTime: {$exists: false},
-        loggedOutBy: "SYSTEM",
+        statusCode: 200
       };
 
-      SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date()} }, (err, result) => {
+      console.log("QuerysecurityLog -->", QuerysecurityLog);
+
+      await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
         if (err) {
           console.error(err);
         } else {
