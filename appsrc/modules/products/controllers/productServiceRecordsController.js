@@ -92,7 +92,19 @@ exports.getProductServiceRecords = async (req, res, next) => {
 
   this.query.machine = req.params.machineId;
   
-  this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, [], callbackFunc);
+
+  this.populate = [
+    {path: 'serviceRecordConfig', select: 'docTitle'},
+    {path: 'customer', select: 'name'},
+    {path: 'site', select: 'name'},
+    {path: 'machine', select: 'name serialNo'},
+    {path: 'technician', select: 'name firstName lastName'},
+    // {path: 'operator', select: 'firstName lastName'},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'}
+  ];
+
+  this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       console.log("error", error);
@@ -141,7 +153,7 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
 
-  req.body.machine = req.params.machineId;
+  // req.body.machine = req.params.machineId;
 
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -149,12 +161,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-
-
-
- 
-  req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
-
+  // req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
