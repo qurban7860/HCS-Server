@@ -15,8 +15,9 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductServiceRecords, Product, ProductCheckItem } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -147,27 +148,9 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
 
 
-  console.log("req.body.serviceRecordConfig", req.body.serviceRecordConfig);
+ 
   req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
 
-  console.log(req.body.serviceRecordConfig);
-  
-  if(req.body.serviceRecordConfig && 
-    Array.isArray(req.body.serviceRecordConfig.checkItemLists) &&
-    req.body.serviceRecordConfig.checkItemLists.length>0) {
-
-    let index = 0;
-    for(let checkParam of req.body.serviceRecordConfig.checkItemLists) {
-      if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-        let indexP = 0;
-        for(let paramListId of checkParam.checkItems) { 
-          req.body.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-          console.log(req.body.serviceRecordConfig.checkItemLists[index].checkItems[indexP]);
-          indexP++;
-        }
-      }
-      index++;
-    }
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -183,12 +166,33 @@ exports.postProductServiceRecord = async (req, res, next) => {
         response = JSON.parse(JSON.stringify(response));
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
 
+
+
+        if(req.body.serviceRecordConfig && 
+          Array.isArray(req.body.checkItemRecordValues) &&
+          req.body.checkItemRecordValues.length>0) {
+          if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+            for(let recordValue of req.body.checkItemRecordValues) {
+                recordValue.loginUser = req.body.loginUser;
+                recordValue.serviceRecord = response._id;
+                let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+                  let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
+                  if (error) {
+                    console.error(error);
+                  } else {
+      
+                  }
+                });
+              }
+            }
+          }
+
+
       }
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
 }
-};
 
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
@@ -232,9 +236,9 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType){
   const { 
-    serviceRecordConfig, serviceDate, customer, site, machine, 
+    serviceRecordConfig, serviceId, serviceDate, versionNo, customer, site, machine, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, recommendationNote, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
+    serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
     technicianNotes, textBeforeCheckItems, textAfterCheckItems, loginUser, isActive, isArchived
   } = req.body;
     
@@ -242,11 +246,18 @@ function getDocumentFromReq(req, reqType){
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductServiceRecords({});
+    doc.versionNo = 1;
+  } else {
+
   }
 
 
   if ("serviceRecordConfig" in req.body){
     doc.serviceRecordConfig = serviceRecordConfig;
+  }
+
+  if ("serviceId" in req.body){
+    doc.serviceId = serviceId;
   }
 
   if ("customer" in req.body){
@@ -297,6 +308,9 @@ function getDocumentFromReq(req, reqType){
   if ("recommendationNote" in req.body){
     doc.recommendationNote = recommendationNote;
   }
+  if ("internalComments" in req.body){
+    doc.internalComments = internalComments;
+  }
   if ("suggestedSpares" in req.body){
     doc.suggestedSpares = suggestedSpares;
   }
@@ -335,6 +349,68 @@ function getDocumentFromReq(req, reqType){
     doc.createdIP = loginUser.userIP;
     doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  } 
+
+  //console.log("doc in http req: ", doc);
+  return doc;
+
+}
+
+
+function productServiceRecordValueDocumentFromReq(recordValue, reqType){
+  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, checkItemValue, comments, files , isActive, isArchived } = recordValue;
+  const { loginUser } = recordValue;
+
+
+  let doc = {};
+  if (reqType && reqType == "new"){
+    doc = new ProductServiceRecordValue({});
+    doc.serviceId = serviceRecord;
+  } else {
+    if ("serviceId" in recordValue) {
+      doc.serviceId = serviceId;
+    }
+  }
+
+  if ("serviceRecord" in recordValue) {
+    doc.serviceRecord = serviceRecord;
+  }
+
+  if ("machineCheckItem" in recordValue) {
+    doc.machineCheckItem = machineCheckItem;
+  }
+  
+  if ("checkItemListId" in recordValue) {
+    doc.checkItemListId = checkItemListId;
+  }
+  
+  if ("checkItemValue" in recordValue) {
+    doc.checkItemValue = checkItemValue;
+  }
+  
+  if ("comments" in recordValue) {
+    doc.comments = comments;
+  }
+  
+  if ("files" in recordValue) {
+    doc.files = files;
+  }
+  
+  if ("isActive" in recordValue){
+    doc.isActive = isActive;
+  }
+  if ("isArchived" in recordValue){
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in recordValue ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in recordValue) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 

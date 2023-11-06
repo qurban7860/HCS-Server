@@ -73,7 +73,9 @@ const docSchema = new Schema({
 
 
         lockUntil : {type: Date},
-        lockedBy: {type: String, enum: ['SYSTEM','ADMIN']}                          
+        lockedBy: {type: String, enum: ['SYSTEM','ADMIN']},
+        loginFailedCounts: {type: Number, default: 0}
+                                  
 },
 {
         collection: 'SecurityUsers'

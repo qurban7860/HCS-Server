@@ -257,7 +257,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { serviceRecord, machineCheckItem, checkItemListId, checkItemValue, comments, files , isActive, isArchived, 
+  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, checkItemValue, comments, files , isActive, isArchived, 
     loginUser } = req.body;
   
   let doc = {};
@@ -267,6 +267,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("serviceRecord" in req.body) {
     doc.serviceRecord = serviceRecord;
+  }
+
+  if ("serviceId" in req.body) {
+    doc.serviceId = serviceId;
   }
 
   if ("machineCheckItem" in req.body) {

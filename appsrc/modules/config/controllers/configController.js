@@ -108,7 +108,9 @@ exports.patchConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, value, isActive, isArchived, loginUser} = req.body;
+  const { name, value, notes, type, isActive, isArchived, loginUser} = req.body;
+
+
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -120,6 +122,13 @@ function getDocumentFromReq(req, reqType) {
   if ("value" in req.body) {
     doc.value = value;
   }
+  if ("notes" in req.body) {
+    doc.notes = notes;
+  }
+  if ("type" in req.body) {
+    doc.type = type;
+  }
+
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
