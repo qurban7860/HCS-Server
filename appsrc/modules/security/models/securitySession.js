@@ -21,9 +21,12 @@ const docSchema = new Schema({
                           
 },
 {
-        collection: 'Sessions'
+        collection: 'SecuritySessions'
 });
 
+docSchema.index({"session.isLoggedIn":1})
+docSchema.index({"session.userId":1})
+docSchema.index({"session.sessionId":1})
 
 
-module.exports = mongoose.model('Session', docSchema);
+module.exports = mongoose.model('SecuritySession', docSchema);

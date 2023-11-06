@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecurityUser, SecurityRole, SecuritySignInLog } = require('../models');
+const { SecurityUser, SecurityRole, SecuritySignInLog, SecuritySession } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
@@ -46,12 +46,19 @@ this.populateList = [
 
 exports.getSecurityUser = async (req, res, next) => {
   this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  function callbackFunc(error, user) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      const wss = getSocketConnectionByUserId(user._id);
+      user.isOnline = false;
+
+      if(Array.isArray(wss) && wss.length>0 && wss[0].userData._id) {
+        user = JSON.parse(JSON.stringify(user));
+        user.isOnline = true;
+      }
+      res.json(user);
     }
   }
 };
@@ -74,13 +81,24 @@ exports.getSecurityUsers = async (req, res, next) => {
 
 
   this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
-  function callbackFunc(error, response) {
+  function callbackFunc(error, users) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      users = JSON.parse(JSON.stringify(users));
+      let i = 0;
+      for(let user of users) {
+        const wss = getSocketConnectionByUserId(user._id);
+        users[i].isOnline = false;
 
-      res.json(response);
+        if(Array.isArray(wss) && wss.length>0 && wss[0].userData._id) {
+          users[i].isOnline = true;
+        }
+        
+        i++;
+      }
+      res.json(users);
     }
   }
 
