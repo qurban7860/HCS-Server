@@ -206,7 +206,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
         _id: req.body.originalConfiguration
       }, {
         originalConfiguration: req.body.originalConfiguration
-      }], 
+      }], status: "APPROVED" 
     };
 
     let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
@@ -269,6 +269,25 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
       if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
         productServiceRecordsConfig.status = 'APPROVED';
+
+        if(req.body.originalConfiguration) {
+          let whereClause  = {
+            $or: [{
+              _id: req.body.originalConfiguration
+            }, {
+              originalConfiguration: req.body.originalConfiguration
+            }], status: "APPROVED" 
+          };
+      
+          let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
+          if(proSerObj)
+            req.body.docVersionNo = proSerObj.docVersionNo + 1;
+          else 
+            delete req.body.originalConfiguration
+          }
+
+
+        
       }
 
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
@@ -326,7 +345,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { machineCategory, recordType, machineModel, status, parentConfig, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
+  const { machineCategory, recordType, machineModel, status, parentConfig, originalConfiguration, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
@@ -357,6 +376,10 @@ function getDocumentFromReq(req, reqType){
   
   if ("parentConfig" in req.body){
     doc.parentConfig = parentConfig;
+  }
+
+  if ("originalConfiguration" in req.body){
+    doc.originalConfiguration = originalConfiguration;
   }
 
   if ("docTitle" in req.body){
