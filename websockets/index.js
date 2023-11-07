@@ -5,42 +5,53 @@ const WebSocket = wss;
 
 const { SecurityUser, SecuritySession, SecurityNotification } = require('../appsrc/modules/security/models');
 WebSocket.on('connection', async function(ws, req) {
-    
-    let queryString = url.parse(req.url,true).query;
-    let isValid = true;
+    try{
+        let queryString = url.parse(req.url,true).query;
+        let isValid = true;
 
-    const token = queryString['accessToken'];
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-    const userId = decodedToken['userId'];
-    const sessionId = decodedToken['sessionId'];
-    if(userId && mongoose.Types.ObjectId.isValid(userId) && sessionId) {
-        const user = await SecurityUser.findById(userId);
-        if(!user) {
-           isValid = false;
+        const token = queryString['accessToken'];
+        
+        if(!token) {
+            console.log('Unauthenticated');
+            ws.terminate();
+        }
+        
+        const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
+        const userId = decodedToken['userId'];
+        const sessionId = decodedToken['sessionId'];
+        if(userId && mongoose.Types.ObjectId.isValid(userId) && sessionId) {
+            const user = await SecurityUser.findById(userId);
+            if(!user) {
+               isValid = false;
+            }
+            else {
+                ws.userData = user;
+                ws.userId = user.id;
+                ws.accessToken = user.accessToken;
+            }
+
+            const session = await SecuritySession.findOne({"session.user":userId,"session.sessionId":sessionId});
+
+            if(!session) {
+                isValid =false
+            }
+            else {
+                ws.userData.session = session;
+                ws.sessionId = sessionId;
+            }
         }
         else {
-            ws.userData = user;
-            ws.userId = user.id;
-            ws.accessToken = user.accessToken;
+            isValid = false;
         }
 
-        const session = await SecuritySession.findOne({"session.user":userId,"session.sessionId":sessionId});
 
-        if(!session) {
-            isValid =false
+        if(!isValid) {
+            console.log('Unauthenticated');
+            ws.terminate();
         }
-        else {
-            ws.userData.session = session;
-            ws.sessionId = sessionId;
-        }
-    }
-    else {
-        isValid = false;
-    }
-
-
-    if(!isValid) {
-        console.log('Unauthenticated');
+    }catch(e) {
+        console.log('WebSocket connection closed due to exception');
+        console.log(e);
         ws.terminate();
     }
 

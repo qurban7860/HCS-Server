@@ -59,6 +59,7 @@ class App {
    */
   constructor() {
     this.app = express();
+    this.server = http.createServer(this.app);
 
     this.MORGAN_FORMAT = process.env.MORGAN_FORMAT != undefined && process.env.MORGAN_FORMAT != null && process.env.MORGAN_FORMAT.length > 0 ? process.env.MORGAN_FORMAT : 'common' ;
     this.app.use(morgan(this.MORGAN_FORMAT));  
@@ -104,14 +105,18 @@ class App {
 
 
   start(){
+
     try {
-      this.app.listen({port: process.env.PORT || 3001}, () => {
+
+      this.wss = new WebSocketServer({
+        server: this.server,
+        autoAcceptConnections: false
+      });
+
+      this.server.listen({port: process.env.PORT || 3001}, () => {
         console.log(`Listening at  http://${process.env.HOST_NAME}:${process.env.PORT}/`)
       });
 
-      this.wss = new WebSocketServer({
-        port:5001
-      });
 
     } catch (error) {
       console.log(error);
