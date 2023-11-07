@@ -41,7 +41,7 @@ this.populate = [
 
 exports.getProductServiceRecord = async (req, res, next) => {
   let populateObject = [
-    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
     {path: 'customer', select: 'name'},
     {path: 'site', select: 'name'},
     {path: 'machine', select: 'name serialNo'},
