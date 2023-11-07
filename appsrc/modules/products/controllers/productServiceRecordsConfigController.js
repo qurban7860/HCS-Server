@@ -325,6 +325,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     }
   }
 };
+}
 
 async function getToken(req){
   try {
@@ -488,5 +489,4 @@ function getDocumentFromReq(req, reqType){
   //console.log("doc in http req: ", doc);
   return doc;
 
-}
 }
