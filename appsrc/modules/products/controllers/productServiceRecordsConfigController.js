@@ -344,7 +344,7 @@ function getDocumentFromReq(req, reqType){
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
     enableSuggestedSpares, header, footer, noOfVerificationsRequired, verifications, loginUser, isActive, isArchived
-} = req.body;
+  } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -383,8 +383,6 @@ function getDocumentFromReq(req, reqType){
   if ("docVersionNo" in req.body){
     doc.docVersionNo = docVersionNo;
   }
-
-  
 
   if ("textBeforeCheckItems" in req.body){
     doc.textBeforeCheckItems = textBeforeCheckItems;
@@ -490,4 +488,5 @@ function getDocumentFromReq(req, reqType){
   //console.log("doc in http req: ", doc);
   return doc;
 
+}
 }
