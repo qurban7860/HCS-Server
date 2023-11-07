@@ -270,12 +270,12 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
         productServiceRecordsConfig.status = 'APPROVED';
 
-        if(req.body.originalConfiguration) {
+        if(productServiceRecordsConfig.originalConfiguration) {
           let whereClause  = {
             $or: [{
-              _id: req.body.originalConfiguration
+              _id: productServiceRecordsConfig.originalConfiguration
             }, {
-              originalConfiguration: req.body.originalConfiguration
+              originalConfiguration: productServiceRecordsConfig.originalConfiguration
             }], status: "APPROVED" 
           };
       
