@@ -281,13 +281,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       
           let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
           if(proSerObj)
-            req.body.docVersionNo = proSerObj.docVersionNo + 1;
-          else 
-            delete req.body.originalConfiguration
-          }
-
-
-        
+            productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;
       }
 
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
