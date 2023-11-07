@@ -444,15 +444,14 @@ function productServiceRecordValueDocumentFromReq(recordValue, reqType){
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductServiceRecordValue({});
-    doc.serviceId = serviceRecord;
-  } else {
-    if ("serviceId" in recordValue) {
-      doc.serviceId = serviceId;
-    }
   }
 
   if ("serviceRecord" in recordValue) {
     doc.serviceRecord = serviceRecord;
+  }
+
+  if ("serviceId" in recordValue) {
+    doc.serviceId = serviceId;
   }
 
   if ("machineCheckItem" in recordValue) {

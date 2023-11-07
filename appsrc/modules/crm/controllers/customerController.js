@@ -373,7 +373,7 @@ exports.exportCustomers = async (req, res, next) => {
   const filePath = path.resolve(__dirname, "../../../../uploads/Customers.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
-  let EXPORT_UUID = await Config.findOne({name: regex, type: "NORMAL-CONFIG", isArchived: false, isActive: true}).select('value');
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
