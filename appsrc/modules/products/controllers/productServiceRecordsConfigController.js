@@ -282,6 +282,11 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
           if(proSerObj)
             productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;
+        
+        }
+
+
+        
       }
 
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
@@ -325,7 +330,6 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     }
   }
 };
-}
 
 async function getToken(req){
   try {
@@ -345,7 +349,7 @@ function getDocumentFromReq(req, reqType){
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
     enableSuggestedSpares, header, footer, noOfVerificationsRequired, verifications, loginUser, isActive, isArchived
-  } = req.body;
+} = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -384,6 +388,8 @@ function getDocumentFromReq(req, reqType){
   if ("docVersionNo" in req.body){
     doc.docVersionNo = docVersionNo;
   }
+
+  
 
   if ("textBeforeCheckItems" in req.body){
     doc.textBeforeCheckItems = textBeforeCheckItems;
