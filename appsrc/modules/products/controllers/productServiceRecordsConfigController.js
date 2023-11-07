@@ -200,20 +200,20 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  if(req.body.parentConfig) {
+  if(req.body.originalConfiguration) {
     let whereClause  = {
       $or: [{
-        _id: req.body.parentConfig
+        _id: req.body.originalConfiguration
       }, {
-        parentConfig: req.body.parentConfig
-      }], status: "APPROVED", 
+        originalConfiguration: req.body.originalConfiguration
+      }], 
     };
 
     let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
     if(proSerObj)
       req.body.docVersionNo = proSerObj.docVersionNo + 1;
     else 
-      delete req.body.parentConfig
+      delete req.body.originalConfiguration
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
