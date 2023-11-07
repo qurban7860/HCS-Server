@@ -185,7 +185,7 @@ exports.patchCustomerSite = async (req, res, next) => {
 
 exports.exportSites = async (req, res, next) => {
   const regex = new RegExp("^EXPORT_UUID$", "i");
-  let EXPORT_UUID = await Config.findOne({name: regex, type: "NORMAL-CONFIG", isArchived: false, isActive: true}).select('value');
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
   
   let finalData = ['Name,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Technical Contact'];
