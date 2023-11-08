@@ -88,16 +88,14 @@ exports.getProductServiceRecord = async (req, res, next) => {
               let queryString = {
                 machineCheckItem: paramListId,
                 checkItemListId: checkParam._id,
-                serviceRecord: response._id,
-                serviceId: response._id,
+                serviceId: response.serviceId,
                 isActive: true, isArchived: false
               };
 
               let historicalProSerValuesQuery = {
                 machineCheckItem: paramListId,
                 checkItemListId: checkParam._id,
-                serviceRecord: response._id,
-                serviceId: response._id,
+                serviceId: response.serviceId,
                 isActive: false, isArchived: false
               };
 
@@ -211,15 +209,11 @@ exports.postProductServiceRecord = async (req, res, next) => {
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
       }
 
-      console.log("Before Value", req.body.checkItemRecordValues);
       if(req.body.serviceRecordConfig && 
         Array.isArray(req.body.checkItemRecordValues) &&
         req.body.checkItemRecordValues.length>0) {
-          console.log("Before Value @1");
         if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-        console.log("Before Value @2");
         for(let recordValue of req.body.checkItemRecordValues) {
-            console.log("recordValue", recordValue);
             recordValue.loginUser = req.body.loginUser;
             recordValue.serviceRecord = response._id;
             recordValue.serviceId = response._id;
