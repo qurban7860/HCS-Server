@@ -284,7 +284,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           }
         }
 
-        res.status(StatusCodes.CREATED).json({ serviceRecord: response });
+        res.status(StatusCodes.CREATED).json({ serviceRecord: result });
       }
     }
   }
