@@ -200,6 +200,22 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
+  if(req.body.parentConfig) {
+    let whereClause  = {
+      $or: [{
+        _id: req.body.parentConfig
+      }, {
+        parentConfig: req.body.parentConfig
+      }], status: "APPROVED", 
+    };
+
+    let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
+    if(proSerObj)
+      req.body.docVersionNo = proSerObj.docVersionNo + 1;
+    else 
+      delete req.body.parentConfig
+  }
+
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -233,7 +249,6 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
     let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
     if(req.body.isVerified){ 
-
       if(!productServiceRecordsConfig) {
         return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
       }
@@ -251,6 +266,11 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         verifiedDate: new Date(),
         verifiedFrom: req.body.loginUser.userIP
       })
+
+      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
+        productServiceRecordsConfig.status = 'APPROVED';
+      }
+
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
       return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
     }
@@ -264,10 +284,12 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
     }
     
-
-    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired < productServiceRecordsConfig.verifications.length) {
+    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired > productServiceRecordsConfig.verifications.length) {
       return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
+
+
+
     
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {

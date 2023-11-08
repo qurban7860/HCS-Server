@@ -13,6 +13,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, Customer } = require('../models');
+const { Config } = require('../../config/models');
 const { Product } = require('../../products/models');
 
 const fs = require('fs');
@@ -183,7 +184,10 @@ exports.patchCustomerSite = async (req, res, next) => {
 };
 
 exports.exportSites = async (req, res, next) => {
-  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false;
+  const regex = new RegExp("^EXPORT_UUID$", "i");
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
+  
   let finalData = ['Name,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Technical Contact'];
 
   if(EXPORT_UUID) {

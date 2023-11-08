@@ -106,52 +106,27 @@ exports.login = async (req, res, next) => {
               }  
             }
 
-            let minutesToWaitUntil = 15;
-
-
-            let successfullyLogin = false;           
-              
-            var now = new Date();
-            var Minutes = 5;
-            var timeInMinutes = new Date(now - Minutes * 60 * 1000); // Calculate the date by deducting minutes ago
-            let QuerysecurityLog = {
-              user: existingUser._id,
-              _id: { $gt: ObjectId(Math.floor(timeInMinutes / 1000).toString(16) + '0000000000000000') },
-              considerLog: true
-            };
-            let listLogs = await SecuritySignInLog.find(QuerysecurityLog).limit(3).sort({_id: -1});
-              if(listLogs && listLogs.length && listLogs.length > 2) {
-                for (const logEntry of listLogs) {
-                  if (logEntry.statusCode === 200) {
-                    successfullyLogin = true;
-                    break;
-                  }
-                }
-              } else {
-                successfullyLogin = true;
-              }
 
 
               
-              if(!successfullyLogin && !existingUser.lockUntil) {
-                var now = new Date();
-                lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
-                let updateUser = {
-                  lockUntil : lockUntil,
-                  lockedBy : "System"
-                };
-
-                _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
-                async function callbackPatchFunc(error, response) {
-                  if (error) {
-                    logger.error(new Error(error));
-                  }
-                }
-              }
-
-              if (successfullyLogin) {
                 let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
                 if(passwordsResponse) {
+
+                  if(existingUser && existingUser.loginFailedCounts && existingUser.loginFailedCounts > 0) {
+                    console.log("updating loginFailedCounts . **********************************************");
+                    let updateUser = {
+                      lockUntil : "",
+                      lockedBy : "",
+                      loginFailedCounts: 0,
+                    };
+      
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                    async function callbackPatchFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                      }
+                    }
+                  }
   
                   if (existingUser.multiFactorAuthentication) {
   
@@ -218,6 +193,39 @@ exports.login = async (req, res, next) => {
   
                 }
                 else {
+                  const minutesToWaitUntil = 15;
+                  if(existingUser && existingUser.loginFailedCounts && 
+                    ((existingUser.loginFailedCounts == 2   && (!existingUser.lockUntil || new Date() >= existingUser.lockUntil )) || existingUser.loginFailedCounts == 4 )) {
+                    var now = new Date();
+                    lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
+                    
+                    if(existingUser.loginFailedCounts == 4) 
+                      lockUntil.setFullYear(lockUntil.getFullYear() + 100);
+
+                    let updateUser = {
+                      lockUntil : lockUntil,
+                      lockedBy : "System"
+                    };
+      
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                    async function callbackPatchFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                      }
+                    }
+                  } 
+
+                  if (!(_.isEmpty(existingUser) ))
+                  {
+                    const updateCount = { $inc: { loginFailedCounts: 1 } };
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateCount, callbackPatchFunc);
+                    async function callbackPatchFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                      }
+                    }
+                  }
+
                   const securityLogs = await addAccessLog('invalidCredentials', existingUser._id, clientIP);
                   dbService.postObject(securityLogs, callbackFunc);
                   async function callbackFunc(error, response) {
@@ -225,16 +233,19 @@ exports.login = async (req, res, next) => {
                       logger.error(new Error(error));
                       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                     } else {
+
                       return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
                     } 
                   }
                 }
-              } else {
-                return res.status(StatusCodes.UNAUTHORIZED).send(`You've submitted three consecutive failed requests, so kindly wait for ${minutesToWaitUntil} minutes to allow processing.`);
-              }
           }
           else {
-            return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
+            if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
+              const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
+            } else {
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Invalid User/User does not have the rights to access", true));
+            }
           }
           
         }
@@ -260,6 +271,23 @@ async function validateAndLoginUser(req, res, existingUser) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
       }
+
+      let QuerysecurityLog = {
+        user: existingUser.id,
+        logoutTime: {$exists: false},
+        statusCode: 200
+      };
+
+      console.log("QuerysecurityLog -->", QuerysecurityLog);
+
+      await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log(result);
+        }
+      });
+
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
       const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
@@ -428,7 +456,7 @@ exports.logout = async (req, res, next) => {
   let existingSignInLog = await SecuritySignInLog.findOne({ user: req.params.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
   if (existingSignInLog && !existingSignInLog.logoutTime) {
 
-    this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date() }, callbackFunc);
+    this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date(), loggedOutBy: "SELF" }, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));

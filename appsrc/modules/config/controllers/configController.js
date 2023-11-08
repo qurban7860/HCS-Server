@@ -93,13 +93,17 @@ exports.patchConfig = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      let existingConfig = await Config.findOne({name: { $regex: req.body.name.trim(), $options: 'i' }});
+      let existingConfig;
+      if(req.body.name)
+        existingConfig = await Config.findOne({name: { $regex: req.body.name.trim(), $options: 'i' }});
+      
       if(existingConfig && existingConfig._id != req.params.id){
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Name already exists. Please enter a unique name!', true));
       }
       const result = await this.dbservice.patchObject(Config, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
+      console.log("error", error);
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
     }
@@ -108,7 +112,9 @@ exports.patchConfig = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, value, isActive, isArchived, loginUser} = req.body;
+  const { name, value, notes, type, isActive, isArchived, loginUser} = req.body;
+
+
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -120,6 +126,13 @@ function getDocumentFromReq(req, reqType) {
   if ("value" in req.body) {
     doc.value = value;
   }
+  if ("notes" in req.body) {
+    doc.notes = notes;
+  }
+  if ("type" in req.body) {
+    doc.type = type;
+  }
+
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }

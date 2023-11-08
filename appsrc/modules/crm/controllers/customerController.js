@@ -14,7 +14,7 @@ this.dbservice = new customerDBService();
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
-const { Country } = require('../../config/models');
+const { Country, Config } = require('../../config/models');
 const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
@@ -372,7 +372,10 @@ exports.exportCustomers = async (req, res, next) => {
   let finalData = ['Name,Code,Trading Name,Type,Main Site,Sites,Contacts,Billing Contact,Technical Contact,Account Manager,Project Manager,Support Subscription, Support Manager'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Customers.csv");
 
-  const EXPORT_UUID = process.env.EXPORT_UUID && process.env.EXPORT_UUID.toLowerCase() === 'true' ? true : false;
+  const regex = new RegExp("^EXPORT_UUID$", "i");
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
+
   if(EXPORT_UUID) {
     finalData = ['ID,Name,Code,Trading Name,Type,Main Site, Main Site ID,Sites,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID,Account Manager, Account Manager ID,Project Manager,Project Manager ID,Support Subscription, Support Manager, Support Manager ID'];
   }

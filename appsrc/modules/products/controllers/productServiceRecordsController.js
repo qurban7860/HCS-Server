@@ -15,8 +15,9 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductServiceRecords, Product, ProductCheckItem } = require('../models');
+const { ProductServiceRecordsConfig, ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
+
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -26,7 +27,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
-  {path: 'serviceRecordConfig', select: ''},
+  {path: 'serviceRecordConfig', select: 'docTitle recordType'},
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
@@ -39,8 +40,18 @@ this.populate = [
 
 
 exports.getProductServiceRecord = async (req, res, next) => {
-  
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populate, callbackFunc);
+  let populateObject = [
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+    {path: 'customer', select: 'name'},
+    {path: 'site', select: 'name'},
+    {path: 'machine', select: 'name serialNo'},
+    {path: 'technician', select: 'name firstName lastName'},
+    // {path: 'operator', select: 'firstName lastName'},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'}
+  ];
+
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, populateObject, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -48,7 +59,6 @@ exports.getProductServiceRecord = async (req, res, next) => {
     } else {
 
       response = JSON.parse(JSON.stringify(response));
-      
 
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
@@ -58,22 +68,55 @@ exports.getProductServiceRecord = async (req, res, next) => {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
       
-      // if(response.serviceRecordConfig && 
-      //   Array.isArray(response.serviceRecordConfig.checkItemLists) &&
-      //   response.serviceRecordConfig.checkItemLists.length>0) {
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
+        response.serviceRecordConfig.checkItemLists.length>0) {
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
+          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
+            let indexP = 0;
+            let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}});
+            productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
 
-      //   let index = 0;
-      //   for(let checkParam of response.serviceRecordConfig.checkItemLists) {
-      //     if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-      //       let indexP = 0;
-      //       for(let paramListId of checkParam.checkItems) { 
-      //         response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-      //         indexP++;
-      //       }
-      //     }
-      //     index++;
-      //   }
-      // }
+            for(let paramListId of checkParam.checkItems) { 
+              // let productCheckItemObject = await ProductCheckItem.findById(paramListId);
+              let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
+              
+              if(!productCheckItemObject)
+                continue;
+              
+              let queryString = {
+                machineCheckItem: paramListId,
+                checkItemListId: checkParam._id,
+                serviceRecord: response._id,
+                serviceId: response._id,
+                isActive: true, isArchived: false
+              };
+
+              let historicalProSerValuesQuery = {
+                machineCheckItem: paramListId,
+                checkItemListId: checkParam._id,
+                serviceRecord: response._id,
+                serviceId: response._id,
+                isActive: false, isArchived: false
+              };
+
+
+              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString);
+              let historicalProductServiceRecordValues = await ProductServiceRecordValue.find(historicalProSerValuesQuery, {checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
+              if(productServiceRecordValueObject) {
+                productCheckItemObject.checkItemValue = productServiceRecordValueObject.checkItemValue;
+                productCheckItemObject.comments = productServiceRecordValueObject.comments;
+                productCheckItemObject.historicalData = historicalProductServiceRecordValues;
+              }
+
+              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
+              indexP++;
+            }
+          }
+          index++;
+        }
+      }
 
       res.json(response);
     }
@@ -83,6 +126,8 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
+
+  console.log("query", this.query);
   // this.orderBy = { name: 1 };
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
@@ -91,30 +136,31 @@ exports.getProductServiceRecords = async (req, res, next) => {
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
+      console.log("error", error);
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-      if(response && Array.isArray(response) && response.length>0) {
-        response = JSON.parse(JSON.stringify(response));
+      // if(response && Array.isArray(response) && response.length>0) {
+      //   response = JSON.parse(JSON.stringify(response));
 
-        let index = 0;
-        for(let serviceRecord of response) {
+      //   let index = 0;
+      //   for(let serviceRecord of response) {
 
 
-          if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
-            serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
-          }
+      //     if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
+      //       serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
+      //     }
   
-          if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
-            serviceRecord.decoilers.length>0) {
-            serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
+      //     if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
+      //       serviceRecord.decoilers.length>0) {
+      //       serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
 
-          }
-          response[index] = serviceRecord;
-          index++;
-        }
-      }
+      //     }
+      //     response[index] = serviceRecord;
+      //     index++;
+      //   }
+      // }
       res.json(response);
     }
   }
@@ -136,7 +182,7 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
 
-  req.body.machine = req.params.machineId;
+  // req.body.machine = req.params.machineId;
 
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -144,33 +190,14 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-
-
-
-  console.log("req.body.serviceRecordConfig", req.body.serviceRecordConfig);
-  req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
-
-  console.log(req.body.serviceRecordConfig);
-  
-  if(req.body.serviceRecordConfig && 
-    Array.isArray(req.body.serviceRecordConfig.checkItemLists) &&
-    req.body.serviceRecordConfig.checkItemLists.length>0) {
-
-    let index = 0;
-    for(let checkParam of req.body.serviceRecordConfig.checkItemLists) {
-      if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-        let indexP = 0;
-        for(let paramListId of checkParam.checkItems) { 
-          req.body.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = await ProductCheckItem.findById(paramListId).populate('category');
-          console.log(req.body.serviceRecordConfig.checkItemLists[index].checkItems[indexP]);
-          indexP++;
-        }
-      }
-      index++;
-    }
+  // req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
   }
 
-  this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+  let productServiceRecordObject = getDocumentFromReq(req, 'new');
+  productServiceRecordObject.versionNo = 1;
+  productServiceRecordObject.serviceId = productServiceRecordObject._id;
+
+  this.dbservice.postObject(productServiceRecordObject, callbackFunc);
 
   async function callbackFunc(error, response) {
     if (error) {
@@ -182,19 +209,39 @@ exports.postProductServiceRecord = async (req, res, next) => {
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response = JSON.parse(JSON.stringify(response));
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-
       }
+
+      console.log("Before Value", req.body.checkItemRecordValues);
+      if(req.body.serviceRecordConfig && 
+        Array.isArray(req.body.checkItemRecordValues) &&
+        req.body.checkItemRecordValues.length>0) {
+          console.log("Before Value @1");
+        if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+        console.log("Before Value @2");
+        for(let recordValue of req.body.checkItemRecordValues) {
+            console.log("recordValue", recordValue);
+            recordValue.loginUser = req.body.loginUser;
+            recordValue.serviceRecord = response._id;
+            recordValue.serviceId = response._id;
+            let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+              let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
+              if (error) {
+                console.error(error);
+              } else {
+
+              }
+            });
+          }
+        }
+      }
+
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
 }
-};
 
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
-  
-  req.body.machine = req.params.machineId;
-  
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -202,8 +249,14 @@ exports.patchProductServiceRecord = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
     
-    this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
+    let parentProductServiceRecordObject = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
+
+    let productServiceRecordObject = getDocumentFromReq(req, 'new');
+    productServiceRecordObject.versionNo = parentProductServiceRecordObject.versionNo + 1; //what will be the version.
+    productServiceRecordObject.serviceId = parentProductServiceRecordObject.serviceId;
+    
+    this.dbservice.postObject(productServiceRecordObject, callbackFunc);
+    async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
@@ -211,6 +264,32 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
+        if(req.body.serviceRecordConfig && 
+          Array.isArray(req.body.checkItemRecordValues) &&
+          req.body.checkItemRecordValues.length>0) {
+          if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+          for(let recordValue of req.body.checkItemRecordValues) {
+              recordValue.loginUser = req.body.loginUser;
+              
+              recordValue.serviceRecord = productServiceRecordObject._id;
+              
+              
+              recordValue.serviceId = req.body.serviceId;
+              console.log("req.body.serviceId", req.body.serviceId);
+              console.log("recordValue", recordValue);
+              
+              let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem},{$set: {isActive: false}});
+                
+                let serviceRecordValues = await serviceRecordValue.save((error, data) => {
+                if (error) {
+                  console.error(error);
+                }
+              });
+            }
+          }
+        }
+
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
@@ -232,9 +311,9 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType){
   const { 
-    serviceRecordConfig, serviceDate, customer, site, machine, 
+    serviceRecordConfig, serviceId, serviceDate, versionNo, customer, site, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
-    serviceNote, recommendationNote, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
+    serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
     technicianNotes, textBeforeCheckItems, textAfterCheckItems, loginUser, isActive, isArchived
   } = req.body;
     
@@ -253,12 +332,21 @@ function getDocumentFromReq(req, reqType){
     doc.customer = customer;
   }
 
+  if ("serviceId" in req.body){
+    doc.serviceId = serviceId;
+  }
+  
+  if ("versionNo" in req.body){
+    doc.versionNo = versionNo;
+  }
+  
+
   if ("site" in req.body){
     doc.site = site;
   }
 
-  if ("machine" in req.body){
-    doc.machine = machine;
+  if (req.params.machineId){
+    doc.machine = req.params.machineId;
   }
 
   if ("decoilers" in req.body){
@@ -296,6 +384,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("recommendationNote" in req.body){
     doc.recommendationNote = recommendationNote;
+  }
+  if ("internalComments" in req.body){
+    doc.internalComments = internalComments;
   }
   if ("suggestedSpares" in req.body){
     doc.suggestedSpares = suggestedSpares;
@@ -335,6 +426,67 @@ function getDocumentFromReq(req, reqType){
     doc.createdIP = loginUser.userIP;
     doc.updatedIP = loginUser.userIP;
   } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  } 
+
+  //console.log("doc in http req: ", doc);
+  return doc;
+
+}
+
+
+function productServiceRecordValueDocumentFromReq(recordValue, reqType){
+  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, checkItemValue, comments, files , isActive, isArchived } = recordValue;
+  const { loginUser } = recordValue;
+
+
+  let doc = {};
+  if (reqType && reqType == "new"){
+    doc = new ProductServiceRecordValue({});
+  }
+
+  if ("serviceRecord" in recordValue) {
+    doc.serviceRecord = serviceRecord;
+  }
+
+  if ("serviceId" in recordValue) {
+    doc.serviceId = serviceId;
+  }
+
+  if ("machineCheckItem" in recordValue) {
+    doc.machineCheckItem = machineCheckItem;
+  }
+  
+  if ("checkItemListId" in recordValue) {
+    doc.checkItemListId = checkItemListId;
+  }
+  
+  if ("checkItemValue" in recordValue) {
+    doc.checkItemValue = checkItemValue;
+  }
+  
+  if ("comments" in recordValue) {
+    doc.comments = comments;
+  }
+  
+  if ("files" in recordValue) {
+    doc.files = files;
+  }
+  
+  if ("isActive" in recordValue){
+    doc.isActive = isActive;
+  }
+  if ("isArchived" in recordValue){
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in recordValue ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in recordValue) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 
