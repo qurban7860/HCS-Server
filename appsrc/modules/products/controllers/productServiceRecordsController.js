@@ -284,7 +284,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           }
         }
 
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        res.status(StatusCodes.CREATED).json({ serviceRecord: response });
       }
     }
   }
