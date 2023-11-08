@@ -72,7 +72,7 @@ WebSocket.on('connection', async function(ws, req) {
 
         let sendEventData = {};
         if(eventName=='getNotifications') {
-            let notifications = await SecurityNotification.find({receivers:userId,readBy:{$ne:userId}});
+            let notifications = await SecurityNotification.find({receivers:userId,readBy:{$ne:userId}}).populate('sender');
             sendEventData = { eventName:'notificationsSent', data : notifications };
             emitEvent(ws,sendEventData)
         }
@@ -83,7 +83,8 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
-        }        
+        }     
+
 
     });
 
