@@ -17,7 +17,8 @@ global.getSocketConnectionByUserId = function getSocketConnectionByUserId(userId
     
     return wsConnection;
 }
-const {  emitSocketEvent, broadCastSocketEvent } = require('./websockets/index');
+const {  emitEvent, broadcastEvent, closeSocket } = require('./websockets/index');
 
-global.emitSocketEvent = emitSocketEvent;
-global.broadCastSocketEvent = broadCastSocketEvent;
+global.emitEvent = emitEvent;
+global.broadcastEvent = broadcastEvent;
+global.closeSocket = closeSocket;

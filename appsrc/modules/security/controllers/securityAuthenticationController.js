@@ -1,7 +1,6 @@
 const { validationResult } = require('express-validator');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 var ObjectId = require('mongoose').Types.ObjectId;
@@ -324,15 +323,17 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
+    if(req.session) {
 
-    req.session.cookie.expires = false;
-    let maxAge = process.env.TOKEN_EXP_TIME || "48h";
-    maxAge = maxAge.replace(/\D/g,'');
+      req.session.cookie.expires = false;
+      let maxAge = process.env.TOKEN_EXP_TIME || "48h";
+      maxAge = maxAge.replace(/\D/g,'');
 
-    req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
-    req.session.isLoggedIn = true;
-    req.session.user = userId;
-    req.session.sessionId = req.sessionID;
+      req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
+      req.session.isLoggedIn = true;
+      req.session.user = userId;
+      req.session.sessionId = req.sessionID;
+    }
 
     await req.session.save();
     return await SecuritySession.findOne({"session.user":userId});
@@ -448,7 +449,12 @@ async function removeSessions(userId) {
   await SecuritySession.deleteMany({"session.user":userId});
   await SecuritySession.deleteMany({"session.user":{$exists:false}});
   const wss = getSocketConnectionByUserId(userId);
-  wss.map((ws)=> ws.terminate());
+  wss.map((ws)=> {  
+    if(ws.userId==userId) {
+      ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
+      ws.terminate();
+    }
+  });
 }
 
 exports.logout = async (req, res, next) => {

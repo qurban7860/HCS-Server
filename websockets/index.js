@@ -13,7 +13,7 @@ WebSocket.on('connection', async function(ws, req) {
         
         if(!token) {
             console.log('Unauthenticated');
-            ws.terminate();
+            closeSocket(ws);
         }
         
         const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
@@ -47,12 +47,14 @@ WebSocket.on('connection', async function(ws, req) {
 
         if(!isValid) {
             console.log('Unauthenticated');
-            ws.terminate();
+            closeSocket(ws);
+
         }
     }catch(e) {
         console.log('WebSocket connection closed due to exception');
         console.log(e);
-        ws.terminate();
+        closeSocket(ws);
+
     }
 
     
@@ -66,18 +68,22 @@ WebSocket.on('connection', async function(ws, req) {
             console.log('Invalid Event data',data,e);
         }
         
-        if(data.type=='getNotifications') {
+        let eventName = data.eventName;
+
+        let sendEventData = {};
+        if(eventName=='getNotifications') {
             let notifications = await SecurityNotification.find({receivers:userId,readBy:{$ne:userId}});
-            return ws.send(JSON.stringify(notifications));
+            sendEventData = { eventName:'notificationsSent', data : notifications };
+            emitEvent(ws,sendEventData)
         }
 
-        if(data.type=='markAsRead') {
+        if(eventName=='markAsRead') {
             let query = { receivers: userId, readBy: { $ne: userId } };
             let update = { $push: { readBy:userId } };
             let notifications = await SecurityNotification.updateMany(query,update);
-            return ws.send(JSON.stringify({success:'yes'}));
+            sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+            emitEvent(ws,sendEventData)
         }        
-
 
     });
 
@@ -94,6 +100,10 @@ WebSocket.on('connection', async function(ws, req) {
 function originIsAllowed(origin) {
   // put logic here to detect whether the specified origin is allowed.
   return true;
+}
+
+function closeSocket(ws) {
+    ws.terminate();
 }
 
 function emitEvent(ws,sendEventData = {}) {
@@ -120,5 +130,6 @@ function broadcastEvent(wss, ws, sendEventData = {},socialStats) {
 exports = {
     WebSocket,
     emitEvent,
-    broadcastEvent
+    broadcastEvent,
+    closeSocket
 }
