@@ -127,7 +127,13 @@ exports.getProductServiceRecords = async (req, res, next) => {
 
   console.log("query", this.query);
 
+  this.query = {};
   this.query.isHistory = false;
+  this.query.isArchived = false;
+  this.query.isActive = true;
+  
+
+  console.log(this.query);
   // this.orderBy = { name: 1 };
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
