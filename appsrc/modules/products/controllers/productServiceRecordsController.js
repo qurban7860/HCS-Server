@@ -126,6 +126,8 @@ exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
   console.log("query", this.query);
+
+  this.query.isHistory = false;
   // this.orderBy = { name: 1 };
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
@@ -258,6 +260,15 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
+        let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
+        await ProductServiceRecords.updateMany(
+          queryToUpdateRecords, 
+          { $set: { isHistory: true } } 
+        );
+
+
+        console.log("queryToUpdateRecords", queryToUpdateRecords);
+        
         if(req.body.serviceRecordConfig && 
           Array.isArray(req.body.checkItemRecordValues) &&
           req.body.checkItemRecordValues.length>0) {
@@ -308,7 +319,7 @@ function getDocumentFromReq(req, reqType){
     serviceRecordConfig, serviceId, serviceDate, versionNo, customer, site, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
-    technicianNotes, textBeforeCheckItems, textAfterCheckItems, loginUser, isActive, isArchived
+    technicianNotes, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
   } = req.body;
     
   let { decoilers } = req.body;
@@ -405,7 +416,11 @@ function getDocumentFromReq(req, reqType){
   if ("textAfterCheckItems" in req.body){
     doc.textAfterCheckItems = textAfterCheckItems;
   }
-  
+
+  if ("isHistory" in req.body){
+    doc.isHistory = isHistory;
+  }
+
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
