@@ -286,7 +286,8 @@ exports.patchProductServiceRecord = async (req, res, next) => {
               console.log("recordValue", recordValue);
               
               let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem},{$set: {isActive: false}});
+                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
+                  checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
                 
                 let serviceRecordValues = await serviceRecordValue.save((error, data) => {
                 if (error) {
