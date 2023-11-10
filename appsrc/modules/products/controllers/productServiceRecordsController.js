@@ -100,11 +100,13 @@ exports.getProductServiceRecord = async (req, res, next) => {
               };
 
 
-              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString);
+              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString).populate({path: 'createdBy', select: 'name'});
               let historicalProductServiceRecordValues = await ProductServiceRecordValue.find(historicalProSerValuesQuery, {checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
               if(productServiceRecordValueObject) {
                 productCheckItemObject.checkItemValue = productServiceRecordValueObject.checkItemValue;
                 productCheckItemObject.comments = productServiceRecordValueObject.comments;
+                productCheckItemObject.createdBy = productServiceRecordValueObject.createdBy;
+                
                 productCheckItemObject.historicalData = historicalProductServiceRecordValues;
               }
 
