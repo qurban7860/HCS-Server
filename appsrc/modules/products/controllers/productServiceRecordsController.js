@@ -67,7 +67,22 @@ exports.getProductServiceRecord = async (req, res, next) => {
       if(Array.isArray(response.operators) && response.operators.length>0) {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
-      
+
+      // fetching active values.
+      let listProductServiceRecordValues = await ProductServiceRecordValue.find({
+        serviceId: response.serviceId,
+        isActive: true, isArchived: false
+      }).populate({path: 'createdBy', select: 'name'});
+      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
+
+      // fetching history values.
+      let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
+        serviceId: response.serviceId,
+        isActive: false, isArchived: false
+      }, {checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
+      listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
+
+    
       if(response.serviceRecordConfig && 
         Array.isArray(response.serviceRecordConfig.checkItemLists) &&
         response.serviceRecordConfig.checkItemLists.length>0) {
@@ -85,29 +100,23 @@ exports.getProductServiceRecord = async (req, res, next) => {
               if(!productCheckItemObject)
                 continue;
               
-              let queryString = {
-                machineCheckItem: paramListId,
-                checkItemListId: checkParam._id,
-                serviceId: response.serviceId,
-                isActive: true, isArchived: false
-              };
+              let PSRV = listProductServiceRecordValues.find((psrval)=>              
+                psrval.machineCheckItem.toString() == paramListId && 
+                psrval.checkItemListId.toString() == checkParam._id
+              );
 
-              let historicalProSerValuesQuery = {
-                machineCheckItem: paramListId,
-                checkItemListId: checkParam._id,
-                serviceId: response.serviceId,
-                isActive: false, isArchived: false
-              };
+              let matchedHistoryVal = listProductServiceRecordHistoryValues.filter((psrval) => {
+                return (
+                  psrval.machineCheckItem.toString() === paramListId &&
+                  psrval.checkItemListId.toString() === checkParam._id
+                );
+              });
 
-
-              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString).populate({path: 'createdBy', select: 'name'});
-              let historicalProductServiceRecordValues = await ProductServiceRecordValue.find(historicalProSerValuesQuery, {checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
-              if(productServiceRecordValueObject) {
-                productCheckItemObject.checkItemValue = productServiceRecordValueObject.checkItemValue;
-                productCheckItemObject.comments = productServiceRecordValueObject.comments;
-                productCheckItemObject.createdBy = productServiceRecordValueObject.createdBy;
-                
-                productCheckItemObject.historicalData = historicalProductServiceRecordValues;
+              if(PSRV) {
+                productCheckItemObject.checkItemValue = PSRV.checkItemValue;
+                productCheckItemObject.comments = PSRV.comments;
+                productCheckItemObject.createdBy = PSRV.createdBy;
+                productCheckItemObject.historicalData = matchedHistoryVal;
               }
 
               response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
