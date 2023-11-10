@@ -125,13 +125,9 @@ exports.getProductServiceRecord = async (req, res, next) => {
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
-  console.log("query", this.query);
-
-  this.query = {};
-  this.query.isHistory = false;
-  this.query.isArchived = false;
-  this.query.isActive = true;
-  
+  if(this.query.isHistory === undefined) {
+    this.query.isHistory = false;
+  }
 
   console.log(this.query);
   // this.orderBy = { name: 1 };
