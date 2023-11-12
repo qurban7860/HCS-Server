@@ -79,7 +79,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
       let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
         isActive: false, isArchived: false
-      }, {checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
+      }, {serviceRecord:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
       listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
 
     
@@ -131,6 +131,82 @@ exports.getProductServiceRecord = async (req, res, next) => {
     }
   }
 
+};
+
+exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) => {
+  let populateObject = [
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+    {path: 'customer', select: 'name'},
+    {path: 'site', select: 'name'},
+    {path: 'machine', select: 'name serialNo'},
+    {path: 'technician', select: 'name firstName lastName'},
+    // {path: 'operator', select: 'firstName lastName'},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'}
+  ];
+
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, populateObject, callbackFunc);
+  async function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+
+      response = JSON.parse(JSON.stringify(response));
+
+      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
+        response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
+      }
+      
+      if(Array.isArray(response.operators) && response.operators.length>0) {
+        response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
+      }
+
+      // fetching active values.
+      let listProductServiceRecordValues = await ProductServiceRecordValue.find({
+        serviceRecord: req.params.id,
+        isArchived: false
+      }).populate({path: 'createdBy', select: 'name'});
+      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
+
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
+        response.serviceRecordConfig.checkItemLists.length>0) {
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
+          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
+            let indexP = 0;
+            let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}});
+            productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
+
+            for(let paramListId of checkParam.checkItems) { 
+              // let productCheckItemObject = await ProductCheckItem.findById(paramListId);
+              let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
+              
+              if(!productCheckItemObject)
+                continue;
+              
+              let PSRV = listProductServiceRecordValues.find((psrval)=>              
+                psrval.machineCheckItem.toString() == paramListId && 
+                psrval.checkItemListId.toString() == checkParam._id
+              );
+
+              if(PSRV) {
+                productCheckItemObject.checkItemValue = PSRV.checkItemValue;
+                productCheckItemObject.comments = PSRV.comments;
+                productCheckItemObject.createdBy = PSRV.createdBy;
+              }
+
+              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
+              indexP++;
+            }
+          }
+          index++;
+        }
+      }
+      res.json(response);
+    }
+  }
 };
 
 exports.getProductServiceRecords = async (req, res, next) => {

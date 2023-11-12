@@ -23,6 +23,8 @@ router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/:id`, controller.getProductServiceRecord);
 
+router.get(`${baseRouteForObject}/:id/values`, controller.getProductServiceRecordWithIndividualDetails);
+
 router.get(`${baseRouteForObject}/`, controller.getProductServiceRecords);
 
 router.post(`${baseRouteForObject}/`,upload.single('document'),  controller.postProductServiceRecord);
