@@ -140,6 +140,26 @@ exports.getConnectionProducts = async (req, res, next) => {
   res.status(StatusCodes.OK).json(listProducts);
 };
 
+exports.getParentMachines = async (req, res, next) => {
+  this.populate =  {path: 'machine', select: 'name serialNo'};
+  try {
+    this.query = req.query != "undefined" ? req.query : {};  
+
+    
+    this.query = {connectedMachine: req.params.connectedMachine, disconnectionDate: {$exists: false}};
+
+    console.log("this.query", this.query);
+
+    const response = await dbservice.getObjectList(ProductConnection, {machine: 1}, this.query, {_id: -1}, this.populate);
+    res.json(response);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+
+
 
 exports.disconnectMachine = async (req, res, next) => {
   let connectedMachineIds = req.body.connectedMachineIds;
