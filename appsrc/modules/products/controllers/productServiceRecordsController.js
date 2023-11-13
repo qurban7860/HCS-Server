@@ -114,7 +114,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
               if(PSRV) {
                 productCheckItemObject.serviceRecord = PSRV.serviceRecord;
-                productCheckItemObject.checkItemValue = PSRV.checkItemValue.toString();
+                productCheckItemObject.checkItemValue = PSRV.checkItemValue+'';
                 productCheckItemObject.comments = PSRV.comments;
                 productCheckItemObject.valueCreatedBy = PSRV.createdBy;
                 productCheckItemObject.historicalData = matchedHistoryVal;
