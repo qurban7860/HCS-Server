@@ -113,6 +113,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
               });
 
               if(PSRV) {
+                console.log("PSRV.checkItemValue", PSRV.checkItemValue);
                 productCheckItemObject.serviceRecord = PSRV.serviceRecord;
                 productCheckItemObject.checkItemValue = PSRV.checkItemValue+'';
                 productCheckItemObject.comments = PSRV.comments;
