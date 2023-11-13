@@ -10,10 +10,10 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
   
-  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true},
+  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true},
   // service record id.
 
-  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' , required: true},
+  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord' , required: true},
   // purpose is to maintain parent service record config uuid
   
   machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},

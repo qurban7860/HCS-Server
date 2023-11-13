@@ -72,7 +72,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
         isActive: true, isArchived: false
-      }).populate({path: 'createdBy', select: 'name'});
+      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
       listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
 
       // fetching history values.
@@ -113,9 +113,10 @@ exports.getProductServiceRecord = async (req, res, next) => {
               });
 
               if(PSRV) {
+                productCheckItemObject.serviceRecord = PSRV.serviceRecord;
                 productCheckItemObject.checkItemValue = PSRV.checkItemValue;
                 productCheckItemObject.comments = PSRV.comments;
-                productCheckItemObject.createdBy = PSRV.createdBy;
+                productCheckItemObject.valueCreatedBy = PSRV.createdBy;
                 productCheckItemObject.historicalData = matchedHistoryVal;
               }
 
@@ -221,7 +222,6 @@ exports.getProductServiceRecords = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
   this.query.machine = req.params.machineId;
-  console.log(this.query);
   this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
