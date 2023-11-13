@@ -212,9 +212,9 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
-  if(this.query.isHistory === undefined) {
-    this.query.isHistory = false;
-  }
+  // if(this.query.isHistory === undefined) {
+  //   this.query.isHistory = false;
+  // }
 
   console.log(this.query);
   // this.orderBy = { name: 1 };
