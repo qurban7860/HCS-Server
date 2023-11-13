@@ -72,7 +72,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
         isActive: true, isArchived: false
-      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
+      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
       listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
 
       // fetching history values.
@@ -113,10 +113,18 @@ exports.getProductServiceRecord = async (req, res, next) => {
               });
 
               if(PSRV) {
+                productCheckItemObject.recordValue = {
+                  serviceRecord : PSRV.serviceRecord,
+                  checkItemValue : PSRV.checkItemValue,
+                  comments : PSRV.comments,
+                  createdBy : PSRV.createdBy,
+                  createdAt : PSRV.createdAt
+                }
                 productCheckItemObject.serviceRecord = PSRV.serviceRecord;
                 productCheckItemObject.checkItemValue = PSRV.checkItemValue;
                 productCheckItemObject.comments = PSRV.comments;
                 productCheckItemObject.valueCreatedBy = PSRV.createdBy;
+                productCheckItemObject.valueCreatedAt = PSRV.createdAt;
                 productCheckItemObject.historicalData = matchedHistoryVal;
               }
 
