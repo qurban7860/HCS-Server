@@ -144,39 +144,6 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
 
   try{
     serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
-    
-    // let i = 0;
-
-
-    // if(Array.isArray(serviceRecordConfigs) && serviceRecordConfigs.length>0) {
-
-    //   for(let serviceRecordConfig of serviceRecordConfigs) {
-
-    //     let index = 0;
-    //     for(let checkParam of serviceRecordConfig.checkItemLists) {
-
-    //       if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-    //         let indexP = 0;
-    //         let paramLists_ = [];
-    //         for(let paramListId of checkParam.checkItems) {
-    //           let checkItem__ = await ProductCheckItem.findOne({_id:paramListId,isActive:true,isArchived:false}).populate('category');
-
-    //           if(checkItem__) {
-    //             serviceRecordConfigs[i].checkItemLists[index].checkItems[indexP] = checkItem__;
-    //             paramLists_.push(checkItem__);
-    //           }
-    //           indexP++;
-    //         }
-
-    //         serviceRecordConfigs[i].checkItemLists[index].checkItems = paramLists_;
-
-    //       } 
-          
-    //       index++;
-    //     }
-    //     i++;
-    //   }
-    // }
     return res.status(StatusCodes.OK).json(serviceRecordConfigs);
 
   }catch(e) {
@@ -264,6 +231,14 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
 
     let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
+
+    if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
+      req.body.submittedInfo = {
+        submittedBy: req.body.loginUser.userId,
+        submittedDate: new Date()
+      }
+    }
+    
     if(req.body.isVerified){ 
       if(!productServiceRecordsConfig) {
         return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
