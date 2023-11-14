@@ -15,10 +15,8 @@ const multer = require("multer");
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
+const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
-
-
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -220,12 +218,6 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
 
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-
-  // if(this.query.isHistory === undefined) {
-  //   this.query.isHistory = false;
-  // }
-
-  // this.orderBy = { name: 1 };
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
@@ -237,27 +229,6 @@ exports.getProductServiceRecords = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-
-      // if(response && Array.isArray(response) && response.length>0) {
-      //   response = JSON.parse(JSON.stringify(response));
-
-      //   let index = 0;
-      //   for(let serviceRecord of response) {
-
-
-      //     if(Array.isArray(serviceRecord.operators) && serviceRecord.operators.length>0) {
-      //       serviceRecord.operators = await CustomerContact.find( { _id : { $in : serviceRecord.operators } }, { firstName:1, lastName:1 })
-      //     }
-  
-      //     if(serviceRecord && Array.isArray(serviceRecord.decoilers) && 
-      //       serviceRecord.decoilers.length>0) {
-      //       serviceRecord.decoilers = await Product.find({_id:{$in:serviceRecord.decoilers}});
-
-      //     }
-      //     response[index] = serviceRecord;
-      //     index++;
-      //   }
-      // }
       res.json(response);
     }
   }
@@ -360,23 +331,14 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           { $set: { isHistory: true } } 
         );
 
-
-        console.log("queryToUpdateRecords", queryToUpdateRecords);
-        
         if(req.body.serviceRecordConfig && 
           Array.isArray(req.body.checkItemRecordValues) &&
           req.body.checkItemRecordValues.length>0) {
           if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
           for(let recordValue of req.body.checkItemRecordValues) {
               recordValue.loginUser = req.body.loginUser;
-              
               recordValue.serviceRecord = productServiceRecordObject._id;
-              
-              
               recordValue.serviceId = req.body.serviceId;
-              console.log("req.body.serviceId", req.body.serviceId);
-              console.log("recordValue", recordValue);
-              
               let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
                 await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
                   checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
@@ -395,7 +357,6 @@ exports.patchProductServiceRecord = async (req, res, next) => {
     }
   }
 };
-
 
 async function getToken(req){
   try {
@@ -595,7 +556,5 @@ function productServiceRecordValueDocumentFromReq(recordValue, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
-
 }
