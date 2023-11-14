@@ -237,6 +237,8 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         submittedBy: req.body.loginUser.userId,
         submittedDate: new Date()
       }
+    } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
+      req.body.submittedInfo = {};
     }
     
     if(req.body.isVerified){ 
