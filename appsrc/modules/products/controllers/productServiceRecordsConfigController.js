@@ -35,7 +35,16 @@ this.populate = [
 
 
 exports.getProductServiceRecordsConfig = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductServiceRecordsConfig, this.fields, req.params.id, this.populate, callbackFunc);
+  let populateValues = [
+    {path: 'machineCategory', select: 'name'},
+    {path: 'machineModel', select: 'name category'},
+    
+    {path: 'category', select: 'name'},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'},
+    {path: 'submittedInfo.submittedBy', select: 'name'}
+  ];
+  this.dbservice.getObjectById(ProductServiceRecordsConfig, this.fields, req.params.id, populateValues, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -216,6 +225,13 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       delete req.body.originalConfiguration
   }
 
+  if(req.body.status == "SUBMITTED") {
+    req.body.submittedInfo = {
+      submittedBy: req.body.loginUser.userId,
+      submittedDate: new Date()
+    }
+  }
+
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -344,7 +360,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { machineCategory, recordType, machineModel, status, parentConfig, originalConfiguration, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
+  const { machineCategory, recordType, machineModel, status, submittedInfo, parentConfig, originalConfiguration, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
@@ -371,6 +387,10 @@ function getDocumentFromReq(req, reqType){
   
   if ("status" in req.body){
     doc.status = status;
+  }
+
+  if ("submittedInfo" in req.body){
+    doc.submittedInfo = submittedInfo;
   }
   
   if ("parentConfig" in req.body){

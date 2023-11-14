@@ -91,7 +91,12 @@ const docSchema = new Schema({
     //user ip address
     verifiedDate: { type: Date, default: Date.now }
     // Date of Verification
-  }]
+  }],
+
+  submittedInfo: {
+    submittedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+    submittedDate: { type: Date }
+  }
   
 
 },

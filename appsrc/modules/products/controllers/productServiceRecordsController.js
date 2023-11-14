@@ -279,15 +279,12 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
 exports.postProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
 
-  // req.body.machine = req.params.machineId;
-
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
 
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-  // req.body.serviceRecordConfig = await ProductServiceRecordsConfig.findOne({_id: req.body.serviceRecordConfig});
   }
 
   let productServiceRecordObject = getDocumentFromReq(req, 'new');
