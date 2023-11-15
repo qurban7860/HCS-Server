@@ -98,7 +98,7 @@ exports.login = async (req, res, next) => {
             
 
             if(blockedCustomer) {
-              const securityLogs = await addAccessLog('invalidCustomer', existingUser._id, clientIP);
+              const securityLogs = await addAccessLog('blockedCustomer', existingUser._id, clientIP);
               dbService.postObject(securityLogs, callbackFunc);
               async function callbackFunc(error, response) {
                 if (error) {
@@ -109,7 +109,7 @@ exports.login = async (req, res, next) => {
             } else {
               let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
               if(blockedUser) {
-                securityLogs = await addAccessLog('invalidUser', null, clientIP);
+                securityLogs = await addAccessLog('blockedUser', existingUser._id, clientIP);
                 dbService.postObject(securityLogs, callbackFunc);
                 async function callbackFunc(error, response) {
                   if (error) {
@@ -253,7 +253,7 @@ exports.login = async (req, res, next) => {
           else {
             let securityLogs = null;
             if(existingUser) {
-              securityLogs = await addAccessLog('userInvalid', existingUser._id, clientIP);
+              securityLogs = await addAccessLog('existsButNotAuth', existingUser._id, clientIP);
             } else {
               securityLogs = await addAccessLog('invalidRequest', null, clientIP);
             }
@@ -751,22 +751,21 @@ async function addAccessLog(actionType, userID, ip = null) {
       loginIP: ip,
       statusCode: 200
     };
-  } else if (actionType == 'invalidCredentials') {
+  } else if (actionType == 'invalidCredentials' || actionType == 'blockedCustomer' || actionType == 'blockedUser' 
+  || actionType == 'existsButNotAuth') {
     var signInLog = {
       user: userID,
       loginIP: ip,
-      statusCode: StatusCodes.UNAUTHORIZED
+      statusCode: actionType == 'invalidCredentials' ? 403 : //Only password issue
+                  actionType == 'blockedCustomer' ? 423 :
+                  actionType == 'blockedUser' ? 423 :
+                  actionType == 'existsButNotAuth' ? 405 : 406
     };
-  } else if (actionType == 'invalidIPs' || actionType == 'userInvalid' || actionType == 'invalidCustomer' || actionType == 'invalidUser') {
+  } else if (actionType == 'invalidIPs' || actionType == 'invalidRequest') {
     var signInLog = {
       loginIP: ip,
-      statusCode: actionType == 'userInvalid' ? 403:actionType == 'invalidCustomer' ? 404:actionType == 'invalidUser' ? 405:actionType == 'invalidIPs' ? 406:407
-    };
-  } else if (actionType == 'invalidRequest') {
-    var signInLog = {
-      user: userID,
-      loginIP: ip,
-      statusCode: 404
+      statusCode: actionType == 'invalidIPs' ? 423 : 
+                  actionType == 'invalidRequest' ? 404 : 406
     };
   }
   
