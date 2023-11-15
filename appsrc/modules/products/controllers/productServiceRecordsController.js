@@ -223,6 +223,11 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
           index++;
         }
       }
+      let currentVersion_ = await ProductServiceRecords.find(
+      {serviceId: response.serviceId, isActive: true, isArchived: false}, 
+      {versionNo: 1, _id: 1});
+      currentVersion_ = JSON.parse(JSON.stringify(currentVersion_));     
+      response.currentVersion = currentVersion_;
       res.json(response);
     }
   }
