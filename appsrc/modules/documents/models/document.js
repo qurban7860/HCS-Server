@@ -30,6 +30,8 @@ const docSchema = new Schema({
 
         referenceNumber: { type: String },
         
+        stockNumber: { type: String },
+        
         customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
         // customer information.
 

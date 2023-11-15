@@ -820,7 +820,7 @@ function getDocumentFromReq(req, reqType) {
   const { name, displayName, description, path, type, extension, content, 
     documentVersions, documentCategory, customer, customerAccess, site,
     contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
-    machineModel, documentType, shippingDate, installationDate, referenceNumber } = req.body;
+    machineModel, documentType, shippingDate, installationDate, referenceNumber, stockNumber} = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -832,6 +832,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("referenceNumber" in req.body) {
     doc.referenceNumber = referenceNumber;
+  }
+
+  if ("stockNumber" in req.body) {
+    doc.stockNumber= stockNumber;
   }
   
   if ("displayName" in req.body) {
