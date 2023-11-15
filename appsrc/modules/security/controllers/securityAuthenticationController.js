@@ -758,13 +758,13 @@ async function addAccessLog(actionType, userID, ip = null) {
       loginIP: ip,
       statusCode: actionType == 'invalidCredentials' ? 403 : //Only password issue
                   actionType == 'blockedCustomer' ? 423 :
-                  actionType == 'blockedUser' ? 423 :
+                  actionType == 'blockedUser' ? 451 :
                   actionType == 'existsButNotAuth' ? 405 : 406
     };
   } else if (actionType == 'invalidIPs' || actionType == 'invalidRequest') {
     var signInLog = {
       loginIP: ip,
-      statusCode: actionType == 'invalidIPs' ? 423 : 
+      statusCode: actionType == 'invalidIPs' ? 422 : 
                   actionType == 'invalidRequest' ? 404 : 406
     };
   }
