@@ -118,11 +118,11 @@ exports.getProductServiceRecord = async (req, res, next) => {
                   createdBy : PSRV.createdBy,
                   createdAt : PSRV.createdAt
                 }
-                productCheckItemObject.serviceRecord = PSRV.serviceRecord;
-                productCheckItemObject.checkItemValue = PSRV.checkItemValue;
-                productCheckItemObject.comments = PSRV.comments;
-                productCheckItemObject.valueCreatedBy = PSRV.createdBy;
-                productCheckItemObject.valueCreatedAt = PSRV.createdAt;
+                // productCheckItemObject.serviceRecord = PSRV.serviceRecord;
+                // productCheckItemObject.checkItemValue = PSRV.checkItemValue;
+                // productCheckItemObject.comments = PSRV.comments;
+                // productCheckItemObject.valueCreatedBy = PSRV.createdBy;
+                // productCheckItemObject.valueCreatedAt = PSRV.createdAt;
                 productCheckItemObject.historicalData = matchedHistoryVal;
               }
 
@@ -173,8 +173,8 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceRecord: req.params.id,
         isArchived: false
-      }).populate({path: 'createdBy', select: 'name'});
-      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
+      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
+      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));     
 
       if(response.serviceRecordConfig && 
         Array.isArray(response.serviceRecordConfig.checkItemLists) &&
