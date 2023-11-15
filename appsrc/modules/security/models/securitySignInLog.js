@@ -19,7 +19,7 @@ const docSchema = new Schema({
 
     statusCode: { type: Number },
 
-    loggedOutBy: {type: String, enum: ["SYSTEM", "ADMIN", "SELF"], default: "SELF"}
+    loggedOutBy: {type: String, enum: ["SYSTEM", "ADMIN", "SELF"]}
  
     // information of IP address from where action is performed
 

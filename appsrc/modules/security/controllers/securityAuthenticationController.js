@@ -44,6 +44,7 @@ exports.login = async (req, res, next) => {
 
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
   } else {
     let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
 
@@ -97,17 +98,28 @@ exports.login = async (req, res, next) => {
             
 
             if(blockedCustomer) {
+              const securityLogs = await addAccessLog('invalidCustomer', existingUser._id, clientIP);
+              dbService.postObject(securityLogs, callbackFunc);
+              async function callbackFunc(error, response) {
+                if (error) {
+                  logger.error(new Error(error));
+                }
+              }
               return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
             } else {
               let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
               if(blockedUser) {
+                securityLogs = await addAccessLog('invalidUser', null, clientIP);
+                dbService.postObject(securityLogs, callbackFunc);
+                async function callbackFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                  }
+                }
                 return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
               }  
             }
 
-
-
-              
                 let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
                 if(passwordsResponse) {
 
@@ -239,6 +251,19 @@ exports.login = async (req, res, next) => {
                 }
           }
           else {
+            let securityLogs = null;
+            if(existingUser) {
+              securityLogs = await addAccessLog('userInvalid', existingUser._id, clientIP);
+            } else {
+              securityLogs = await addAccessLog('invalidRequest', null, clientIP);
+            }
+            dbService.postObject(securityLogs, callbackFunc);
+            async function callbackFunc(error, response) {
+              if (error) {
+                logger.error(new Error(error));
+              }
+            }
+
             if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
               const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
@@ -250,7 +275,15 @@ exports.login = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
+      const securityLogs = await addAccessLog('invalidIPs', null, clientIP);
+      dbService.postObject(securityLogs, callbackFunc);
+      async function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+        } else {
+          res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
+        }
+      }
     }
   }
 };
@@ -718,21 +751,30 @@ async function addAccessLog(actionType, userID, ip = null) {
       loginIP: ip,
       statusCode: 200
     };
-    var reqSignInLog = {};
-    reqSignInLog.body = signInLog;
-    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
-    return res;
   } else if (actionType == 'invalidCredentials') {
     var signInLog = {
       user: userID,
       loginIP: ip,
       statusCode: StatusCodes.UNAUTHORIZED
     };
-    var reqSignInLog = {};
-    reqSignInLog.body = signInLog;
-    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
-    return res;
+  } else if (actionType == 'invalidIPs' || actionType == 'userInvalid' || actionType == 'invalidCustomer' || actionType == 'invalidUser') {
+    var signInLog = {
+      loginIP: ip,
+      statusCode: actionType == 'userInvalid' ? 403:actionType == 'invalidCustomer' ? 404:actionType == 'invalidUser' ? 405:actionType == 'invalidIPs' ? 406:407
+    };
+  } else if (actionType == 'invalidRequest') {
+    var signInLog = {
+      user: userID,
+      loginIP: ip,
+      statusCode: 404
+    };
   }
+  
+  var reqSignInLog = {};
+  reqSignInLog.body = signInLog;
+
+  const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
+  return res;
 }
 
 async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
