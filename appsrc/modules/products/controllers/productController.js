@@ -99,8 +99,10 @@ exports.getProduct = async (req, res, next) => {
       console.log(machineProfileQuery);
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
 
-      let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
-      machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
+      if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
+        let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
+        machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
+      }
 
       res.json(machine);
     }
