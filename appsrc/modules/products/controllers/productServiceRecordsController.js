@@ -326,51 +326,54 @@ exports.patchProductServiceRecord = async (req, res, next) => {
     
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
-    
-    let parentProductServiceRecordObject = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
 
-    let productServiceRecordObject = getDocumentFromReq(req, 'new');
-    productServiceRecordObject.versionNo = parentProductServiceRecordObject.versionNo + 1; //what will be the version.
-    productServiceRecordObject.serviceId = parentProductServiceRecordObject.serviceId;
-    
-    this.dbservice.postObject(productServiceRecordObject, callbackFunc);
-    async function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
-        await ProductServiceRecords.updateMany(
-          queryToUpdateRecords, 
-          { $set: { isHistory: true } } 
-        );
-
-        if(req.body.serviceRecordConfig && 
-          Array.isArray(req.body.checkItemRecordValues) &&
-          req.body.checkItemRecordValues.length>0) {
-          if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-          for(let recordValue of req.body.checkItemRecordValues) {
-              recordValue.loginUser = req.body.loginUser;
-              recordValue.serviceRecord = productServiceRecordObject._id;
-              recordValue.serviceId = req.body.serviceId;
-              let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
-                  checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
-                
-                let serviceRecordValues = await serviceRecordValue.save((error, data) => {
-                if (error) {
-                  console.error(error);
-                }
-              });
+    if(req.body.isArchived == true) {
+      const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+    } else {
+      let parentProductServiceRecordObject = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
+      let productServiceRecordObject = getDocumentFromReq(req, 'new');
+      productServiceRecordObject.versionNo = parentProductServiceRecordObject.versionNo + 1; //what will be the version.
+      productServiceRecordObject.serviceId = parentProductServiceRecordObject.serviceId;
+      
+      this.dbservice.postObject(productServiceRecordObject, callbackFunc);
+      async function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
+          await ProductServiceRecords.updateMany(
+            queryToUpdateRecords, 
+            { $set: { isHistory: true } } 
+          );
+  
+          if(req.body.serviceRecordConfig && 
+            Array.isArray(req.body.checkItemRecordValues) &&
+            req.body.checkItemRecordValues.length>0) {
+            if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+            for(let recordValue of req.body.checkItemRecordValues) {
+                recordValue.loginUser = req.body.loginUser;
+                recordValue.serviceRecord = productServiceRecordObject._id;
+                recordValue.serviceId = req.body.serviceId;
+                let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+                  await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
+                    checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
+                  
+                  let serviceRecordValues = await serviceRecordValue.save((error, data) => {
+                  if (error) {
+                    console.error(error);
+                  }
+                });
+              }
             }
           }
+          res.status(StatusCodes.CREATED).json({ serviceRecord: result });
         }
-
-        res.status(StatusCodes.CREATED).json({ serviceRecord: result });
-      }
+      }  
     }
   }
 };
