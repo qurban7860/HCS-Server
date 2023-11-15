@@ -358,17 +358,6 @@ exports.postDocument = async (req, res, next) => {
                   documentVersion = await documentVersion.save();
                   documentFile.version = documentVersion.id;
                   documentFile = await documentFile.save();
-
-                  console.log("docCategory.drawing", docCategory.drawing);
-                  console.log("req.body.machine", req.body.machine);
-                  
-                  if(docCategory.drawing && req.body.machine) {
-                    console.log("in function");
-                    req.body.documentId = documentFile._id;
-                    let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
-                    console.log("productDrawingDocx", productDrawingDocx);
-                    productDrawingDocx.save();
-                  }
                 }
               }
             }
@@ -393,7 +382,15 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
+          if(docCategory.drawing && req.body.machine) {
+            req.body.documentId = document_._id;
+            let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
+            productDrawingDocx.save();
+          }
+
           await createAuditLog(documentAuditLogObj,req);
+
+
           return res.status(StatusCodes.CREATED).json({ Document: document_ });
 
         }
