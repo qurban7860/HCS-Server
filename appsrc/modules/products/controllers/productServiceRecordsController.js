@@ -198,10 +198,22 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
                 psrval.checkItemListId.toString() == checkParam._id
               );
 
+
+
+
               if(PSRV) {
+                productCheckItemObject.recordValue = {
+                  serviceRecord : PSRV.serviceRecord,
+                  checkItemValue : PSRV.checkItemValue,
+                  comments : PSRV.comments,
+                  createdBy : PSRV.createdBy,
+                  createdAt : PSRV.createdAt
+                }
+                productCheckItemObject.serviceRecord = PSRV.serviceRecord;                
                 productCheckItemObject.checkItemValue = PSRV.checkItemValue;
                 productCheckItemObject.comments = PSRV.comments;
                 productCheckItemObject.createdBy = PSRV.createdBy;
+                productCheckItemObject.createdAt = PSRV.createdAt;
               }
 
               response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
