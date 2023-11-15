@@ -336,7 +336,6 @@ exports.postDocument = async (req, res, next) => {
           for(let file of files) {
             
             if(file && file.originalname) {
-
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
@@ -360,9 +359,14 @@ exports.postDocument = async (req, res, next) => {
                   documentFile.version = documentVersion.id;
                   documentFile = await documentFile.save();
 
+                  console.log("docCategory.drawing", docCategory.drawing);
+                  console.log("req.body.machine", req.body.machine);
+                  
                   if(docCategory.drawing && req.body.machine) {
+                    console.log("in function");
                     req.body.documentId = documentFile._id;
                     let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
+                    console.log("productDrawingDocx", productDrawingDocx);
                     productDrawingDocx.save();
                   }
                 }
