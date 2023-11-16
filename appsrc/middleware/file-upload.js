@@ -71,6 +71,7 @@ const validExtensions = [
   'odt',
   'ott',
   'rtf',
+  'json',
   'txt'
 ];
 
