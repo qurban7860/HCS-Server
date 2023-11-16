@@ -53,15 +53,20 @@ async function connectMachines(machineId, connectedMachines = []) {
     let connectedMachinesIds = []
     if(Array.isArray(connectedMachines) && connectedMachines.length>0) {
       for(let connectedMachineId of connectedMachines) {
+        console.log("=====>>>>>>>", connectedMachineId);
         
-        if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId)
+        if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId) {
           continue;
+        }
+          
         
         let decoilerMachine = await dbservice.getObjectById(Product, this.fields, connectedMachineId);
         
         if(decoilerMachine && decoilerMachine.id && decoilerMachine.isActive && !decoilerMachine.isArchived) {
-          let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId, isActive:true});
+          console.log("=================>>>>>>>>>> @@@ 1111" );
+          let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId, disconnectionDate: {$exists: false}, isActive:true});
           
+          console.log("machineConnection", machineConnection);
           if(!machineConnection) {
             let machineConnectionData = {
               machine:dbMachine.id,
