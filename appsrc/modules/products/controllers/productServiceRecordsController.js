@@ -118,13 +118,9 @@ exports.getProductServiceRecord = async (req, res, next) => {
                   createdBy : PSRV.createdBy,
                   createdAt : PSRV.createdAt
                 }
-                // productCheckItemObject.serviceRecord = PSRV.serviceRecord;
-                // productCheckItemObject.checkItemValue = PSRV.checkItemValue;
-                // productCheckItemObject.comments = PSRV.comments;
-                // productCheckItemObject.valueCreatedBy = PSRV.createdBy;
-                // productCheckItemObject.valueCreatedAt = PSRV.createdAt;
-                productCheckItemObject.historicalData = matchedHistoryVal;
               }
+              if(matchedHistoryVal)
+                productCheckItemObject.historicalData = matchedHistoryVal;
 
               response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
               indexP++;
