@@ -364,10 +364,11 @@ exports.patchProductServiceRecord = async (req, res, next) => {
               }
             }
           }
-          await ProductServiceRecordValue.updateMany({serviceId: result.serviceId,   $nor: [
-            { serviceRecord: result.serviceRecord }
-          ]},{$set: {isActive: false}});
-
+          let query__ = {serviceId: result.serviceId,   $nor: [
+            { serviceRecord: result._id }
+          ]};
+          console.log("query__", query__);
+          await ProductServiceRecordValue.updateMany(query__,{$set: {isActive: false}});
           res.status(StatusCodes.CREATED).json({ serviceRecord: result });
         }
       }  
