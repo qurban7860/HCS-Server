@@ -461,6 +461,8 @@ function isValidCustomer(customer) {
 
 
 function isValidUser(user) {
+  console.log("isValidUser");
+  console.log(_.isEmpty(user), user.isActive, user.isArchived == true);
   if (_.isEmpty(user) || 
   user.isActive == false || 
   user.isArchived == true) {
