@@ -87,6 +87,7 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
+          console.log(_.isEmpty(existingUser), isValidCustomer(existingUser.customer), isValidUser(existingUser), isValidContact(existingUser.contact), isValidRole(existingUser.roles), existingUser.lockUntil);
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
