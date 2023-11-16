@@ -356,9 +356,6 @@ exports.patchProductServiceRecord = async (req, res, next) => {
                 recordValue.serviceRecord = productServiceRecordObject._id;
                 recordValue.serviceId = req.body.serviceId;
                 let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                  await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
-                    checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
-                  
                   let serviceRecordValues = await serviceRecordValue.save((error, data) => {
                   if (error) {
                     console.error(error);
@@ -367,6 +364,10 @@ exports.patchProductServiceRecord = async (req, res, next) => {
               }
             }
           }
+          await ProductServiceRecordValue.updateMany({serviceId: result.serviceId,   $nor: [
+            { serviceRecord: result.serviceRecord }
+          ]},{$set: {isActive: false}});
+
           res.status(StatusCodes.CREATED).json({ serviceRecord: result });
         }
       }  
