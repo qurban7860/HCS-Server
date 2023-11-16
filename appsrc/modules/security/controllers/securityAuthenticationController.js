@@ -46,7 +46,7 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
-    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] };
+    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
 
     let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
 
@@ -87,7 +87,9 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+
+
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
 
@@ -453,16 +455,6 @@ function isValidCustomer(customer) {
   customer.type != 'SP' || 
   customer.isActive == false || 
   customer.isArchived == true) {
-    return false;
-  }
-  return true;
-}
-
-
-function isValidUser(user) {
-  if (_.isEmpty(user) || 
-  user.isActive == false || 
-  user.isArchived == true) {
     return false;
   }
   return true;
