@@ -388,14 +388,19 @@ exports.patchProduct = async (req, res, next) => {
     else{ 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
+
+          console.log("req.body.machineConnections", req.body.machineConnections, machine.machineConnections);
         
         let oldMachineConnections = machine.machineConnections;
         let newMachineConnections = req.body.machineConnections;
+
         let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
 
+        console.log("isSame", isSame);
         if(!isSame) {
           let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
           
+          console.log("toBeConnected", toBeConnected);
           if(toBeConnected.length>0) 
             machine = await connectMachines(machine.id, toBeConnected);
           
@@ -428,7 +433,8 @@ exports.patchProduct = async (req, res, next) => {
         );
       } else {
         let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
-        await postProductAuditLog(machineAuditLog);
+        // console.log("machineAuditLog", machineAuditLog);
+        // await postProductAuditLog(machineAuditLog);
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
