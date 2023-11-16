@@ -46,7 +46,7 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
-    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
+    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] };
 
     let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
 
@@ -87,9 +87,7 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
-
-
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
 
@@ -98,7 +96,7 @@ exports.login = async (req, res, next) => {
             
 
             if(blockedCustomer) {
-              const securityLogs = await addAccessLog('blockedCustomer', existingUser._id, clientIP);
+              const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
               dbService.postObject(securityLogs, callbackFunc);
               async function callbackFunc(error, response) {
                 if (error) {
@@ -109,7 +107,7 @@ exports.login = async (req, res, next) => {
             } else {
               let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
               if(blockedUser) {
-                securityLogs = await addAccessLog('blockedUser', existingUser._id, clientIP);
+                securityLogs = await addAccessLog('blockedUser', req.body.email, existingUser._id, clientIP);
                 dbService.postObject(securityLogs, callbackFunc);
                 async function callbackFunc(error, response) {
                   if (error) {
@@ -237,7 +235,7 @@ exports.login = async (req, res, next) => {
                     }
                   }
 
-                  const securityLogs = await addAccessLog('invalidCredentials', existingUser._id, clientIP);
+                  const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP);
                   dbService.postObject(securityLogs, callbackFunc);
                   async function callbackFunc(error, response) {
                     if (error) {
@@ -253,9 +251,9 @@ exports.login = async (req, res, next) => {
           else {
             let securityLogs = null;
             if(existingUser) {
-              securityLogs = await addAccessLog('existsButNotAuth', existingUser._id, clientIP);
+              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP);
             } else {
-              securityLogs = await addAccessLog('invalidRequest', null, clientIP);
+              securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP);
             }
             dbService.postObject(securityLogs, callbackFunc);
             async function callbackFunc(error, response) {
@@ -275,7 +273,7 @@ exports.login = async (req, res, next) => {
         }
       }
     } else {
-      const securityLogs = await addAccessLog('invalidIPs', null, clientIP);
+      const securityLogs = await addAccessLog('invalidIPs', req.body.email, null, clientIP);
       dbService.postObject(securityLogs, callbackFunc);
       async function callbackFunc(error, response) {
         if (error) {
@@ -321,7 +319,7 @@ async function validateAndLoginUser(req, res, existingUser) {
       });
 
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
+      const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
         if (error) {
@@ -455,6 +453,16 @@ function isValidCustomer(customer) {
   customer.type != 'SP' || 
   customer.isActive == false || 
   customer.isArchived == true) {
+    return false;
+  }
+  return true;
+}
+
+
+function isValidUser(user) {
+  if (_.isEmpty(user) || 
+  user.isActive == false || 
+  user.isArchived == true) {
     return false;
   }
   return true;
@@ -744,9 +752,10 @@ function updateUserToken(accessToken) {
 };
 
 
-async function addAccessLog(actionType, userID, ip = null) {
+async function addAccessLog(actionType, requestedLogin, userID, ip = null) {
   if (actionType == 'login') {
     var signInLog = {
+      requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
       statusCode: 200
@@ -754,6 +763,7 @@ async function addAccessLog(actionType, userID, ip = null) {
   } else if (actionType == 'invalidCredentials' || actionType == 'blockedCustomer' || actionType == 'blockedUser' 
   || actionType == 'existsButNotAuth') {
     var signInLog = {
+      requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
       statusCode: actionType == 'invalidCredentials' ? 403 : //Only password issue
@@ -763,6 +773,7 @@ async function addAccessLog(actionType, userID, ip = null) {
     };
   } else if (actionType == 'invalidIPs' || actionType == 'invalidRequest') {
     var signInLog = {
+      requestedLogin: requestedLogin,
       loginIP: ip,
       statusCode: actionType == 'invalidIPs' ? 422 : 
                   actionType == 'invalidRequest' ? 404 : 406
