@@ -71,6 +71,9 @@ const docSchema = new Schema({
   
   operatorNotes: { type: String },
   // operator comments against this record.
+
+  isHistory: { type: Boolean, default: false },
+  // just indication of current active record.
 },
 {
     collection: 'MachineServiceRecords'

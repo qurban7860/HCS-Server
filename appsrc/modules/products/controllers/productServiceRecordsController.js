@@ -41,7 +41,7 @@ this.populate = [
 
 exports.getProductServiceRecord = async (req, res, next) => {
   let populateObject = [
-    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
     {path: 'customer', select: 'name'},
     {path: 'site', select: 'name'},
     {path: 'machine', select: 'name serialNo'},
@@ -88,25 +88,25 @@ exports.getProductServiceRecord = async (req, res, next) => {
               let queryString = {
                 machineCheckItem: paramListId,
                 checkItemListId: checkParam._id,
-                serviceRecord: response._id,
-                serviceId: response._id,
+                serviceId: response.serviceId,
                 isActive: true, isArchived: false
               };
 
               let historicalProSerValuesQuery = {
                 machineCheckItem: paramListId,
                 checkItemListId: checkParam._id,
-                serviceRecord: response._id,
-                serviceId: response._id,
+                serviceId: response.serviceId,
                 isActive: false, isArchived: false
               };
 
 
-              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString);
+              let productServiceRecordValueObject = await ProductServiceRecordValue.findOne(queryString).populate({path: 'createdBy', select: 'name'});
               let historicalProductServiceRecordValues = await ProductServiceRecordValue.find(historicalProSerValuesQuery, {checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate({path: 'createdBy', select: 'name'}).sort({createdAt: -1});
               if(productServiceRecordValueObject) {
                 productCheckItemObject.checkItemValue = productServiceRecordValueObject.checkItemValue;
                 productCheckItemObject.comments = productServiceRecordValueObject.comments;
+                productCheckItemObject.createdBy = productServiceRecordValueObject.createdBy;
+                
                 productCheckItemObject.historicalData = historicalProductServiceRecordValues;
               }
 
@@ -127,7 +127,11 @@ exports.getProductServiceRecord = async (req, res, next) => {
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
-  console.log("query", this.query);
+  if(this.query.isHistory === undefined) {
+    this.query.isHistory = false;
+  }
+
+  console.log(this.query);
   // this.orderBy = { name: 1 };
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
@@ -211,15 +215,11 @@ exports.postProductServiceRecord = async (req, res, next) => {
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
       }
 
-      console.log("Before Value", req.body.checkItemRecordValues);
       if(req.body.serviceRecordConfig && 
         Array.isArray(req.body.checkItemRecordValues) &&
         req.body.checkItemRecordValues.length>0) {
-          console.log("Before Value @1");
         if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-        console.log("Before Value @2");
         for(let recordValue of req.body.checkItemRecordValues) {
-            console.log("recordValue", recordValue);
             recordValue.loginUser = req.body.loginUser;
             recordValue.serviceRecord = response._id;
             recordValue.serviceId = response._id;
@@ -264,6 +264,15 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
+        let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
+        await ProductServiceRecords.updateMany(
+          queryToUpdateRecords, 
+          { $set: { isHistory: true } } 
+        );
+
+
+        console.log("queryToUpdateRecords", queryToUpdateRecords);
+        
         if(req.body.serviceRecordConfig && 
           Array.isArray(req.body.checkItemRecordValues) &&
           req.body.checkItemRecordValues.length>0) {
@@ -279,7 +288,8 @@ exports.patchProductServiceRecord = async (req, res, next) => {
               console.log("recordValue", recordValue);
               
               let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem},{$set: {isActive: false}});
+                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
+                  checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
                 
                 let serviceRecordValues = await serviceRecordValue.save((error, data) => {
                 if (error) {
@@ -290,7 +300,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           }
         }
 
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        res.status(StatusCodes.CREATED).json({ serviceRecord: result });
       }
     }
   }
@@ -314,7 +324,7 @@ function getDocumentFromReq(req, reqType){
     serviceRecordConfig, serviceId, serviceDate, versionNo, customer, site, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
-    technicianNotes, textBeforeCheckItems, textAfterCheckItems, loginUser, isActive, isArchived
+    technicianNotes, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
   } = req.body;
     
   let { decoilers } = req.body;
@@ -411,7 +421,11 @@ function getDocumentFromReq(req, reqType){
   if ("textAfterCheckItems" in req.body){
     doc.textAfterCheckItems = textAfterCheckItems;
   }
-  
+
+  if ("isHistory" in req.body){
+    doc.isHistory = isHistory;
+  }
+
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }

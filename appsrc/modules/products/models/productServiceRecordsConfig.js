@@ -23,6 +23,9 @@ const docSchema = new Schema({
   parentConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
   // last configuration version.  if there is any
   
+  originalConfiguration: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
+  // last configuration version.  if there is any
+  
   docTitle: { type: String },
   // name/title of document/screen
 
