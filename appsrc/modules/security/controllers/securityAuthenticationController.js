@@ -769,6 +769,9 @@ function updateUserToken(accessToken) {
 
 async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
   let existsButNotAuthCode = 470;
+  console.log("userInfo.isArchived", userInfo.isArchived);
+  console.log("userInfo", userInfo);
+  
   if (userInfo && !_.isEmpty(userInfo) && actionType == 'existsButNotAuth') {
     const isValidRole = userInfo.roles.some(role => role.isActive === true && role.isArchived === false);
     existsButNotAuthCode = userInfo.customer.type != 'SP' ? "452":userInfo.customer.isActive == false ? "453":userInfo.customer.isArchived == true ? "454":
