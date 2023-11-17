@@ -236,13 +236,15 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     } else {
       let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
 
-      if((  (productServiceRecordsConfig.isActive == false && (req.body.isActive != "true" || req.body.isActive != true) ) || 
+      if((req.body.status == 'SUBMITTED' || req.body.status == 'APPROVED') &&
+         ((  (productServiceRecordsConfig.isActive == false && (req.body.isActive != "true" || req.body.isActive != true) ) || 
             (productServiceRecordsConfig.isArchived == true  && (req.body.isArchived != "false" || req.body.isArchived != false))
          ) 
-        || (req.body.isActive == "false" || req.body.isActive == false || req.body.isArchived == "true" || req.body.isArchived == true)) { 
-          return res.status(StatusCodes.BAD_REQUEST).send("Please active configuration to proceed!");
+        || (req.body.isActive == "false" || req.body.isActive == false || req.body.isArchived == "true" || req.body.isArchived == true)
+        )) { 
+          return res.status(StatusCodes.BAD_REQUEST).send("Inactive configuration can't be moved to submit and approved!");
       }
-      
+
       if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
         req.body.submittedInfo = {
           submittedBy: req.body.loginUser.userId,
