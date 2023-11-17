@@ -76,21 +76,21 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
           }
 
           
-          if(Array.isArray(response.verifications) && response.verifications.length>0 ) {
+          if(Array.isArray(response.approvels) && response.approvels.length>0 ) {
             let serviceRecordsConfigVerifications = [];
     
-            for(let verification of response.verifications) {
+            for(let verification of response.approvels) {
     
     
-              let user = await SecurityUser.findOne({ _id: verification.verifiedBy}).select('name');
+              let user = await SecurityUser.findOne({ _id: verification.approveledBy}).select('name');
     
               if(user) {
-                verification.verifiedBy = user;
+                verification.approveledBy = user;
                 serviceRecordsConfigVerifications.push(verification);
               }
     
             }
-            response.verifications = serviceRecordsConfigVerifications;
+            response.approvels = serviceRecordsConfigVerifications;
           }
           return res.json(response);
         } else {
@@ -246,21 +246,21 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
       }
       
-      if(!Array.isArray(productServiceRecordsConfig.verifications))
-        productServiceRecordsConfig.verifications = [];
+      if(!Array.isArray(productServiceRecordsConfig.approvels))
+        productServiceRecordsConfig.approvels = [];
 
-      for(let verif of productServiceRecordsConfig.verifications) {
-        if(verif.verifiedBy == req.body.loginUser.userId)
+      for(let verif of productServiceRecordsConfig.approvels) {
+        if(verif.approveledBy == req.body.loginUser.userId)
           return res.status(StatusCodes.BAD_REQUEST).send("Already verified");
       }
 
-      productServiceRecordsConfig.verifications.push({
-        verifiedBy: req.body.loginUser.userId,
-        verifiedDate: new Date(),
-        verifiedFrom: req.body.loginUser.userIP
+      productServiceRecordsConfig.approvels.push({
+        approveledBy: req.body.loginUser.userId,
+        approvedDate: new Date(),
+        approvedFrom: req.body.loginUser.userIP
       })
 
-      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.verifications.length >= productServiceRecordsConfig.noOfVerificationsRequired) {
+      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.approvels.length >= productServiceRecordsConfig.noOfApprovelsRequired) {
         productServiceRecordsConfig.status = 'APPROVED';
 
         if(productServiceRecordsConfig.originalConfiguration) {
@@ -275,11 +275,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
           if(proSerObj)
             productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;
-        
         }
-
-
-        
       }
 
       productServiceRecordsConfig = await productServiceRecordsConfig.save();
@@ -295,8 +291,8 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
     }
     
-    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfVerificationsRequired > productServiceRecordsConfig.verifications.length) {
-      return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfVerificationsRequired} Verification${productServiceRecordsConfig.noOfVerificationsRequired == 1 ? '':'s'} required to approve configuartion! `);
+    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovelsRequired > productServiceRecordsConfig.approvels.length) {
+      return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovelsRequired} Verification${productServiceRecordsConfig.noOfApprovelsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
 
 
@@ -341,7 +337,7 @@ function getDocumentFromReq(req, reqType){
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
-    enableSuggestedSpares, header, footer, noOfVerificationsRequired, verifications, loginUser, isActive, isArchived
+    enableSuggestedSpares, header, footer, noOfApprovelsRequired, approvels, loginUser, isActive, isArchived
 } = req.body;
   
   let doc = {};
@@ -455,16 +451,16 @@ function getDocumentFromReq(req, reqType){
     doc.footer = footer;
   }
   
-  if ("noOfVerificationsRequired" in req.body){
-    doc.noOfVerificationsRequired = noOfVerificationsRequired;
+  if ("noOfApprovelsRequired" in req.body){
+    doc.noOfApprovelsRequired = noOfApprovelsRequired;
   }
-  if ("verifications" in req.body){
-    doc.verifications = verifications;
+  if ("approvels" in req.body){
+    doc.approvels = approvels;
 
 
     if (reqType && reqType === "new") {
-      for (let i = 0; i < doc.verifications.length; i++) {
-          doc.verifications[i].verifiedFrom = loginUser.userIP;
+      for (let i = 0; i < doc.approvels.length; i++) {
+          doc.approvels[i].approvedFrom = loginUser.userIP;
       }
     }
   }

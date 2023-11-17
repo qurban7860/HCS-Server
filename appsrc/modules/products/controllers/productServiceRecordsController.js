@@ -69,14 +69,14 @@ exports.getProductServiceRecord = async (req, res, next) => {
       // fetching active values.
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
-        isActive: true, isArchived: false
+        isHistory: true, isArchived: false
       }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
       listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
 
       // fetching history values.
       let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
-        isActive: false, isArchived: false
+        isHistory: false, isArchived: false
       }, {serviceRecord:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]).sort({createdAt: -1});
       listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
 
@@ -358,7 +358,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
                 let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
                 
                 await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
-                checkItemListId: recordValue.checkItemListId},{$set: {isActive: false}});
+                checkItemListId: recordValue.checkItemListId},{$set: {isHistory: false}});
                
 
                   let serviceRecordValues = await serviceRecordValue.save((error, data) => {
@@ -373,7 +373,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           //   { serviceRecord: result._id }
           // ]};
           // console.log("query__", query__);
-          // await ProductServiceRecordValue.updateMany(query__,{$set: {isActive: false}});
+          // await ProductServiceRecordValue.updateMany(query__,{$set: {isHistory: false}});
           res.status(StatusCodes.CREATED).json({ serviceRecord: result });
         }
       }  
@@ -525,7 +525,7 @@ function getDocumentFromReq(req, reqType){
 
 
 function productServiceRecordValueDocumentFromReq(recordValue, reqType){
-  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, checkItemValue, comments, files , isActive, isArchived } = recordValue;
+  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, checkItemValue, comments, files , isHistory, isActive, isArchived } = recordValue;
   const { loginUser } = recordValue;
 
 
@@ -562,9 +562,14 @@ function productServiceRecordValueDocumentFromReq(recordValue, reqType){
     doc.files = files;
   }
   
+  if ("isHistory" in recordValue){
+    doc.isHistory = isHistory;
+  }
+  
   if ("isActive" in recordValue){
     doc.isActive = isActive;
   }
+  
   if ("isArchived" in recordValue){
     doc.isArchived = isArchived;
   }

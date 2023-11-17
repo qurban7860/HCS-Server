@@ -81,17 +81,18 @@ const docSchema = new Schema({
     // for page number, use value pgNo. 
   },
 
-  noOfVerificationsRequired: { type: Number, required: true,  default: '1' },
+  noOfApprovelsRequired: { type: Number, required: true,  default: '1' },
   // Number of approvals required
   
-  verifications:[{
-    verifiedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+  approvels:[{
+    approveledBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
     // user who will verified this document
-    verifiedFrom: {type: String},
+    approvedFrom: {type: String},
     //user ip address
-    verifiedDate: { type: Date, default: Date.now }
+    approvedDate: { type: Date, default: Date.now }
     // Date of Verification
   }],
+
 
   submittedInfo: {
     submittedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
