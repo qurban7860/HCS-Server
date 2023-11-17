@@ -10,10 +10,10 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
   
-  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true},
+  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true},
   // service record id.
 
-  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' , required: true},
+  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord' , required: true},
   // purpose is to maintain parent service record config uuid
   
   machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},
@@ -22,16 +22,19 @@ const docSchema = new Schema({
   checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig.checkItemLists', required: true}, 
   //this will refer to the list to which checkitem is belong to,
 
-  checkItemValue: {type: String},
+  checkItemValue: {type: String, required: true},
   // if checked, then value will be considered
   
   comments: {type: String}, 
   // comments against this checkitem
   
-  files : []
+  files : [],
   // list of documents/images related to this checkitem
 
-  },
+  isHistory: {type: Boolean, default: false}
+  //if value is updated flag should be set to true as considered as history one.
+
+},
 {
     collection: 'MachineServiceRecordValues'
 });

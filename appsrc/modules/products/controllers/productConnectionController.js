@@ -53,15 +53,20 @@ async function connectMachines(machineId, connectedMachines = []) {
     let connectedMachinesIds = []
     if(Array.isArray(connectedMachines) && connectedMachines.length>0) {
       for(let connectedMachineId of connectedMachines) {
+        console.log("=====>>>>>>>", connectedMachineId);
         
-        if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId)
+        if(!mongoose.Types.ObjectId.isValid(connectedMachineId) || machineId==connectedMachineId) {
           continue;
+        }
+          
         
         let decoilerMachine = await dbservice.getObjectById(Product, this.fields, connectedMachineId);
         
         if(decoilerMachine && decoilerMachine.id && decoilerMachine.isActive && !decoilerMachine.isArchived) {
-          let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId, isActive:true});
+          console.log("=================>>>>>>>>>> @@@ 1111" );
+          let machineConnection = await dbservice.getObject(ProductConnection, { machine:machineId, connectedMachine : connectedMachineId, disconnectionDate: {$exists: false}, isActive:true});
           
+          console.log("machineConnection", machineConnection);
           if(!machineConnection) {
             let machineConnectionData = {
               machine:dbMachine.id,
@@ -139,6 +144,26 @@ exports.getConnectionProducts = async (req, res, next) => {
   let listProducts = await Product.aggregate(aggregateQuery);
   res.status(StatusCodes.OK).json(listProducts);
 };
+
+exports.getParentMachines = async (req, res, next) => {
+  this.populate =  {path: 'machine', select: 'name serialNo'};
+  try {
+    this.query = req.query != "undefined" ? req.query : {};  
+
+    
+    this.query = {connectedMachine: req.params.connectedMachine, disconnectionDate: {$exists: false}};
+
+    console.log("this.query", this.query);
+
+    const response = await dbservice.getObjectList(ProductConnection, {machine: 1}, this.query, {_id: -1}, this.populate);
+    res.json(response);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+
 
 
 exports.disconnectMachine = async (req, res, next) => {

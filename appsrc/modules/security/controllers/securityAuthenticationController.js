@@ -44,8 +44,9 @@ exports.login = async (req, res, next) => {
 
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
   } else {
-    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
+    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}], isArchived: false };
 
     let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
 
@@ -86,9 +87,7 @@ exports.login = async (req, res, next) => {
         } else {
           const existingUser = response;
 
-
-
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
 
@@ -97,17 +96,28 @@ exports.login = async (req, res, next) => {
             
 
             if(blockedCustomer) {
+              const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
+              dbService.postObject(securityLogs, callbackFunc);
+              async function callbackFunc(error, response) {
+                if (error) {
+                  logger.error(new Error(error));
+                }
+              }
               return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
             } else {
               let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
               if(blockedUser) {
+                securityLogs = await addAccessLog('blockedUser', req.body.email, existingUser._id, clientIP);
+                dbService.postObject(securityLogs, callbackFunc);
+                async function callbackFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                  }
+                }
                 return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
               }  
             }
 
-
-
-              
                 let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
                 if(passwordsResponse) {
 
@@ -225,7 +235,7 @@ exports.login = async (req, res, next) => {
                     }
                   }
 
-                  const securityLogs = await addAccessLog('invalidCredentials', existingUser._id, clientIP);
+                  const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP);
                   dbService.postObject(securityLogs, callbackFunc);
                   async function callbackFunc(error, response) {
                     if (error) {
@@ -239,6 +249,19 @@ exports.login = async (req, res, next) => {
                 }
           }
           else {
+            let securityLogs = null;
+            if(existingUser) {
+              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser);
+            } else {
+              securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP);
+            }
+            dbService.postObject(securityLogs, callbackFunc);
+            async function callbackFunc(error, response) {
+              if (error) {
+                logger.error(new Error(error));
+              }
+            }
+
             if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
               const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
@@ -250,7 +273,15 @@ exports.login = async (req, res, next) => {
         }
       }
     } else {
-      res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
+      const securityLogs = await addAccessLog('invalidIPs', req.body.email, null, clientIP);
+      dbService.postObject(securityLogs, callbackFunc);
+      async function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+        } else {
+          res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
+        }
+      }
     }
   }
 };
@@ -288,7 +319,7 @@ async function validateAndLoginUser(req, res, existingUser) {
       });
 
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
+      const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
         if (error) {
@@ -427,6 +458,16 @@ function isValidCustomer(customer) {
   return true;
 }
 
+
+function isValidUser(user) {
+  if (_.isEmpty(user) || 
+  user.isActive == false || 
+  user.isArchived == true) {
+    return false;
+  }
+  return true;
+}
+
 function isValidContact(contact){
   if (!_.isEmpty(contact)){
     if(contact.isActive == false || contact.isArchived == true) {
@@ -454,6 +495,20 @@ async function removeSessions(userId) {
       ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
       ws.terminate();
     }
+    // const ws = new WebSocket('totalLoggedInUsers'); 
+    // ws.onmessage = (event) => {
+    //     let totalCount = 0;
+    //     const data = JSON.parse(event.data);
+    //     const eventName = data.eventName;
+    //     totalCount = data.totalCount;
+    //     if (eventName === 'totalLoggedInUsers') {
+    //         totalCount --;
+    //         console.log(`Received a logout message for user ${totalCount}`);
+    //     }
+    // };
+
+    ws.send(Buffer.from(JSON.stringify({'eventName':'totalLoggedInUsers',totalCount})));
+
   });
 }
 
@@ -711,28 +766,49 @@ function updateUserToken(accessToken) {
 };
 
 
-async function addAccessLog(actionType, userID, ip = null) {
+async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
+  let existsButNotAuthCode = 470;
+  if (userInfo && !_.isEmpty(userInfo) && actionType == 'existsButNotAuth') {
+    const isValidRole = userInfo.roles.some(role => role.isActive === true && role.isArchived === false);
+    existsButNotAuthCode = userInfo.customer.type != 'SP' ? "452":userInfo.customer.isActive == false ? "453":userInfo.customer.isArchived == true ? "454":
+    userInfo.isActive == false ? "455":userInfo.isArchived == true ? "456":
+    userInfo.contact.isActive == false ? "457":userInfo.contact.isArchived == true ? "458":
+    (_.isEmpty(userInfo.roles) || !isValidRole)  ? "459":
+    !(typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
+  }
+
   if (actionType == 'login') {
     var signInLog = {
+      requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
       statusCode: 200
     };
-    var reqSignInLog = {};
-    reqSignInLog.body = signInLog;
-    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
-    return res;
-  } else if (actionType == 'invalidCredentials') {
+  } else if (actionType == 'invalidCredentials' || actionType == 'blockedCustomer' || actionType == 'blockedUser' 
+  || actionType == 'existsButNotAuth') {
     var signInLog = {
+      requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
-      statusCode: StatusCodes.UNAUTHORIZED
+      statusCode: actionType == 'invalidCredentials' ? 461 : //Only password issue
+                  actionType == 'blockedCustomer' ? 462 :
+                  actionType == 'blockedUser' ? 463 :
+                  actionType == 'existsButNotAuth' ? existsButNotAuthCode : 470
     };
-    var reqSignInLog = {};
-    reqSignInLog.body = signInLog;
-    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
-    return res;
+  } else if (actionType == 'invalidIPs' || actionType == 'invalidRequest') {
+    var signInLog = {
+      requestedLogin: requestedLogin,
+      loginIP: ip,
+      statusCode: actionType == 'invalidIPs' ? 464 : 
+                  actionType == 'invalidRequest' ? 465 : 470
+    };
   }
+  
+  var reqSignInLog = {};
+  reqSignInLog.body = signInLog;
+
+  const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
+  return res;
 }
 
 async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
