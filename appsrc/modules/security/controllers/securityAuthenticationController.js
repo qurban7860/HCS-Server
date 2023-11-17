@@ -46,7 +46,7 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
-    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}], isArchived: false };
+    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] };
 
     let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
 
