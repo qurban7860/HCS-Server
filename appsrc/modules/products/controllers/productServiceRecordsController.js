@@ -344,7 +344,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
           await ProductServiceRecords.updateMany(
             queryToUpdateRecords, 
-            { $set: { isHistory: true } } 
+            { $set: { isHistory: false } } 
           );
   
           if(req.body.serviceRecordConfig && 
@@ -358,7 +358,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
                 let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
                 
                 await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
-                checkItemListId: recordValue.checkItemListId},{$set: {isHistory: false}});
+                checkItemListId: recordValue.checkItemListId},{$set: {isHistory: true}});
                
 
                   let serviceRecordValues = await serviceRecordValue.save((error, data) => {
