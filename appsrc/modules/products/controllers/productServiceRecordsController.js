@@ -69,14 +69,14 @@ exports.getProductServiceRecord = async (req, res, next) => {
       // fetching active values.
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
-        isHistory: true, isArchived: false
+        isHistory: false, isActive: true, isArchived: false
       }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
       listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
 
       // fetching history values.
       let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
         serviceId: response.serviceId,
-        isHistory: false, isArchived: false
+        isHistory: true, isActive: true, isArchived: false
       }, {serviceRecord:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]).sort({createdAt: -1});
       listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
 
