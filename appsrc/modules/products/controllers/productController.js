@@ -96,12 +96,16 @@ exports.getProduct = async (req, res, next) => {
       }
 
       let machineProfileQuery = {type:"MANUFACTURER", machine: machine._id, isActive:true, isArchived:false};
-      console.log(machineProfileQuery);
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
+
+      if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
+        let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
+        machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
+      }
+
       res.json(machine);
     }
   }
-
 };
 
 exports.getProducts = async (req, res, next) => {
@@ -382,22 +386,31 @@ exports.patchProduct = async (req, res, next) => {
     else{ 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
+
+          console.log("req.body.machineConnections", req.body.machineConnections, machine.machineConnections);
         
         let oldMachineConnections = machine.machineConnections;
         let newMachineConnections = req.body.machineConnections;
+
         let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
 
+        console.log("isSame", isSame);
         if(!isSame) {
-          let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
-          
-          if(toBeConnected.length>0) 
-            machine = await connectMachines(machine.id, toBeConnected);
-          
 
           let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
 
           if(toBeDisconnected.length>0) 
             machine = await disconnectMachine_(machine.id, toBeDisconnected);
+
+
+          let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
+          
+          console.log("toBeConnected", toBeConnected);
+          if(toBeConnected.length>0) 
+            machine = await connectMachines(machine.id, toBeConnected);
+          
+
+
           
           req.body.machineConnections = machine.machineConnections;
 
@@ -422,7 +435,8 @@ exports.patchProduct = async (req, res, next) => {
         );
       } else {
         let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
-        await postProductAuditLog(machineAuditLog);
+        // console.log("machineAuditLog", machineAuditLog);
+        // await postProductAuditLog(machineAuditLog);
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }

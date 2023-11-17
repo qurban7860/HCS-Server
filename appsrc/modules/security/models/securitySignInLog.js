@@ -5,7 +5,9 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
-        
+
+    requestedLogin: { type: String },
+
     user: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
     // guid of user from users collection.
     
@@ -15,7 +17,12 @@ const docSchema = new Schema({
     logoutTime: { type: Date  },
     // logout time of user
     
-    loginIP: { type: String }
+    loginIP: { type: String },
+
+    statusCode: { type: Number },
+
+    loggedOutBy: {type: String, enum: ["SYSTEM", "ADMIN", "SELF"]}
+ 
     // information of IP address from where action is performed
 
     // information of IP address from where action is performed

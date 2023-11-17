@@ -9,12 +9,18 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
-  
+
   serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
   // record configuration used to create this record.
+
+  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' },
+  // purpose is to maintain parent service record config uuid
   
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
+
+  versionNo: { type: Number,  required: true,  default: '1'},
+  // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
   // customer information.
@@ -31,37 +37,43 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
   // technician information who performed service process.
   
-  technicianRemarks: { type: String },
+  technicianNotes: { type: String },
   // operator comments against this record.
-  
-  checkParams: [{
-    serviceParam: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem'},
-    name: {type: String},
-    paramListTitle: {type: String},
-    checked: {type: Boolean, default: false},
-    value: {type: String},
-    status: {type: String},
-    comments: {type: String},
-    files: []
-  }],
 
+  textBeforeCheckItems: { type: String },
+  // display this text before fields. default will be copied from configurtation
+  
+  textAfterCheckItems: { type: String },
+  // display this text before fields
+
+  
   serviceNote: { type: String },
   //some notes regarding service/installation/training,
   
-  maintenanceRecommendation: { type: String },
+  recommendationNote: { type: String },
   //recommendations if required
+  
+  internalComments: { type: String },
+  //Internal comments in machine service record . this comments will not be printed at PDF and not visible to customer
+
   
   suggestedSpares: { type: String },
   //detail of suggested spares
+
+  internalNote: { type: String },
+  //internal notes will not be visibile to customer,
   
-  // files : []
-  // list of documents/images related to this record
+  files : [],
+  //list of documents/images related to this record
   
   operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // operators who is training.
   
-  operatorRemarks: { type: String },
+  operatorNotes: { type: String },
   // operator comments against this record.
+
+  isHistory: { type: Boolean, default: false },
+  // just indication of current active record.
 },
 {
     collection: 'MachineServiceRecords'

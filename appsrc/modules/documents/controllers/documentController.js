@@ -17,8 +17,10 @@ let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
 const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
+const {  } = require('../../products/models');
+
 const { Customer, CustomerSite } = require('../../crm/models');
-const { Machine, MachineModel } = require('../../products/models');
+const { Machine, MachineModel, ProductDrawing } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -334,7 +336,6 @@ exports.postDocument = async (req, res, next) => {
           for(let file of files) {
             
             if(file && file.originalname) {
-
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
@@ -381,7 +382,15 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
+          if(docCategory.drawing && req.body.machine) {
+            req.body.documentId = document_._id;
+            let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
+            productDrawingDocx.save();
+          }
+
           await createAuditLog(documentAuditLogObj,req);
+
+
           return res.status(StatusCodes.CREATED).json({ Document: document_ });
 
         }
@@ -809,10 +818,10 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { name, displayName, description, path, type, extension, content, 
+  const { name, displayName, documentTitle, description, path, type, extension, content, 
     documentVersions, documentCategory, customer, customerAccess, site,
     contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
-    machineModel, documentType, shippingDate, installationDate, referenceNumber } = req.body;
+    machineModel, documentType, shippingDate, installationDate, referenceNumber, stockNumber} = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -825,10 +834,19 @@ function getDocumentFromReq(req, reqType) {
   if ("referenceNumber" in req.body) {
     doc.referenceNumber = referenceNumber;
   }
+
+  if ("stockNumber" in req.body) {
+    doc.stockNumber= stockNumber;
+  }
   
   if ("displayName" in req.body) {
     doc.displayName = displayName;
   }
+
+  if ("documentTitle" in req.body) {
+    doc.documentTitle = documentTitle;
+  }
+
   if ("description" in req.body) {
     doc.description = description;
   }
@@ -908,6 +926,49 @@ function getDocumentFromReq(req, reqType) {
 
   return doc;
 
+}
+
+
+function getDocumentProductDocumentFromReq(req, reqType){
+  const { machine, documentCategory, documentType, documentId, isActive, isArchived, loginUser } = req.body;
+  let doc = {};
+  if (reqType && reqType == "new"){
+    doc = new ProductDrawing({});
+  }
+
+  if ("machine" in req.body){
+    doc.machine = machine;
+  }
+  if ("documentCategory" in req.body){
+    doc.documentCategory = documentCategory;
+  }
+  if ("documentType" in req.body){
+    doc.documentType = documentType;
+  }
+  if ("documentId" in req.body){
+    doc.document = documentId;
+  }
+  
+  if ("isActive" in req.body){
+    doc.isActive = isActive;
+  }
+
+  if ("isArchived" in req.body){
+    doc.isArchived = isArchived;
+  }
+  
+  if (reqType == "new" && "loginUser" in req.body ){
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  } 
+
+  //console.log("doc in http req: ", doc);
+  return doc;
 }
 
 

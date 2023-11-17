@@ -26,6 +26,12 @@ const baseRouteForObject = `/customers/:customerId/sites`;
 router.use(checkAuth, checkCustomer);
 
 
+//// - /api/1.0.0/crm/sites/search
+router.get(`${baseRouteForObject}/search`, controller.searchCustomerSites);
+
+// - /api/1.0.0/crm/sites/export
+router.get(`${baseRouteForObject}/export`, controller.exportSites);
+
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.get(`${baseRouteForObject}/:id`, checkCustomerID, controller.getCustomerSite);
 
@@ -41,7 +47,6 @@ router.patch(`${baseRouteForObject}/:id`, checkCustomerID, verifyDelete, control
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.delete(`${baseRouteForObject}/:id`, checkCustomerID, controller.deleteCustomerSite);
 
-//// - /api/1.0.0/crm/sites/search
-router.get(`/sites/search`, controller.searchCustomerSites);
+
 
 module.exports = router;

@@ -29,6 +29,10 @@ router.post(`${baseRouteForObject}/:id/disconnect`, controller.disconnectMachine
 
 router.get(`${baseRouteForObject}/`, controller.getConnectionProducts); 
 
+router.get(`${baseRouteForObject}/:connectedMachine`, controller.getParentMachines); 
+
+// db.getCollection('MachineConnections').find({connectedMachine: ObjectId("654e8a90bf181c38980c819d"), disconnectionDate: {$exists: false} }, {machine:1}).sort({_id: -1});
+
 
 
 module.exports = router;

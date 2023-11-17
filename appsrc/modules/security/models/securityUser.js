@@ -69,8 +69,13 @@ const docSchema = new Schema({
           // Date/Time for token  creation.
           tokenExpiry: { type: Date}
           // Date/Time for token expiry.
-        }
-                          
+        },
+
+
+        lockUntil : {type: Date},
+        lockedBy: {type: String, enum: ['SYSTEM','ADMIN']},
+        loginFailedCounts: {type: Number, default: 0}
+                                  
 },
 {
         collection: 'SecurityUsers'

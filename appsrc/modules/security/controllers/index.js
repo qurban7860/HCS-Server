@@ -8,8 +8,10 @@ module.exports = {
     securitySignInLogController: require('./securitySignInLogController'),
     securityNoteController: require('./securityNoteController'),
     securityUserInvitationController: require('./securityUserInvitationController'),
-
-    
+    securityConfigBlockedUserController: require('./securityConfigBlockedUserController'),
+    securityConfigBlockedCustomerController: require('./securityConfigBlockedCustomerController'),
+    securityConfigWhileListIPController: require('./securityConfigWhiteListIPController'),
+    securityConfigBlackListIPController: require('./securityConfigBlackListIPController'),
 
     // securityInviteController: require('./securityInviteController'),
 }

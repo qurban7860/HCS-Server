@@ -3,6 +3,7 @@ APP_NAME=Howick Cloud Services Backend
 ENV=dev
 HOST_NAME=localhost
 PORT=3001
+SOCKET_PORT=5001
 SSL_Enabled_domain=
 
 
@@ -21,6 +22,7 @@ UPLOAD_PATH =
 
 LOG_TO_CONSOLE=true
 JWT_SECRETKEY=supersecret_dont_share
+SESSION_SECRETKEY=9scNTgPJtj
 MORGAN_FORMAT=combined
 
 AWS_REGION=

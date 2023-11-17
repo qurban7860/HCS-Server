@@ -13,6 +13,9 @@ const docSchema = new Schema({
         displayName: { type: String },
         // name/title to print at reports. default is same as name 
 
+        documentTitle: { type: String },
+        // name/title to print at reports. default is same as name 
+
         description: { type: String },
         // detailed description of field
 
@@ -29,6 +32,8 @@ const docSchema = new Schema({
         // list of versions. 
 
         referenceNumber: { type: String },
+        
+        stockNumber: { type: String },
         
         customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
         // customer information.

@@ -17,7 +17,8 @@ const dbService = this.dbservice = new securityDBService();
 
 const emailController = require('../../email/controllers/emailController');
 const securitySignInLogController = require('./securitySignInLogController');
-const { SecurityUser, SecuritySignInLog } = require('../models');
+const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, SecuritySession } = require('../models');
+const ipRangeCheck = require("ip-range-check");
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -38,93 +39,248 @@ this.populateList = [
 
 exports.login = async (req, res, next) => {
   const errors = validationResult(req);
+  const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   var _this = this;
-  console.log("login....");
+
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
   } else {
-    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}] , isActive:true, isArchived:false };
-    this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
-    async function getObjectCallback(error, response) {
+    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}], isArchived: false };
 
-      if (error) {
-        logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
+
+    let matchedBlackListIps = false;
+    blackListIP.forEach((ipObj) => {
+      if(clientIP == ipObj.blackListIP) {
+        matchedBlackListIps = true;
+      } else if(ipRangeCheck(clientIP, ipObj.blackListIP)){
+        matchedBlackListIps = true;
+      }
+    });
+
+
+    let matchedwhiteListIPs = false;
+    if(!matchedBlackListIps) {
+      let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
+      if(validIps && validIps.length > 0) {
+        validIps.forEach((ipObj) => {
+          if(clientIP == ipObj.whiteListIP) {
+            matchedwhiteListIPs = true;
+          } else if(ipRangeCheck(clientIP, ipObj.whiteListIP)){
+            matchedwhiteListIPs = true;
+          }
+        });  
       } else {
-        const existingUser = response;
-        if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles)) {
+        matchedwhiteListIPs = true;
+      }
+    }
 
-          let passwordsResponse = await comparePasswords(req.body.password, existingUser.password)
-          
-          if(passwordsResponse) {
 
-            if (existingUser.multiFactorAuthentication) {
+    if(matchedwhiteListIPs && !matchedBlackListIps){
+      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
+      async function getObjectCallback(error, response) {
 
-              // User has enabled MFA, so redirect them to the MFA page
-              // Generate a one time code and send it to the user's email address
-              const code = Math.floor(100000 + Math.random() * 900000);
-              
-              let emailContent = `Hi ${existingUser.name},<br><br>We detected an unusual 
-              sign-in from a device or location you don't usually use. If this was you, 
-              enter the code below to sign in. <br>
-              <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
-              The code will expire in 10 minutes.`;
-              let emailSubject = "Multi-Factor Authentication Code";
+        if (error) {
+          logger.error(new Error(error));
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        } else {
+          const existingUser = response;
 
-              let params = {
-                to: `${existingUser.email}`,
-                subject: emailSubject,
-                html: true
-              };
-              let hostName = 'portal.howickltd.com';
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
+          ) {
 
-              if(process.env.CLIENT_HOST_NAME)
-                hostName = process.env.CLIENT_HOST_NAME;
-              
-              let hostUrl = "https://portal.howickltd.com";
+            //Checking blocked list of customer & users.
+            let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
+            
 
-              if(process.env.CLIENT_APP_URL)
-                hostUrl = process.env.CLIENT_APP_URL;
-              
-              // console.log("@2");
-              fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
-                params.htmlData = htmlData;
-                let response = await awsService.sendEmail(params);
-              })
-              const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-              _this.dbservice.postObject(emailResponse, callbackFunc);
-              function callbackFunc(error, response) {
-                // console.log("add object -->", response);
+            if(blockedCustomer) {
+              const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
+              dbService.postObject(securityLogs, callbackFunc);
+              async function callbackFunc(error, response) {
                 if (error) {
                   logger.error(new Error(error));
-                  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                } else {
-                  let userMFAData = {};
-                  userMFAData.multiFactorAuthenticationCode = code;
-                  const currentDate = new Date();
-                  userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-                  _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
-                  
-                  function callbackPatchFunc(error, response) {
-                    return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
-                  }
                 }
               }
-              return;  
+              return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
+            } else {
+              let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
+              if(blockedUser) {
+                securityLogs = await addAccessLog('blockedUser', req.body.email, existingUser._id, clientIP);
+                dbService.postObject(securityLogs, callbackFunc);
+                async function callbackFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                  }
+                }
+                return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
+              }  
             }
 
-            return await validateAndLoginUser(req, res, existingUser);
+                let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
+                if(passwordsResponse) {
 
+                  if(existingUser && existingUser.loginFailedCounts && existingUser.loginFailedCounts > 0) {
+                    console.log("updating loginFailedCounts . **********************************************");
+                    let updateUser = {
+                      lockUntil : "",
+                      lockedBy : "",
+                      loginFailedCounts: 0,
+                    };
+      
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                    async function callbackPatchFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                      }
+                    }
+                  }
+  
+                  if (existingUser.multiFactorAuthentication) {
+  
+                    // User has enabled MFA, so redirect them to the MFA page
+                    // Generate a one time code and send it to the user's email address
+                    const code = Math.floor(100000 + Math.random() * 900000);
+                    
+                    let emailContent = `We detected an unusual 
+                    sign-in from a device or location you don't usually use. If this was you, 
+                    enter the code below to sign in. <br>
+                    <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
+                    The code will expire in <b>10</b> minutes.`;
+                    let emailSubject = "Multi-Factor Authentication Code";
+  
+                    let params = {
+                      to: `${existingUser.email}`,
+                      subject: emailSubject,
+                      html: true
+                    };
+  
+                    
+                    let username = existingUser.name;
+  
+                    let hostName = 'portal.howickltd.com';
+  
+                    if(process.env.CLIENT_HOST_NAME)
+                      hostName = process.env.CLIENT_HOST_NAME;
+                    
+                    let hostUrl = "https://portal.howickltd.com";
+  
+                    if(process.env.CLIENT_APP_URL)
+                      hostUrl = process.env.CLIENT_APP_URL;
+                    
+                    fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+                      let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
+                      params.htmlData = htmlData;
+                      let response = await awsService.sendEmail(params);
+                    })
+                    const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
+                    _this.dbservice.postObject(emailResponse, callbackFunc);
+                    function callbackFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                      } else {
+                        let userMFAData = {};
+                        userMFAData.multiFactorAuthenticationCode = code;
+                        const currentDate = new Date();
+                        userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
+                        
+
+
+                        _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
+                        
+                        function callbackPatchFunc(error, response) {
+                          return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
+                        }
+                      }
+                    }
+                    return;  
+                  }
+  
+                  return await validateAndLoginUser(req, res, existingUser);
+  
+                }
+                else {
+                  const minutesToWaitUntil = 15;
+                  if(existingUser && existingUser.loginFailedCounts && 
+                    ((existingUser.loginFailedCounts == 2   && (!existingUser.lockUntil || new Date() >= existingUser.lockUntil )) || existingUser.loginFailedCounts == 4 )) {
+                    var now = new Date();
+                    lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
+                    
+                    if(existingUser.loginFailedCounts == 4) 
+                      lockUntil.setFullYear(lockUntil.getFullYear() + 100);
+
+                    let updateUser = {
+                      lockUntil : lockUntil,
+                      lockedBy : "System"
+                    };
+      
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                    async function callbackPatchFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                      }
+                    }
+                  } 
+
+                  if (!(_.isEmpty(existingUser) ))
+                  {
+                    const updateCount = { $inc: { loginFailedCounts: 1 } };
+                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateCount, callbackPatchFunc);
+                    async function callbackPatchFunc(error, response) {
+                      if (error) {
+                        logger.error(new Error(error));
+                      }
+                    }
+                  }
+
+                  const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP);
+                  dbService.postObject(securityLogs, callbackFunc);
+                  async function callbackFunc(error, response) {
+                    if (error) {
+                      logger.error(new Error(error));
+                      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                    } else {
+
+                      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+                    } 
+                  }
+                }
           }
           else {
-            return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+            let securityLogs = null;
+            if(existingUser) {
+              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser);
+            } else {
+              securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP);
+            }
+            dbService.postObject(securityLogs, callbackFunc);
+            async function callbackFunc(error, response) {
+              if (error) {
+                logger.error(new Error(error));
+              }
+            }
+
+            if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
+              const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
+            } else {
+              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Invalid User/User does not have the rights to access", true));
+            }
           }
+          
         }
-        else {
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid User/User does not have the rights to access', true));
+      }
+    } else {
+      const securityLogs = await addAccessLog('invalidIPs', req.body.email, null, clientIP);
+      dbService.postObject(securityLogs, callbackFunc);
+      async function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+        } else {
+          res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
         }
-        
       }
     }
   }
@@ -133,28 +289,49 @@ exports.login = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   
-  const accessToken = await issueToken(existingUser._id, existingUser.login);
+
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID);
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
-   
+    
     dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
     async function callbackPatchFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
       }
+
+      let QuerysecurityLog = {
+        user: existingUser.id,
+        logoutTime: {$exists: false},
+        statusCode: 200
+      };
+
+      console.log("QuerysecurityLog -->", QuerysecurityLog);
+
+      await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
+        if (err) {
+          console.error(err);
+        } else {
+          console.log(result);
+        }
+      });
+
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog('login', existingUser._id, clientIP);
+      const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
-      function callbackFunc(error, response) {
+      async function callbackFunc(error, response) {
         if (error) {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
+          let session = await removeAndCreateNewSession(req,existingUser.id);
+
           return res.json({
             accessToken,
             userId: existingUser.id,
+            sessionId:session.session.sessionId,
             user: {
               login: existingUser.login,
               email: existingUser.email,
@@ -171,6 +348,34 @@ async function validateAndLoginUser(req, res, existingUser) {
   }
   
 }
+
+
+async function removeAndCreateNewSession(req, userId) {
+
+  try {
+    await removeSessions(userId);
+    if(req.session) {
+
+      req.session.cookie.expires = false;
+      let maxAge = process.env.TOKEN_EXP_TIME || "48h";
+      maxAge = maxAge.replace(/\D/g,'');
+
+      req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
+      req.session.isLoggedIn = true;
+      req.session.user = userId;
+      req.session.sessionId = req.sessionID;
+    }
+
+    await req.session.save();
+    return await SecuritySession.findOne({"session.user":userId});
+
+  } catch (err) {
+    console.error('Error saving to session storage: ', err);
+    return next(new Error('Error creating user session'));
+  }
+}
+
+exports.removeAndCreateNewSession = removeAndCreateNewSession;
 
 exports.multifactorverifyCode = async (req, res, next) => {
   const errors = validationResult(req);
@@ -205,13 +410,6 @@ exports.multifactorverifyCode = async (req, res, next) => {
   }
 };
 
-
-
-
-
-
-
-
 exports.refreshToken = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
@@ -220,7 +418,7 @@ exports.refreshToken = async (req, res, next) => {
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
     if(existingUser){
-    const accessToken = await issueToken(existingUser._id, existingUser.login);
+    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID);
     if (accessToken) {
       updatedToken = updateUserToken(accessToken);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -260,6 +458,16 @@ function isValidCustomer(customer) {
   return true;
 }
 
+
+function isValidUser(user) {
+  if (_.isEmpty(user) || 
+  user.isActive == false || 
+  user.isArchived == true) {
+    return false;
+  }
+  return true;
+}
+
 function isValidContact(contact){
   if (!_.isEmpty(contact)){
     if(contact.isActive == false || contact.isArchived == true) {
@@ -278,11 +486,38 @@ function isValidRole(roles) {
   return true;
 }
 
+async function removeSessions(userId) {
+  await SecuritySession.deleteMany({"session.user":userId});
+  await SecuritySession.deleteMany({"session.user":{$exists:false}});
+  const wss = getSocketConnectionByUserId(userId);
+  wss.map((ws)=> {  
+    if(ws.userId==userId) {
+      ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
+      ws.terminate();
+    }
+    // const ws = new WebSocket('totalLoggedInUsers'); 
+    // ws.onmessage = (event) => {
+    //     let totalCount = 0;
+    //     const data = JSON.parse(event.data);
+    //     const eventName = data.eventName;
+    //     totalCount = data.totalCount;
+    //     if (eventName === 'totalLoggedInUsers') {
+    //         totalCount --;
+    //         console.log(`Received a logout message for user ${totalCount}`);
+    //     }
+    // };
+
+    ws.send(Buffer.from(JSON.stringify({'eventName':'totalLoggedInUsers',totalCount})));
+
+  });
+}
+
 exports.logout = async (req, res, next) => {
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   let existingSignInLog = await SecuritySignInLog.findOne({ user: req.params.userID, loginIP: clientIP }).sort({ loginTime: -1 }).limit(1);
-  if (!existingSignInLog.logoutTime) {
-    this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date() }, callbackFunc);
+  if (existingSignInLog && !existingSignInLog.logoutTime) {
+
+    this.dbservice.patchObject(SecuritySignInLog, existingSignInLog._id, { logoutTime: new Date(), loggedOutBy: "SELF" }, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -291,31 +526,23 @@ exports.logout = async (req, res, next) => {
     }
   }
 
-  res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
-
-  // const currentTime = Date.now;
-  // var signOutLog = {
-  //   user: userID,
-  //   logOutTime: currentTime,
-  // };
-
-  // const diffInMilliseconds = Math.abs(currentTime - user.loginTime);
-  // const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
-
-  // if (diffInHours >= 2) {
-  //   console.log("Time diff is greater than or equal to 2 hours");
-  // var reqSignOutLog = {};
-  // reqSignOutLog.body = signOutLog;
-  // const res = await securitySignInLogController.getDocumentFromReq(reqSignOutLog);
+  await removeSessions(req.params.userID);
 
 
-  // } 
-  // else {
-  //   console.log("time diff < 2 hours");
-  //   var reqSignOutLog = {};
-  //   reqSignOutLog.body = signOutLog;
-  // }
-  // return res;
+  
+  if(req.session) {
+    req.session.isLoggedIn = false;
+
+    req.session.destroy((a,b,c) => {
+      // console.log("destroy",a,b,c);
+      return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+    })
+  }
+  else {
+      return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+
+  }
+
 };
 
 exports.forgetPassword = async (req, res, next) => {
@@ -338,9 +565,7 @@ exports.forgetPassword = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
 
-          let emailContent = `Hi ${existingUser.name},<br><br>You requested to reset your password.<br>
-                          <br>Please click the link below to reset your password.<br>
-                          <br><a href="${link}">Click here</a>`;
+          
           let emailSubject = "Reset Password";
 
           let params = {
@@ -349,6 +574,7 @@ exports.forgetPassword = async (req, res, next) => {
             html: true
           };
 
+          let username = existingUser.name;
           let hostName = 'portal.howickltd.com';
 
           if(process.env.CLIENT_HOST_NAME)
@@ -358,10 +584,10 @@ exports.forgetPassword = async (req, res, next) => {
 
           if(process.env.CLIENT_APP_URL)
             hostUrl = process.env.CLIENT_APP_URL;
+          
+          fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
 
-          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-
-            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+            let htmlData = render(data,{ hostName, hostUrl, username, link })
             params.htmlData = htmlData;
             let response = await awsService.sendEmail(params);
           })
@@ -406,7 +632,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
 
-              let emailContent = `Hi ${existingUser.name},<br><br>Your password has been update successfully.<br>
+              let emailContent = `Hi ${existingUser.name},<br><br>Your password has been updated successfully.<br>
                               <br>Please sign in to access your account<br>`;
                               
               let emailSubject = "Password Reset Successful";
@@ -428,9 +654,11 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               if(process.env.CLIENT_APP_URL)
                 hostUrl = process.env.CLIENT_APP_URL;
 
+              let username = existingUser.name;
+
               fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
 
-                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
                 params.htmlData = htmlData;
                 let response = await awsService.sendEmail(params);
               })
@@ -505,12 +733,15 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail) {
+async function issueToken(userID, userEmail, sessionID) {
   let token;
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID };
+  // console.log("tokenData",tokenData);
+
   try {
+
     token = jwt.sign(
-      { userId: userID, email: userEmail },
-      //'supersecret_dont_share',
+      tokenData,
       process.env.JWT_SECRETKEY,
       { expiresIn: process.env.TOKEN_EXP_TIME || '48h'}
     );
@@ -535,17 +766,49 @@ function updateUserToken(accessToken) {
 };
 
 
-async function addAccessLog(actionType, userID, ip = null) {
+async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
+  let existsButNotAuthCode = 470;
+  if (userInfo && !_.isEmpty(userInfo) && actionType == 'existsButNotAuth') {
+    const isValidRole = userInfo.roles.some(role => role.isActive === true && role.isArchived === false);
+    existsButNotAuthCode = userInfo.customer.type != 'SP' ? "452":userInfo.customer.isActive == false ? "453":userInfo.customer.isArchived == true ? "454":
+    userInfo.isActive == false ? "455":userInfo.isArchived == true ? "456":
+    userInfo.contact.isActive == false ? "457":userInfo.contact.isArchived == true ? "458":
+    (_.isEmpty(userInfo.roles) || !isValidRole)  ? "459":
+    !(typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
+  }
+
   if (actionType == 'login') {
     var signInLog = {
+      requestedLogin: requestedLogin,
       user: userID,
-      loginIP: ip
+      loginIP: ip,
+      statusCode: 200
     };
-    var reqSignInLog = {};
-    reqSignInLog.body = signInLog;
-    const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
-    return res;
+  } else if (actionType == 'invalidCredentials' || actionType == 'blockedCustomer' || actionType == 'blockedUser' 
+  || actionType == 'existsButNotAuth') {
+    var signInLog = {
+      requestedLogin: requestedLogin,
+      user: userID,
+      loginIP: ip,
+      statusCode: actionType == 'invalidCredentials' ? 461 : //Only password issue
+                  actionType == 'blockedCustomer' ? 462 :
+                  actionType == 'blockedUser' ? 463 :
+                  actionType == 'existsButNotAuth' ? existsButNotAuthCode : 470
+    };
+  } else if (actionType == 'invalidIPs' || actionType == 'invalidRequest') {
+    var signInLog = {
+      requestedLogin: requestedLogin,
+      loginIP: ip,
+      statusCode: actionType == 'invalidIPs' ? 464 : 
+                  actionType == 'invalidRequest' ? 465 : 470
+    };
   }
+  
+  var reqSignInLog = {};
+  reqSignInLog.body = signInLog;
+
+  const res = securitySignInLogController.getDocumentFromReq(reqSignInLog, 'new');
+  return res;
 }
 
 async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {

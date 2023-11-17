@@ -3,9 +3,24 @@ const apiPath = process.env.API_ROOT;
 const fs         = require('fs');
 const path       = require('path');
 const express = require('express');
-const bodyParser = require('body-parser');
-var cors = require('cors')
+const { WebSocketServer, WebSocket } = require('ws');
+const http = require('http');
 
+const bodyParser = require('body-parser');
+const cors = require('cors')
+const session = require('express-session');
+const MongoDBStore = require('connect-mongodb-session')(session);
+
+let dburl = `mongodb://${process.env.MONGODB_HOST}:${process.env.MONGODB_PORT}/${process.env.MONGODB_NAME}`
+
+if (process.env.MONGODB_HOST_TYPE && process.env.MONGODB_HOST_TYPE == "mongocloud"){
+    dburl = `mongodb+srv://${ process.env.MONGODB_USERNAME }:${ process.env.MONGODB_PASSWD }@${ process.env.MONGODB_HOST }/${ process.env.MONGODB_NAME }?retryWrites=true&w=majority`;
+}
+
+const store = new MongoDBStore({
+    uri: dburl,
+    collection: 'SecuritySessions'
+});
 
 // MIDDLEWARE
 const setHeaders = require('../../middleware/set-header');
@@ -21,6 +36,7 @@ const emailRoute  = require ('../email/routes');
 const regionRoute  = require ('../regions/routes');
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
+
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -43,11 +59,21 @@ class App {
    */
   constructor() {
     this.app = express();
+    this.server = http.createServer(this.app);
+
     this.MORGAN_FORMAT = process.env.MORGAN_FORMAT != undefined && process.env.MORGAN_FORMAT != null && process.env.MORGAN_FORMAT.length > 0 ? process.env.MORGAN_FORMAT : 'common' ;
     this.app.use(morgan(this.MORGAN_FORMAT));  
     this.app.use(bodyParser.json());
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
+    
+    console.log('constructor called ----------------------------')
+    this.app.use('/api/1.0.0/security/getToken/',session({
+      secret: process.env.SESSION_SECRETKEY,
+      resave: true,
+      store: store
+    }));
+
     this.registerRoutes();
     this.app.use(cors({
         origin: '*'
@@ -59,6 +85,7 @@ class App {
       swaggerUi.serve,
       swaggerUi.setup(swaggerDocument)
     );
+
     this.app.use(errorHandler);
   }
 
@@ -71,20 +98,29 @@ class App {
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     configRoute.registerConfigRoutes(this.app, apiPath);
+    logRoute.registerlogRoutes(this.app, apiPath);
   }
 
 
 
 
   start(){
-        try {
-          this.app.listen({port: process.env.PORT || 3001}, () => {
-            console.log(`Listening at  http://${process.env.HOST_NAME}:${process.env.PORT}/`)
-          })
 
-        } catch (error) {
-          console.log(error);
-        }    
+    try {
+
+      this.wss = new WebSocketServer({
+        server: this.server,
+        autoAcceptConnections: false
+      });
+
+      this.server.listen({port: process.env.PORT || 3001}, () => {
+        console.log(`Listening at  http://${process.env.HOST_NAME}:${process.env.PORT}/`)
+      });
+
+
+    } catch (error) {
+      console.log(error);
+    }    
   }
 }
 

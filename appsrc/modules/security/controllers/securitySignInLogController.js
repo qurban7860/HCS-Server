@@ -24,7 +24,7 @@ this.populate = [
 
 
 this.populateList = [
-  {path: 'user'}
+  {path: 'user', select: 'name email login'}
 ];
 
 
@@ -147,13 +147,19 @@ exports.patchSignInLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { user, loginTime, logoutTime, loginIP } = req.body;
+  const { requestedLogin, user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
 
   let doc = {};
   
   if (reqType && reqType == "new"){
     doc = new SecuritySignInLog({});
   }
+  
+
+  if ("requestedLogin" in req.body){
+    doc.requestedLogin = requestedLogin;
+  }
+  
   if ("user" in req.body){
     doc.user = user;
   }
@@ -163,8 +169,22 @@ function getDocumentFromReq(req, reqType){
   if ("logoutTime" in req.body){
     doc.logoutTime = logoutTime;
   }
+
+  if ("loggedOutBy" in req.body){
+    doc.loggedOutBy = loggedOutBy;
+  }
+
   if ("loginIP" in req.body){
     doc.loginIP = loginIP;
+  }
+
+  if ("statusCode" in req.body){
+    doc.statusCode = statusCode;
+  }
+
+  
+  if ("considerLog" in req.body){
+    doc.considerLog = considerLog;
   }
 
   if (reqType == "new" && "loginUser" in req.body ){
