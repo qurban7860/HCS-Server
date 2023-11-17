@@ -231,74 +231,75 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     req.body.loginUser = await getToken(req);
   
   
-  if(req.body.isArchived=='false' || req.body.isArchived===false){
-    let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
+    if(req.body.isArchived=='true' || req.body.isArchived===true){
+      req.body = {isArchived: true};
+    } else {
+      let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
 
-    if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
-      req.body.submittedInfo = {
-        submittedBy: req.body.loginUser.userId,
-        submittedDate: new Date()
-      }
-    } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
-      req.body.submittedInfo = {};
-    }
-    
-    if(req.body.isVerified){ 
-      if(!productServiceRecordsConfig) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
-      }
-      
-      if(!Array.isArray(productServiceRecordsConfig.approvals))
-        productServiceRecordsConfig.approvals = [];
-
-      for(let verif of productServiceRecordsConfig.approvals) {
-        if(verif.approvedBy == req.body.loginUser.userId)
-          return res.status(StatusCodes.BAD_REQUEST).send("Already Approved!");
-      }
-
-      productServiceRecordsConfig.approvals.push({
-        approvedBy: req.body.loginUser.userId,
-        approvedDate: new Date(),
-        approvedFrom: req.body.loginUser.userIP
-      })
-
-      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.approvals.length >= productServiceRecordsConfig.noOfApprovalsRequired) {
-        productServiceRecordsConfig.status = 'APPROVED';
-
-        if(productServiceRecordsConfig.originalConfiguration) {
-          let whereClause  = {
-            $or: [{
-              _id: productServiceRecordsConfig.originalConfiguration
-            }, {
-              originalConfiguration: productServiceRecordsConfig.originalConfiguration
-            }], status: "APPROVED" 
-          };
-      
-          let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
-          if(proSerObj)
-            productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;
+      if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
+        req.body.submittedInfo = {
+          submittedBy: req.body.loginUser.userId,
+          submittedDate: new Date()
         }
+      } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
+        req.body.submittedInfo = {};
+      }
+      
+      if(req.body.isVerified){ 
+        if(!productServiceRecordsConfig) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
+        }
+        
+        if(!Array.isArray(productServiceRecordsConfig.approvals))
+          productServiceRecordsConfig.approvals = [];
+
+        for(let verif of productServiceRecordsConfig.approvals) {
+          if(verif.approvedBy == req.body.loginUser.userId)
+            return res.status(StatusCodes.BAD_REQUEST).send("Already Approved!");
+        }
+
+        productServiceRecordsConfig.approvals.push({
+          approvedBy: req.body.loginUser.userId,
+          approvedDate: new Date(),
+          approvedFrom: req.body.loginUser.userIP
+        })
+
+        if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.approvals.length >= productServiceRecordsConfig.noOfApprovalsRequired) {
+          productServiceRecordsConfig.status = 'APPROVED';
+
+          if(productServiceRecordsConfig.originalConfiguration) {
+            let whereClause  = {
+              $or: [{
+                _id: productServiceRecordsConfig.originalConfiguration
+              }, {
+                originalConfiguration: productServiceRecordsConfig.originalConfiguration
+              }], status: "APPROVED" 
+            };
+        
+            let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
+            if(proSerObj)
+              productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;
+          }
+        }
+
+        productServiceRecordsConfig = await productServiceRecordsConfig.save();
+        return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
       }
 
-      productServiceRecordsConfig = await productServiceRecordsConfig.save();
-      return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
-    }
 
+      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'APPROVED') {
+        return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config is in APPROVED state!");
+      }
 
-    if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'APPROVED') {
-      return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config is in APPROVED state!");
-    }
+      if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.status != 'SUBMITTED') {
+        return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
+      }
+      
+      if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovalsRequired > productServiceRecordsConfig.approvals.length) {
+        return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovalsRequired} Verification${productServiceRecordsConfig.noOfApprovalsRequired == 1 ? '':'s'} required to approve configuartion! `);
+      }
 
-    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.status != 'SUBMITTED') {
-      return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
     }
-    
-    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovalsRequired > productServiceRecordsConfig.approvals.length) {
-      return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovalsRequired} Verification${productServiceRecordsConfig.noOfApprovalsRequired == 1 ? '':'s'} required to approve configuartion! `);
-    }
-  } else {
-    req.body = {isArchived: true}; 
-  }
      
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
