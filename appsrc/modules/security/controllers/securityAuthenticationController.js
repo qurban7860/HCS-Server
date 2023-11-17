@@ -251,7 +251,7 @@ exports.login = async (req, res, next) => {
           else {
             let securityLogs = null;
             if(existingUser) {
-              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP);
+              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser);
             } else {
               securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP);
             }
@@ -752,7 +752,17 @@ function updateUserToken(accessToken) {
 };
 
 
-async function addAccessLog(actionType, requestedLogin, userID, ip = null) {
+async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
+  let existsButNotAuthCode = 470;
+  if (userInfo && actionType == 'existsButNotAuth') {
+    const isValidRole = userInfo.roles.some(role => role.isActive === true && role.isArchived === false);
+    existsButNotAuthCode = userInfo.customer.type != 'SP' ? "452":userInfo.customer.isActive == false ? "453":userInfo.customer.isArchived == true ? "454":
+    userInfo.isActive == false ? "455":userInfo.isArchived == true ? "456":
+    userInfo.contact.isActive == false ? "457":userInfo.contact.isArchived == true ? "458":
+    (_.isEmpty(roles) || !isValidRole)  ? "459":
+    (typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
+  }
+
   if (actionType == 'login') {
     var signInLog = {
       requestedLogin: requestedLogin,
@@ -766,17 +776,17 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null) {
       requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
-      statusCode: actionType == 'invalidCredentials' ? 403 : //Only password issue
-                  actionType == 'blockedCustomer' ? 423 :
-                  actionType == 'blockedUser' ? 451 :
-                  actionType == 'existsButNotAuth' ? 405 : 406
+      statusCode: actionType == 'invalidCredentials' ? 461 : //Only password issue
+                  actionType == 'blockedCustomer' ? 462 :
+                  actionType == 'blockedUser' ? 463 :
+                  actionType == 'existsButNotAuth' ? existsButNotAuthCode : 470
     };
   } else if (actionType == 'invalidIPs' || actionType == 'invalidRequest') {
     var signInLog = {
       requestedLogin: requestedLogin,
       loginIP: ip,
-      statusCode: actionType == 'invalidIPs' ? 422 : 
-                  actionType == 'invalidRequest' ? 404 : 406
+      statusCode: actionType == 'invalidIPs' ? 464 : 
+                  actionType == 'invalidRequest' ? 465 : 470
     };
   }
   
