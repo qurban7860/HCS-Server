@@ -251,7 +251,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
       for(let verif of productServiceRecordsConfig.approvals) {
         if(verif.approvedBy == req.body.loginUser.userId)
-          return res.status(StatusCodes.BAD_REQUEST).send("Already verified");
+          return res.status(StatusCodes.BAD_REQUEST).send("Already Approved!");
       }
 
       productServiceRecordsConfig.approvals.push({

@@ -96,7 +96,6 @@ exports.getProduct = async (req, res, next) => {
       }
 
       let machineProfileQuery = {type:"MANUFACTURER", machine: machine._id, isActive:true, isArchived:false};
-      console.log(machineProfileQuery);
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
 
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
@@ -107,7 +106,6 @@ exports.getProduct = async (req, res, next) => {
       res.json(machine);
     }
   }
-
 };
 
 exports.getProducts = async (req, res, next) => {
@@ -398,6 +396,13 @@ exports.patchProduct = async (req, res, next) => {
 
         console.log("isSame", isSame);
         if(!isSame) {
+
+          let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
+
+          if(toBeDisconnected.length>0) 
+            machine = await disconnectMachine_(machine.id, toBeDisconnected);
+
+
           let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
           
           console.log("toBeConnected", toBeConnected);
@@ -405,10 +410,7 @@ exports.patchProduct = async (req, res, next) => {
             machine = await connectMachines(machine.id, toBeConnected);
           
 
-          let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
 
-          if(toBeDisconnected.length>0) 
-            machine = await disconnectMachine_(machine.id, toBeDisconnected);
           
           req.body.machineConnections = machine.machineConnections;
 

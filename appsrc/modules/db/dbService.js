@@ -148,7 +148,6 @@ class dbService {
       });
     }
     else{
-      console.log("Object -->", Object);
       return await model.updateOne({ _id: id }, Object);
     }
   }
