@@ -13,6 +13,9 @@ const docSchema = new Schema({
         displayName: { type: String },
         // name/title to print at reports. default is same as name 
 
+        documentTitle: { type: String },
+        // name/title to print at reports. default is same as name 
+
         description: { type: String },
         // detailed description of field
 

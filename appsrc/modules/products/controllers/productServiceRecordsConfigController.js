@@ -226,10 +226,12 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     logger.error(new Error(error));
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-
+    
     if(!req.body.loginUser)
-      req.body.loginUser = await getToken(req);
-
+    req.body.loginUser = await getToken(req);
+  
+  
+  if(req.body.isArchived=='false' || req.body.isArchived===false){
     let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
 
     if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
@@ -294,10 +296,10 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovalsRequired > productServiceRecordsConfig.approvals.length) {
       return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovalsRequired} Verification${productServiceRecordsConfig.noOfApprovalsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
-
-
-
-    
+  } else {
+    req.body = {isArchived: true}; 
+  }
+     
     this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
       if (error) {
@@ -317,6 +319,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, machineServiceRecordConfig));
       }
     }
+  
   }
 };
 

@@ -818,7 +818,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { name, displayName, description, path, type, extension, content, 
+  const { name, displayName, documentTitle, description, path, type, extension, content, 
     documentVersions, documentCategory, customer, customerAccess, site,
     contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
     machineModel, documentType, shippingDate, installationDate, referenceNumber, stockNumber} = req.body;
@@ -842,6 +842,11 @@ function getDocumentFromReq(req, reqType) {
   if ("displayName" in req.body) {
     doc.displayName = displayName;
   }
+
+  if ("documentTitle" in req.body) {
+    doc.documentTitle = documentTitle;
+  }
+
   if ("description" in req.body) {
     doc.description = description;
   }
