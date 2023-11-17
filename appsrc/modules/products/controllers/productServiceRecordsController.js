@@ -166,6 +166,11 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
       }
 
       // fetching active values.
+      let abc__ = {
+        serviceRecord: req.params.id,
+        isArchived: false
+      }
+      console.log("req.params.id", req.params.id, "------------------------->", abc__);
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceRecord: req.params.id,
         isArchived: false
