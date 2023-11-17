@@ -492,11 +492,10 @@ async function removeSessions(userId) {
   const wss = getSocketConnectionByUserId(userId);
   wss.map((ws)=> {  
     if(ws.userId==userId) {
-      const ws = new WebSocket('totalLoggedInUsers');
       ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
       ws.terminate();
     }
-
+    // const ws = new WebSocket('totalLoggedInUsers'); 
     // ws.onmessage = (event) => {
     //     let totalCount = 0;
     //     const data = JSON.parse(event.data);
