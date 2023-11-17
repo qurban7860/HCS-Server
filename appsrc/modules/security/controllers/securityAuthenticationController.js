@@ -326,21 +326,6 @@ async function validateAndLoginUser(req, res, existingUser) {
           logger.error(new Error(error));
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
-          
-
-          let totalCount = 0;
-          ws.onmessage = (event) => {
-              const data = JSON.parse(event.data);
-              const eventName = data.eventName;
-              totalCount = data.totalCount;
-              if (eventName === 'totalLoggedInUsers') {
-                  totalCount ++;
-                  console.log(`Received a logout message for user ${totalCount}`);
-              }
-          };
-          totalCount ++;
-          ws.send(Buffer.from(JSON.stringify({'eventName':'totalLoggedInUsers',totalCount})));
-
           let session = await removeAndCreateNewSession(req,existingUser.id);
 
           return res.json({
@@ -512,17 +497,16 @@ async function removeSessions(userId) {
       ws.terminate();
     }
 
-
-    ws.onmessage = (event) => {
-        let totalCount = 0;
-        const data = JSON.parse(event.data);
-        const eventName = data.eventName;
-        totalCount = data.totalCount;
-        if (eventName === 'totalLoggedInUsers') {
-            totalCount --;
-            console.log(`Received a logout message for user ${totalCount}`);
-        }
-    };
+    // ws.onmessage = (event) => {
+    //     let totalCount = 0;
+    //     const data = JSON.parse(event.data);
+    //     const eventName = data.eventName;
+    //     totalCount = data.totalCount;
+    //     if (eventName === 'totalLoggedInUsers') {
+    //         totalCount --;
+    //         console.log(`Received a logout message for user ${totalCount}`);
+    //     }
+    // };
 
     ws.send(Buffer.from(JSON.stringify({'eventName':'totalLoggedInUsers',totalCount})));
 
