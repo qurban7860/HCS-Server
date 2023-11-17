@@ -775,7 +775,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
     userInfo.isActive == false ? "455":userInfo.isArchived == true ? "456":
     userInfo.contact.isActive == false ? "457":userInfo.contact.isArchived == true ? "458":
     (_.isEmpty(userInfo.roles) || !isValidRole)  ? "459":
-    (typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
+    !(typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
   }
 
   if (actionType == 'login') {
