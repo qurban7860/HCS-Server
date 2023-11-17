@@ -10,6 +10,8 @@ const docSchema = new Schema({
     
     message: { type: String },
 
+    type: { type: String },
+
     readBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],                       
 
     // deleteBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],                       
