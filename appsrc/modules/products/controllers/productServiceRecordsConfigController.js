@@ -76,21 +76,21 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
           }
 
           
-          if(Array.isArray(response.approvels) && response.approvels.length>0 ) {
+          if(Array.isArray(response.approvals) && response.approvals.length>0 ) {
             let serviceRecordsConfigVerifications = [];
     
-            for(let verification of response.approvels) {
+            for(let verification of response.approvals) {
     
     
-              let user = await SecurityUser.findOne({ _id: verification.approveledBy}).select('name');
+              let user = await SecurityUser.findOne({ _id: verification.approvedBy}).select('name');
     
               if(user) {
-                verification.approveledBy = user;
+                verification.approvedBy = user;
                 serviceRecordsConfigVerifications.push(verification);
               }
     
             }
-            response.approvels = serviceRecordsConfigVerifications;
+            response.approvals = serviceRecordsConfigVerifications;
           }
           return res.json(response);
         } else {
@@ -246,21 +246,21 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
       }
       
-      if(!Array.isArray(productServiceRecordsConfig.approvels))
-        productServiceRecordsConfig.approvels = [];
+      if(!Array.isArray(productServiceRecordsConfig.approvals))
+        productServiceRecordsConfig.approvals = [];
 
-      for(let verif of productServiceRecordsConfig.approvels) {
-        if(verif.approveledBy == req.body.loginUser.userId)
+      for(let verif of productServiceRecordsConfig.approvals) {
+        if(verif.approvedBy == req.body.loginUser.userId)
           return res.status(StatusCodes.BAD_REQUEST).send("Already verified");
       }
 
-      productServiceRecordsConfig.approvels.push({
-        approveledBy: req.body.loginUser.userId,
+      productServiceRecordsConfig.approvals.push({
+        approvedBy: req.body.loginUser.userId,
         approvedDate: new Date(),
         approvedFrom: req.body.loginUser.userIP
       })
 
-      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.approvels.length >= productServiceRecordsConfig.noOfApprovelsRequired) {
+      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.approvals.length >= productServiceRecordsConfig.noOfApprovalsRequired) {
         productServiceRecordsConfig.status = 'APPROVED';
 
         if(productServiceRecordsConfig.originalConfiguration) {
@@ -291,8 +291,8 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
     }
     
-    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovelsRequired > productServiceRecordsConfig.approvels.length) {
-      return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovelsRequired} Verification${productServiceRecordsConfig.noOfApprovelsRequired == 1 ? '':'s'} required to approve configuartion! `);
+    if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovalsRequired > productServiceRecordsConfig.approvals.length) {
+      return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovalsRequired} Verification${productServiceRecordsConfig.noOfApprovalsRequired == 1 ? '':'s'} required to approve configuartion! `);
     }
 
 
@@ -337,7 +337,7 @@ function getDocumentFromReq(req, reqType){
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
-    enableSuggestedSpares, header, footer, noOfApprovelsRequired, approvels, loginUser, isActive, isArchived
+    enableSuggestedSpares, header, footer, noOfApprovalsRequired, approvals, loginUser, isActive, isArchived
 } = req.body;
   
   let doc = {};
@@ -451,16 +451,16 @@ function getDocumentFromReq(req, reqType){
     doc.footer = footer;
   }
   
-  if ("noOfApprovelsRequired" in req.body){
-    doc.noOfApprovelsRequired = noOfApprovelsRequired;
+  if ("noOfApprovalsRequired" in req.body){
+    doc.noOfApprovalsRequired = noOfApprovalsRequired;
   }
-  if ("approvels" in req.body){
-    doc.approvels = approvels;
+  if ("approvals" in req.body){
+    doc.approvals = approvals;
 
 
     if (reqType && reqType === "new") {
-      for (let i = 0; i < doc.approvels.length; i++) {
-          doc.approvels[i].approvedFrom = loginUser.userIP;
+      for (let i = 0; i < doc.approvals.length; i++) {
+          doc.approvals[i].approvedFrom = loginUser.userIP;
       }
     }
   }

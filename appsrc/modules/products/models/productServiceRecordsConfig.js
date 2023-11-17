@@ -81,17 +81,28 @@ const docSchema = new Schema({
     // for page number, use value pgNo. 
   },
 
-  noOfApprovelsRequired: { type: Number, required: true,  default: '1' },
-  // Number of approvals required
+  noOfApprovalsRequired: { type: Number, required: true,  default: '1' },
   
-  approvels:[{
-    approveledBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+  approvals:[{
+    approvedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
     // user who will verified this document
     approvedFrom: {type: String},
     //user ip address
     approvedDate: { type: Date, default: Date.now }
     // Date of Verification
   }],
+
+  // noOfApprovelsRequired: { type: Number, required: true,  default: '1' },
+  // // Number of approvals required
+  
+  // approvels:[{
+  //   approvedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+  //   // user who will verified this document
+  //   approvedFrom: {type: String},
+  //   //user ip address
+  //   approvedDate: { type: Date, default: Date.now }
+  //   // Date of Verification
+  // }],
 
 
   submittedInfo: {
