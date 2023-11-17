@@ -117,12 +117,12 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
     this.query.isArchived = false;
   }
 
-  if(this.query.isActive=='false'){
-    this.query.isActive = false
-  }
-  else {
-    this.query.isActive = true;
-  }
+  // if(this.query.isActive=='false'){
+  //   this.query.isActive = false
+  // }
+  // else {
+  //   this.query.isActive = true;
+  // }
 
   if(req.params.machineId) {
     let machine = await Product.findOne({_id:req.params.machineId,isActive:true,isArchived:false}).populate('machineModel');
