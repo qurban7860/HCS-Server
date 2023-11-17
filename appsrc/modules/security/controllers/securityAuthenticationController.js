@@ -774,7 +774,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
     existsButNotAuthCode = userInfo.customer.type != 'SP' ? "452":userInfo.customer.isActive == false ? "453":userInfo.customer.isArchived == true ? "454":
     userInfo.isActive == false ? "455":userInfo.isArchived == true ? "456":
     userInfo.contact.isActive == false ? "457":userInfo.contact.isArchived == true ? "458":
-    (_.isEmpty(roles) || !isValidRole)  ? "459":
+    (_.isEmpty(userInfo.roles) || !isValidRole)  ? "459":
     (typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
   }
 
