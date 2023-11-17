@@ -166,11 +166,6 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
       }
 
       // fetching active values.
-      let abc__ = {
-        serviceRecord: req.params.id,
-        isArchived: false
-      }
-      console.log("req.params.id", req.params.id, "------------------------->", abc__);
       let listProductServiceRecordValues = await ProductServiceRecordValue.find({
         serviceRecord: req.params.id,
         isArchived: false
@@ -349,7 +344,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
           let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
           await ProductServiceRecords.updateMany(
             queryToUpdateRecords, 
-            { $set: { isHistory: false } } 
+            { $set: { isHistory: true } } 
           );
   
           if(req.body.serviceRecordConfig && 
