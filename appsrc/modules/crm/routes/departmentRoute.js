@@ -15,7 +15,7 @@ const router = express.Router();
 // - /api/1.0.0/crm
 
 // - /api/1.0.0/crm/department 
-const baseRouteForObject = `/department`; 
+const baseRouteForObject = `/departments`; 
 
 // EndPoint: {{baseUrl}}/crm/department/:id
 // localhost://api/1.0.0/crm/department 

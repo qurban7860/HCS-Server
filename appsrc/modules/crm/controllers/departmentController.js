@@ -149,7 +149,7 @@ function getDocumentFromReq(req, reqType){
   }
 
   if ("departmentName" in req.body){
-    doc.departmentName = departmentName;
+    doc.departmentName = departmentName.trim();
   }
 
   if ("isActive" in req.body){
