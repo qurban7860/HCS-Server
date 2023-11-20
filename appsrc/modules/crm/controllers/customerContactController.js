@@ -246,9 +246,9 @@ exports.postCustomerContact = async (req, res, next) => {
   } else {
     if(req.body.reportingTo) {
       if(ObjectId.isValid(req.body.reportingTo)) {
-        console.log({_id: req.body.reportingTo, customer: req.body.customer});
+        console.log({_id: req.body.reportingTo, customer: req.params.customerId});
 
-        let reportToContact = CustomerContact.findOne({_id: req.body.reportingTo, customer: req.body.customer});
+        let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
 
         console.log(reportToContact);
         if(!reportToContact || _.isEmpty(reportToContact)) {
