@@ -1,0 +1,24 @@
+const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
+const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
+const baseSchema = require('../../../base/baseSchema');
+
+const Schema = mongoose.Schema;
+
+const docSchema = new Schema({
+        organizationName: { type: String, required: true},
+        // Organization Name
+},
+{
+        collection: 'Organizations'
+});
+docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docVisibilitySchema);
+docSchema.add(baseSchema.docAuditSchema);
+
+docSchema.index({"isActive":1})
+docSchema.index({"isArchived":1})
+
+docSchema.plugin(uniqueValidator);
+
+module.exports = mongoose.model('Organization', docSchema);

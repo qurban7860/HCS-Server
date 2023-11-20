@@ -9,7 +9,7 @@ const docSchema = new Schema({
         
         customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true},
         // guid of customer from customers collection.
-        
+
         firstName: { type: String, required: true},
         // First name of contact person
         
@@ -29,6 +29,9 @@ const docSchema = new Schema({
         
         email: { type: String },
         // Email addresses. There can be multiple comma separated entries
+
+        reportingTo: { type: Schema.Types.ObjectId, ref: 'CustomerContact'},
+        // Reporting to person.
         
         sites: [{ type: Schema.Types.ObjectId, ref: 'CustomerSite' }],
         // list of sites with which this contact is associated. 

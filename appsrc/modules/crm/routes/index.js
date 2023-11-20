@@ -5,6 +5,7 @@ const customerRoute = require('./customerRoute');
 const customerSiteRoute = require('./customerSiteRoute');
 const customerContactRoute = require('./customerContactRoute');
 const customerNoteRoute = require('./customerNoteRoute');
+const organizationRoute = require('./organizationRoute');
 
 exports.registerCustomerRoutes = (app, apiPath) => {
     const rootPathForModule = `${apiPath}/crm`
@@ -20,5 +21,8 @@ exports.registerCustomerRoutes = (app, apiPath) => {
 
     // localhost://api/1.0.0/crm
     app.use(`${rootPathForModule}`, customerNoteRoute);
+
+    // localhost://api/1.0.0/crm
+    app.use(`${rootPathForModule}`, organizationRoute);
 
 }

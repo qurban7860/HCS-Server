@@ -244,6 +244,16 @@ exports.postCustomerContact = async (req, res, next) => {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, error.msg));
     });
   } else {
+    if(req.body.reportingTo) {
+      if(ObjectId.isValid(req.body.reportingTo)) {
+        let reportToContact = CustomerContact.findOne({_id: req.body.reportingTo, customer: req.body.customer});
+        if(!reportToContact || _.isEmpty(reportToContact)) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not valid.");
+        }
+      } else {
+        delete req.body.reportingTo;
+      }
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -397,7 +407,7 @@ function getContactName(contact) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { firstName, lastName, title, contactTypes, phone, email, sites,  address,
+  const { reportingTo, firstName, lastName, title, contactTypes, phone, email, sites,  address,
     isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -409,6 +419,11 @@ function getDocumentFromReq(req, reqType){
   }else{
     doc.customer = req.body.customer;
   }
+
+  if ("reportingTo" in req.body){
+    doc.reportingTo = reportingTo;
+  }
+
   if ("firstName" in req.body){
     doc.firstName = firstName;
   }
