@@ -3,5 +3,5 @@ module.exports = {
     customerSiteController: require('./customerSiteController'),
     customerContactController: require('./customerContactController'),
     customerNoteController: require('./customerNoteController'),
-    organizationController: require('./organizationController')
+    departmentController: require('./departmentController')
 }

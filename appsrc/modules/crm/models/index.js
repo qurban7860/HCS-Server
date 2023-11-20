@@ -4,5 +4,5 @@ module.exports = {
     CustomerSite: require('./customerSite'),
     CustomerContact: require('./customerContact'),
     CustomerNote: require('./customerNote'),
-    Organization: require('./organization')
+    Department: require('./department')
 }
