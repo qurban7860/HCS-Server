@@ -297,7 +297,7 @@ exports.patchCustomerContact = async (req, res, next) => {
 
     if(req.body.reportingTo) {
       if(ObjectId.isValid(req.body.reportingTo)) {
-        if(req.body.reportingTo != req.params.id) {
+        if(req.body.reportingTo == req.params.id) {
           return res.status(StatusCodes.BAD_REQUEST).send("Contact can't able to report to it self!");
         } else {
           let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
