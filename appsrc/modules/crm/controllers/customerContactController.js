@@ -246,11 +246,7 @@ exports.postCustomerContact = async (req, res, next) => {
   } else {
     if(req.body.reportingTo) {
       if(ObjectId.isValid(req.body.reportingTo)) {
-        console.log({_id: req.body.reportingTo, customer: req.params.customerId});
-
         let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
-
-        console.log(reportToContact);
         if(!reportToContact || _.isEmpty(reportToContact)) {
           return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
         }
@@ -298,6 +294,22 @@ exports.patchCustomerContact = async (req, res, next) => {
     this.query.customer = req.params.customerId;
     this.query._id = req.params.id;
     // let queryString  = { _id: req.params.customerId, customer: req.params.id };
+
+    if(req.body.reportingTo) {
+      if(ObjectId.isValid(req.body.reportingTo)) {
+        if(req.body.reportingTo != req.params.id) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Contact can't able to report to it self!");
+        } else {
+          let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
+          if(!reportToContact || _.isEmpty(reportToContact)) {
+            return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
+          }
+        }
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Report to contact!");
+      }
+    }
+    
     this.dbservice.getObject(CustomerContact, this.query, this.populate, getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
