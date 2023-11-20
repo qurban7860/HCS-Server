@@ -75,9 +75,9 @@ exports.deleteDepartment = async (req, res, next) => {
   let id = req.params.id;
   
   if(req.params.id) {
-    let Department = await Department.findOne({_id:req.params.id});
+    let departmentObject = await Department.findOne({_id:req.params.id});
     
-    if(Department) {
+    if(departmentObject) {
       this.dbservice.deleteObject(Department, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
