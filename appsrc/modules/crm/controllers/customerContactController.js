@@ -248,12 +248,13 @@ exports.postCustomerContact = async (req, res, next) => {
       if(ObjectId.isValid(req.body.reportingTo)) {
         let reportToContact = CustomerContact.findOne({_id: req.body.reportingTo, customer: req.body.customer});
         if(!reportToContact || _.isEmpty(reportToContact)) {
-          return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not valid.");
+          return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
         }
       } else {
-        delete req.body.reportingTo;
+        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Report to contact!");
       }
     }
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
