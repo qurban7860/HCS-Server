@@ -20,9 +20,5 @@ module.exports = {
     productCheckItemCategoryController: require('./productCheckItemCategoryController'),
     productProfileController: require('./productProfileController'),
     productServiceRecordValueController: require('./productServiceRecordValueController'),
-    
-
-    
-
-
+    productConfigurationController: require('./productConfigurationController'),
 }
