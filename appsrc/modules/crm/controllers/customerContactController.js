@@ -246,7 +246,11 @@ exports.postCustomerContact = async (req, res, next) => {
   } else {
     if(req.body.reportingTo) {
       if(ObjectId.isValid(req.body.reportingTo)) {
+        console.log({_id: req.body.reportingTo, customer: req.body.customer});
+
         let reportToContact = CustomerContact.findOne({_id: req.body.reportingTo, customer: req.body.customer});
+
+        console.log(reportToContact);
         if(!reportToContact || _.isEmpty(reportToContact)) {
           return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
         }
