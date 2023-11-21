@@ -74,8 +74,9 @@ exports.postProductConfiguration = async (req, res, next) => {
   } else {
 
 
-    if(ObjectId.isValid(req.body.inputGUID)){
-      let productObject = await Product.findOne({_id: req.body.inputGUID}).select('_id');
+    if(ObjectId.isValid(req.body.inputGUID) && req.body.inputSerialNo){
+      const query__ = {_id: req.body.inputGUID, serialNo: (String(req.body.inputSerialNo).trim()) };
+      let productObject = await Product.findOne(query__).select('_id');
       if(productObject && !_.isEmpty(productObject)) {
         req.body.machine = productObject._id;    
       }
