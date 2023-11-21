@@ -20,8 +20,10 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
-this.populate = null;
-
+this.populate = [
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'}
+];
 
 exports.getDepartment = async (req, res, next) => {
   this.dbservice.getObjectById(Department, this.fields, req.params.id, this.populate, callbackFunc);
