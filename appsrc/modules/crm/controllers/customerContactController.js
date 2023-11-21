@@ -31,7 +31,7 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
                 {path: 'customer', select: 'name'},
                 {path: 'department', select: 'departmentName'},
-                {path: 'reportTo', select: 'firstName lastName'},
+                {path: 'reportingTo', select: 'firstName lastName'},
                 {path: 'createdBy', select: 'name'},
                 {path: 'updatedBy', select: 'name'}
                 ];
