@@ -83,7 +83,11 @@ exports.postProductConfiguration = async (req, res, next) => {
     }
 
 
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    let productConfObjec = getDocumentFromReq(req, 'new');
+    const date = productConfObjec._id.getTimestamp();
+    productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
+
+    this.dbservice.postObject(productConfObjec, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -119,11 +123,16 @@ exports.patchProductConfiguration = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { inputGUID, inputSerialNo, machine, configuration, isActive, isArchived, loginUser} = req.body;
+  const { backupid, inputGUID, inputSerialNo, machine, configuration, isActive, isArchived, loginUser} = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductConfiguration({});
   }
+
+  if ("backupid" in req.body){
+    doc.backupid = backupid;
+  }
+
 
   if ("machine" in req.body){
     doc.machine = machine;

@@ -66,6 +66,11 @@ exports.getProductToolInstalledList = async (req, res, next) => {
   this.machineId = req.params.machineId;
   this.query = req.query != "undefined" ? req.query : {};  
   this.query.machine = this.machineId;
+  this.orderBy = { createdAt: -1 }; 
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
