@@ -75,6 +75,7 @@ exports.getProductToolInstalledList = async (req, res, next) => {
         options: { sort: { name: 1 } } // Sort authors by name in ascending order
       }
     ];  
+    this.orderBy = null;
     delete this.query.orderBy;
   }
 
