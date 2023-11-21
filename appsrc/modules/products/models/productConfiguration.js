@@ -9,6 +9,8 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
+    backupid: { type: String , required: true },
+
     inputGUID: { type: String , required: true },
 
     inputSerialNo: { type: String , required: true },
