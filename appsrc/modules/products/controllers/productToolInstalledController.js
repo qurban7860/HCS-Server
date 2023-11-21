@@ -96,21 +96,21 @@ exports.getProductToolInstalledList = async (req, res, next) => {
         response[i] = toolsInstalled;
         i++;
       }
-      if(this.query && this.query.orderBy) {
-        response = await response.sort((a, b) => {
-          const nameA = a.tool.name.toUpperCase();
-          const nameB = b.tool.name.toUpperCase();
+      // if(this.query && this.query.orderBy) {
+      //   response = await response.sort((a, b) => {
+      //     const nameA = a.tool.name.toUpperCase();
+      //     const nameB = b.tool.name.toUpperCase();
         
-          if (nameA < nameB) {
-            return -1;
-          }
-          if (nameA > nameB) {
-            return 1;
-          }
+      //     if (nameA < nameB) {
+      //       return -1;
+      //     }
+      //     if (nameA > nameB) {
+      //       return 1;
+      //     }
         
-          return 0;
-        });
-      }
+      //     return 0;
+      //   });
+      // }
 
       res.json(response);
     }
