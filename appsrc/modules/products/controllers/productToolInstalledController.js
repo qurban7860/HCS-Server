@@ -68,9 +68,17 @@ exports.getProductToolInstalledList = async (req, res, next) => {
   this.query.machine = this.machineId;
   this.orderBy = { createdAt: -1 }; 
   if(this.query.orderBy) {
-    this.orderBy = this.query.orderBy;
+    this.populate = [
+      {path: 'createdBy', select: 'name'},
+      {path: 'updatedBy', select: 'name'},
+      {path: 'tool', select: 'name', 
+        options: { sort: { name: 1 } } // Sort authors by name in ascending order
+      }
+    ];  
     delete this.query.orderBy;
   }
+
+
   this.dbservice.getObjectList(ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
