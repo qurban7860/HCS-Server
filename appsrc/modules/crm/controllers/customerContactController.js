@@ -30,6 +30,8 @@ this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
                 {path: 'customer', select: 'name'},
+                {path: 'department', select: 'departmentName'},
+                {path: 'reportTo', select: 'name'},
                 {path: 'createdBy', select: 'name'},
                 {path: 'updatedBy', select: 'name'}
                 ];
