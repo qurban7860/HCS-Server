@@ -551,7 +551,7 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const existingUser = await SecurityUser.findOne({ email: req.body.email })
+    const existingUser = await SecurityUser.findOne({ email: req.body.email, isActive: true, isArchived: false })
         .populate([{ path: 'customer', select: 'name type isActive isArchived' },
                   { path: 'contact', select: 'name isActive isArchived' }]);
     if (existingUser && isValidCustomer(existingUser.customer)) {
@@ -632,7 +632,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
 
-              let emailContent = `Hi ${existingUser.name},<br><br>Your password has been updated successfully.<br>
+              let emailContent = `Your password has been updated successfully.<br>
                               <br>Please sign in to access your account<br>`;
                               
               let emailSubject = "Password Reset Successful";
