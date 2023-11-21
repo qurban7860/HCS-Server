@@ -122,7 +122,6 @@ exports.login = async (req, res, next) => {
                 if(passwordsResponse) {
 
                   if(existingUser && existingUser.loginFailedCounts && existingUser.loginFailedCounts > 0) {
-                    console.log("updating loginFailedCounts . **********************************************");
                     let updateUser = {
                       lockUntil : "",
                       lockedBy : "",
@@ -264,7 +263,7 @@ exports.login = async (req, res, next) => {
 
             if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
               const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
-              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
+              return res.status(480).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
             } else {
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Invalid User/User does not have the rights to access", true));
             }
