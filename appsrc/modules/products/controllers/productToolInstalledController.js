@@ -78,6 +78,8 @@ exports.getProductToolInstalledList = async (req, res, next) => {
     delete this.query.orderBy;
   }
 
+  console.log("this.populate", this.populate);
+  console.log("this.populate", this.populate);
 
   this.dbservice.getObjectList(ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
