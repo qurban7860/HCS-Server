@@ -242,7 +242,7 @@ exports.login = async (req, res, next) => {
                       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                     } else {
 
-                      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.FORBIDDEN));
+                      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.BAD_REQUEST));
                     } 
                   }
                 }
@@ -263,9 +263,9 @@ exports.login = async (req, res, next) => {
 
             if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
               const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
-              return res.status(480).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
+              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
             } else {
-              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Invalid User/User does not have the rights to access", true));
+              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, "Invalid User/User does not have the rights to access", true));
             }
           }
           
@@ -397,14 +397,14 @@ exports.multifactorverifyCode = async (req, res, next) => {
           return await validateAndLoginUser(req, res, existingUser);
         } 
         else {
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'The code is no longer valid.', true));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'The code is no longer valid.', true));
         }
       } else {
-        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Invalid code', true));
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid code', true));
       }
     }
     else{
-      return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Code not found', true));
+      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Code not found', true));
     }
   }
 };
@@ -442,7 +442,7 @@ exports.refreshToken = async (req, res, next) => {
     }
   }
     else{
-      res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User not found', true));
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found', true));
     }
   }
 };
