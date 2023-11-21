@@ -30,6 +30,8 @@ this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
                 {path: 'customer', select: 'name'},
+                {path: 'department', select: 'departmentName'},
+                {path: 'reportingTo', select: 'firstName lastName'},
                 {path: 'createdBy', select: 'name'},
                 {path: 'updatedBy', select: 'name'}
                 ];
@@ -244,6 +246,17 @@ exports.postCustomerContact = async (req, res, next) => {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, error.msg));
     });
   } else {
+    if(req.body.reportingTo) {
+      if(ObjectId.isValid(req.body.reportingTo)) {
+        let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
+        if(!reportToContact || _.isEmpty(reportToContact)) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
+        }
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Report to contact!");
+      }
+    }
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -283,6 +296,22 @@ exports.patchCustomerContact = async (req, res, next) => {
     this.query.customer = req.params.customerId;
     this.query._id = req.params.id;
     // let queryString  = { _id: req.params.customerId, customer: req.params.id };
+
+    if(req.body.reportingTo) {
+      if(ObjectId.isValid(req.body.reportingTo)) {
+        if(req.body.reportingTo == req.params.id) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Contact can't able to report to it self!");
+        } else {
+          let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
+          if(!reportToContact || _.isEmpty(reportToContact)) {
+            return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
+          }
+        }
+      } else {
+        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Report to contact!");
+      }
+    }
+    
     this.dbservice.getObject(CustomerContact, this.query, this.populate, getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
@@ -397,7 +426,7 @@ function getContactName(contact) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { firstName, lastName, title, contactTypes, phone, email, sites,  address,
+  const { firstName, lastName, title, contactTypes, phone, email, sites,  address, reportingTo, department, 
     isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -409,6 +438,7 @@ function getDocumentFromReq(req, reqType){
   }else{
     doc.customer = req.body.customer;
   }
+
   if ("firstName" in req.body){
     doc.firstName = firstName;
   }
@@ -432,6 +462,14 @@ function getDocumentFromReq(req, reqType){
   }
   if ("address" in req.body){
     doc.address = address;
+  }
+
+  if ("department" in req.body){
+    doc.department = department;
+  }
+
+  if ("reportingTo" in req.body){
+    doc.reportingTo = reportingTo;
   }
   
   if ("isActive" in req.body){
