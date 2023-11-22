@@ -183,6 +183,9 @@ exports.postDocumentVersion = async (req, res, next) => {
 
         let document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
         
+        console.log(document_);
+        console.log(document_.isArchived);
+        
         if(!document_ || document_.isArchived) {
           console.error("Invalid document for documentVersion!");
 
