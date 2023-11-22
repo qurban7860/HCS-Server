@@ -26,7 +26,7 @@ const docSchema = new Schema({
     thickness: { type: String, maxlength: 35 },
     // Thickness
     
-    type: {  type: String, enum: ['CUSTOMER','MANUFACTURER'], default: 'CUSTOMER'},                  
+    type: {  type: String, enum: ['CUSTOMER','MANUFACTURE'], default: 'CUSTOMER'},                  
     
 },
 {
