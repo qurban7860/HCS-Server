@@ -321,12 +321,12 @@ async function validateAndLoginUser(req, res, existingUser) {
       const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-        if (error) {
+        let session = await removeAndCreateNewSession(req,existingUser.id);
+        if (error || !session || !session.session || !session.session.sessionId) {
+          console.log(error, session);
           logger.error(new Error(error));
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
         } else {
-          let session = await removeAndCreateNewSession(req,existingUser.id);
-
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -338,6 +338,7 @@ async function validateAndLoginUser(req, res, existingUser) {
               roles: existingUser.roles
             }
           });
+          
         }
       }
     }
@@ -363,10 +364,13 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
+      await req.session.save();
+      return await SecuritySession.findOne({"session.user":userId});
+    }
+    else {
+      return false;
     }
 
-    await req.session.save();
-    return await SecuritySession.findOne({"session.user":userId});
 
   } catch (err) {
     console.error('Error saving to session storage: ', err);
