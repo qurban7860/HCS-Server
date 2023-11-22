@@ -184,7 +184,7 @@ exports.postDocumentVersion = async (req, res, next) => {
         let document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
         
         if(!document_ || document_.isArchived) {
-          console.error("Invalid document for documentVersion");
+          console.error("Invalid document for documentVersion!");
 
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
@@ -390,7 +390,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
         document_ = await dbservice.getObjectById(Document, this.fields, documentID,this.populate);
         
         if(!document_ || document_.isArchived) {
-          console.error("Invalid document for documentVersion");
+          console.error("Invalid document for documentVersion.!");
 
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }

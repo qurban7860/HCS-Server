@@ -307,8 +307,6 @@ async function validateAndLoginUser(req, res, existingUser) {
         statusCode: 200
       };
 
-      console.log("QuerysecurityLog -->", QuerysecurityLog);
-
       await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
         if (err) {
           console.error(err);
@@ -321,12 +319,12 @@ async function validateAndLoginUser(req, res, existingUser) {
       const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-        if (error) {
+        let session = await removeAndCreateNewSession(req,existingUser.id);
+        if (error || !session || !session.session || !session.session.sessionId) {
+          console.log(error, session);
           logger.error(new Error(error));
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
         } else {
-          let session = await removeAndCreateNewSession(req,existingUser.id);
-
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -338,6 +336,7 @@ async function validateAndLoginUser(req, res, existingUser) {
               roles: existingUser.roles
             }
           });
+          
         }
       }
     }
@@ -363,10 +362,13 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
+      await req.session.save();
+      return await SecuritySession.findOne({"session.user":userId});
+    }
+    else {
+      return false;
     }
 
-    await req.session.save();
-    return await SecuritySession.findOne({"session.user":userId});
 
   } catch (err) {
     console.error('Error saving to session storage: ', err);
@@ -494,20 +496,6 @@ async function removeSessions(userId) {
       ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
       ws.terminate();
     }
-    // const ws = new WebSocket('totalLoggedInUsers'); 
-    // ws.onmessage = (event) => {
-    //     let totalCount = 0;
-    //     const data = JSON.parse(event.data);
-    //     const eventName = data.eventName;
-    //     totalCount = data.totalCount;
-    //     if (eventName === 'totalLoggedInUsers') {
-    //         totalCount --;
-    //         console.log(`Received a logout message for user ${totalCount}`);
-    //     }
-    // };
-
-    ws.send(Buffer.from(JSON.stringify({'eventName':'totalLoggedInUsers',totalCount})));
-
   });
 }
 
