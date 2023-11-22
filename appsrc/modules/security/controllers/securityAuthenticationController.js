@@ -307,8 +307,6 @@ async function validateAndLoginUser(req, res, existingUser) {
         statusCode: 200
       };
 
-      console.log("QuerysecurityLog -->", QuerysecurityLog);
-
       await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
         if (err) {
           console.error(err);
@@ -498,20 +496,6 @@ async function removeSessions(userId) {
       ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
       ws.terminate();
     }
-    // const ws = new WebSocket('totalLoggedInUsers'); 
-    // ws.onmessage = (event) => {
-    //     let totalCount = 0;
-    //     const data = JSON.parse(event.data);
-    //     const eventName = data.eventName;
-    //     totalCount = data.totalCount;
-    //     if (eventName === 'totalLoggedInUsers') {
-    //         totalCount --;
-    //         console.log(`Received a logout message for user ${totalCount}`);
-    //     }
-    // };
-
-    ws.send(Buffer.from(JSON.stringify({'eventName':'totalLoggedInUsers',totalCount})));
-
   });
 }
 
