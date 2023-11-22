@@ -76,7 +76,7 @@ exports.postProductProfile = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(req.body.type=='MANUFACTURER') {
+    if(req.body.type=='MANUFACTURE') {
       let alreadyExists = await ProductProfile.findOne({
         type:req.body.type,
         isArchived:false,
@@ -84,7 +84,7 @@ exports.postProductProfile = async (req, res, next) => {
         machine:req.params.machineId
       });
       if(alreadyExists) {
-        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURE` already exists for this machine profile');
       }
     }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -108,7 +108,7 @@ exports.patchProductProfile = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
 
-    if(req.body.type=='MANUFACTURER') {
+    if(req.body.type=='MANUFACTURE') {
       let alreadyExists = await ProductProfile.findOne({
         type:req.body.type,
         isArchived:false,
@@ -116,7 +116,7 @@ exports.patchProductProfile = async (req, res, next) => {
         machine:req.params.machineId
       });
       if(alreadyExists && req.params.id!=alreadyExists.id) {
-        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURER` already exists for this machine profile');
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURE` already exists for this machine profile');
       }
     }
     this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
