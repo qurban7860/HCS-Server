@@ -135,7 +135,7 @@ exports.patchProductProfile = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, defaultName, names, flange, type, web, isActive, isArchived, loginUser} = req.body;
+  const { machine, defaultName, names, flange, type, web, thickness, isActive, isArchived, loginUser} = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -168,6 +168,11 @@ function getDocumentFromReq(req, reqType){
   if ("web" in req.body){
     doc.web = web;
   }
+  
+  if ("thickness" in req.body){
+    doc.thickness = thickness;
+  }
+  
   
   if ("isActive" in req.body){
     doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
