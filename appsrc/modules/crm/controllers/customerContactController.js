@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { Customer, CustomerSite, CustomerContact } = require('../models');
 const { Config } = require('../../config/models');
+const { MachineServiceRecord } = require('../../products/models');
+
 
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
@@ -44,6 +46,13 @@ exports.getCustomerContact = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      let isOperator = await MachineServiceRecord.findOne( { operators : response._id } ).select('_id');
+      
+      if(isOperator) {
+        response = JSON.parse(JSON.stringify(response));
+        response.isOperator = true;
+      }
+      
       res.json(response);
     }
   }
