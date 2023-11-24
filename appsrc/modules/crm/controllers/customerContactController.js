@@ -79,15 +79,29 @@ exports.getCustomerContacts = async (req, res, next) => {
     } else {
       response = JSON.parse(JSON.stringify(response));
       let index = 0;
+      let contactIds = [];
+      let operators = [];
+      if(Array.isArray(response) && response.length>0) {
+
+        contactIds = response.map((c)=>c._id);
+
+        operators = await MachineServiceRecord.find( { operators : {$in:contactIds} } ).select('_id');
+      }
+      
       for(let contact of response) {
-        let isOperator = await MachineServiceRecord.findOne( { operators : contact._id } ).select('_id');
-        
+        let isOperator = operators.find((o)=>{
+          if(o && Array.isArray(o.operators) && o.operators.length>0) {
+            if(o.operators.find((op)=>op==contact.id)) 
+              return o;
+          }
+        })
         if(isOperator) 
           contact.isOperator = true;
         else 
           contact.isOperator = false;
 
         response[index] = contact; 
+        index++;
       }
 
       res.json(response);
