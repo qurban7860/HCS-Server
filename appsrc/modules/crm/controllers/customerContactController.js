@@ -52,7 +52,9 @@ exports.getCustomerContact = async (req, res, next) => {
         response = JSON.parse(JSON.stringify(response));
         response.isOperator = true;
       }
-      
+      else
+        response.isOperator = false;
+
       res.json(response);
     }
   }
@@ -75,6 +77,19 @@ exports.getCustomerContacts = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      response = JSON.parse(JSON.stringify(response));
+      let index = 0;
+      for(let contact of response) {
+        let isOperator = await MachineServiceRecord.findOne( { operators : contact._id } ).select('_id');
+        
+        if(isOperator) 
+          contact.isOperator = true;
+        else 
+          contact.isOperator = false;
+
+        response[index] = contact; 
+      }
+
       res.json(response);
     }
   }
