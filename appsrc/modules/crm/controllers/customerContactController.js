@@ -70,6 +70,7 @@ exports.getCustomerContacts = async (req, res, next) => {
   }
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
+      console.log('here1');
   this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   async function callbackFunc(error, response) {
@@ -81,28 +82,35 @@ exports.getCustomerContacts = async (req, res, next) => {
       let index = 0;
       let contactIds = [];
       let operators = [];
+      console.log('here2');
       if(Array.isArray(response) && response.length>0) {
 
         contactIds = response.map((c)=>c._id);
+      console.log('here3');
 
         operators = await MachineServiceRecord.find( { operators : {$in:contactIds} } ).select('_id');
-      }
-      
-      for(let contact of response) {
-        let isOperator = operators.find((o)=>{
-          if(o && Array.isArray(o.operators) && o.operators.length>0) {
-            if(o.operators.find((op)=>op==contact.id)) 
-              return o;
-          }
-        })
-        if(isOperator) 
-          contact.isOperator = true;
-        else 
-          contact.isOperator = false;
+      console.log('here4');
+        
+        for(let contact of response) {
+          let isOperator = operators.find((o)=>{
+            if(o && Array.isArray(o.operators) && o.operators.length>0) {
+              if(o.operators.find((op)=>op==contact.id)) 
+                return o;
+            }
+          })
+          if(isOperator) 
+            contact.isOperator = true;
+          else 
+            contact.isOperator = false;
 
-        response[index] = contact; 
-        index++;
+          response[index] = contact; 
+          index++;
+        }
+      console.log('here5');
+
       }
+
+      console.log('here6');
 
       res.json(response);
     }

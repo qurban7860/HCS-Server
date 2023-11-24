@@ -85,6 +85,7 @@ docSchema.add(baseSchema.docAuditSchema);
 docSchema.plugin(uniqueValidator);
 
 docSchema.index({"recordType":1})
+docSchema.index({"operators":1})
 docSchema.index({"serviceDate":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
