@@ -326,7 +326,8 @@ async function validateAndLoginUser(req, res, existingUser) {
             error = 'Unable to Start session.'
           
           console.log(error, session);
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
+          // return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
+          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           return res.json({
             accessToken,
