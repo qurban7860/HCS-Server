@@ -19,7 +19,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };    
 this.populate = [
-  {path: 'document', select: 'displayName isActive isArchived'},
+  {path: 'document', select: 'displayName referenceNumber stockNumber isActive isArchived'},
   {path: 'documentCategory', select: 'name'},
   {path: 'documentType', select: 'name'},
   {path: 'createdBy', select: 'name'},

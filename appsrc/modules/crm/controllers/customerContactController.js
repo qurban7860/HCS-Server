@@ -5,6 +5,8 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { Customer, CustomerSite, CustomerContact } = require('../models');
 const { Config } = require('../../config/models');
+const { ProductServiceRecords } = require('../../products/models');
+
 
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
@@ -39,11 +41,20 @@ this.populate = [
 
 exports.getCustomerContact = async (req, res, next) => {
   this.dbservice.getObjectById(CustomerContact, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id');
+      
+      if(isOperator) {
+        response = JSON.parse(JSON.stringify(response));
+        response.isOperator = true;
+      }
+      else
+        response.isOperator = false;
+
       res.json(response);
     }
   }
@@ -61,11 +72,34 @@ exports.getCustomerContacts = async (req, res, next) => {
   this.query.customer = this.customerId; 
   this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
-  function callbackFunc(error, response) {
+  async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+     
+      if(Array.isArray(response) && response.length>0) {
+        
+        response = JSON.parse(JSON.stringify(response));
+        let index = 0;
+
+        for(let contact of response) {
+
+          let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id');
+      
+          if(isOperator) {
+            contact.isOperator = true;
+          }
+          else
+            contact.isOperator = false;
+          
+          response[index] = contact; 
+          index++;
+        }
+
+      }
+
+
       res.json(response);
     }
   }
