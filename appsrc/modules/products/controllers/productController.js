@@ -95,7 +95,7 @@ exports.getProduct = async (req, res, next) => {
         machine.verifications = machineVerifications;
       }
 
-      let machineProfileQuery = {type:"MANUFACTURER", machine: machine._id, isActive:true, isArchived:false};
+      let machineProfileQuery = {type:"MANUFACTURE", machine: machine._id, isActive:true, isArchived:false};
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
 
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
@@ -201,7 +201,7 @@ exports.getProducts = async (req, res, next) => {
 
           if(product && product.machineModel && product.machineModel.category && 
             product.machineModel.category.connections) {
-            // product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURER",machine:product.id});        
+            // product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURE",machine:product.id});        
             filteredProducts.push(product);
           
           }
