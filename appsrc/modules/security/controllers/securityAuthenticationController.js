@@ -311,7 +311,7 @@ async function validateAndLoginUser(req, res, existingUser) {
         if (err) {
           console.error(err);
         } else {
-          console.log(result);
+          // console.log(result);
         }
       });
 
@@ -321,10 +321,11 @@ async function validateAndLoginUser(req, res, existingUser) {
       async function callbackFunc(error, response) {
         let session = await removeAndCreateNewSession(req,existingUser.id);
         if (error || !session || !session.session || !session.session.sessionId) {
-          console.log(error, session);
           logger.error(new Error(error));
           if(!error)
             error = 'Unable to Start session.'
+          
+          console.log(error, session);
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
         } else {
           return res.json({
@@ -354,6 +355,7 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
+    // console.log("req.session",req.session);
     if(req.session) {
 
       req.session.cookie.expires = false;
@@ -493,12 +495,17 @@ async function removeSessions(userId) {
   await SecuritySession.deleteMany({"session.user":userId});
   await SecuritySession.deleteMany({"session.user":{$exists:false}});
   const wss = getSocketConnectionByUserId(userId);
-  wss.map((ws)=> {  
-    if(ws.userId==userId) {
-      ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
-      ws.terminate();
-    }
-  });
+  const sessionTimeout = setTimeout(()=>{
+    wss.map((ws)=> {  
+      if(ws.userId==userId) {
+        ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
+        ws.terminate();
+      }
+    });
+    clearTimeout(sessionTimeout);
+
+  }, 300);
+  
 }
 
 exports.logout = async (req, res, next) => {
