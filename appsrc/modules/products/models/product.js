@@ -50,6 +50,9 @@ const docSchema = new Schema({
     machineConnections: [{ type: Schema.Types.ObjectId , ref: 'MachineConnection' }],
     // list of connections with other machines like decoiler
 
+    financialCustomer: { type: Schema.Types.ObjectId , ref: 'Customer' },
+    // Financial Customer for this machine
+
     customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
     // customer for this machine
   
