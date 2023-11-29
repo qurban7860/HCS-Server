@@ -481,7 +481,7 @@ function getContactName(contact) {
 function getDocumentFromReq(req, reqType){
   const { name, clientCode, tradingName, type, mainSite, sites, contacts,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
-    accountManager, projectManager, supportSubscription, supportManager, 
+    accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, 
     isActive, isArchived, loginUser } = req.body;
 
 
@@ -589,6 +589,11 @@ function getDocumentFromReq(req, reqType){
   if ("supportManager" in req.body){
     doc.supportManager = supportManager;
   }
+
+  if ("isFinancialCompany" in req.body){
+    doc.isFinancialCompany = isFinancialCompany;
+  }
+
 
   if ("isActive" in req.body){
     doc.isActive = isActive;
