@@ -9,10 +9,17 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
-let productDBService = require('../service/productDBService')
-this.dbservice = new productDBService();
+let apiClientDBService = require('../service/apiClientDBService')
+this.dbservice = new apiClientDBService();
 
-const { Product, ProductConfiguration } = require('../models');
+const { Product } = require('../../products/models');
+
+const { ProductConfiguration } = require('../models');
+
+
+
+const apiLogController = require('../../apiclient/controllers/apiLogController');
+
 const ObjectId = require('mongoose').Types.ObjectId;
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -68,12 +75,26 @@ exports.deleteProductConfiguration = async (req, res, next) => {
 };
 
 exports.postProductConfiguration = async (req, res, next) => {
+  const start = Date.now();
   const errors = validationResult(req);
+  
+  req.body.apiType = "INI";
+  // const { SecurityUser} = require('../../security/models');
+  // let userObject = await SecurityUser.findOne(
+  //   { _id: req.body.loginUser.userId},
+  //   { roles: 1 }
+  // ).populate({path: 'roles' , select: 'name roleType isArchived isActive'});
+  // userObject.roles = userObject.roles.filter(role => (role.roleType === 'APIAccess' && role.isActive == true && role.isArchived == false));
+  // const roleAPIFound = userObject.roles && userObject.roles.length > 0 ? true : false;
+
+  console.log("req.body.loginUser.roleTypes", req.body.loginUser);
+
+
+  const roleAPIFound = req.body.loginUser.roleTypes.filter(type => type === 'APIAccess'); if(roleAPIFound) {req.body.response = "APPROVED"} else {req.body.response = "DENIED"}; 
+
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-
-
     if(ObjectId.isValid(req.body.inputGUID) && req.body.inputSerialNo){
       const query__ = {_id: req.body.inputGUID, serialNo: (String(req.body.inputSerialNo).trim()) };
       let productObject = await Product.findOne(query__).select('_id');
@@ -82,22 +103,30 @@ exports.postProductConfiguration = async (req, res, next) => {
       }
     }
 
+    if(req.body.machine && roleAPIFound) {  
+      //req.body.additionalContextualInformation = "";
+      let productConfObjec = getDocumentFromReq(req, 'new');
+      const date = productConfObjec._id.getTimestamp();
+      productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
+      
+      let response = await this.dbservice.postObject(productConfObjec);
 
-    let productConfObjec = getDocumentFromReq(req, 'new');
-    const date = productConfObjec._id.getTimestamp();
-    productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
-
-    this.dbservice.postObject(productConfObjec, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
+      if (!response) {
         logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-        );
+        req.body.responseStatusCode = StatusCodes.INTERNAL_SERVER_ERROR;
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
-        return res.status(StatusCodes.CREATED).json({ ProductConfiguration: response });
+        req.body.refUUID = response._id;
+        req.body.responseStatusCode = StatusCodes.CREATED;
+        res.status(StatusCodes.CREATED).json({ ProductConfiguration: response });
       }
+    } else {
+      const errorCode = 400;
+      req.body.responseStatusCode = errorCode;
+      res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!": errorCode);
     }
+
+    const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req, 'new'); apiLogObject.save();
   }
 };
 
