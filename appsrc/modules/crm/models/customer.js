@@ -51,7 +51,7 @@ const docSchema = new Schema({
         supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
         // support project manager for this customer from Howick Side
 
-        isfinancialCompany: { type: Boolean , default: false },
+        isFinancialCompany: { type: Boolean , default: false },
         // Company deals financial matters.
 
         verifications : [{
