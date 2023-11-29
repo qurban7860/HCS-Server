@@ -40,7 +40,7 @@ this.populate = [
       {path: 'accountManager', select: '_id firstName lastName'},
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
-      {path: 'financialCustomer', select: '_id clientCode name'},
+      {path: 'financialCompany', select: '_id clientCode name'},
       {path: 'createdBy', select: 'name'},
       {path: 'updatedBy', select: 'name'}
     ];
@@ -696,7 +696,7 @@ exports.moveMachine = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
-    workOrderRef, financialCustomer, customer, instalationSite, billingSite, operators,
+    workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
@@ -734,8 +734,8 @@ function getDocumentFromReq(req, reqType){
   if ("workOrderRef" in req.body){
     doc.workOrderRef = workOrderRef;
   }
-  if ("financialCustomer" in req.body){
-    doc.financialCustomer = financialCustomer;
+  if ("financialCompany" in req.body){
+    doc.financialCompany = financialCompany;
   }
   if ("customer" in req.body){
     doc.customer = customer;
