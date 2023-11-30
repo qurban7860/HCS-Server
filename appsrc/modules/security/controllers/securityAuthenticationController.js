@@ -356,6 +356,7 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
+
     // console.log("req.session",req.session);
     if(req.session) {
 
@@ -363,7 +364,7 @@ async function removeAndCreateNewSession(req, userId) {
       let maxAge = process.env.TOKEN_EXP_TIME || "48h";
       maxAge = maxAge.replace(/\D/g,'');
 
-      req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
+      req.session.cookie.maxAge =  maxAge * 60 * 60 * 1000;
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
@@ -371,6 +372,8 @@ async function removeAndCreateNewSession(req, userId) {
       return await SecuritySession.findOne({"session.user":userId});
     }
     else {
+      console.log("session not found",new Date().getTime());
+
       return false;
     }
 
@@ -529,8 +532,10 @@ exports.logout = async (req, res, next) => {
   
   if(req.session) {
     req.session.isLoggedIn = false;
+    console.log("destroy calling",new Date().getTime());
 
     req.session.destroy((a,b,c) => {
+      console.log("destroy called",new Date().getTime());
       // console.log("destroy",a,b,c);
       return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     })
