@@ -325,7 +325,7 @@ exports.postDocument = async (req, res, next) => {
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
           }
   
-          let versionNo_ = parseInt(req.body.versionNo);
+          let versionNo_ = parseFloat(req.body.versionNo);
   
           if(isNaN(versionNo_))
             req.body.versionNo = 1;
@@ -591,10 +591,10 @@ exports.patchDocument = async (req, res, next) => {
           .sort({ versionNo:-1 });
           let version = 0;
 
-          if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+          if(!documentVersion || isNaN(parseFloat(documentVersion.versionNo))) 
             version = 1;
           else 
-            version = parseInt(documentVersion.versionNo) + 1;
+            version = Math.ceil(parseFloat(documentVersion.versionNo) + 1);
 
           req.body.versionNo = version;
 
@@ -673,7 +673,7 @@ exports.patchDocument = async (req, res, next) => {
         let dbFiles = []
 
         if(Array.isArray(files) && files.length>0) {
-          if(!documentVersion || isNaN(parseInt(documentVersion.versionNo))) 
+          if(!documentVersion || isNaN(parseFloat(documentVersion.versionNo))) 
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
           for(let file of files) {
