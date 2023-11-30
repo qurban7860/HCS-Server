@@ -289,7 +289,7 @@ exports.login = async (req, res, next) => {
 async function validateAndLoginUser(req, res, existingUser) {
   
 
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID);
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles);
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -730,9 +730,13 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail, sessionID) {
+async function issueToken(userID, userEmail, sessionID, roles) {
+  const filteredRoles = roles
+  .filter(role => role.isActive && !role.isArchived)
+  .map(role => role.roleType);
+
   let token;
-  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID };
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles };
   // console.log("tokenData",tokenData);
 
   try {
