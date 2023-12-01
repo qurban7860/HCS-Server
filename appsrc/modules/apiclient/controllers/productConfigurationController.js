@@ -89,8 +89,9 @@ exports.postProductConfiguration = async (req, res, next) => {
 
   console.log("req.body.loginUser.roleTypes", req.body.loginUser);
 
-
-  const roleAPIFound = req.body.loginUser.roleTypes.filter(type => type === 'APIAccess'); if(roleAPIFound) {req.body.response = "APPROVED"} else {req.body.response = "DENIED"}; 
+  req.body.response = "APPROVED";
+  const roleAPIFound = true;
+  // const roleAPIFound = req.body.loginUser.roleTypes.filter(type => type === 'APIAccess'); if(roleAPIFound) {req.body.response = "APPROVED"} else {req.body.response = "DENIED"}; 
 
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
