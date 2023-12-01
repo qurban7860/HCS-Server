@@ -508,7 +508,7 @@ async function removeSessions(userId) {
     });
     clearTimeout(sessionTimeout);
 
-  }, 300);
+  }, 2000);
   
 }
 
