@@ -177,9 +177,34 @@ async function sendEmail(params) {
     }
     */
   });
-
-  
 }
+
+
+const mailcomposer = require('mailcomposer');
+async function sendEmailWithRawData(params, file) {
+  const mail = mailcomposer({
+    from: process.env.AWS_SES_FROM_EMAIL,
+    to: params.to,
+    subject: params.subject,
+    html : params.htmlData,
+    attachments: [
+      {
+        filename: file.originalname,
+        content: file.buffer
+      },
+    ],
+  });
+  
+  mail.build(async (err, message) => {
+    if (err) {
+      console.error(`Error sending raw email: ${err}`);
+    }
+    let SES = new AWS.SES({region: process.env.AWS_REGION})
+    let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
+    console.log(response);
+  }); 
+}
+
 
 async function downloadFileS3(filePath) {
   const params = {

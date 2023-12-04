@@ -314,6 +314,86 @@ exports.postProductServiceRecord = async (req, res, next) => {
   }
 }
 
+exports.sendServiceRecordEmail = async (req, res, next) => {
+  const errors = validationResult(req);
+  var _this = this;
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    const file_ = req.file;
+    const emailAddress = req.body.emailadress;
+    if (!file_) {
+      return res.status(400).send('No file uploaded!');
+    };
+
+    if (!validateEmails(emailAddress)) {
+      return res.status(400).send('Email validation failded!');
+    }
+
+    const serviceRecordObject = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false })
+      .populate([{ path: 'customer', select: 'name type isActive isArchived' }]);
+
+    if (serviceRecordObject) {
+      let emailSubject = "Service Record";
+
+      let params = {
+        to: emailAddress,
+        subject: emailSubject,
+        html: true,
+      };
+
+      fs.readFile(file_.path, (err, data) => {
+        if (err) {
+          console.error('Error reading file:', err);
+          return;
+        }
+
+        // Use the file content as a buffer
+        file_.buffer = data;
+        const email = req.body.emailAddress;
+        console.log("email --->>>>", email);
+
+        // Now you can work with the file buffer as needed
+        console.log(file_.buffer);
+      });
+
+
+      let username = serviceRecordObject.name;
+      let hostName = 'portal.howickltd.com';
+
+      if (process.env.CLIENT_HOST_NAME)
+        hostName = process.env.CLIENT_HOST_NAME;
+
+      let hostUrl = "https://portal.howickltd.com";
+
+      if (process.env.CLIENT_APP_URL)
+        hostUrl = process.env.CLIENT_APP_URL;
+
+      fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
+        let link = "www.google.com";
+        let htmlData = render(data, { hostName, hostUrl, username, link })
+        params.htmlData = htmlData;
+        const awsService = require('../../../../appsrc/base/aws');
+        let response = await awsService.sendEmailWithRawData(params, file_);
+      })
+
+      const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecordObject, params.to);
+
+      _this.dbservice.postObject(emailResponse, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
+        }
+      }
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Service Record configuration not found!', true));
+    }
+  }
+};
+
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
