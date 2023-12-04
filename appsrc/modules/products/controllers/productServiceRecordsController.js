@@ -318,7 +318,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST)); 
   } else {
     const file_ = req.file;
     const emailAddress = req.body.emailadress;

@@ -692,6 +692,123 @@ exports.moveMachine = async (req, res, next) => {
   }
 };
 
+const path = require('path');
+const { Config } = require('../../config/models');
+const fs = require('fs');
+
+exports.exportProducts = async (req, res, next) => {
+  let finalData = ['serialNo, machineModel, customer, profile, name, alias, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, machineConnections, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+  const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
+
+  const regex = new RegExp("^EXPORT_UUID$", "i");
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
+
+  if(EXPORT_UUID) {
+    finalData = ['productID, serialNo, machineModel, customer, profile, name, alias, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, machineConnections, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+  }
+  
+  let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
+
+  products = JSON.parse(JSON.stringify(products));
+  for(let product of products) {
+   
+    // if(Array.isArray(product.sites) && product.sites.length>0) {
+    //   product.sites = await CustomerSite.find({_id:{$in:product.sites},isActive:true,isArchived:false});
+    //   product.sitesName = product.sites.map((s)=>s.name);
+    //   product.sitesName = product.sitesName.join('|')
+    // }
+
+    // if(Array.isArray(product.contacts) && product.contacts.length>0) {
+    //   product.contacts = await CustomerContact.find({_id:{$in:product.contacts},isActive:true,isArchived:false});
+    //   product.contactsName = product.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+    //   product.contactsName = product.contactsName.join('|')
+    // }
+
+    console.log("product", product);
+
+    if(EXPORT_UUID) {
+      finalDataObj = {
+        id:product._id,
+        serialNo: product?.serialNo?''+product?.serialNo.replace(/"/g,"'")+'':'',
+        machineModel: product?.machineModel?''+product?.machineModel.name.replace(/"/g,"'")+'':'',
+        customer: product?.customer?''+product?.customer.name.replace(/"/g,"'")+'':'',
+        profile: product?.profile?''+product?.profile.replace(/"/g,"'")+'':'',
+        name: product?.name?''+product?.name.replace(/"/g,"'")+'':'',
+        // alias: product?.alias?''+product?.alias?.replace(/"/g,"'")+'':'',
+        status: product?.status?.name?.replace(/"/g,"'"),
+        workOrderRef: product?.workOrderRef?''+product?.workOrderRef.replace(/"/g,"'")+'':'',
+        financialCompany: product?.financialCompany?''+product?.financialCompany.replace(/"/g,"'")+'':'',
+        billingSite: product?.billingSite?''+product?.billingSite.replace(/"/g,"'")+'':'',
+        shippingDate: product?.shippingDate?''+product?.shippingDate.replace(/"/g,"'")+'':'',
+        installationDate: product?.installationDate?''+product?.installationDate.replace(/"/g,"'")+'':'',
+        installationSite: product?.installationSite?''+product?.installationSite.replace(/"/g,"'")+'':'',
+        siteMilestone: product?.siteMilestone?''+product?.siteMilestone.replace(/"/g,"'")+'':'',
+        // machineConnections: product?.machineConnections?''+product?.machineConnections.replace(/"/g,"'")+'':'',
+        accountManager: product?.accountManager?''+product?.accountManager.replace(/"/g,"'")+'':'',
+        projectManager: product?.projectManager?''+product?.projectManager.replace(/"/g,"'")+'':'',
+        supportManager: product?.supportManager?''+product?.supportManager.replace(/"/g,"'")+'':'',
+        supportExpireDate: product?.supportExpireDate?''+product?.supportExpireDate.replace(/"/g,"'")+'':'',
+        totalSettings: product?.totalSettings?''+product?.totalSettings.replace(/"/g,"'")+'':'',
+        totalTools: product?.totalTools?''+product?.totalTools.replace(/"/g,"'")+'':'',
+        totalDrawings: product?.totalDrawings?''+product?.totalDrawings.replace(/"/g,"'")+'':'',
+        totalDocuments: product?.totalDocuments?''+product?.totalDocuments.replace(/"/g,"'")+'':'',
+        totalLicenses: product?.totalLicenses?''+product?.totalLicenses.replace(/"/g,"'")+'':'',
+        totalProfiles: product?.totalProfiles?''+product?.totalProfiles.replace(/"/g,"'")+'':'',
+        totalServiceRecords: product?.totalServiceRecords?''+product?.totalServiceRecords.replace(/"/g,"'")+'':'',
+        totalINI:product?.totalINI?''+product?.totalINI?.replace(/"/g,"'")+'':''
+      };
+    } else {
+      console.log("product?.alias", product?.alias);
+      finalDataObj = {
+        serialNo: product?.serialNo?''+product?.serialNo.replace(/"/g,"'")+'':'',
+        machineModel: product?.machineModel?''+product?.machineModel.name.replace(/"/g,"'")+'':'',
+        customer: product?.customer?''+product?.customer.name.replace(/"/g,"'")+'':'',
+        profile: product?.profile?''+product?.profile.replace(/"/g,"'")+'':'',
+        name: product?.name?''+product?.name.replace(/"/g,"'")+'':'',
+        // alias: product?.alias?''+product?.alias?.replace(/"/g,"'")+'':'',
+        status: product?.status?.name?.replace(/"/g,"'"),
+        workOrderRef: product?.workOrderRef?''+product?.workOrderRef.replace(/"/g,"'")+'':'',
+        financialCompany: product?.financialCompany?''+product?.financialCompany.replace(/"/g,"'")+'':'',
+        billingSite: product?.billingSite?''+product?.billingSite.replace(/"/g,"'")+'':'',
+        shippingDate: product?.shippingDate?''+product?.shippingDate.replace(/"/g,"'")+'':'',
+        installationDate: product?.installationDate?''+product?.installationDate.replace(/"/g,"'")+'':'',
+        installationSite: product?.installationSite?''+product?.installationSite.replace(/"/g,"'")+'':'',
+        siteMilestone: product?.siteMilestone?''+product?.siteMilestone.replace(/"/g,"'")+'':'',
+        // machineConnections: product?.machineConnections?''+product?.machineConnections.replace(/"/g,"'")+'':'',
+        accountManager: product?.accountManager?''+product?.accountManager.replace(/"/g,"'")+'':'',
+        projectManager: product?.projectManager?''+product?.projectManager.replace(/"/g,"'")+'':'',
+        supportManager: product?.supportManager?''+product?.supportManager.replace(/"/g,"'")+'':'',
+        supportExpireDate: product?.supportExpireDate?''+product?.supportExpireDate.replace(/"/g,"'")+'':'',
+        totalSettings: product?.totalSettings?''+product?.totalSettings.replace(/"/g,"'")+'':'',
+        totalTools: product?.totalTools?''+product?.totalTools.replace(/"/g,"'")+'':'',
+        totalDrawings: product?.totalDrawings?''+product?.totalDrawings.replace(/"/g,"'")+'':'',
+        totalDocuments: product?.totalDocuments?''+product?.totalDocuments.replace(/"/g,"'")+'':'',
+        totalLicenses: product?.totalLicenses?''+product?.totalLicenses.replace(/"/g,"'")+'':'',
+        totalProfiles: product?.totalProfiles?''+product?.totalProfiles.replace(/"/g,"'")+'':'',
+        totalServiceRecords: product?.totalServiceRecords?''+product?.totalServiceRecords.replace(/"/g,"'")+'':'',
+        totalINI:product?.totalINI?''+product?.totalINI?.replace(/"/g,"'")+'':''
+      };
+    }
+
+    finalDataRow = Object.values(finalDataObj);
+
+    finalDataRow = finalDataRow.join(', ');
+    finalData.push(finalDataRow);
+  }
+
+  let csvDataToWrite = finalData.join('\n');
+
+  fs.writeFile(filePath, csvDataToWrite, 'utf8', function (err) {
+    if (err) {
+      console.log('Some error occured - file either not saved or corrupted file saved.');
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else{
+      return res.sendFile(filePath);
+    }
+  });
+}
+
 
 
 function getDocumentFromReq(req, reqType){
