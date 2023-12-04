@@ -350,7 +350,9 @@ async function validateAndLoginUser(req, res, existingUser) {
   }
   
 }
-
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+} 
 
 async function removeAndCreateNewSession(req, userId) {
 
@@ -369,7 +371,9 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
       await req.session.save();
-      return await SecuritySession.findOne({"session.user":userId});
+      await delay(500);
+      let user = await SecuritySession.findOne({"session.user":userId});
+      return user;
     }
     else {
       console.log("session not found",new Date().getTime());
@@ -532,10 +536,8 @@ exports.logout = async (req, res, next) => {
   
   if(req.session) {
     req.session.isLoggedIn = false;
-    console.log("destroy calling",new Date().getTime());
 
     req.session.destroy((a,b,c) => {
-      console.log("destroy called",new Date().getTime());
       // console.log("destroy",a,b,c);
       return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     })
