@@ -37,7 +37,7 @@ exports.getProductCheckItem = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       response = JSON.parse(JSON.stringify(response));
-      let serviceRecordConfigs = await ProductServiceRecordsConfig.find({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{'docTitle':1});
+      let serviceRecordConfigs = await ProductServiceRecordsConfig.find({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{'docTitle':1, 'docVersionNo': 1});
       response.serviceRecordConfigs = serviceRecordConfigs;
       
       return res.json(response);
