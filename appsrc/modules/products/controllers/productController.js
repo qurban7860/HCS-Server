@@ -699,7 +699,7 @@ const { Config } = require('../../config/models');
 const fs = require('fs');
 
 exports.exportProducts = async (req, res, next) => {
-  let finalData = ['serialNo, machineModel, customer, profile, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+  let finalData = ['serialNo, machineModel, customer, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -707,7 +707,7 @@ exports.exportProducts = async (req, res, next) => {
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
-    finalData = ['productID, serialNo, machineModel, customer, profile, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+    finalData = ['productID, serialNo, machineModel, customer, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
   }
   
   let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
@@ -743,7 +743,6 @@ exports.exportProducts = async (req, res, next) => {
         serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
         machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
-        profile:product?.profile?.defaultName === undefined ? "":product?.profile?.defaultName.replace(/"/g,"'")+'',
         name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
         status:product?.name === undefined ? "":product?.name?.replace(/"/g,"'"),
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
@@ -751,7 +750,6 @@ exports.exportProducts = async (req, res, next) => {
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
-        installationSite:product?.installationSite?.name === undefined ? "":product?.installationSite?.name.replace(/"/g,"'")+'',
         siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
         accountManager:product?.accountManager?.firstName === undefined ? "":product?.accountManager?.firstName?.replace(/"/g,"'")+'',
         projectManager:product?.projectManager?.firstName === undefined ? "":product?.projectManager?.firstName?.replace(/"/g,"'")+'',
@@ -771,7 +769,6 @@ exports.exportProducts = async (req, res, next) => {
         serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
         machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
-        profile:product?.profile?.defaultName === undefined ? "":product?.profile?.defaultName.replace(/"/g,"'")+'',
         name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
         status:product?.name === undefined ? "":product?.name?.replace(/"/g,"'"),
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
@@ -779,7 +776,6 @@ exports.exportProducts = async (req, res, next) => {
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
-        installationSite:product?.installationSite?.name === undefined ? "":product?.installationSite?.name.replace(/"/g,"'")+'',
         siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
         accountManager:product?.accountManager?.firstName === undefined ? "":product?.accountManager?.firstName?.replace(/"/g,"'")+'',
         projectManager:product?.projectManager?.firstName === undefined ? "":product?.projectManager?.firstName?.replace(/"/g,"'")+'',
