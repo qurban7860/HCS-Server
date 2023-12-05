@@ -32,7 +32,7 @@ this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
   { path: 'docType', select: 'name' },
-  { path: 'docCategory', select: 'name' },
+  { path: 'docCategory', select: 'name drawing' },
   { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
@@ -76,6 +76,10 @@ exports.getDocument = async (req, res, next) => {
             documentVersion.files = documentFiles;
           }
         }
+      }
+
+      if(document_?.docCategory?.drawing) {
+        document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1}).populate({ path: 'machine', select: 'name serialNo'});
       }
       document_.documentVersions = documentVersions;
     }
