@@ -87,6 +87,7 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+  let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     if(this.query.orderBy) {
@@ -102,6 +103,7 @@ exports.getDocuments = async (req, res, next) => {
 
 
     if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
+      if (this.query.forDrawing) isDrawing = true;
 
       let query;
       if(this.query.forCustomer && this.query.forMachine) {
@@ -180,6 +182,10 @@ exports.getDocuments = async (req, res, next) => {
           else {
             let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
             documentVersions = [documentVersion]
+          }
+
+          if(isDrawing) {
+            document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1});
           }
           document_.documentVersions = documentVersions;
         }

@@ -136,7 +136,7 @@ exports.patchProductProfile = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { machine, defaultName, names, flange, type, web, thickness, isActive, isArchived, loginUser} = req.body;
+  const { machine, defaultName, names, flange, type, web, thicknessStart, thicknessEnd, isActive, isArchived, loginUser} = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -170,8 +170,12 @@ function getDocumentFromReq(req, reqType){
     doc.web = web;
   }
   
-  if ("thickness" in req.body){
-    doc.thickness = thickness;
+  if ("thicknessStart" in req.body){
+    doc.thicknessStart = thicknessStart;
+  }
+
+  if ("thicknessEnd" in req.body){
+    doc.thicknessEnd = thicknessEnd;
   }
   
   
