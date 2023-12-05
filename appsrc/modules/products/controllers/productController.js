@@ -12,7 +12,9 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog } = require('../models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductDrawing, ProductServiceRecords, ProductLicense } = require('../models');
+const { ProductConfiguration } = require('../../apiclient/models');
+const { Document } = require('../../documents/models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 const { postProductAuditLog, patchProductAuditLog } =  require('./productAuditLogController');
 const { Customer, CustomerSite } = require('../../crm/models')
@@ -697,7 +699,7 @@ const { Config } = require('../../config/models');
 const fs = require('fs');
 
 exports.exportProducts = async (req, res, next) => {
-  let finalData = ['serialNo, machineModel, customer, profile, name, alias, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, machineConnections, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+  let finalData = ['serialNo, machineModel, customer, profile, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -705,28 +707,36 @@ exports.exportProducts = async (req, res, next) => {
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
-    finalData = ['productID, serialNo, machineModel, customer, profile, name, alias, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, machineConnections, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+    finalData = ['productID, serialNo, machineModel, customer, profile, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, installationSite, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
   }
   
   let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
 
   products = JSON.parse(JSON.stringify(products));
+
+  let aggregate = [
+    {$match: {isArchived: false,isActive: true}},
+    {$group: {_id: "$machine",count: { $sum: 1 }}}
+  ];
+  let listProductTechParamValue = await ProductTechParamValue.aggregate(aggregate);
+  let listProductToolInstalled = await ProductToolInstalled.aggregate(aggregate);
+  let listProductDrawing = await ProductDrawing.aggregate(aggregate);
+  let listProductLicense = await ProductLicense.aggregate(aggregate);
+  let listProfileCount = await ProductProfile.aggregate(aggregate);
+  let listProductServiceRecords = await ProductServiceRecords.aggregate(aggregate);
+  let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
+  let listDocument = await Document.aggregate(aggregate);
+
   for(let product of products) {
-   
-    // if(Array.isArray(product.sites) && product.sites.length>0) {
-    //   product.sites = await CustomerSite.find({_id:{$in:product.sites},isActive:true,isArchived:false});
-    //   product.sitesName = product.sites.map((s)=>s.name);
-    //   product.sitesName = product.sitesName.join('|')
-    // }
-
-    // if(Array.isArray(product.contacts) && product.contacts.length>0) {
-    //   product.contacts = await CustomerContact.find({_id:{$in:product.contacts},isActive:true,isArchived:false});
-    //   product.contactsName = product.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
-    //   product.contactsName = product.contactsName.join('|')
-    // }
-
-    console.log("product", product);
-
+    let countlistProductTechParamValue= listProductTechParamValue.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductToolInstalled= listProductToolInstalled.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductDrawing= listProductDrawing.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistDocument= listDocument.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductLicense= listProductLicense.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProfileCount= listProfileCount.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductServiceRecords= listProductServiceRecords.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductConfiguration= listProductConfiguration.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    
     if(EXPORT_UUID) {
       finalDataObj = {
         id:product._id,
@@ -735,7 +745,6 @@ exports.exportProducts = async (req, res, next) => {
         customer: product?.customer?''+product?.customer.name.replace(/"/g,"'")+'':'',
         profile: product?.profile?''+product?.profile.replace(/"/g,"'")+'':'',
         name: product?.name?''+product?.name.replace(/"/g,"'")+'':'',
-        // alias: product?.alias?''+product?.alias?.replace(/"/g,"'")+'':'',
         status: product?.status?.name?.replace(/"/g,"'"),
         workOrderRef: product?.workOrderRef?''+product?.workOrderRef.replace(/"/g,"'")+'':'',
         financialCompany: product?.financialCompany?''+product?.financialCompany.replace(/"/g,"'")+'':'',
@@ -744,29 +753,26 @@ exports.exportProducts = async (req, res, next) => {
         installationDate: product?.installationDate?''+product?.installationDate.replace(/"/g,"'")+'':'',
         installationSite: product?.installationSite?''+product?.installationSite.replace(/"/g,"'")+'':'',
         siteMilestone: product?.siteMilestone?''+product?.siteMilestone.replace(/"/g,"'")+'':'',
-        // machineConnections: product?.machineConnections?''+product?.machineConnections.replace(/"/g,"'")+'':'',
         accountManager: product?.accountManager?''+product?.accountManager.replace(/"/g,"'")+'':'',
         projectManager: product?.projectManager?''+product?.projectManager.replace(/"/g,"'")+'':'',
         supportManager: product?.supportManager?''+product?.supportManager.replace(/"/g,"'")+'':'',
         supportExpireDate: product?.supportExpireDate?''+product?.supportExpireDate.replace(/"/g,"'")+'':'',
-        totalSettings: product?.totalSettings?''+product?.totalSettings.replace(/"/g,"'")+'':'',
-        totalTools: product?.totalTools?''+product?.totalTools.replace(/"/g,"'")+'':'',
-        totalDrawings: product?.totalDrawings?''+product?.totalDrawings.replace(/"/g,"'")+'':'',
-        totalDocuments: product?.totalDocuments?''+product?.totalDocuments.replace(/"/g,"'")+'':'',
-        totalLicenses: product?.totalLicenses?''+product?.totalLicenses.replace(/"/g,"'")+'':'',
-        totalProfiles: product?.totalProfiles?''+product?.totalProfiles.replace(/"/g,"'")+'':'',
-        totalServiceRecords: product?.totalServiceRecords?''+product?.totalServiceRecords.replace(/"/g,"'")+'':'',
-        totalINI:product?.totalINI?''+product?.totalINI?.replace(/"/g,"'")+'':''
+        totalSettings: countlistProductTechParamValue?.count,
+        totalTools: countlistProductToolInstalled?.count,
+        totalDrawings: countlistProductDrawing?.count,
+        totalDocuments: countlistDocument?.count,
+        totalLicenses: countlistProductLicense?.count,
+        totalProfiles: countlistProfileCount?.count,
+        totalServiceRecords: countlistProductServiceRecords?.count,
+        totalINI: countlistProductConfiguration?.count,
       };
     } else {
-      console.log("product?.alias", product?.alias);
       finalDataObj = {
         serialNo: product?.serialNo?''+product?.serialNo.replace(/"/g,"'")+'':'',
         machineModel: product?.machineModel?''+product?.machineModel.name.replace(/"/g,"'")+'':'',
         customer: product?.customer?''+product?.customer.name.replace(/"/g,"'")+'':'',
         profile: product?.profile?''+product?.profile.replace(/"/g,"'")+'':'',
         name: product?.name?''+product?.name.replace(/"/g,"'")+'':'',
-        // alias: product?.alias?''+product?.alias?.replace(/"/g,"'")+'':'',
         status: product?.status?.name?.replace(/"/g,"'"),
         workOrderRef: product?.workOrderRef?''+product?.workOrderRef.replace(/"/g,"'")+'':'',
         financialCompany: product?.financialCompany?''+product?.financialCompany.replace(/"/g,"'")+'':'',
@@ -775,19 +781,18 @@ exports.exportProducts = async (req, res, next) => {
         installationDate: product?.installationDate?''+product?.installationDate.replace(/"/g,"'")+'':'',
         installationSite: product?.installationSite?''+product?.installationSite.replace(/"/g,"'")+'':'',
         siteMilestone: product?.siteMilestone?''+product?.siteMilestone.replace(/"/g,"'")+'':'',
-        // machineConnections: product?.machineConnections?''+product?.machineConnections.replace(/"/g,"'")+'':'',
         accountManager: product?.accountManager?''+product?.accountManager.replace(/"/g,"'")+'':'',
         projectManager: product?.projectManager?''+product?.projectManager.replace(/"/g,"'")+'':'',
         supportManager: product?.supportManager?''+product?.supportManager.replace(/"/g,"'")+'':'',
         supportExpireDate: product?.supportExpireDate?''+product?.supportExpireDate.replace(/"/g,"'")+'':'',
-        totalSettings: product?.totalSettings?''+product?.totalSettings.replace(/"/g,"'")+'':'',
-        totalTools: product?.totalTools?''+product?.totalTools.replace(/"/g,"'")+'':'',
-        totalDrawings: product?.totalDrawings?''+product?.totalDrawings.replace(/"/g,"'")+'':'',
-        totalDocuments: product?.totalDocuments?''+product?.totalDocuments.replace(/"/g,"'")+'':'',
-        totalLicenses: product?.totalLicenses?''+product?.totalLicenses.replace(/"/g,"'")+'':'',
-        totalProfiles: product?.totalProfiles?''+product?.totalProfiles.replace(/"/g,"'")+'':'',
-        totalServiceRecords: product?.totalServiceRecords?''+product?.totalServiceRecords.replace(/"/g,"'")+'':'',
-        totalINI:product?.totalINI?''+product?.totalINI?.replace(/"/g,"'")+'':''
+        totalSettings: countlistProductTechParamValue?.count,
+        totalTools: countlistProductToolInstalled?.count,
+        totalDrawings: countlistProductDrawing?.count,
+        totalDocuments: countlistDocument?.count,
+        totalLicenses: countlistProductLicense?.count,
+        totalProfiles: countlistProfileCount?.count,
+        totalServiceRecords: countlistProductServiceRecords?.count,
+        totalINI: countlistProductConfiguration?.count
       };
     }
 
