@@ -485,6 +485,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
           
+          
           if(parentMachine.machineConnections.length > 0){
             let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
           }
@@ -503,6 +504,28 @@ exports.transferOwnership = async (req, res, next) => {
           } else {
             const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
             if (transferredMachine) {
+              let query___ = {machine: req.body.machine, isArchived: false, isActive: true};
+
+              let listSettings = await ProductTechParamValue.find(query___);
+              let listProfiles = await ProductProfile.find(query___);
+              
+              let newMachineId = transferredMachine._id;
+              for (const setting of listSettings) {
+                let settingClone = JSON.parse(JSON.stringify(setting))
+                delete settingClone._id;
+                delete settingClone.id;
+                settingClone.machine = newMachineId;
+                const settingClone_ = await ProductTechParamValue.create(settingClone);
+              }
+
+              for (const profile of listProfiles) {
+                let profileClone = JSON.parse(JSON.stringify(profile))
+                delete profileClone._id;
+                delete profileClone.id;
+                profileClone.machine = newMachineId;
+                const profileClone_ = await ProductProfile.create(profileClone);
+              }
+
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
                 transferredMachine: transferredMachine._id,
