@@ -9,8 +9,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
-const fileUpload = require('../../../middleware/file-upload');
-const multer = require("multer");
+const fs = require('fs');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
