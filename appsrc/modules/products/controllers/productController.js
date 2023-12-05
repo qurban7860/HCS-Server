@@ -493,7 +493,7 @@ exports.transferOwnership = async (req, res, next) => {
           // update status of the new(transferred) machine
           let queryString = { slug: 'intransfer'}
           let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
-          if(machineStatus){
+          if(machineStatus && !req.body.status){
             req.body.status = machineStatus._id;
           }
           
