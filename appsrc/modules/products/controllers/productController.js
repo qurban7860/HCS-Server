@@ -767,7 +767,6 @@ exports.exportProducts = async (req, res, next) => {
         totalINI: countlistProductConfiguration?.count,
       };
     } else {
-      console.log("", product);
       finalDataObj = {
         serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
         machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
