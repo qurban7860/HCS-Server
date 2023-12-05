@@ -13,7 +13,7 @@ const fs = require('fs');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-
+const emailController = require('../../email/controllers/emailController');
 const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
 
