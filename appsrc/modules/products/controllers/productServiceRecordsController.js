@@ -398,6 +398,42 @@ function validateEmail(email) {
   return emailRegex.test(email);
 }
 
+async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
+  var email = {
+    subject,
+    body,
+    toEmails:emailAddresses,
+    fromEmail:process.env.AWS_SES_FROM_EMAIL,
+    customer:'',
+    toContacts:[],
+    toUsers:[],
+    ccEmails,
+    bccEmails,
+    isArchived: false,
+    isActive: true,
+    // loginIP: ip,
+    createdBy: '',
+    updatedBy: '',
+    createdIP: ''
+  };
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+    }
+  }
+  
+  var reqEmail = {};
+
+  reqEmail.body = email;
+  
+  const res = emailController.getDocumentFromReq(reqEmail, 'new');
+  return res;
+}
 
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
