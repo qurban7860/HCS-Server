@@ -181,6 +181,7 @@ async function sendEmail(params) {
 
 
 const mailcomposer = require('mailcomposer');
+
 async function sendEmailWithRawData(params, file) {
   const mail = mailcomposer({
     from: process.env.AWS_SES_FROM_EMAIL,
@@ -224,6 +225,7 @@ async function downloadFileS3(filePath) {
 
 module.exports = {
   sendEmail,
+  sendEmailWithRawData,
   uploadFileS3,
   checkFileHeader,
   copyFile,
