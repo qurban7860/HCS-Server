@@ -741,8 +741,8 @@ exports.exportProducts = async (req, res, next) => {
       finalDataObj = {
         id:product._id,
         serialNo:product?.serialNo?.replace(/"/g,"'")+'',
-        machineModel:product?.machineModel.name?.replace(/"/g,"'")+'',
-        customer:product?.customer.name?.replace(/"/g,"'")+'',
+        machineModel:product?.machineModel?.name?.replace(/"/g,"'")+'',
+        customer:product?.customer?.name?.replace(/"/g,"'")+'',
         profile:product?.profile?.replace(/"/g,"'")+'',
         name:product?.name?.replace(/"/g,"'")+'',
         status:product?.name?.replace(/"/g,"'"),
@@ -769,8 +769,8 @@ exports.exportProducts = async (req, res, next) => {
     } else {
       finalDataObj = {
         serialNo:product?.serialNo?.replace(/"/g,"'")+'',
-        machineModel:product?.machineModel.name?.replace(/"/g,"'")+'',
-        customer:product?.customer.name?.replace(/"/g,"'")+'',
+        machineModel:product?.machineModel?.name?.replace(/"/g,"'")+'',
+        customer:product?.customer?.name?.replace(/"/g,"'")+'',
         profile:product?.profile?.replace(/"/g,"'")+'',
         name:product?.name?.replace(/"/g,"'")+'',
         status:product?.name?.replace(/"/g,"'"),
