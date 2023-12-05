@@ -8,7 +8,7 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
-
+const { render } = require('template-file');
 const fs = require('fs');
 
 let productDBService = require('../service/productDBService')
