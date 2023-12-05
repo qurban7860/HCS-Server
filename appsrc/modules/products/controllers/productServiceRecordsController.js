@@ -326,7 +326,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       return res.status(400).send('No file uploaded!');
     };
 
-    if (!validateEmails(emailAddress)) {
+    if (!validateEmail(emailAddress)) {
       return res.status(400).send('Email validation failded!');
     }
 
@@ -393,6 +393,12 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
     }
   }
 };
+
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
 
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
