@@ -699,7 +699,7 @@ const { Config } = require('../../config/models');
 const fs = require('fs');
 
 exports.exportProducts = async (req, res, next) => {
-  let finalData = ['serialNo, machineModel, customer, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+  let finalData = ['serialNo, machineModel, customer, name, supplier, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -707,7 +707,7 @@ exports.exportProducts = async (req, res, next) => {
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
-    finalData = ['productID, serialNo, machineModel, customer, name, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+    finalData = ['productID, serialNo, machineModel, customer, name, supplier, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
   }
   
   let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
@@ -744,7 +744,8 @@ exports.exportProducts = async (req, res, next) => {
         machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
-        status:product?.name === undefined ? "":product?.name?.replace(/"/g,"'"),
+        supplier:product?.supplier?.name? === undefined ? "":product?.supplier?.name?.replace(/"/g,"'")+'',
+        status:product?.status?.name === undefined ? "":product?.status?.name.replace(/"/g,"'"),
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
@@ -770,7 +771,8 @@ exports.exportProducts = async (req, res, next) => {
         machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
-        status:product?.name === undefined ? "":product?.name?.replace(/"/g,"'"),
+        supplier:product?.supplier?.name? === undefined ? "":product?.supplier?.name?.replace(/"/g,"'")+'',
+        status:product?.status?.name === undefined ? "":product?.status?.name.replace(/"/g,"'"),
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
