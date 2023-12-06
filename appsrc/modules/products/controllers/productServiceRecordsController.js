@@ -62,7 +62,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
       }
 
       if(response.machine && response.machine.machineModel){
-        response.machine.machineModel = await ProductModel.find({_id: response.machine.machineModel}, {name: 1});
+        response.machine.machineModel = await ProductModel.findOne({_id: response.machine.machineModel}, {name: 1});
       }
       
       if(Array.isArray(response.operators) && response.operators.length>0) {
