@@ -29,6 +29,8 @@ router.get(`${baseRouteForObject}/`, controller.getProductServiceRecords);
 
 router.post(`${baseRouteForObject}/`,upload.single('document'),  controller.postProductServiceRecord);
 
+router.post(`${baseRouteForObject}/:id/sendEmail`, upload.single('pdf'), controller.sendServiceRecordEmail);
+
 router.patch(`${baseRouteForObject}/:id`, [verifyDelete,upload.single('document')], controller.patchProductServiceRecord);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceRecord);

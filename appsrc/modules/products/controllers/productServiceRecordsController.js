@@ -8,13 +8,12 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
-
-const fileUpload = require('../../../middleware/file-upload');
-const multer = require("multer");
+const { render } = require('template-file');
+const fs = require('fs');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-
+const emailController = require('../../email/controllers/emailController');
 const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
 
@@ -312,6 +311,156 @@ exports.postProductServiceRecord = async (req, res, next) => {
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
+}
+
+exports.sendServiceRecordEmail = async (req, res, next) => {
+  const errors = validationResult(req);
+  var _this = this;
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST)); 
+  } else {
+    const file_ = req.file;
+    const emailAddress = req.body.email;
+    if (!file_) {
+      return res.status(400).send('No file uploaded!');
+    };
+
+    if (!validateEmail(emailAddress)) {
+      return res.status(400).send('Email validation failded!');
+    }
+
+    const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false })
+      .populate([{ path: 'customer', select: 'name type isActive isArchived'}, { path: 'machine', select: 'serialNo'}, { path: 'createdBy', select: 'name'}]);
+
+    if (serviceRecObj) {
+      let emailSubject = `Service Record PDF attached`;
+
+      let params = {
+        to: emailAddress,
+        subject: emailSubject,
+        html: true,
+      };
+
+      fs.readFile(file_.path, (err, data) => {
+        if (err) {
+          console.error('Error reading file:', err);
+          return;
+        }
+
+        // Use the file content as a buffer
+        file_.buffer = data;
+        const email = req.body.email;
+
+        // Now you can work with the file buffer as needed
+        console.log(file_.buffer);
+      });
+
+
+      let username = serviceRecObj.name;
+      let hostName = 'portal.howickltd.com';
+
+      if (process.env.CLIENT_HOST_NAME)
+        hostName = process.env.CLIENT_HOST_NAME;
+
+      let hostUrl = "https://portal.howickltd.com";
+
+      if (process.env.CLIENT_APP_URL)
+        hostUrl = process.env.CLIENT_APP_URL;
+
+      let serviceDate=serviceRecObj.serviceDate;
+      const SDdateObject = new Date(serviceDate);
+      const SDyear = SDdateObject.getFullYear();
+      const SDmonth = SDdateObject.getMonth() + 1;
+      const SDday = SDdateObject.getDate();
+      serviceDate = `${SDyear}-${SDmonth < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
+
+      const versionNo=serviceRecObj.versionNo;
+      const serialNo=serviceRecObj.machine?.serialNo;
+      const customer=serviceRecObj.customer?.name;
+      const createdBy=serviceRecObj.createdBy?.name;
+
+
+      let createdAt=serviceRecObj.createdAt;
+      const dateObject = new Date(createdAt);
+      const year = dateObject.getFullYear();
+      const month = dateObject.getMonth() + 1;
+      const day = dateObject.getDate();
+      createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
+      
+      fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
+        let link = "";
+        let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy })
+        params.htmlData = htmlData;
+        const awsService = require('../../../../appsrc/base/aws');
+        let response = await awsService.sendEmailWithRawData(params, file_);
+      })
+
+      const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
+
+      console.log(emailResponse);
+
+      _this.dbservice.postObject(emailResponse, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
+        }
+      }
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Service Record configuration not found!', true));
+    }
+  }
+};
+
+function validateEmail(email) {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
+async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
+  var email = {
+    subject,
+    body,
+    toEmails:emailAddresses,
+    fromEmail:process.env.AWS_SES_FROM_EMAIL,
+    customer:'',
+    toContacts:[],
+    toUsers:[],
+    ccEmails,
+    bccEmails,
+    isArchived: false,
+    isActive: true,
+    // loginIP: ip,
+    createdBy: '',
+    updatedBy: '',
+    createdIP: ''
+  };
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+
+    if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      console.log("here");
+      email.customer = toUser.customer.id;
+    } else {
+      email.customer = null;
+    }
+
+    if(toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      console.log("here 2");
+      email.toContacts.push(toUser.contact.id);
+    } else {
+      email.toContacts = null;
+    }
+  }
+  
+  var reqEmail = {};
+
+  reqEmail.body = email;
+  
+  const res = emailController.getDocumentFromReq(reqEmail, 'new');
+  return res;
 }
 
 exports.patchProductServiceRecord = async (req, res, next) => {

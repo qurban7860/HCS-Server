@@ -23,8 +23,12 @@ const docSchema = new Schema({
     flange: { type: String, maxlength: 35 },
     // Height
     
-    thickness: { type: String, maxlength: 35 },
+    thicknessStart: { type: String, maxlength: 35 },
     // Thickness
+    
+    thicknessEnd: { type: String, maxlength: 35 },
+    // Thickness
+    
     
     type: {  type: String, enum: ['CUSTOMER','MANUFACTURE'], default: 'CUSTOMER'},                  
     

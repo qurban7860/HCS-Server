@@ -32,7 +32,7 @@ this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
   { path: 'docType', select: 'name' },
-  { path: 'docCategory', select: 'name' },
+  { path: 'docCategory', select: 'name drawing' },
   { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
@@ -77,6 +77,10 @@ exports.getDocument = async (req, res, next) => {
           }
         }
       }
+
+      if(document_?.docCategory?.drawing) {
+        document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1}).populate({ path: 'machine', select: 'name serialNo'});
+      }
       document_.documentVersions = documentVersions;
     }
     res.json(document_);
@@ -87,6 +91,7 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+  let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     if(this.query.orderBy) {
@@ -102,6 +107,7 @@ exports.getDocuments = async (req, res, next) => {
 
 
     if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
+      if (this.query.forDrawing) isDrawing = true;
 
       let query;
       if(this.query.forCustomer && this.query.forMachine) {
@@ -180,6 +186,10 @@ exports.getDocuments = async (req, res, next) => {
           else {
             let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
             documentVersions = [documentVersion]
+          }
+
+          if(isDrawing) {
+            document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1});
           }
           document_.documentVersions = documentVersions;
         }

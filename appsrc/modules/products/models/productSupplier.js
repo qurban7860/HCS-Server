@@ -15,6 +15,8 @@ const docSchema = new Schema({
     
     contactTitle: { type: String },
     // title of contact person of suppplier
+
+    isDefault: {type: Boolean, default: false}
 },
 {
     collection: 'MachineSuppliers'
