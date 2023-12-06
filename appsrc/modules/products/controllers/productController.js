@@ -773,7 +773,7 @@ exports.exportProducts = async (req, res, next) => {
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
-        installationSite:product?.installationSite?.name === undefined ? "":product?.installationSite?.name.replace(/"/g,"'")+'',
+        installationSite:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
