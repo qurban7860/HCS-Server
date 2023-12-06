@@ -377,7 +377,8 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       const versionNo=serviceRecObj.versionNo;
       const serialNo=serviceRecObj.machine?.serialNo;
       const customer=serviceRecObj.customer?.name;
-      const createdBy=serviceRecObj.createdBy;
+      const createdBy=serviceRecObj.createdBy?.name;
+
 
       let createdAt=serviceRecObj.createdAt;
       const dateObject = new Date(createdAt);
