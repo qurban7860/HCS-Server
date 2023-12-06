@@ -329,11 +329,11 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       return res.status(400).send('Email validation failded!');
     }
 
-    const serviceRecordObject = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false })
-      .populate([{ path: 'customer', select: 'name type isActive isArchived' }]);
+    const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false })
+      .populate([{ path: 'customer', select: 'name type isActive isArchived'}, { path: 'machine', select: 'serialNo'}, { path: 'createdBy', select: 'name'}]);
 
-    if (serviceRecordObject) {
-      let emailSubject = "Service Record";
+    if (serviceRecObj) {
+      let emailSubject = `Service Record PDF attached`;
 
       let params = {
         to: emailAddress,
@@ -349,15 +349,14 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
 
         // Use the file content as a buffer
         file_.buffer = data;
-        const email = req.body.emailAddress;
-        console.log("email --->>>>", email);
+        const email = req.body.email;
 
         // Now you can work with the file buffer as needed
         console.log(file_.buffer);
       });
 
 
-      let username = serviceRecordObject.name;
+      let username = serviceRecObj.name;
       let hostName = 'portal.howickltd.com';
 
       if (process.env.CLIENT_HOST_NAME)
@@ -368,15 +367,30 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       if (process.env.CLIENT_APP_URL)
         hostUrl = process.env.CLIENT_APP_URL;
 
+      const serviceDate=serviceRecObj.serviceDate;
+      const versionNo=serviceRecObj.versionNo;
+      const machine=serviceRecObj.machine;
+      const customer=serviceRecObj.customer;
+      const createdBy=serviceRecObj.createdBy;
+      const createdAt=serviceRecObj.createdAt;
+      
+      console.log(serviceDate)
+      console.log(versionNo)
+      console.log(machine.serialNo)
+      console.log(customer.name)
+      console.log(createdBy.name)
+      console.log(createdAt)
+      
+
       fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
         let link = "www.google.com";
-        let htmlData = render(data, { hostName, hostUrl, username, link })
+        let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, machine, customer, createdAt })
         params.htmlData = htmlData;
         const awsService = require('../../../../appsrc/base/aws');
         let response = await awsService.sendEmailWithRawData(params, file_);
       })
 
-      const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecordObject, params.to);
+      const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
 
       _this.dbservice.postObject(emailResponse, callbackFunc);
       function callbackFunc(error, response) {
