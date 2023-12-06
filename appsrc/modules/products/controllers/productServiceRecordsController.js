@@ -441,7 +441,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
 
     console.log("customer", toUser);
     console.log("customer", toUser.customer);
-    if(toUser.customer && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+    if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
       email.customer = toUser.customer.id;
     }
 
