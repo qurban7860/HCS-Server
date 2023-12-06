@@ -367,16 +367,28 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       if (process.env.CLIENT_APP_URL)
         hostUrl = process.env.CLIENT_APP_URL;
 
-      const serviceDate=serviceRecObj.serviceDate;
+      let serviceDate=serviceRecObj.serviceDate;
+      const SDdateObject = new Date(serviceDate);
+      const SDyear = SDdateObject.getFullYear();
+      const SDmonth = SDdateObject.getMonth() + 1;
+      const SDday = SDdateObject.getDate();
+      serviceDate = `${SDyear}-${SDmonth < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
+
       const versionNo=serviceRecObj.versionNo;
       const serialNo=serviceRecObj.machine?.serialNo;
       const customer=serviceRecObj.customer?.name;
       const createdBy=serviceRecObj.createdBy;
-      const createdAt=serviceRecObj.createdAt;
+
+      let createdAt=serviceRecObj.createdAt;
+      const dateObject = new Date(createdAt);
+      const year = dateObject.getFullYear();
+      const month = dateObject.getMonth() + 1;
+      const day = dateObject.getDate();
+      createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
       
       fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
-        let link = "www.google.com";
-        let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt })
+        let link = "";
+        let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy })
         params.htmlData = htmlData;
         const awsService = require('../../../../appsrc/base/aws');
         let response = await awsService.sendEmailWithRawData(params, file_);
