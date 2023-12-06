@@ -320,7 +320,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST)); 
   } else {
     const file_ = req.file;
-    const emailAddress = req.body.emailadress;
+    const emailAddress = req.body.email;
     if (!file_) {
       return res.status(400).send('No file uploaded!');
     };
