@@ -28,7 +28,6 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
-//this.populate = 'category';
 this.populate = [
       {path: 'machineModel', select: '_id name category', 
         populate: { path:"category" , select:"name description connections" }
@@ -722,7 +721,7 @@ const { Config } = require('../../config/models');
 const fs = require('fs');
 
 exports.exportProducts = async (req, res, next) => {
-  let finalData = ['serialNo, machineModel, customer, name, supplier, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+  let finalData = ['serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -730,10 +729,12 @@ exports.exportProducts = async (req, res, next) => {
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
-    finalData = ['productID, serialNo, machineModel, customer, name, supplier, status, workOrderRef, financialCompany, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, totalSettings, totalTools, totalDrawings, totalDocuments, totalLicenses, totalProfiles, totalServiceRecords, totalINI'];
+    finalData = ['productID, serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
   }
   
   let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
+  
+
 
   products = JSON.parse(JSON.stringify(products));
 
@@ -751,6 +752,7 @@ exports.exportProducts = async (req, res, next) => {
   let listDocument = await Document.aggregate(aggregate);
 
   for(let product of products) {
+    
     let countlistProductTechParamValue= listProductTechParamValue.find((obj)=> obj?._id?.toString()==product?._id?.toString());
     let countlistProductToolInstalled= listProductToolInstalled.find((obj)=> obj?._id?.toString()==product?._id?.toString());
     let countlistProductDrawing= listProductDrawing.find((obj)=> obj?._id?.toString()==product?._id?.toString());
@@ -764,13 +766,14 @@ exports.exportProducts = async (req, res, next) => {
       finalDataObj = {
         id:product._id,
         serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
-        machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
-        customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
+        machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
         supplier:product?.supplier?.name === undefined ? "":product?.supplier?.name?.replace(/"/g,"'")+'',
         status:product?.status?.name === undefined ? "":product?.status?.name.replace(/"/g,"'"),
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
+        customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
+        installationSite:product?.installationSite?.name === undefined ? "":product?.installationSite?.name.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
@@ -791,13 +794,14 @@ exports.exportProducts = async (req, res, next) => {
     } else {
       finalDataObj = {
         serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
-        machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
-        customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
+        machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
         supplier:product?.supplier?.name === undefined ? "":product?.supplier?.name?.replace(/"/g,"'")+'',
         status:product?.status?.name === undefined ? "":product?.status?.name.replace(/"/g,"'"),
         workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
+        customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
+        installationSite:product?.installationSite?.name === undefined ? "":product?.installationSite?.name.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
