@@ -369,22 +369,14 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
 
       const serviceDate=serviceRecObj.serviceDate;
       const versionNo=serviceRecObj.versionNo;
-      const machine=serviceRecObj.machine;
-      const customer=serviceRecObj.customer;
+      const serialNo=serviceRecObj.machine?.serialNo;
+      const customer=serviceRecObj.customer?.name;
       const createdBy=serviceRecObj.createdBy;
       const createdAt=serviceRecObj.createdAt;
       
-      console.log(serviceDate)
-      console.log(versionNo)
-      console.log(machine.serialNo)
-      console.log(customer.name)
-      console.log(createdBy.name)
-      console.log(createdAt)
-      
-
       fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
         let link = "www.google.com";
-        let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, machine, customer, createdAt })
+        let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt })
         params.htmlData = htmlData;
         const awsService = require('../../../../appsrc/base/aws');
         let response = await awsService.sendEmailWithRawData(params, file_);
