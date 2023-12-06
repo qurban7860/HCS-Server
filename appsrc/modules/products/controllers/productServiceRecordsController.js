@@ -14,7 +14,7 @@ const fs = require('fs');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
-const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductCheckItem } = require('../models');
+const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -41,7 +41,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
     {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
     {path: 'customer', select: 'name'},
     {path: 'site', select: 'name'},
-    {path: 'machine', select: 'name serialNo'},
+    {path: 'machine', select: 'name serialNo machineModel'},
     {path: 'technician', select: 'name firstName lastName'},
     // {path: 'operator', select: 'firstName lastName'},
     {path: 'createdBy', select: 'name'},
@@ -59,6 +59,10 @@ exports.getProductServiceRecord = async (req, res, next) => {
 
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
+      }
+
+      if(response.machine && response.machine.machineModel){
+        response.machine.machineModel = await ProductModel.findOne({_id: response.machine.machineModel}, {name: 1});
       }
       
       if(Array.isArray(response.operators) && response.operators.length>0) {
@@ -132,7 +136,6 @@ exports.getProductServiceRecord = async (req, res, next) => {
       res.json(response);
     }
   }
-
 };
 
 exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) => {
