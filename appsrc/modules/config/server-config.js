@@ -34,6 +34,8 @@ const dashboardRoute  = require ('../dashboard/routes');
 const documentRoute  = require ('../documents/routes');
 const emailRoute  = require ('../email/routes');
 const regionRoute  = require ('../regions/routes');
+const apiclientRoute  = require ('../apiclient/routes');
+
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
 
@@ -97,6 +99,7 @@ class App {
     documentRoute.registerDocumentRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
+    apiclientRoute.registerapiClientRoutes(this.app, apiPath); 
     configRoute.registerConfigRoutes(this.app, apiPath);
     logRoute.registerlogRoutes(this.app, apiPath);
   }

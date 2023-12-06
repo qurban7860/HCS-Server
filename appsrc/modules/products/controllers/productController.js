@@ -12,7 +12,9 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog } = require('../models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductDrawing, ProductServiceRecords, ProductLicense } = require('../models');
+const { ProductConfiguration } = require('../../apiclient/models');
+const { Document } = require('../../documents/models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 const { postProductAuditLog, patchProductAuditLog } =  require('./productAuditLogController');
 const { Customer, CustomerSite } = require('../../crm/models')
@@ -26,7 +28,6 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
-//this.populate = 'category';
 this.populate = [
       {path: 'machineModel', select: '_id name category', 
         populate: { path:"category" , select:"name description connections" }
@@ -483,6 +484,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
           
+          
           if(parentMachine.machineConnections.length > 0){
             let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
           }
@@ -490,7 +492,7 @@ exports.transferOwnership = async (req, res, next) => {
           // update status of the new(transferred) machine
           let queryString = { slug: 'intransfer'}
           let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
-          if(machineStatus){
+          if(machineStatus && !req.body.status){
             req.body.status = machineStatus._id;
           }
           
@@ -501,6 +503,28 @@ exports.transferOwnership = async (req, res, next) => {
           } else {
             const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
             if (transferredMachine) {
+              let query___ = {machine: req.body.machine, isArchived: false, isActive: true};
+
+              let listSettings = await ProductTechParamValue.find(query___);
+              let listProfiles = await ProductProfile.find(query___);
+              
+              let newMachineId = transferredMachine._id;
+              for (const setting of listSettings) {
+                let settingClone = JSON.parse(JSON.stringify(setting))
+                delete settingClone._id;
+                delete settingClone.id;
+                settingClone.machine = newMachineId;
+                const settingClone_ = await ProductTechParamValue.create(settingClone);
+              }
+
+              for (const profile of listProfiles) {
+                let profileClone = JSON.parse(JSON.stringify(profile))
+                delete profileClone._id;
+                delete profileClone.id;
+                profileClone.machine = newMachineId;
+                const profileClone_ = await ProductProfile.create(profileClone);
+              }
+
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
                 transferredMachine: transferredMachine._id,
@@ -691,6 +715,129 @@ exports.moveMachine = async (req, res, next) => {
     }
   }
 };
+
+const path = require('path');
+const { Config } = require('../../config/models');
+const fs = require('fs');
+
+exports.exportProducts = async (req, res, next) => {
+  let finalData = ['serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
+  const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
+
+  const regex = new RegExp("^EXPORT_UUID$", "i");
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
+
+  if(EXPORT_UUID) {
+    finalData = ['productID, serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
+  }
+  
+  let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
+  
+
+
+  products = JSON.parse(JSON.stringify(products));
+
+  let aggregate = [
+    {$match: {isArchived: false,isActive: true}},
+    {$group: {_id: "$machine",count: { $sum: 1 }}}
+  ];
+  let listProductTechParamValue = await ProductTechParamValue.aggregate(aggregate);
+  let listProductToolInstalled = await ProductToolInstalled.aggregate(aggregate);
+  let listProductDrawing = await ProductDrawing.aggregate(aggregate);
+  let listProductLicense = await ProductLicense.aggregate(aggregate);
+  let listProfileCount = await ProductProfile.aggregate(aggregate);
+  let listProductServiceRecords = await ProductServiceRecords.aggregate(aggregate);
+  let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
+  let listDocument = await Document.aggregate(aggregate);
+
+  for(let product of products) {
+    
+    let countlistProductTechParamValue= listProductTechParamValue.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductToolInstalled= listProductToolInstalled.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductDrawing= listProductDrawing.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistDocument= listDocument.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductLicense= listProductLicense.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProfileCount= listProfileCount.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductServiceRecords= listProductServiceRecords.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductConfiguration= listProductConfiguration.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    
+    if(EXPORT_UUID) {
+      finalDataObj = {
+        id:product._id,
+        serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
+        name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
+        machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
+        supplier:product?.supplier?.name === undefined ? "":product?.supplier?.name?.replace(/"/g,"'")+'',
+        status:product?.status?.name === undefined ? "":product?.status?.name.replace(/"/g,"'"),
+        workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
+        financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
+        customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
+        installationSite:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
+        billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
+        shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
+        installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
+        siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
+        accountManager:product?.accountManager?.firstName === undefined ? "":product?.accountManager?.firstName?.replace(/"/g,"'")+'',
+        projectManager:product?.projectManager?.firstName === undefined ? "":product?.projectManager?.firstName?.replace(/"/g,"'")+'',
+        supportManager:product?.supportManager?.firstName === undefined ? "":product?.supportManager?.firstName?.replace(/"/g,"'")+'',
+        supportExpireDate:product?.supportExpireDate ? product.supportExpireDate.replace(/"/g, "'") : "",
+        totalSettings: countlistProductTechParamValue?.count,
+        totalTools: countlistProductToolInstalled?.count,
+        totalDrawings: countlistProductDrawing?.count,
+        totalDocuments: countlistDocument?.count,
+        totalLicenses: countlistProductLicense?.count,
+        totalProfiles: countlistProfileCount?.count,
+        totalServiceRecords: countlistProductServiceRecords?.count,
+        totalINI: countlistProductConfiguration?.count,
+      };
+    } else {
+      finalDataObj = {
+        serialNo:product?.serialNo === undefined ? "":product?.serialNo.replace(/"/g,"'")+'',
+        name:product?.name === undefined ? "":product?.name.replace(/"/g,"'")+'',
+        machineModel:product?.machineModel?.name === undefined ? "":product?.machineModel?.name.replace(/"/g,"'")+'',
+        supplier:product?.supplier?.name === undefined ? "":product?.supplier?.name?.replace(/"/g,"'")+'',
+        status:product?.status?.name === undefined ? "":product?.status?.name.replace(/"/g,"'"),
+        workOrderRef:product?.workOrderRef === undefined ? "":product?.workOrderRef.replace(/"/g,"'")+'',
+        financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
+        customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
+        installationSite:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
+        billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
+        shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
+        installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
+        siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
+        accountManager:product?.accountManager?.firstName === undefined ? "":product?.accountManager?.firstName?.replace(/"/g,"'")+'',
+        projectManager:product?.projectManager?.firstName === undefined ? "":product?.projectManager?.firstName?.replace(/"/g,"'")+'',
+        supportManager:product?.supportManager?.firstName === undefined ? "":product?.supportManager?.firstName?.replace(/"/g,"'")+'',
+        supportExpireDate:product?.supportExpireDate ? product.supportExpireDate.replace(/"/g, "'") : "",
+        totalSettings: countlistProductTechParamValue?.count,
+        totalTools: countlistProductToolInstalled?.count,
+        totalDrawings: countlistProductDrawing?.count,
+        totalDocuments: countlistDocument?.count,
+        totalLicenses: countlistProductLicense?.count,
+        totalProfiles: countlistProfileCount?.count,
+        totalServiceRecords: countlistProductServiceRecords?.count,
+        totalINI: countlistProductConfiguration?.count,
+      };
+    }
+
+    finalDataRow = Object.values(finalDataObj);
+
+    finalDataRow = finalDataRow.join(', ');
+    finalData.push(finalDataRow);
+  }
+
+  let csvDataToWrite = finalData.join('\n');
+
+  fs.writeFile(filePath, csvDataToWrite, 'utf8', function (err) {
+    if (err) {
+      console.log('Some error occured - file either not saved or corrupted file saved.');
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else{
+      return res.sendFile(filePath);
+    }
+  });
+}
 
 
 

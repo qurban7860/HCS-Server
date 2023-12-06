@@ -289,7 +289,7 @@ exports.login = async (req, res, next) => {
 async function validateAndLoginUser(req, res, existingUser) {
   
 
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID);
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles);
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -350,12 +350,15 @@ async function validateAndLoginUser(req, res, existingUser) {
   }
   
 }
-
+function delay(time) {
+  return new Promise(resolve => setTimeout(resolve, time));
+} 
 
 async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
+
     // console.log("req.session",req.session);
     if(req.session) {
 
@@ -363,14 +366,18 @@ async function removeAndCreateNewSession(req, userId) {
       let maxAge = process.env.TOKEN_EXP_TIME || "48h";
       maxAge = maxAge.replace(/\D/g,'');
 
-      req.session.cookie.maxAge = maxAge * 60 * 60 * 1000;
+      req.session.cookie.maxAge =  maxAge * 60 * 60 * 1000;
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
       await req.session.save();
-      return await SecuritySession.findOne({"session.user":userId});
+      await delay(500);
+      let user = await SecuritySession.findOne({"session.user":userId});
+      return user;
     }
     else {
+      console.log("session not found",new Date().getTime());
+
       return false;
     }
 
@@ -505,7 +512,7 @@ async function removeSessions(userId) {
     });
     clearTimeout(sessionTimeout);
 
-  }, 300);
+  }, 2000);
   
 }
 
@@ -730,9 +737,13 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail, sessionID) {
+async function issueToken(userID, userEmail, sessionID, roles) {
+  const filteredRoles = roles
+  .filter(role => role.isActive && !role.isArchived)
+  .map(role => role.roleType);
+
   let token;
-  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID };
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles };
   // console.log("tokenData",tokenData);
 
   try {

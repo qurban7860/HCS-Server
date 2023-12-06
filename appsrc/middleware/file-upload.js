@@ -72,7 +72,8 @@ const validExtensions = [
   'ott',
   'rtf',
   'json',
-  'txt'
+  'txt',
+  'xlsm'
 ];
 
 const fileUpload = multer({

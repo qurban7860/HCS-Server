@@ -12,7 +12,7 @@ const docSchema = new Schema({
 
     connections: { type: Boolean, default:false },
     description: { type: String, },
-    // description of model
+    isDefault: { type: Boolean, default:false }
     },
     {
         collection: 'MachineCategories'

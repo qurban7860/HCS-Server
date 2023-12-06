@@ -46,14 +46,14 @@ exports.getCustomerContact = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id');
-      
-      if(isOperator) {
+      let operatorsList = await ProductServiceRecords.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceRecordConfig').populate({path: "serviceRecordConfig", select: "docTitle"});
+
+      if(operatorsList && operatorsList.length > 0) {
         response = JSON.parse(JSON.stringify(response));
-        response.isOperator = true;
+        response.serviceRecords = operatorsList;
       }
       else
-        response.isOperator = false;
+        response.serviceRecords = [];
 
       res.json(response);
     }

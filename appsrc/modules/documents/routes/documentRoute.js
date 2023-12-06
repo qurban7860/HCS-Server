@@ -11,6 +11,7 @@ const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
 
 
+
 const controllers = require('../controllers');
 const controller = controllers.documentController;
 
@@ -31,7 +32,7 @@ router.get(`${baseRoute}/`, controller.getDocuments);
 
 // - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -47,7 +48,7 @@ router.post(`${baseRoute}/`, (req, res, next) => {
 
 // - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:10}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);

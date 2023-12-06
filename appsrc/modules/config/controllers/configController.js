@@ -74,7 +74,7 @@ exports.postConfig = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      let existingConfig = await Config.findOne({name: { $regex: req.body.name.trim(), $options: 'i' }, type: req.body.type, isActive: true});
+      let existingConfig = await Config.findOne({name: { $regex: req.body.name.trim(), $options: 'i' }, type: req.body.type, isActive: true, isArchived: false});
       if(existingConfig){
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Name already exists. Please enter a unique name!', true));
       }
