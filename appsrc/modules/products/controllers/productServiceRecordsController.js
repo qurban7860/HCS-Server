@@ -442,10 +442,12 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     console.log("customer", toUser);
     console.log("customer", toUser.customer);
     if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      console.log("here");
       email.customer = toUser.customer.id;
     }
 
-    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+    if(toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      console.log("here 2");
       email.toContacts.push(toUser.contact.id);
     }
   }
