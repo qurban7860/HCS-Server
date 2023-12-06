@@ -489,7 +489,18 @@
                                 <tr>
                                   <td align="left" style="padding:0;Margin:0">
                                     <h2 style="Margin:0;line-height:43px;mso-line-height-rule:exactly;font-family:'Space Grotesk', sans-serif;font-size:24px;font-style:normal;font-weight:normal;color:#051923">Hi, <strong>{{username}}</strong></h2>
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">This email contains attachment of service record of customer <b>{{ customer }}</b> for machine </b>{{ serialNo }}</b> service record dated at </b>{{ serviceDate }}</b> of version </b>{{ VersionNo }}</b> create on date </b>{{ createdAt }}</b>.</p>
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">This email contains attachment of service record for the following information.
+                                      <br>
+                                      <strong>Customer:</strong> {{ customer }}<br>
+                                      <strong>Machine:</strong> {{ serialNo }}<br>
+                                      <strong>Service Record Date:</strong> {{ serviceDate }}<br>
+                                      <strong>Version No:</strong> {{ VersionNo }}<br>
+                                      <strong>Created By: {{</strong> Created By }}<br>
+                                      <strong>Created At:</strong> {{ createdAt }}<br>
+                                    </p>
+                                      
+                                      
+
                                   </td>
                                 </tr>
                                 <tr>
@@ -503,7 +514,7 @@
                                 </tr>
                                 <tr>
                                   <td align="left" style="padding:0;Margin:0">
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Please download the attached file.</p>
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px;font-weight: bolder;">Please download the attached file.</p>
                                     <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
                                       <br>
                                     </p>
