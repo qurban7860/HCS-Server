@@ -397,6 +397,8 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
 
       const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
 
+      console.log(emailResponse);
+
       _this.dbservice.postObject(emailResponse, callbackFunc);
       function callbackFunc(error, response) {
         if (error) {
@@ -444,17 +446,22 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
       console.log("here");
       email.customer = toUser.customer.id;
+    } else {
+      toUser.customer = null;
     }
 
     if(toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
       console.log("here 2");
       email.toContacts.push(toUser.contact.id);
+    } else {
+      email.toContacts = null;
     }
   }
   
   var reqEmail = {};
 
   reqEmail.body = email;
+  console.log();
   
   const res = emailController.getDocumentFromReq(reqEmail, 'new');
   return res;
