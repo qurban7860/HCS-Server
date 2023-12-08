@@ -537,10 +537,13 @@ exports.patchDocument = async (req, res, next) => {
 
       if(req.body.isArchived) {
         let productDrawingObj__ = await ProductDrawing.findOne({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
-        console.log("productDrawing", productDrawingObj__);
         
         if(productDrawingObj__)
           return res.status(StatusCodes.CONFLICT).send(`Record exists against this document. Please check Machine: ${productDrawingObj__.machine.serialNo}`);      
+
+        if(req.body.isMachineDrawings && (document_.machine || document_.customer))
+          return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);      
+
       }
 
       if(!document_)
