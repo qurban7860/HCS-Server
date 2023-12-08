@@ -392,7 +392,7 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
-          if(docCategory.drawing && req.body.machine) {
+          if(docCategory.drawing && req.body.drawingMachine) {
             req.body.documentId = document_._id;
             let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
             productDrawingDocx.save();
