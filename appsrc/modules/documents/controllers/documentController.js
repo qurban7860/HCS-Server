@@ -397,6 +397,7 @@ exports.postDocument = async (req, res, next) => {
             req.body.machine = req.body.drawingMachine;
             let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
             productDrawingDocx.save();
+            delete req.body.machine;
           }
 
           await createAuditLog(documentAuditLogObj,req);
