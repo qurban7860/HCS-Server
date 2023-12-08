@@ -751,6 +751,8 @@ exports.exportProducts = async (req, res, next) => {
   let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
   let listDocument = await Document.aggregate(aggregate);
 
+  // export latitude, longitude, billing and installation site addresses in the machine CSV
+
   for(let product of products) {
     
     let countlistProductTechParamValue= listProductTechParamValue.find((obj)=> obj?._id?.toString()==product?._id?.toString());
@@ -774,7 +776,9 @@ exports.exportProducts = async (req, res, next) => {
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         installationSite:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
+        installationAddress:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
+        billingAddress:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
         siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
