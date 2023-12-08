@@ -541,7 +541,7 @@ exports.patchDocument = async (req, res, next) => {
         if(productDrawingObj__)
           return res.status(StatusCodes.CONFLICT).send(`Record exists against this document. Please check Machine: ${productDrawingObj__.machine.serialNo}`);      
 
-        if(req.body.isMachineDrawings && (document_.machine || document_.customer))
+        if(req.body.checkReference && (document_.machine || document_.customer))
           return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);      
 
       }
