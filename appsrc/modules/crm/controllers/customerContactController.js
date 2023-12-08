@@ -46,7 +46,7 @@ exports.getCustomerContact = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      let operatorsList = await ProductServiceRecords.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceRecordConfig').populate({path: "serviceRecordConfig", select: "docTitle"});
+      let operatorsList = await ProductServiceRecords.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceRecordConfig machine').populate({path: "serviceRecordConfig", select: "docTitle"});
 
       if(operatorsList && operatorsList.length > 0) {
         response = JSON.parse(JSON.stringify(response));
