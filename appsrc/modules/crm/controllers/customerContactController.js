@@ -85,7 +85,7 @@ exports.getCustomerContacts = async (req, res, next) => {
 
         for(let contact of response) {
 
-          let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machineid');
+          let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
       
           if(isOperator) {
             contact.isOperator = true;
