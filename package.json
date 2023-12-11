@@ -30,6 +30,7 @@
     "jimp": "^0.22.8",
     "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.21",
+    "mailcomposer": "^4.0.2",
     "mongodb": "^6.1.0",
     "mongoose": "^5.13.20",
     "mongoose-guid": "^2.0.1",
