@@ -399,9 +399,6 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       })
 
       const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
-
-      console.log(emailResponse);
-
       _this.dbservice.postObject(emailResponse, callbackFunc);
       function callbackFunc(error, response) {
         if (error) {

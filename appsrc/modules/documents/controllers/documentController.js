@@ -392,10 +392,12 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
-          if(docCategory.drawing && req.body.machine) {
+          if(docCategory.drawing && req.body.drawingMachine) {
             req.body.documentId = document_._id;
+            req.body.machine = req.body.drawingMachine;
             let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
             productDrawingDocx.save();
+            delete req.body.machine;
           }
 
           await createAuditLog(documentAuditLogObj,req);
@@ -522,18 +524,27 @@ exports.patchDocument = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      
       if(!req.body.loginUser){
         req.body.loginUser = await getToken(req);
       }
 
       let files = [];
-      
       if(req.files && req.files.images)
         files = req.files.images;
 
       let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
       
+
+      if(req.body.isArchived) {
+        let productDrawingObj__ = await ProductDrawing.findOne({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
+        
+        if(productDrawingObj__)
+          return res.status(StatusCodes.CONFLICT).send(`Record exists against this document. Please check Machine: ${productDrawingObj__.machine.serialNo}`);      
+
+        if(req.body.checkReference && (document_.machine || document_.customer))
+          return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);      
+
+      }
 
       if(!document_)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));

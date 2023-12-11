@@ -721,7 +721,7 @@ const { Config } = require('../../config/models');
 const fs = require('fs');
 
 exports.exportProducts = async (req, res, next) => {
-  let finalData = ['serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
+  let finalData = ['serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite,installationSiteAddress, installationSitelat, installationSitelong, billingSite, billingSiteAddress,  billingSitelat,  billingSitelong, shippingDate,  installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -729,7 +729,7 @@ exports.exportProducts = async (req, res, next) => {
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
-    finalData = ['productID, serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite, billingSite, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
+    finalData = ['productID, serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite,installationSiteAddress, installationSitelat, installationSitelong, billingSite,billingSiteAddress, billingSitelat, billingSitelong, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
   }
   
   let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
@@ -751,6 +751,8 @@ exports.exportProducts = async (req, res, next) => {
   let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
   let listDocument = await Document.aggregate(aggregate);
 
+  // export latitude, longitude, billing and installation site addresses in the machine CSV
+
   for(let product of products) {
     
     let countlistProductTechParamValue= listProductTechParamValue.find((obj)=> obj?._id?.toString()==product?._id?.toString());
@@ -762,6 +764,9 @@ exports.exportProducts = async (req, res, next) => {
     let countlistProductServiceRecords= listProductServiceRecords.find((obj)=> obj?._id?.toString()==product?._id?.toString());
     let countlistProductConfiguration= listProductConfiguration.find((obj)=> obj?._id?.toString()==product?._id?.toString());
     
+
+
+
     if(EXPORT_UUID) {
       finalDataObj = {
         id:product._id,
@@ -774,7 +779,13 @@ exports.exportProducts = async (req, res, next) => {
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         installationSite:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
+        installationSiteAddress:fetchAddressCSV(product?.instalationSite?.address).replace(/"/g,"'"),
+        installationSitelat:product?.instalationSite?.long === undefined ? "":product?.instalationSite?.long.replace(/"/g,"'")+'',
+        installationSitelong:product?.instalationSite?.long === undefined ? "":product?.instalationSite?.long.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
+        billingSiteAddress:fetchAddressCSV(product?.billingSite?.address).replace(/"/g,"'"),
+        billingSitelat:product?.billingSite?.long === undefined ? "":product?.billingSite?.long.replace(/"/g,"'")+'',
+        billingSitelong:product?.billingSite?.long === undefined ? "":product?.billingSite?.long.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
         siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
@@ -802,7 +813,13 @@ exports.exportProducts = async (req, res, next) => {
         financialCompany:product?.financialCompany?.name === undefined ? "":product?.financialCompany?.name.replace(/"/g,"'")+'',
         customer:product?.customer?.name === undefined ? "":product?.customer?.name.replace(/"/g,"'")+'',
         installationSite:product?.instalationSite?.name === undefined ? "":product?.instalationSite?.name.replace(/"/g,"'")+'',
+        installationSiteAddress:fetchAddressCSV(product?.instalationSite?.address).replace(/"/g,"'"),
+        installationSitelat:product?.instalationSite?.long === undefined ? "":product?.instalationSite?.long.replace(/"/g,"'")+'',
+        installationSitelong:product?.instalationSite?.long === undefined ? "":product?.instalationSite?.long.replace(/"/g,"'")+'',
         billingSite:product?.billingSite?.name === undefined ? "":product?.billingSite?.name.replace(/"/g,"'")+'',
+        billingSiteAddress:fetchAddressCSV(product?.billingSite?.address).replace(/"/g,"'"),
+        billingSitelat:product?.billingSite?.long === undefined ? "":product?.billingSite?.long.replace(/"/g,"'")+'',
+        billingSitelong:product?.billingSite?.long === undefined ? "":product?.billingSite?.long.replace(/"/g,"'")+'',
         shippingDate:product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : "",
         installationDate:product?.installationDate ? product.installationDate.replace(/"/g, "'") : "",
         siteMilestone:product?.siteMilestone === undefined ? "":product?.siteMilestone.replace(/"/g,"'")+'',
@@ -840,6 +857,20 @@ exports.exportProducts = async (req, res, next) => {
 }
 
 
+function fetchAddressCSV(address) {
+  if (!address || typeof address !== 'object') {
+    return ''; // Return an empty string or handle the error as needed
+  }
+
+  const addressComponents = ['street', 'suburb', 'city', 'region', 'postcode', 'country'];
+
+  const formattedAddressCSV = addressComponents
+    .map(component => address[component])
+    .filter(value => value !== undefined && value !== null && value !== '')
+    .join(' ');
+
+  return formattedAddressCSV;
+}
 
 function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
