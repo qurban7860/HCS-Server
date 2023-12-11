@@ -1,3 +1,5 @@
 module.exports = {
-    configController: require('./configController')
+    configController: require('./configController'),
+    metaSchemaController: require('./metaSchemaController')
+    
 }
