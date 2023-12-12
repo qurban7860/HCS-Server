@@ -52,7 +52,12 @@ exports.getRegion = async (req, res, next) => {
 exports.getRegions = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-
+    if(this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
+    
+    console.log("this.query", this.query);
     const response = await this.dbservice.getObjectList(Region, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
