@@ -5,6 +5,7 @@ const WebSocket = wss;
 
 const { SecurityUser, SecuritySession, SecurityNotification } = require('../appsrc/modules/security/models');
 WebSocket.on('connection', async function(ws, req) {
+    let userId = null;
     try{
         let queryString = url.parse(req.url,true).query;
         let isValid = true;
@@ -17,7 +18,7 @@ WebSocket.on('connection', async function(ws, req) {
         }
         
         const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-        const userId = decodedToken['userId'];
+        userId = decodedToken['userId'];
         const sessionId = decodedToken['sessionId'];
         if(userId && mongoose.Types.ObjectId.isValid(userId) && sessionId) {
             const user = await SecurityUser.findById(userId);
@@ -74,7 +75,7 @@ WebSocket.on('connection', async function(ws, req) {
         let eventName = data.eventName;
 
 
-        console.log("eventName");
+        console.log("eventName", eventName);
 
         let sendEventData = {};
         if(eventName=='getNotifications') {
