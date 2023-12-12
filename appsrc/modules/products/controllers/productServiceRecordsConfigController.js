@@ -10,11 +10,12 @@ let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
 let productDBService = require('../service/productDBService')
+const { securityNotificationController } = require('../../security/controllers')
 this.dbservice = new productDBService();
 
 const { ProductServiceRecordsConfig, ProductCheckItem, ProductModel, Product } = require('../models');
 
-const { SecurityUser } = require('../../security/models');
+const { SecurityUser, SecurityRole } = require('../../security/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -197,6 +198,16 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       submittedBy: req.body.loginUser.userId,
       submittedDate: new Date()
     }
+    const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
+    if(roles) {
+      const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
+      if(Array.isArray(users) && users.length>0) {
+        for(let user of users) {
+          let notificationMessage = `${req.body.docTitle} has been submitted. Please Review.`;
+          await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user._id);
+        }   
+      }
+    }   
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -246,10 +257,23 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       // }
 
       if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
+
         req.body.submittedInfo = {
           submittedBy: req.body.loginUser.userId,
           submittedDate: new Date()
         }
+
+        const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
+        if(roles) {
+          const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
+          if(Array.isArray(users) && users.length>0) {
+            for(let user of users) {
+              let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
+              await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
+            }   
+          }
+        }          
+
       } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
         req.body.submittedInfo = {};
       }
@@ -287,6 +311,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         
             await ProductServiceRecordsConfig.updateMany(whereClause, { isActive: false }, { new: true });
             
+
             let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1);
             if(proSerObj)
               productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;

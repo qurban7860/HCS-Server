@@ -8,17 +8,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
     name: { type: String , required: true, unique: true },
-    // name of Status 
-    /*
-      Order Accepted
-      Procurement Process Initiated
-      In Production
-      Ready for Shipment
-      In Freight
-      Received by Customer
-      Deployment/Installation
-      In Operation
-    */
+    
     description: { type: String },
     // description of Status
 

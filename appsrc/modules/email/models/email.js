@@ -7,6 +7,9 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
+        // emailType: {type: String, enum: []}
+        status: { type: String, enum: ['DRAFT','SUBMITTED', 'APPROVED'], default: 'DRAFT' },
+
         subject: { type: String },
         //Subject of a email
         
