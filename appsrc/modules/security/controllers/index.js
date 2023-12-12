@@ -12,6 +12,7 @@ module.exports = {
     securityConfigBlockedCustomerController: require('./securityConfigBlockedCustomerController'),
     securityConfigWhileListIPController: require('./securityConfigWhiteListIPController'),
     securityConfigBlackListIPController: require('./securityConfigBlackListIPController'),
+    securityNotificationController: require('./securityNotificationController'),
 
     // securityInviteController: require('./securityInviteController'),
 }
