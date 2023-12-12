@@ -83,6 +83,15 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
+        }   
+
+        if(eventName=='getOnlineUsers') {
+            const userIds = []
+            WebSocket.clients.forEach((client)=> {
+                userIds.push(client.userId);
+            });
+            broadcastEvent(WebSocket, {'eventName':'onlineUsers',userIds})
+
         }     
 
 
