@@ -12,6 +12,8 @@ const docSchema = new Schema({
 
     type: { type: String },
 
+    extraInfo: { type: Object }
+
     readBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],                       
 
     // deleteBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],                       
