@@ -333,7 +333,7 @@ async function validateAndLoginUser(req, res, existingUser) {
           const wss = getAllWebSockets();
           console.log(wss);
           wss.map((ws)=> {  
-            ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId})));
+            ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
           });
 
           return res.json({
