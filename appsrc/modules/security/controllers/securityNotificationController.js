@@ -101,10 +101,10 @@ exports.createNotification = async(message='', sender='', receiver='', type='sys
     const wss = getSocketConnectionByUserId(receiver);
 
     wss.map((ws)=> {  
-      if(ws.userId==receiver) {
-        ws.send({'eventName' : 'newNotification', receiver, notification});
+      // if(ws.userId==receiver) {
+        ws.send(JSON.stringify({'eventName' : 'newNotification', receiver, notification}));
         ws.terminate();
-      }
+      // }
     });
 
   }
