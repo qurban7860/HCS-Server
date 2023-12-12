@@ -5,6 +5,7 @@ const WebSocket = wss;
 
 const { SecurityUser, SecuritySession, SecurityNotification } = require('../appsrc/modules/security/models');
 WebSocket.on('connection', async function(ws, req) {
+    let userId = null;
     try{
         let queryString = url.parse(req.url,true).query;
         let isValid = true;
@@ -17,7 +18,7 @@ WebSocket.on('connection', async function(ws, req) {
         }
         
         const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-        const userId = decodedToken['userId'];
+        userId = decodedToken['userId'];
         const sessionId = decodedToken['sessionId'];
         if(userId && mongoose.Types.ObjectId.isValid(userId) && sessionId) {
             const user = await SecurityUser.findById(userId);
@@ -60,19 +61,28 @@ WebSocket.on('connection', async function(ws, req) {
     
 
     ws.on('message', async function(data) {
-
+        console.log("data", data);
         data = Buffer.from(data,'utf8'.toString());
         try{
             data = JSON.parse(data);
         }catch(e) {
             console.log('Invalid Event data',data,e);
         }
+
+        console.log("data JSON", data);
+        
         
         let eventName = data.eventName;
 
+
+        console.log("eventName", eventName);
+
         let sendEventData = {};
         if(eventName=='getNotifications') {
-            let notifications = await SecurityNotification.find({receivers:userId,readBy:{$ne:userId}}).populate('sender');
+            let queryString__ =  {receivers:userId,readBy:{$ne:userId}};
+            console.log("queryString__", queryString__);
+            let notifications = await SecurityNotification.find(queryString__).populate('sender');
+            console.log("notifications", notifications);
             sendEventData = { eventName:'notificationsSent', data : notifications };
             emitEvent(ws,sendEventData)
         }
@@ -119,7 +129,7 @@ function closeSocket(ws) {
 function emitEvent(ws,sendEventData = {}) {
   console.log(`\nSending eventName : ${sendEventData.eventName}`);
   console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
-  ws.send(Buffer.from(JSON.stringify(sendEventData)));
+  ws.send(JSON.stringify(sendEventData));
 }
 
 function broadcastEvent(wss, sendEventData = {}) {
