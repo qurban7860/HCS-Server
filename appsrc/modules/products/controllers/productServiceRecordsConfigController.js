@@ -198,16 +198,16 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       submittedBy: req.body.loginUser.userId,
       submittedDate: new Date()
     }
-    const role = await SecurityRole.findOne({roleType:'SuperAdmin'}).select('_id');
-    if(role) {
-      const users = await SecurityUser.find({roles:role._id}).select('_id');
+    const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
+    if(roles) {
+      const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
       if(Array.isArray(users) && users.length>0) {
         for(let user of users) {
-          let notificationMessage = `${req.body.docTitle} has been submitted. Please Review.`;
+          let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
           await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
         }   
       }
-    }
+    }   
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -263,9 +263,9 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           submittedDate: new Date()
         }
 
-        const role = await SecurityRole.findOne({roleType:'SuperAdmin'}).select('_id');
-        if(role) {
-          const users = await SecurityUser.find({roles:role._id}).select('_id');
+        const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
+        if(roles) {
+          const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
           if(Array.isArray(users) && users.length>0) {
             for(let user of users) {
               let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
