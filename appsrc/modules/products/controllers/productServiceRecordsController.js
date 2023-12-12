@@ -344,20 +344,34 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
         html: true,
       };
 
-      fs.readFile(file_.path, (err, data) => {
-        if (err) {
-          console.error('Error reading file:', err);
-          return;
-        }
+      // fs.readFile(file_.path, (err, data) => {
+      //   if (err) {
+      //     console.error('Error reading file:', err);
+      //     return;
+      //   }
 
-        // Use the file content as a buffer
-        console.log("data file buffer",data.length)
+      //   // Use the file content as a buffer
+      //   console.log("data file buffer",data.length)
+      //   file_.buffer = data;
+
+      //   // Now you can work with the file buffer as needed
+      //   console.log(file_.buffer);
+      // });
+
+
+      // Promisify the fs.readFile function
+      const readFileAsync = util.promisify(fs.readFile);
+
+      // Assuming this code is within an async function
+      try {
+        const data = await readFileAsync(file_.path);
         file_.buffer = data;
-        const email = req.body.email;
+        // console.log(file_.buffer);
+        console.log("data file buffer",data.length)
+      } catch (err) {
+        console.error('Error reading file:', err);
+      }
 
-        // Now you can work with the file buffer as needed
-        console.log(file_.buffer);
-      });
 
 
       let username = serviceRecObj.name;
