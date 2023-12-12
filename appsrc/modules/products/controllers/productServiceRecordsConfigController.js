@@ -15,7 +15,7 @@ this.dbservice = new productDBService();
 
 const { ProductServiceRecordsConfig, ProductCheckItem, ProductModel, Product } = require('../models');
 
-const { SecurityUser } = require('../../security/models');
+const { SecurityUser, SecurityRole } = require('../../security/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -198,11 +198,16 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       submittedBy: req.body.loginUser.userId,
       submittedDate: new Date()
     }
-    const users = await SecurityUser.find({roles:'SuperAdmin'}).select('_id');
-    for(let user of users) {
-      let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
-      await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
-    }   
+    const role = await SecurityRole.findOne({roleType:'SuperAdmin'}).select('_id');
+    if(role) {
+      const users = await SecurityUser.find({roles:role._id}).select('_id');
+      if(Array.isArray(users) && users.length>0) {
+        for(let user of users) {
+          let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
+          await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
+        }   
+      }
+    }
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -257,11 +262,17 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           submittedBy: req.body.loginUser.userId,
           submittedDate: new Date()
         }
-        const users = await SecurityUser.find({roles:'SuperAdmin'}).select('_id');
-        for(let user of users) {
-          let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
-          await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
-        }            
+
+        const role = await SecurityRole.findOne({roleType:'SuperAdmin'}).select('_id');
+        if(role) {
+          const users = await SecurityUser.find({roles:role._id}).select('_id');
+          if(Array.isArray(users) && users.length>0) {
+            for(let user of users) {
+              let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
+              await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
+            }   
+          }
+        }          
 
       } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
         req.body.submittedInfo = {};
