@@ -351,6 +351,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
         }
 
         // Use the file content as a buffer
+        console.log("data file buffer",data.length)
         file_.buffer = data;
         const email = req.body.email;
 
