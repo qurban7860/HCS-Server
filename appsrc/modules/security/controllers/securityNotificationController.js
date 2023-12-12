@@ -84,28 +84,54 @@ exports.postSecurityNotification = async (req, res, next) => {
   }
 };
 
-exports.createNotification = async(message='', sender='', receiver='', type='system') => {
+exports.createNotification = async(message='', sender='', receiver='', type='system', data) => {
 
-  if(sender && receiver && message) {
+  if(sender && message) {
     console.log("sender", sender, "receiver", receiver, "message", message);
     
-    
-    let notification = await SecurityNotification.create({
+    let notificationObj = {
       sender:sender,
-      receivers:[receiver],
       type,
-      message
-    });
+      message,
+      extraInfo:data
+    }
+
+    if(Array.isArray(receiver) && receiver.length>0) {
+      const newReceivers = []
+
+      for(const rec of receiver) {
+        if(mongoose.Types.ObjectId.isValid(rec)) {
+          newReceivers.push(rec);
+        }
+      }
+
+      if(newReceivers.length==0)
+        return false;
+      
+      notificationObj.receiver = newReceivers;
+    } else if(mongoose.Types.ObjectId.isValid(receiver)) {
+
+      notificationObj.receiver = [receiver];
+    }
+    else {
+      return false;
+    }
+
+    let notification = await SecurityNotification.create(notificationObj);
 
     notification = await SecurityNotification.findById(notification.id).populate('sender');
-    const wss = getSocketConnectionByUserId(receiver);
 
-    wss.map((ws)=> {  
-      // if(ws.userId==receiver) {
-        ws.send(JSON.stringify({'eventName' : 'newNotification', receiver, notification}));
-        ws.terminate();
-      // }
-    });
+    if(Array.isArray(notification.receiver) && notification.receiver.length>0) {
+      notification.receiver.forEach((notifRecevier)=>{
+        const wss = getSocketConnectionByUserId(notifRecevier);
+
+        wss.map((ws)=> {  
+          ws.send(Buffer.from(JSON.stringify({'eventName' : 'newNotification', notifRecevier, notification})));
+        });
+
+      })
+
+    }
 
   }
 

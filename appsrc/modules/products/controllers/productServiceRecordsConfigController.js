@@ -198,16 +198,6 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       submittedBy: req.body.loginUser.userId,
       submittedDate: new Date()
     }
-    const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
-    if(roles) {
-      const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
-      if(Array.isArray(users) && users.length>0) {
-        for(let user of users) {
-          let notificationMessage = `${req.body.docTitle} has been submitted. Please Review.`;
-          await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user._id);
-        }   
-      }
-    }   
   }
 
   this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -218,6 +208,32 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
         error._message
       );
     } else {
+
+      if(req.body.status == "SUBMITTED") {
+        
+        const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
+        if(roles) {
+          const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
+          if(Array.isArray(users) && users.length>0) {
+            const userIds = users.map((u)=>u._id);
+            await securityNotificationController.createNotification(
+              `${req.body.docTitle} has been submitted. Please Review.`,
+              req.body.loginUser.userId, 
+              userIds,
+              'ProductServiceRecordsConfig',
+              {
+                _id:response._id, 
+                docTitle:response.docTitle,
+                recordType:response.recordType,
+                status:response.status,
+                docVersionNo:response.docVersionNo
+              }
+            );
+          }
+        }   
+
+      }
+
       if(response && response.machineModel) {
         let machineModel = await ProductModel.findOne({_id:response.machineModel,isActive:true,isArchived:false}).populate('category');
         response = JSON.parse(JSON.stringify(response));
@@ -267,10 +283,21 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
           if(Array.isArray(users) && users.length>0) {
-            for(let user of users) {
-              let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
-              await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
-            }   
+            const userIds = users.map((u)=>u._id);
+            
+            await securityNotificationController.createNotification(
+              `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`,
+              req.body.loginUser.userId, 
+              userIds,
+              'ProductServiceRecordsConfig',
+              {
+                _id:productServiceRecordsConfig._id, 
+                docTitle:productServiceRecordsConfig.docTitle,
+                recordType:productServiceRecordsConfig.recordType,
+                status:productServiceRecordsConfig.status,
+                docVersionNo:productServiceRecordsConfig.docVersionNo
+              }
+            );
           }
         }          
 

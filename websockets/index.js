@@ -83,6 +83,15 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
+        }   
+
+        if(eventName=='getOnlineUsers') {
+            const userIds = []
+            WebSocket.clients.forEach((client)=> {
+                userIds.push(client.userId);
+            });
+            broadcastEvent(WebSocket, {'eventName':'onlineUsers',userIds})
+
         }     
 
 
@@ -113,15 +122,10 @@ function emitEvent(ws,sendEventData = {}) {
   ws.send(Buffer.from(JSON.stringify(sendEventData)));
 }
 
-function broadcastEvent(wss, ws, sendEventData = {},socialStats) {
+function broadcastEvent(wss, sendEventData = {}) {
   wss.clients.forEach(function each(client) {
-    if (client !== ws && client.readyState === WebSocket.OPEN) {
+    if (client.readyState === WebSocket.OPEN) {
       emitEvent(client,sendEventData)
-      
-      if(sendEventData.eventName=='newMessagesSent') {
-        socialStats(client);
-      }
-
     }
   });
 }
