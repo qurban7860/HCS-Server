@@ -17,6 +17,16 @@ global.getSocketConnectionByUserId = function getSocketConnectionByUserId(userId
     
     return wsConnection;
 }
+
+global.getAllWebSockets = function getAllWebSockets() {
+    let wsConnection = [];
+
+    wss.clients.forEach((client)=> {
+        wsConnection.push(client);
+    });
+    
+    return wsConnection;
+}
 const {  emitEvent, broadcastEvent, closeSocket } = require('./websockets/index');
 
 global.emitEvent = emitEvent;
