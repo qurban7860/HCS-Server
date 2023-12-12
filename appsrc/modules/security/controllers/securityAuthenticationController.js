@@ -319,6 +319,7 @@ async function validateAndLoginUser(req, res, existingUser) {
       const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
+
         let session = await removeAndCreateNewSession(req,existingUser.id);
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
@@ -329,6 +330,12 @@ async function validateAndLoginUser(req, res, existingUser) {
           // return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
+          const wss = getAllWebSockets();
+          console.log(wss);
+          wss.map((ws)=> {  
+            ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId})));
+          });
+
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -532,7 +539,10 @@ exports.logout = async (req, res, next) => {
 
   await removeSessions(req.params.userID);
 
-
+  const wss = getAllWebSockets();
+  wss.map((ws)=> {  
+    ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
+  });
   
   if(req.session) {
     req.session.isLoggedIn = false;
