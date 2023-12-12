@@ -200,6 +200,7 @@ async function sendEmailWithRawData(params, file) {
     if (err) {
       console.error(`Error sending raw email: ${err}`);
     }
+    console.log("message",message);
     let SES = new AWS.SES({region: process.env.AWS_REGION})
     let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
     console.log(response);
