@@ -360,6 +360,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
 
 
       // Promisify the fs.readFile function
+      const util = require('util'); 
       const readFileAsync = util.promisify(fs.readFile);
 
       // Assuming this code is within an async function
