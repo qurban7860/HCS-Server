@@ -16,6 +16,7 @@ this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
 const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
+const util = require('util');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -359,21 +360,13 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       // });
 
 
-      // Promisify the fs.readFile function
-      const util = require('util'); 
       const readFileAsync = util.promisify(fs.readFile);
-
-      // Assuming this code is within an async function
       try {
         const data = await readFileAsync(file_.path);
         file_.buffer = data;
-        // console.log(file_.buffer);
-        console.log("data file buffer",data.length)
       } catch (err) {
         console.error('Error reading file:', err);
       }
-
-
 
       let username = serviceRecObj.name;
       let hostName = 'portal.howickltd.com';
@@ -457,14 +450,12 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     email.toUsers.push(toUser.id);
 
     if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
-      console.log("here");
       email.customer = toUser.customer.id;
     } else {
       email.customer = null;
     }
 
     if(toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
-      console.log("here 2");
       email.toContacts.push(toUser.contact.id);
     } else {
       email.toContacts = null;
