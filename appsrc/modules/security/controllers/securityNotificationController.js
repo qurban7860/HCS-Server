@@ -87,6 +87,9 @@ exports.postSecurityNotification = async (req, res, next) => {
 exports.createNotification = async(message='', sender='', receiver='', type='system') => {
 
   if(sender && receiver && message) {
+    console.log("sender", sender, "receiver", receiver, "message", message);
+    
+    
     let notification = await SecurityNotification.create({
       sender:sender,
       receivers:[receiver],
@@ -98,10 +101,10 @@ exports.createNotification = async(message='', sender='', receiver='', type='sys
     const wss = getSocketConnectionByUserId(receiver);
 
     wss.map((ws)=> {  
-      // if(ws.userId==receiver) {
-        ws.send(Buffer.from(JSON.stringify({'eventName' : 'newNotification', receiver, notification})));
-        // ws.terminate();
-      // }
+      if(ws.userId==receiver) {
+        ws.send({'eventName' : 'newNotification', receiver, notification});
+        ws.terminate();
+      }
     });
 
   }
