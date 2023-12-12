@@ -721,7 +721,7 @@ const { Config } = require('../../config/models');
 const fs = require('fs');
 
 exports.exportProducts = async (req, res, next) => {
-  let finalData = ['serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite,installationSiteAddress, installationSitelat, installationSitelong, billingSite, billingSiteAddress,  billingSitelat,  billingSitelong, shippingDate,  installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
+  let finalData = ['Serial No, Name, Machine Model, Supplier, Status, Work Order Ref, Financial Company, Customer, Installation Site, Installation Site Address, Installation Site Latitude, Installation Site Longitude, Billing Site, Billing Site Address, Billing Site Latitude,  Billing Site Longitude, Shipping Date,  Installation Date, Site Milestone, Account Manager, Project Manager, Support Manager, Support Expire Date, Settings, Tools, Drawings, Documents, Licenses, Profiles, Service Records, INI'];
   const filePath = path.resolve(__dirname, "../../../../uploads/Products.csv");
 
   const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -729,7 +729,7 @@ exports.exportProducts = async (req, res, next) => {
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
 
   if(EXPORT_UUID) {
-    finalData = ['productID, serialNo, name, machineModel, supplier, status, workOrderRef, financialCompany, customer, installationSite,installationSiteAddress, installationSitelat, installationSitelong, billingSite,billingSiteAddress, billingSitelat, billingSitelong, shippingDate, installationDate, siteMilestone, accountManager, projectManager, supportManager, supportExpireDate, Settings, Tools, Drawings, Documents, Licenses, Profiles, ServiceRecords, INI'];
+    finalData = ['Product ID, Serial No, Name, Machine Model, Supplier, Status, Work Order Ref, Financial Company, Customer, Installation Site, Installation Site Address, Installation Site Latitude, Installation Site Longitude, Billing Site, Billing Site Address, Billing Site Latitude,  Billing Site Longitude, Shipping Date,  Installation Date, Site Milestone, Account Manager, Project Manager, Support Manager, Support Expire Date, Settings, Tools, Drawings, Documents, Licenses, Profiles, Service Records, INI'];
   }
   
   let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
