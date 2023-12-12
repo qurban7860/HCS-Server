@@ -203,7 +203,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       const users = await SecurityUser.find({roles:role._id}).select('_id');
       if(Array.isArray(users) && users.length>0) {
         for(let user of users) {
-          let notificationMessage = `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`;
+          let notificationMessage = `${req.body.docTitle} has been submitted. Please Review.`;
           await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
         }   
       }
