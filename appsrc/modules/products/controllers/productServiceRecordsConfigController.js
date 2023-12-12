@@ -204,7 +204,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       if(Array.isArray(users) && users.length>0) {
         for(let user of users) {
           let notificationMessage = `${req.body.docTitle} has been submitted. Please Review.`;
-          await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user);
+          await securityNotificationController.createNotification(notificationMessage,req.body.loginUser.userId, user._id);
         }   
       }
     }   
