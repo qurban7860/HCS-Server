@@ -877,7 +877,7 @@ function fetchAddressCSV(address) {
     .filter(value => value !== undefined && value !== null && value !== '')
     .join(', ');
 
-  return '"'+(formattedAddressCSV)+'"';
+  return '"'+(formattedAddressCSV).toString+'"';
 }
 
 function getDocumentFromReq(req, reqType){
