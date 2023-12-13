@@ -464,6 +464,87 @@ exports.exportCustomers = async (req, res, next) => {
   });
 }
 
+exports.exportCustomersJSONForCSV = async (req, res, next) => {
+  try {
+    let listObjects = [];
+    const regex = new RegExp("^EXPORT_UUID$", "i");
+    let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+    EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
+    let customers = await Customer.find({ isActive: true, isArchived: false })
+      .populate('mainSite')
+      .populate('primaryBillingContact')
+      .populate('primaryTechnicalContact')
+      .populate('accountManager')
+      .populate('projectManager')
+      .populate('supportManager');
+
+    customers = JSON.parse(JSON.stringify(customers));
+
+    const customerPromises = customers.map(async (customer) => {
+    
+      if(Array.isArray(customer.sites) && customer.sites.length>0) {
+        customer.sites = await CustomerSite.find({_id:{$in:customer.sites},isActive:true,isArchived:false});
+        customer.sitesName = customer.sites.map((s)=>s.name);
+        customer.sitesName = customer.sitesName.join('|')
+      }
+
+      if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
+        customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
+        customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+        customer.contactsName = customer.contactsName.join('|')
+      }
+
+      if(EXPORT_UUID) {
+        finalDataObj = {
+          "ID": customer._id,
+          "Name": customer.name ? '' + customer.name.replace(/"/g,"'") + '' : '',
+          "Code": customer.clientCode ? '' + customer.clientCode.replace(/"/g,"'") + '' : '',
+          "TradingName": customer.tradingName ? '' + customer.tradingName.join('-').replace(/"/g,"'") + '' : '',
+          "Type": '' + customer.type + '',
+          "MainSite": customer.mainSite ? '' + customer.mainSite.name.replace(/"/g,"'") + '' : '',
+          "MainSiteID": customer.mainSite ? customer.mainSite._id : '',
+          "Sites": customer.sitesName ? '' + customer.sitesName.replace(/"/g,"'") + '' : '',
+          "Contacts": customer.contactsName ? '' + customer.contactsName.replace(/"/g,"'") + '' : '',
+          "BillingContact": customer.primaryBillingContact ? getContactName(customer.primaryBillingContact) : '',
+          "BillingContactID": customer.primaryBillingContact ? customer.primaryBillingContact._id : '',
+          "TechnicalContact": customer.primaryTechnicalContact ? getContactName(customer.primaryTechnicalContact) : '',
+          "TechnicalContactID": customer.primaryTechnicalContact ? customer.primaryTechnicalContact._id : '',
+          "AccountManager": customer.accountManager ? getContactName(customer.accountManager) : '',
+          "AccountManagerID": customer.accountManager ? customer.accountManager._id : '',
+          "ProjectManager": customer.projectManager ? getContactName(customer.projectManager) : '',
+          "ProjectManagerID": customer.projectManager ? customer.projectManager._id : '',
+          "SupportSubscription": customer.supportSubscription ? 'Yes' : 'No',
+          "SupportManager": customer.supportManager ? getContactName(customer.supportManager) : '',
+          "SupportManagerID": customer.supportManager ? customer.supportManager._id : ''
+        }
+      } else {
+        finalDataObj = {
+          "Name": customer.name ? '' + customer.name.replace(/"/g,"'") + '' : '',
+          "Code": customer.clientCode ? '' + customer.clientCode.replace(/"/g,"'") + '' : '',
+          "TradingName": customer.tradingName ? '' + customer.tradingName.join('-').replace(/"/g,"'") + '' : '',
+          "Type": '' + customer.type + '',
+          "MainSite": customer.mainSite ? '' + customer.mainSite.name.replace(/"/g,"'") + '' : '',
+          "Sites": customer.sitesName ? '' + customer.sitesName.replace(/"/g,"'") + '' : '',
+          "Contacts": customer.contactsName ? '' + customer.contactsName.replace(/"/g,"'") + '' : '',
+          "BillingContact": customer.primaryBillingContact ? getContactName(customer.primaryBillingContact) : '',
+          "TechnicalContact": customer.primaryTechnicalContact ? getContactName(customer.primaryTechnicalContact) : '',
+          "AccountManager": customer.accountManager ? getContactName(customer.accountManager) : '',
+          "ProjectManager": customer.projectManager ? getContactName(customer.projectManager) : '',
+          "SupportSubscription": customer.supportSubscription ? 'Yes' : 'No',
+          "SupportManager": customer.supportManager ? getContactName(customer.supportManager) : '',
+        }
+      }
+
+      listObjects.push(finalDataObj);
+    });
+
+    await Promise.all(customerPromises);
+    return res.json(listObjects);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Internal Server Error");
+  }
+}
 
 function getContactName(contact) {
   let fullName = '';

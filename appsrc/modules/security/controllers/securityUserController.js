@@ -21,7 +21,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { name: 1 };  
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'},
@@ -78,7 +78,6 @@ exports.getSecurityUsers = async (req, res, next) => {
     delete this.query.roleType;
     delete req.query.roleType;
   }
-
 
   this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, users) {

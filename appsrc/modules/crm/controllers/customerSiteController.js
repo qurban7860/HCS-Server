@@ -277,6 +277,77 @@ exports.exportSites = async (req, res, next) => {
   });
 }
 
+exports.exportSitesJSONForCSV = async (req, res, next) => {
+  try {
+    const regex = new RegExp("^EXPORT_UUID$", "i");
+    let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+    EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
+
+    let sites = await CustomerSite.find({ customer: req.params.customerId, isActive: true, isArchived: false })
+      .populate('customer')
+      .populate('primaryBillingContact')
+      .populate('primaryTechnicalContact');
+
+    sites = JSON.parse(JSON.stringify(sites));
+    let listJSON = [];
+    
+    await Promise.all(sites.map(async (site) => {
+      if (site && site.customer && (site.customer.isActive == false || site.customer.isArchived == true))
+        return;
+
+      if (Array.isArray(site.contacts) && site.contacts.length > 0) {
+        site.contacts = await CustomerContact.find({ _id: { $in: site.contacts }, isActive: true, isArchived: false });
+        site.contactsName = site.contacts.map((c) => `${c.firstName} ${c.lastName}`);
+        site.contactsName = '"' + site.contactsName + '"';
+      }
+
+      let finalDataObj;
+      if (EXPORT_UUID) {
+        finalDataObj = {
+          Name: site ? '' + site.name.replace(/"/g, "'") + '' : '',
+          CustomerID: site.customer ? site.customer._id : '',
+          Customer: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
+          Street: site.address ? (site.address.street ? '' + site.address.street.replace(/"/g, "'") + '' : '') : '',
+          Suburb: site.address ? (site.address.suburb ? '' + site.address.suburb.replace(/"/g, "'") + '' : '') : '',
+          City: site.address ? (site.address.city ? '' + site.address.city.replace(/"/g, "'") + '' : '') : '',
+          Region: site.address ? (site.address.region ? '' + site.address.region.replace(/"/g, "'") + '' : '') : '',
+          PostCode: site.address ? (site.address.postcode ? '' + site.address.postcode.replace(/"/g, "'") + '' : '') : '',
+          Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
+          Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
+          Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
+          Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
+          BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
+          BillingContactID: site.primaryBillingContact ? site.primaryBillingContact._id : '',
+          TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          TechnicalContactID: site.primaryTechnicalContact ? site.primaryTechnicalContact._id : '',
+        };
+      } else {
+        finalDataObj = {
+          Name: site ? '' + site.name.replace(/"/g, "'") + '' : '',
+          Customer: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
+          Street: site.address ? (site.address.street ? '' + site.address.street.replace(/"/g, "'") + '' : '') : '',
+          Suburb: site.address ? (site.address.suburb ? '' + site.address.suburb.replace(/"/g, "'") + '' : '') : '',
+          City: site.address ? (site.address.city ? '' + site.address.city.replace(/"/g, "'") + '' : '') : '',
+          Region: site.address ? (site.address.region ? '' + site.address.region.replace(/"/g, "'") + '' : '') : '',
+          PostCode: site.address ? (site.address.postcode ? '' + site.address.postcode.replace(/"/g, "'") + '' : '') : '',
+          Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
+          Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
+          Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
+          Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
+          BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
+          TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+        };
+      }
+
+      listJSON.push(finalDataObj);
+    }));
+
+    res.send(listJSON);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+}
 
 function getContactName(contact) {
   let fullName = '"';
