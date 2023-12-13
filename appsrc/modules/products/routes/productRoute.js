@@ -22,7 +22,7 @@ const baseRouteForObject = `/machines`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/export`, controller.exportProducts);
+router.get(`${baseRouteForObject}/export`, controller.exportProductsJSONforCSV);
 
 router.get(`${baseRouteForObject}/`, controller.getProducts);
 

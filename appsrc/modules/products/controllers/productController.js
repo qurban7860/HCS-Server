@@ -873,6 +873,118 @@ exports.exportProducts = async (req, res, next) => {
 }
 
 
+exports.exportProductsJSONforCSV = async (req, res, next) => {
+  const regex = new RegExp("^EXPORT_UUID$", "i");
+  let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false; 
+  let products = await Product.find({isActive:true,isArchived:false}).populate(this.populate);
+  products = JSON.parse(JSON.stringify(products));
+  let aggregate = [
+    {$match: {isArchived: false,isActive: true}},
+    {$group: {_id: "$machine",count: { $sum: 1 }}}
+  ];
+  let listProductTechParamValue = await ProductTechParamValue.aggregate(aggregate);
+  let listProductToolInstalled = await ProductToolInstalled.aggregate(aggregate);
+  let listProductDrawing = await ProductDrawing.aggregate(aggregate);
+  let listProductLicense = await ProductLicense.aggregate(aggregate);
+  let listProfileCount = await ProductProfile.aggregate(aggregate);
+  let listProductServiceRecords = await ProductServiceRecords.aggregate(aggregate);
+  let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
+  let listDocument = await Document.aggregate(aggregate);
+  let listObjects = [];
+  for(let product of products) {
+    
+    let countlistProductTechParamValue= listProductTechParamValue.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductToolInstalled= listProductToolInstalled.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductDrawing= listProductDrawing.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistDocument= listDocument.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductLicense= listProductLicense.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProfileCount= listProfileCount.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductServiceRecords= listProductServiceRecords.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    let countlistProductConfiguration= listProductConfiguration.find((obj)=> obj?._id?.toString()==product?._id?.toString());
+    
+
+
+    let finalDataObj = null;
+    if(EXPORT_UUID) {
+      finalDataObj = {
+        id: "" + (product._id) + "",
+        serialNo: `${product?.serialNo.replace(/"/g, "'")}`,
+        name: product?.name === undefined ? "" : (`${product?.name.replace(/"/g, "'")}`),
+        machineModel: product?.machineModel?.name === undefined ? "" : (`${product?.machineModel?.name.replace(/"/g, "'")}`),
+        supplier: product?.supplier?.name === undefined ? "" : (`${product?.supplier?.name?.replace(/"/g, "'")}`),
+        status: product?.status?.name === undefined ? "" : (`${product?.status?.name.replace(/"/g, "'")}`),
+        workOrderRef: product?.workOrderRef === undefined ? "" : (`${product?.workOrderRef.replace(/"/g, "'")}`),
+        financialCompany: product?.financialCompany?.name === undefined ? "" : (`${product?.financialCompany?.name.replace(/"/g, "'")}`),
+        customer: product?.customer?.name === undefined ? "" : (`${product?.customer?.name.replace(/"/g, "'")}`),
+        installationSite: product?.instalationSite?.name === undefined ? "" : (`${product?.instalationSite?.name.replace(/"/g, "'")}`),
+        installationSiteAddress: `${(fetchAddressCSV(product?.instalationSite?.address).replace(/"/g, "'"))}`,
+        installationSitelat: product?.instalationSite?.long === undefined ? "" : `${(product?.instalationSite?.long.replace(/"/g, "'"))}`,
+        installationSitelong: product?.instalationSite?.long === undefined ? "" : `${(product?.instalationSite?.long.replace(/"/g, "'"))}`,
+        billingSite: product?.billingSite?.name === undefined ? "" : `${(product?.billingSite?.name.replace(/"/g, "'"))}`,
+        billingSiteAddress: `${(fetchAddressCSV(product?.billingSite?.address).replace(/"/g, "'"))}`,
+        billingSitelat: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
+        billingSitelong: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
+        shippingDate: `${(product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : '')}`,
+        installationDate: `${(product?.installationDate ? product.installationDate.replace(/"/g, "'") : '')}`,
+        siteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
+        accountManager: product?.accountManager?.firstName === undefined ? "" : `${(product?.accountManager?.firstName?.replace(/"/g, "'"))}`,
+        projectManager: product?.projectManager?.firstName === undefined ? "" : `${(product?.projectManager?.firstName?.replace(/"/g, "'"))}`,
+        supportManager: product?.supportManager?.firstName === undefined ? "" : `${(product?.supportManager?.firstName?.replace(/"/g, "'"))}`,
+        supportExpireDate: `${(product?.supportExpireDate ? product.supportExpireDate.replace(/"/g, "'") : "")}`,
+        totalSettings: `${(countlistProductTechParamValue != undefined ? countlistProductTechParamValue?.count : '')}`,
+        totalTools: `${(countlistProductToolInstalled != undefined ? countlistProductToolInstalled?.count : '')}`,
+        totalDrawings: `${(countlistProductDrawing != undefined ? countlistProductDrawing?.count : '')}`,
+        totalDocuments: `${(countlistDocument != undefined ? countlistDocument?.count : '')}`,
+        totalLicenses: `${(countlistProductLicense != undefined ? countlistProductLicense?.count : '')}`,
+        totalProfiles: `${(countlistProfileCount != undefined ? countlistProfileCount?.count : '')}`,
+        totalServiceRecords: `${(countlistProductServiceRecords != undefined ? countlistProductServiceRecords?.count : '')}`,
+        totalINI: `${(countlistProductConfiguration != undefined ? countlistProductConfiguration?.count : '')}`,
+    };
+    } else {
+      finalDataObj = {
+        serialNo: `${product?.serialNo.replace(/"/g, "'")}`,
+        name: product?.name === undefined ? "" : (`${product?.name.replace(/"/g, "'")}`),
+        machineModel: product?.machineModel?.name === undefined ? "" : (`${product?.machineModel?.name.replace(/"/g, "'")}`),
+        supplier: product?.supplier?.name === undefined ? "" : (`${product?.supplier?.name?.replace(/"/g, "'")}`),
+        status: product?.status?.name === undefined ? "" : (`${product?.status?.name.replace(/"/g, "'")}`),
+        workOrderRef: product?.workOrderRef === undefined ? "" : (`${product?.workOrderRef.replace(/"/g, "'")}`),
+        financialCompany: product?.financialCompany?.name === undefined ? "" : (`${product?.financialCompany?.name.replace(/"/g, "'")}`),
+        customer: product?.customer?.name === undefined ? "" : (`${product?.customer?.name.replace(/"/g, "'")}`),
+        installationSite: product?.instalationSite?.name === undefined ? "" : (`${product?.instalationSite?.name.replace(/"/g, "'")}`),
+        installationSiteAddress: `${(fetchAddressCSV(product?.instalationSite?.address).replace(/"/g, "'"))}`,
+        installationSitelat: product?.instalationSite?.long === undefined ? "" : `${(product?.instalationSite?.long.replace(/"/g, "'"))}`,
+        installationSitelong: product?.instalationSite?.long === undefined ? "" : `${(product?.instalationSite?.long.replace(/"/g, "'"))}`,
+        billingSite: product?.billingSite?.name === undefined ? "" : `${(product?.billingSite?.name.replace(/"/g, "'"))}`,
+        billingSiteAddress: `${(fetchAddressCSV(product?.billingSite?.address).replace(/"/g, "'"))}`,
+        billingSitelat: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
+        billingSitelong: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
+        shippingDate: `${(product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : '')}`,
+        installationDate: `${(product?.installationDate ? product.installationDate.replace(/"/g, "'") : '')}`,
+        siteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
+        accountManager: product?.accountManager?.firstName === undefined ? "" : `${(product?.accountManager?.firstName?.replace(/"/g, "'"))}`,
+        projectManager: product?.projectManager?.firstName === undefined ? "" : `${(product?.projectManager?.firstName?.replace(/"/g, "'"))}`,
+        supportManager: product?.supportManager?.firstName === undefined ? "" : `${(product?.supportManager?.firstName?.replace(/"/g, "'"))}`,
+        supportExpireDate: `${(product?.supportExpireDate ? product.supportExpireDate.replace(/"/g, "'") : "")}`,
+        totalSettings: `${(countlistProductTechParamValue != undefined ? countlistProductTechParamValue?.count : '')}`,
+        totalTools: `${(countlistProductToolInstalled != undefined ? countlistProductToolInstalled?.count : '')}`,
+        totalDrawings: `${(countlistProductDrawing != undefined ? countlistProductDrawing?.count : '')}`,
+        totalDocuments: `${(countlistDocument != undefined ? countlistDocument?.count : '')}`,
+        totalLicenses: `${(countlistProductLicense != undefined ? countlistProductLicense?.count : '')}`,
+        totalProfiles: `${(countlistProfileCount != undefined ? countlistProfileCount?.count : '')}`,
+        totalServiceRecords: `${(countlistProductServiceRecords != undefined ? countlistProductServiceRecords?.count : '')}`,
+        totalINI: `${(countlistProductConfiguration != undefined ? countlistProductConfiguration?.count : '')}`,
+    };
+    }
+
+    listObjects.push(finalDataObj);
+  }
+
+
+  return res.send(listObjects);
+}
+
+
 function fetchAddressCSV(address) {
   if (!address || typeof address !== 'object') {
     return ''; // Return an empty string or handle the error as needed
