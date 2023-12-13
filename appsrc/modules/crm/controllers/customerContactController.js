@@ -446,6 +446,62 @@ exports.exportContacts = async (req, res, next) => {
   });
 };
 
+exports.exportContactsJSONForCSV = async (req, res, next) => {
+  try {
+    const regex = new RegExp("^EXPORT_UUID$", "i");
+    let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+    EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
+
+    let contacts = await CustomerContact.find({ customer: req.params.customerId, isActive: true, isArchived: false })
+      .populate('customer');
+
+    contacts = JSON.parse(JSON.stringify(contacts));
+    let listJSON = [];
+
+    await Promise.all(contacts.map(async (contact) => {
+      if (contact && contact.customer && (contact.customer.isActive == false || contact.customer.isArchived == true))
+        return;
+
+      if (Array.isArray(contact.sites) && contact.sites.length > 0) {
+        contact.sites = await CustomerSite.find({ _id: { $in: contact.sites }, isActive: true, isArchived: false });
+        contact.sitesName = contact.sites.map((s) => s.name);
+        contact.sitesName = contact.sitesName.join('- ')
+      }
+
+      let finalDataObj;
+      if (EXPORT_UUID) {
+        finalDataObj = {
+          ID: contact._id,
+          Name: contact ? getContactName(contact) : '',
+          Title: contact.title ? '' + contact.title.replace(/"/g, "'") + '' : '',
+          Types: contact.contactTypes ? '' + contact.contactTypes.join('|').replace(/"/g, "'") + '' : '',
+          CustomerID: contact.customer ? contact.customer._id : '',
+          Customer: contact.customer ? '' + contact.customer.name.replace(/"/g, "'") + '' : '',
+          Phone: contact.phone ? '' + contact.phone.replace(/"/g, "'") + '' : '',
+          Email: contact.email ? '' + contact.email.replace(/"/g, "'") + '' : '',
+          Sites: contact.sitesName ? '' + contact.sitesName.replace(/"/g, "'") + '' : '',
+        };
+      } else {
+        finalDataObj = {
+          Name: contact ? getContactName(contact) : '',
+          Title: contact.title ? '' + contact.title.replace(/"/g, "'") + '' : '',
+          Types: contact.contactTypes ? '' + contact.contactTypes.join('|').replace(/"/g, "'") + '' : '',
+          Customer: contact.customer ? '' + contact.customer.name.replace(/"/g, "'") + '' : '',
+          Phone: contact.phone ? '' + contact.phone.replace(/"/g, "'") + '' : '',
+          Email: contact.email ? '' + contact.email.replace(/"/g, "'") + '' : '',
+          Sites: contact.sitesName ? '' + contact.sitesName.replace(/"/g, "'") + '' : '',
+        };
+      }
+      listJSON.push(finalDataObj);
+    }));
+
+    res.send(listJSON);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send({ error: 'Internal Server Error' });
+  }
+};
+
 
 function getContactName(contact) {
   let fullName = '';
