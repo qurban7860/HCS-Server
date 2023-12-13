@@ -779,11 +779,11 @@ exports.exportProducts = async (req, res, next) => {
         financialCompany:product?.financialCompany?.name === undefined ? "":('"'+product?.financialCompany?.name.replace(/"/g,"'")+'"'),
         customer:product?.customer?.name === undefined ? "":('"'+product?.customer?.name.replace(/"/g,"'")+'"'),
         installationSite:product?.instalationSite?.name === undefined ? "":('"'+product?.instalationSite?.name.replace(/"/g,"'")+'"'),
-        installationSiteAddress:'"'+(fetchAddressCSV(product?.instalationSite?.address).replace(/"/g,"'"))+'"',
+        installationSiteAddress:''+(fetchAddressCSV(product?.instalationSite?.address).replace(/"/g,"'"))+'',
         installationSitelat:product?.instalationSite?.long === undefined ? "":'"'+(product?.instalationSite?.long.replace(/"/g,"'"))+'"',
         installationSitelong:product?.instalationSite?.long === undefined ? "":'"'+(product?.instalationSite?.long.replace(/"/g,"'"))+'"',
         billingSite:product?.billingSite?.name === undefined ? "":'"'+(product?.billingSite?.name.replace(/"/g,"'"))+'"',
-        billingSiteAddress:'"'+(fetchAddressCSV(product?.billingSite?.address).replace(/"/g,"'"))+'"',
+        billingSiteAddress:''+(fetchAddressCSV(product?.billingSite?.address).replace(/"/g,"'"))+'',
         billingSitelat:product?.billingSite?.long === undefined ? "":'"'+(product?.billingSite?.long.replace(/"/g,"'"))+'"',
         billingSitelong:product?.billingSite?.long === undefined ? "":'"'+(product?.billingSite?.long.replace(/"/g,"'"))+'"',
 
@@ -817,11 +817,11 @@ exports.exportProducts = async (req, res, next) => {
         financialCompany:product?.financialCompany?.name === undefined ? "":('"'+product?.financialCompany?.name.replace(/"/g,"'")+'"'),
         customer:product?.customer?.name === undefined ? "":('"'+product?.customer?.name.replace(/"/g,"'")+'"'),
         installationSite:product?.instalationSite?.name === undefined ? "":('"'+product?.instalationSite?.name.replace(/"/g,"'")+'"'),
-        installationSiteAddress:'"'+(fetchAddressCSV(product?.instalationSite?.address).replace(/"/g,"'"))+'"',
+        installationSiteAddress:''+(fetchAddressCSV(product?.instalationSite?.address).replace(/"/g,"'"))+'',
         installationSitelat:product?.instalationSite?.long === undefined ? "":'"'+(product?.instalationSite?.long.replace(/"/g,"'"))+'"',
         installationSitelong:product?.instalationSite?.long === undefined ? "":'"'+(product?.instalationSite?.long.replace(/"/g,"'"))+'"',
         billingSite:product?.billingSite?.name === undefined ? "":'"'+(product?.billingSite?.name.replace(/"/g,"'"))+'"',
-        billingSiteAddress:'"'+(fetchAddressCSV(product?.billingSite?.address).replace(/"/g,"'"))+'"',
+        billingSiteAddress:''+(fetchAddressCSV(product?.billingSite?.address).replace(/"/g,"'"))+'',
         billingSitelat:product?.billingSite?.long === undefined ? "":'"'+(product?.billingSite?.long.replace(/"/g,"'"))+'"',
         billingSitelong:product?.billingSite?.long === undefined ? "":'"'+(product?.billingSite?.long.replace(/"/g,"'"))+'"',
 
@@ -877,7 +877,7 @@ function fetchAddressCSV(address) {
     .filter(value => value !== undefined && value !== null && value !== '')
     .join(', ');
 
-  return formattedAddressCSV;
+  return '"'+(formattedAddressCSV)+'"';
 }
 
 function getDocumentFromReq(req, reqType){
