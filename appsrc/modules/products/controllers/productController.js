@@ -875,6 +875,7 @@ exports.moveMachine = async (req, res, next) => {
 const { Config } = require('../../config/models');
 exports.exportProductsJSONforCSV = async (req, res, next) => {
   try {
+    console.log("this.query", this.query);
     this.query = req.query != "undefined" ? req.query : { isActive: true, isArchived: false };
     let sortBy = { createdAt: -1 };
 
