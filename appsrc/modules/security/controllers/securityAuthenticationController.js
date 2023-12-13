@@ -548,6 +548,7 @@ exports.logout = async (req, res, next) => {
 
   wss = getAllWebSockets();
   const userIds = wss.map((ws)=> ws.userId);
+  console.log("userIds", userIds);
   wss.map((ws)=> {
     ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
   });
