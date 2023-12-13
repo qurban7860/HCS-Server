@@ -545,6 +545,12 @@ exports.logout = async (req, res, next) => {
   wss.map((ws)=> {  
     ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
   });
+
+  wss = getAllWebSockets();
+  const userIds = wss.map((ws)=> ws.userId);
+  wss.map((ws)=> {
+    ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
+  });
   
   if(req.session) {
     req.session.isLoggedIn = false;
