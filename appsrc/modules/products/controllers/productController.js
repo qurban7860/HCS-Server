@@ -885,6 +885,8 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
   const regex = new RegExp("^EXPORT_UUID$", "i");
   let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false; 
+  console.log(this.query);
+  console.log(sortBy);
   
   let products = await Product.find(this.query).populate(this.populate).sort(sortBy);
   products = JSON.parse(JSON.stringify(products));
