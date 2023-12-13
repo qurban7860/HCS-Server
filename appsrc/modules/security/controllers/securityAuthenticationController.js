@@ -540,6 +540,8 @@ exports.logout = async (req, res, next) => {
   await removeSessions(req.params.userID);
 
   const wss = getAllWebSockets();
+  console.log("testing.");
+  console.log(wss);
   wss.map((ws)=> {  
     ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
   });
