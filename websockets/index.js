@@ -103,6 +103,10 @@ WebSocket.on('connection', async function(ws, req) {
             if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
                 let query = { receivers: userId, readBy: userId, _id: data._id };
                 let update = { $pull: { readBy:userId } };
+                
+                console.log("query", query);
+                console.log("update", update);
+
                 let notifications = await SecurityNotification.updateMany(query,update);
                 sendEventData = { eventName:'readMarked', data : {success:'yes'} };
                 emitEvent(ws,sendEventData)
