@@ -8,10 +8,10 @@ const docSchema = new Schema({
 
     receivers: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
     
-    message: { type: String },
-    
-    title: { title: String },
+    title: { type: String },
 
+    description: { type: String },
+    
     type: { type: String },
 
     extraInfo: { type: Object },
