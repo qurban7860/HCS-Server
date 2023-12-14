@@ -546,10 +546,14 @@ exports.logout = async (req, res, next) => {
     ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
   });
 
-  const userIds = ws.map((ws)=> ws.userId);
-  ws.map((ws)=> {
-    ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
-  });
+  // const userIds = ws.map((ws)=> ws.userId);
+  // ws.map((ws)=> {
+  //   ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
+  // });
+
+
+
+
   
   if(req.session) {
     req.session.isLoggedIn = false;
