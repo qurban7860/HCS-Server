@@ -221,7 +221,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
             const userIds = users.map((u)=>u._id);
             console.log("userIds", userIds);
             await securityNotificationController.createNotification(
-              `${req.body.docTitle} has been submitted. Please Review.`,
+              `Service Record Config with title ${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
               type_,
@@ -294,7 +294,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
             const userIds = users.map((u)=>u._id);
             console.log("userIds", userIds);
             await securityNotificationController.createNotification(
-              `${req.body.docTitle} has been submitted. Please Review.`,
+              `Service Record Config with title ${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
               type_,
@@ -302,7 +302,7 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
                 _id:productServiceRecordsConfig._id, 
                 docTitle:productServiceRecordsConfig.docTitle,
                 recordType:productServiceRecordsConfig.recordType,
-                status:productServiceRecordsConfig.status,
+                status:req.body.status,
                 docVersionNo:productServiceRecordsConfig.docVersionNo
               },
               "Service Config Submitted"
