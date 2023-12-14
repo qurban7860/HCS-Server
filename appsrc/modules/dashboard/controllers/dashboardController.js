@@ -25,7 +25,7 @@ exports.getMachineByCountries = async (req, res, next) => {
   console.log("queryString__", queryString__);
   let notifications = await SecurityNotification.find(queryString__).populate('sender');
   sendEventData = { eventName:'notificationsSent', data : notifications };
-  emitEvent(ws,sendEventData)
+  emitEvent(wss,sendEventData)
 
   // console.log(req.query)
   let modelsIds = []
