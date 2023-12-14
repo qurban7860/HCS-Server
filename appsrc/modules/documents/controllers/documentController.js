@@ -101,9 +101,8 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     console.log("this.query.isVersionNeeded", this.query.isVersionNeeded);
-    if(this.query.isVersionNeeded) {
-      console.log("this.query.isVersionNeeded");
-      isVersionNeeded = this.query.isVersionNeeded;
+    if(this.query && (this.query.isVersionNeeded==false || this.query.isVersionNeeded=='false')) {
+      isVersionNeeded = false;
       delete this.query.isVersionNeeded;
     }
 
