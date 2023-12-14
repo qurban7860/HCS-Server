@@ -84,9 +84,7 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.find(queryString__).populate('sender');
             console.log("notifications", notifications);
             sendEventData = { eventName:'notificationsSent', data : notifications };
-            
-
-            emitEvent(ws, Buffer.from(JSON.stringify(sendEventData)));
+            emitEvent(ws, sendEventData);
         }
 
         if(eventName=='markAsRead') {
@@ -131,7 +129,7 @@ function closeSocket(ws) {
 function emitEvent(ws,sendEventData = {}) {
   console.log(`\nSending eventName : ${sendEventData.eventName}`);
   console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
-  ws.send(JSON.stringify(sendEventData));
+  ws.send(Buffer.from(JSON.stringify(sendEventData)));
 }
 
 function broadcastEvent(wss, sendEventData = {}) {
