@@ -84,16 +84,37 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.find(queryString__).populate('sender');
             console.log("notifications", notifications);
             sendEventData = { eventName:'notificationsSent', data : notifications };
-            emitEvent(ws,sendEventData)
+            emitEvent(ws, sendEventData);
         }
 
         if(eventName=='markAsRead') {
             let query = { receivers: userId, readBy: { $ne: userId } };
+            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                query._id = data._id;
+            }
+
             let update = { $push: { readBy:userId } };
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
-        }   
+        }
+        
+        console.log(eventName);
+        if(eventName=='markAsUnRead') {
+            console.log("eventName 1");
+            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                console.log("eventName 2");
+                let query = { receivers: userId, readBy: userId, _id: data._id };
+                let update = { $pull: { readBy:userId } };
+                
+                console.log("query", query);
+                console.log("update", update);
+
+                let notifications = await SecurityNotification.updateMany(query,update);
+                sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+                emitEvent(ws,sendEventData)
+            }
+        }
 
         if(eventName=='getOnlineUsers') {
             const userIds = []
@@ -129,7 +150,7 @@ function closeSocket(ws) {
 function emitEvent(ws,sendEventData = {}) {
   console.log(`\nSending eventName : ${sendEventData.eventName}`);
   console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
-  ws.send(JSON.stringify(sendEventData));
+  ws.send(Buffer.from(JSON.stringify(sendEventData)));
 }
 
 function broadcastEvent(wss, sendEventData = {}) {

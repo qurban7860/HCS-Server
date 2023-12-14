@@ -91,6 +91,7 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+  let isVersionNeeded = true;
   let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};  
@@ -98,6 +99,13 @@ exports.getDocuments = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
+
+    console.log("this.query.isVersionNeeded", this.query.isVersionNeeded);
+    if(this.query && (this.query.isVersionNeeded==false || this.query.isVersionNeeded=='false')) {
+      isVersionNeeded = false;
+      delete this.query.isVersionNeeded;
+    }
+
     let basicInfo = false;
 
     if(this.query && (this.query.basic==true || this.query.basic=='true')) {
@@ -157,44 +165,57 @@ exports.getDocuments = async (req, res, next) => {
     if(this.query.isActive=='false')
       this.query.isActive = false;
 
+
+    this.populate = [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' },
+      { path: 'docType', select: 'name' },
+      { path: 'docCategory', select: 'name drawing' },
+      { path: 'customer', select: 'name' },
+      { path: 'machine', select: 'name serialNo' }
+    ];
+    
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
-      let documentIndex = 0;
-      for(let document_ of documents) {
 
-        if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
-          
-          document_ = JSON.parse(JSON.stringify(document_));
+      if(isVersionNeeded) {
+        let documentIndex = 0;
+        for(let document_ of documents) {
 
-          let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
-          let documentVersions = [];
-          if(basicInfo===false) {
-            documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
-            if(Array.isArray(documentVersions) && documentVersions.length>0) {
-              documentVersions = JSON.parse(JSON.stringify(documentVersions));
+          if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+            
+            document_ = JSON.parse(JSON.stringify(document_));
 
-              for(let documentVersion of documentVersions) {
-                if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-                  let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
-                  let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
-                  documentVersion.files = documentFiles;
+            let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
+            let documentVersions = [];
+            if(basicInfo===false) {
+              documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
+              if(Array.isArray(documentVersions) && documentVersions.length>0) {
+                documentVersions = JSON.parse(JSON.stringify(documentVersions));
+
+                for(let documentVersion of documentVersions) {
+                  if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+                    let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
+                    let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                    documentVersion.files = documentFiles;
+                  }
                 }
               }
             }
-          }
-          else {
-            let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
-            documentVersions = [documentVersion]
-          }
+            else {
+              let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
+              documentVersions = [documentVersion]
+            }
 
-          if(isDrawing) {
-            document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1});
+            if(isDrawing) {
+              document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1});
+            }
+            document_.documentVersions = documentVersions;
           }
-          document_.documentVersions = documentVersions;
+          documents[documentIndex] = document_;
+          documentIndex++;
         }
-        documents[documentIndex] = document_;
-        documentIndex++;
       }
     }
     
@@ -536,10 +557,12 @@ exports.patchDocument = async (req, res, next) => {
       
 
       if(req.body.isArchived) {
-        let productDrawingObj__ = await ProductDrawing.findOne({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
-        
-        if(productDrawingObj__)
-          return res.status(StatusCodes.CONFLICT).send(`Record exists against this document. Please check Machine: ${productDrawingObj__.machine.serialNo}`);      
+        let productDrawingObj__ = await ProductDrawing.find({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
+
+        const serialNosString = productDrawingObj__.map(obj => obj.machine ? obj.machine.serialNo : null).filter(serialNo => serialNo !== null).join(', ');
+
+        if(productDrawingObj__ && productDrawingObj__.length > 0) 
+          return res.status(StatusCodes.CONFLICT).send(`This document is attached with machines/customers. So it can't be deleted. Attached with Machines: ${serialNosString}`);      
 
         if(req.body.checkReference && (document_.machine || document_.customer))
           return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);      

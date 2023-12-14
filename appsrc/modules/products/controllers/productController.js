@@ -251,6 +251,11 @@ exports.getConnectionProducts = async (req, res, next) => {
           'isActive': true,
           'isArchived': false
       }
+    },
+    {
+      $sort: {
+        serialNo: 1
+      }
     }
   ];
   let listProducts = await Product.aggregate(aggregateQuery);
