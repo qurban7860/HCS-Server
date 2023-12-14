@@ -139,7 +139,7 @@ exports.createNotification = async(message='', sender='', receiver='', type='sys
 }
 
 async function getDocumentFromReq(req, reqType){
-  const { sender, message, type, receivers, readBy } = req.body;
+  const { sender, message, title, type, receivers, readBy } = req.body;
 
   let doc = {};
   
@@ -151,6 +151,9 @@ async function getDocumentFromReq(req, reqType){
   }
   if ("message" in req.body){
     doc.message = message;
+  }
+  if ("title" in req.body){
+    doc.title = title;
   }
   if ("type" in req.body){
     doc.type = type;

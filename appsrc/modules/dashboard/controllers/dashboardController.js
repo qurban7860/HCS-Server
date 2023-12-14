@@ -19,6 +19,14 @@ exports.getMachineByCountries = async (req, res, next) => {
   wss.map((ws)=> {
     ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
   });
+
+
+  let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
+  console.log("queryString__", queryString__);
+  let notifications = await SecurityNotification.find(queryString__).populate('sender');
+  sendEventData = { eventName:'notificationsSent', data : notifications };
+  emitEvent(ws,sendEventData)
+
   // console.log(req.query)
   let modelsIds = []
   let installationSitesId = []

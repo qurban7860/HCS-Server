@@ -9,12 +9,14 @@ const docSchema = new Schema({
     receivers: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
     
     message: { type: String },
+    
+    title: { title: String },
 
     type: { type: String },
 
     extraInfo: { type: Object },
 
-    readBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],                       
+    readBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
     // deleteBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],                       
 },
