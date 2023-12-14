@@ -91,7 +91,7 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
-  let isVersionNeeded = false;
+  let isVersionNeeded = true;
   let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};  
@@ -99,6 +99,14 @@ exports.getDocuments = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
+
+    console.log("this.query.isVersionNeeded", this.query.isVersionNeeded);
+    if(this.query.isVersionNeeded) {
+      console.log("this.query.isVersionNeeded");
+      isVersionNeeded = this.query.isVersionNeeded;
+      delete this.query.isVersionNeeded;
+    }
+
     let basicInfo = false;
 
     if(this.query && (this.query.basic==true || this.query.basic=='true')) {
