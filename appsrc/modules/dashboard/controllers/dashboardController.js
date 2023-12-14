@@ -253,7 +253,10 @@ exports.getCount = async (req, res, next) => {
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let machineCount = await Product.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedMachineCount = await Product.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
-    let userCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let userTotalCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    
+    
     let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
     
     
@@ -271,7 +274,8 @@ exports.getCount = async (req, res, next) => {
     nonVerifiedMachineCount,
     connectAbleMachinesCount,
     machineCount, 
-    userCount, 
+    userActiveCount, 
+    userTotalCount, 
     siteCount, 
   });
 
