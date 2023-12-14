@@ -97,7 +97,17 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
-        }   
+        }
+        
+        if(eventName=='markAsUnRead') {
+            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                let query = { receivers: userId, readBy: userId, _id: data._id };
+                let update = { $pull: { readBy:userId } };
+                let notifications = await SecurityNotification.updateMany(query,update);
+                sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+                emitEvent(ws,sendEventData)
+            }
+        }
 
         if(eventName=='getOnlineUsers') {
             const userIds = []
