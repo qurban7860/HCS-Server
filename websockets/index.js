@@ -99,8 +99,11 @@ WebSocket.on('connection', async function(ws, req) {
             emitEvent(ws,sendEventData)
         }
         
+        console.log(eventName);
         if(eventName=='markAsUnRead') {
+            console.log("eventName 1");
             if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                console.log("eventName 2");
                 let query = { receivers: userId, readBy: userId, _id: data._id };
                 let update = { $pull: { readBy:userId } };
                 
