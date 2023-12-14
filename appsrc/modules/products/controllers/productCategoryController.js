@@ -76,6 +76,8 @@ exports.postProductCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -96,6 +98,18 @@ exports.patchProductCategory = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    console.log("req.body.isArchived", req.body.isArchived);
+    if(req.body.isArchived && (req.body.isArchived == true || req.body.isArchived == 'true')) {
+      let productModels_ = await ProductModel.find({category: req.params.id, isActive: true, isArchived: false}).select('name')
+
+      console.log("productModels_", productModels_);
+
+      const modelNames = productModels_.map(obj => obj.name).join(', ');
+
+      if(productModels_ && productModels_.length > 0) 
+        return res.status(StatusCodes.CONFLICT).send(`This Machine Category is attached with Models. So it can't be deleted. Attached with Models Names: ${modelNames}`);
+    }
+
     this.dbservice.patchObject(ProductCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
