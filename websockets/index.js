@@ -84,7 +84,9 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.find(queryString__).populate('sender');
             console.log("notifications", notifications);
             sendEventData = { eventName:'notificationsSent', data : notifications };
-            emitEvent(ws, Buffer.from(JSON.stringify(sendEventData))
+            
+
+            emitEvent(ws, Buffer.from(JSON.stringify(sendEventData)));
         }
 
         if(eventName=='markAsRead') {
