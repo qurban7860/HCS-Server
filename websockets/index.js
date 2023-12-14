@@ -89,7 +89,12 @@ WebSocket.on('connection', async function(ws, req) {
 
         if(eventName=='markAsRead') {
             let query = { receivers: userId, readBy: { $ne: userId } };
+            if(data._id) {
+                query._id = data._id;
+            }
+
             let update = { $push: { readBy:userId } };
+            console.log("query -->", query);
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
