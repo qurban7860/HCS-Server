@@ -21,11 +21,11 @@ exports.getMachineByCountries = async (req, res, next) => {
   });
 
 
-  let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
-  console.log("queryString__", queryString__);
-  let notifications = await SecurityNotification.find(queryString__).populate('sender');
-  sendEventData = { eventName:'notificationsSent', data : notifications };
-  emitEvent(wss,sendEventData)
+  // let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
+  // console.log("queryString__", queryString__);
+  // let notifications = await SecurityNotification.find(queryString__).populate('sender');
+  // sendEventData = { eventName:'notificationsSent', data : notifications };
+  // emitEvent(wss,sendEventData)
 
   // console.log(req.query)
   let modelsIds = []
