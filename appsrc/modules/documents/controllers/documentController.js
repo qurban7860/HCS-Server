@@ -536,10 +536,12 @@ exports.patchDocument = async (req, res, next) => {
       
 
       if(req.body.isArchived) {
-        let productDrawingObj__ = await ProductDrawing.findOne({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
-        
+        let productDrawingObj__ = await ProductDrawing.find({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
+
+        const serialNosString = productDrawingObj__.map(obj => obj.machine ? obj.machine.serialNo : null).filter(serialNo => serialNo !== null).join(', ');
+
         if(productDrawingObj__)
-          return res.status(StatusCodes.CONFLICT).send(`Record exists against this document. Please check Machine: ${productDrawingObj__.machine.serialNo}`);      
+          return res.status(StatusCodes.CONFLICT).send(`This document is attached with machines/customers. So it can't be deleted. Attached with Machines: ${serialNosString}`);      
 
         if(req.body.checkReference && (document_.machine || document_.customer))
           return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);      

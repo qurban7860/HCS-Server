@@ -88,7 +88,6 @@ exports.createNotification = async(description='', sender='', receiver='', type=
 
   if(sender && description) {
     console.log("sender", sender, "receiver", receiver, "description", description, "type", type, "title", title);
-    
     let notificationObj = {
       sender:sender,
       title,

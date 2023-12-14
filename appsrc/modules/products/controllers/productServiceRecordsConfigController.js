@@ -236,7 +236,6 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
             );
           }
         }   
-
       }
 
       if(response && response.machineModel) {
@@ -284,27 +283,32 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           submittedDate: new Date()
         }
 
+        let type_ = "SERVICE-CONFIG";
         const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
+        console.log("roles", roles);
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
+          console.log("users", users);
+
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
-            
+            console.log("userIds", userIds);
             await securityNotificationController.createNotification(
-              `${productServiceRecordsConfig.docTitle} has been submitted. Please Review.`,
+              `${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
-              'ProductServiceRecordsConfig',
+              type_,
               {
                 _id:productServiceRecordsConfig._id, 
                 docTitle:productServiceRecordsConfig.docTitle,
                 recordType:productServiceRecordsConfig.recordType,
                 status:productServiceRecordsConfig.status,
                 docVersionNo:productServiceRecordsConfig.docVersionNo
-              }
+              },
+              "Service Config Submitted"
             );
           }
-        }          
+        }        
 
       } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
         req.body.submittedInfo = {};
