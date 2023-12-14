@@ -540,6 +540,7 @@ exports.patchDocument = async (req, res, next) => {
 
         const serialNosString = productDrawingObj__.map(obj => obj.machine ? obj.machine.serialNo : null).filter(serialNo => serialNo !== null).join(', ');
 
+        console.log("productDrawingObj__", productDrawingObj__);
         if(productDrawingObj__)
           return res.status(StatusCodes.CONFLICT).send(`This document is attached with machines/customers. So it can't be deleted. Attached with Machines: ${serialNosString}`);      
 
