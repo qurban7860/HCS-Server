@@ -367,10 +367,6 @@ exports.patchCustomer = async (req, res, next) => {
               updateOperation.projectManager = req.body.projectManager;
             if(req.body.supportManager)
               updateOperation.supportManager = req.body.supportManager;
-
-              console.log("updateProductManagers -->", req.body.updateProductManagers);
-              console.log("updateOperation -->", updateOperation);
-              console.log("req.params.id -->", req.params.id);
               if (Object.keys(updateOperation).length !== 0 && req.params.id) {
                 ProductStatus.find({ slug: 'transphered'}).select('id').exec((err, documents) => {
                   if (err) {

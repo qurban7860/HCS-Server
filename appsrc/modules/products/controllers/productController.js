@@ -907,6 +907,8 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
     let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
     let listDocument = await Document.aggregate(aggregate);
 
+    const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
+
     let listObjects = await Promise.all(products.map(async (product) => {
       let countlistProductTechParamValue = listProductTechParamValue.find((obj) => obj?._id?.toString() == product?._id?.toString());
       let countlistProductToolInstalled = listProductToolInstalled.find((obj) => obj?._id?.toString() == product?._id?.toString());
@@ -918,7 +920,22 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
       let countlistProductConfiguration = listProductConfiguration.find((obj) => obj?._id?.toString() == product?._id?.toString());
 
       let finalDataObj = null;
+
+      let shippingDateLTZ = ""; 
+      if(product?.shippingDate && product?.shippingDate.length > 0) { const shippingDate = new Date(product.shippingDate); shippingDateLTZ = shippingDate.toLocaleString('en-NZ', options); }
+      
+      let installationDateLTZ = ""; 
+      if(product?.installationDate && product?.installationDate.length > 0) { const installationDate = new Date(product.installationDate); installationDateLTZ = installationDate.toLocaleString('en-NZ', options); }
+      
+      let SupportExpireDateLTZ = ""; 
+      if(product?.SupportExpireDate && product?.SupportExpireDate.length > 0) { const SupportExpireDate = new Date(product.SupportExpireDate); SupportExpireDateLTZ = SupportExpireDate.toLocaleString('en-NZ', options); }
+      
+      console.log(shippingDateLTZ, installationDateLTZ, SupportExpireDateLTZ);
+
       if (EXPORT_UUID) {
+
+
+
         finalDataObj = {
           ProductID: "" + (product._id) + "",
           SerialNo: `${product?.serialNo.replace(/"/g, "'")}`,
@@ -937,13 +954,13 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           BillingSiteAddress: `${(fetchAddressCSV(product?.billingSite?.address).replace(/"/g, "'"))}`,
           BillingSiteLatitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
           BillingSiteLongitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
-          ShippingDate: `${(product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : '')}`,
-          InstallationDate: `${(product?.installationDate ? product.installationDate.replace(/"/g, "'") : '')}`,
+          ShippingDate: shippingDateLTZ,
+          InstallationDate: installationDateLTZ,
           SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
           AccountManager: product?.accountManager?.firstName === undefined ? "" : `${(product?.accountManager?.firstName?.replace(/"/g, "'"))}`,
           ProjectManager: product?.projectManager?.firstName === undefined ? "" : `${(product?.projectManager?.firstName?.replace(/"/g, "'"))}`,
           SupportManager: product?.supportManager?.firstName === undefined ? "" : `${(product?.supportManager?.firstName?.replace(/"/g, "'"))}`,
-          SupportExpireDate: `${(product?.supportExpireDate ? product.supportExpireDate.replace(/"/g, "'") : "")}`,
+          SupportExpireDate: SupportExpireDateLTZ,
           TotalSettings: `${(countlistProductTechParamValue != undefined ? countlistProductTechParamValue?.count : '')}`,
           TotalTools: `${(countlistProductToolInstalled != undefined ? countlistProductToolInstalled?.count : '')}`,
           TotalDrawings: `${(countlistProductDrawing != undefined ? countlistProductDrawing?.count : '')}`,
@@ -971,13 +988,13 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           BillingSiteAddress: `${(fetchAddressCSV(product?.billingSite?.address).replace(/"/g, "'"))}`,
           BillingSiteLatitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
           BillingSiteLongitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
-          ShippingDate: `${(product?.shippingDate ? product.shippingDate.replace(/"/g, "'") : '')}`,
-          InstallationDate: `${(product?.installationDate ? product.installationDate.replace(/"/g, "'") : '')}`,
+          ShippingDate: shippingDateLTZ,
+          InstallationDate: installationDateLTZ,
           SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
           AccountManager: product?.accountManager?.firstName === undefined ? "" : `${(product?.accountManager?.firstName?.replace(/"/g, "'"))}`,
           ProjectManager: product?.projectManager?.firstName === undefined ? "" : `${(product?.projectManager?.firstName?.replace(/"/g, "'"))}`,
           SupportManager: product?.supportManager?.firstName === undefined ? "" : `${(product?.supportManager?.firstName?.replace(/"/g, "'"))}`,
-          SupportExpireDate: `${(product?.supportExpireDate ? product.supportExpireDate.replace(/"/g, "'") : "")}`,
+          SupportExpireDate: SupportExpireDateLTZ,
           TotalSettings: `${(countlistProductTechParamValue != undefined ? countlistProductTechParamValue?.count : '')}`,
           TotalTools: `${(countlistProductToolInstalled != undefined ? countlistProductToolInstalled?.count : '')}`,
           TotalDrawings: `${(countlistProductDrawing != undefined ? countlistProductDrawing?.count : '')}`,
