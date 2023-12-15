@@ -9,10 +9,10 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let logDBService = require('../service/logDBService')
+let logDBService = require('../service/productDBService')
 this.dbservice = new logDBService();
 
-const { Log } = require('../models');
+const { ProductLog } = require('../models');
 const { SecurityUser } = require('../../security/models');
 
 
@@ -30,9 +30,9 @@ this.populate = [
 
 
 
-exports.getLog = async (req, res, next) => {
+exports.getProductLog = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Log, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(ProductLog, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -40,11 +40,11 @@ exports.getLog = async (req, res, next) => {
   }
 };
 
-exports.getLogs = async (req, res, next) => {
+exports.getProductLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    let response = await this.dbservice.getObjectList(Log, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(ProductLog, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
   } catch (error) {
@@ -54,9 +54,9 @@ exports.getLogs = async (req, res, next) => {
 };
 
 
-exports.deleteLog = async (req, res, next) => {
+exports.deleteProductLog = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Log, req.params.id);
+    const result = await this.dbservice.deleteObject(ProductLog, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -64,7 +64,7 @@ exports.deleteLog = async (req, res, next) => {
   }
 };
 
-exports.postLog = async (req, res, next) => {
+exports.postProductLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -79,13 +79,13 @@ exports.postLog = async (req, res, next) => {
   }
 };
 
-exports.patchLog = async (req, res, next) => {
+exports.patchProductLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Log, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(ProductLog, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));

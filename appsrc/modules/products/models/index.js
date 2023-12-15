@@ -20,5 +20,6 @@ module.exports = {
     ProductServiceRecords: require('./productServiceRecords'),
     ProductCheckItemCategory: require('./productCheckItemCategory'),
     ProductProfile: require('./productProfile'),
-    ProductServiceRecordValue: require('./productServiceRecordValue')
+    ProductServiceRecordValue: require('./productServiceRecordValue'),
+    ProductLog: require('./productLog')
 }
