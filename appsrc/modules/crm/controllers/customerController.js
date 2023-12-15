@@ -12,6 +12,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
+const { Product } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 const { Country, Config } = require('../../config/models');
@@ -341,7 +342,6 @@ exports.patchCustomer = async (req, res, next) => {
         for(let verif of customer.verifications) {
           if(verif.verifiedBy == req.body.loginUser.userId)
             return res.status(StatusCodes.BAD_REQUEST).json({message:"Already verified"});
-
         }
         customer.verifications.push({
           verifiedBy: req.body.loginUser.userId,
@@ -359,6 +359,29 @@ exports.patchCustomer = async (req, res, next) => {
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
             );
         } else {
+          if(req.body.updateProductManagers && (req.body.updateProductManagers == 'true' || req.body.updateProductManagers == true)) {
+            let updateOperation = {};
+            if(req.body.accountManager)
+              updateOperation.accountManager = req.body.accountManager;
+            if(req.body.projectManager)
+              updateOperation.projectManager = req.body.projectManager;
+            if(req.body.supportManager)
+              updateOperation.supportManager = req.body.supportManager;
+
+              console.log("updateProductManagers -->", req.body.updateProductManagers);
+              console.log("updateOperation -->", updateOperation);
+              console.log("req.params.id -->", req.params.id);
+              if (Object.keys(updateOperation).length !== 0 && req.params.id) {
+                let queryForProductUpdate = { customer: req.params.id, isActive: true, isArchived: false };
+                Product.updateMany(queryForProductUpdate, updateOperation, (err, result) => {
+                  if (err) {
+                    console.error('Error updating documents:', err);
+                  } else {
+                    console.log(`${result.nModified} documents updated`);
+                  }
+                });
+              }
+          }
           res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
         }
       }
