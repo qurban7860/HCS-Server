@@ -50,4 +50,4 @@ docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
-module.exports = mongoose.model('Log', docSchema);
+module.exports = mongoose.model('MachineLog', docSchema);

@@ -37,9 +37,6 @@ const regionRoute  = require ('../regions/routes');
 const apiclientRoute  = require ('../apiclient/routes');
 
 const configRoute  = require ('../config/routes');
-const logRoute  = require ('../log/routes');
-
-
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -101,7 +98,6 @@ class App {
     regionRoute.registerRegionRoutes(this.app, apiPath);
     apiclientRoute.registerapiClientRoutes(this.app, apiPath); 
     configRoute.registerConfigRoutes(this.app, apiPath);
-    logRoute.registerlogRoutes(this.app, apiPath);
   }
 
 
