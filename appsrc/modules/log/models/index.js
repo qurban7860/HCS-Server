@@ -1,4 +1,4 @@
 'use strict'
 module.exports = {
-    Log: require('./log')
+    ErpLog: require('./erpLog')
 }

@@ -84,15 +84,15 @@ exports.postSecurityNotification = async (req, res, next) => {
   }
 };
 
-exports.createNotification = async(message='', sender='', receiver='', type='system', data) => {
+exports.createNotification = async(description='', sender='', receiver='', type='system', data, title) => {
 
-  if(sender && message) {
-    console.log("sender", sender, "receiver", receiver, "message", message);
-    
+  if(sender && description) {
+    console.log("sender", sender, "receiver", receiver, "description", description, "type", type, "title", title);
     let notificationObj = {
       sender:sender,
+      title,
       type,
-      message,
+      description,
       extraInfo:data
     }
 
@@ -108,10 +108,10 @@ exports.createNotification = async(message='', sender='', receiver='', type='sys
       if(newReceivers.length==0)
         return false;
       
-      notificationObj.receiver = newReceivers;
-    } else if(mongoose.Types.ObjectId.isValid(receiver)) {
+      notificationObj.receivers = newReceivers;
 
-      notificationObj.receiver = [receiver];
+    } else if(mongoose.Types.ObjectId.isValid(receiver)) {
+      notificationObj.receivers = [receiver];
     }
     else {
       return false;
@@ -139,7 +139,7 @@ exports.createNotification = async(message='', sender='', receiver='', type='sys
 }
 
 async function getDocumentFromReq(req, reqType){
-  const { sender, message, type, receivers, readBy } = req.body;
+  const { sender, description, title, type, receivers, readBy } = req.body;
 
   let doc = {};
   
@@ -149,9 +149,13 @@ async function getDocumentFromReq(req, reqType){
   if ("sender" in req.body){
     doc.sender = sender;
   }
-  if ("message" in req.body){
-    doc.message = message;
+  if ("title" in req.body){
+    doc.title = title;
   }
+  if ("description" in req.body){
+    doc.description = description;
+  }
+
   if ("type" in req.body){
     doc.type = type;
   }

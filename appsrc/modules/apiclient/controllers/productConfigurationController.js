@@ -77,7 +77,7 @@ exports.deleteProductConfiguration = async (req, res, next) => {
 exports.postProductConfiguration = async (req, res, next) => {
   const start = Date.now();
   const errors = validationResult(req);
-  
+
   req.body.apiType = "INI";
   // const { SecurityUser} = require('../../security/models');
   // let userObject = await SecurityUser.findOne(
@@ -153,10 +153,14 @@ exports.patchProductConfiguration = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { backupid, inputGUID, inputSerialNo, machine, configuration, isActive, isArchived, loginUser} = req.body;
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isActive, isArchived, loginUser} = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductConfiguration({});
+  }
+
+  if ("type" in req.body){
+    doc.type = type;
   }
 
   if ("backupid" in req.body){

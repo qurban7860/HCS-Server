@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { Customer, CustomerSite } = require('../../crm/models');
 const { Product, ProductModel } = require('../../products/models');
-const { SecurityUser } = require('../../security/models');
+const { SecurityUser, SecurityNotification} = require('../../security/models');
 const { Country } = require('../../config/models');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -19,6 +19,14 @@ exports.getMachineByCountries = async (req, res, next) => {
   wss.map((ws)=> {
     ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
   });
+
+
+  // let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
+  // console.log("queryString__", queryString__);
+  // let notifications = await SecurityNotification.find(queryString__).populate('sender');
+  // sendEventData = { eventName:'notificationsSent', data : notifications };
+  // emitEvent(wss,sendEventData)
+
   // console.log(req.query)
   let modelsIds = []
   let installationSitesId = []
@@ -253,7 +261,10 @@ exports.getCount = async (req, res, next) => {
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let machineCount = await Product.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedMachineCount = await Product.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
-    let userCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
+    
+    
     let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
     
     
@@ -271,7 +282,8 @@ exports.getCount = async (req, res, next) => {
     nonVerifiedMachineCount,
     connectAbleMachinesCount,
     machineCount, 
-    userCount, 
+    userActiveCount, 
+    userTotalCount, 
     siteCount, 
   });
 
@@ -292,8 +304,10 @@ exports.getData = async (req, res, next) => {
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let machineCount = await Product.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedMachineCount = await Product.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
-    let userCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
+    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
     let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
+
     
     // let countryWiseCustomerCount = await Customer.aggregate([
     //   { $match: { isArchived: false, isActive: true } }, 
@@ -355,7 +369,9 @@ exports.getData = async (req, res, next) => {
     nonVerifiedMachineCount,
     connectAbleMachinesCount,
     machineCount, 
-    userCount, 
+    userTotalCount, 
+    userActiveCount, 
+    
     siteCount, 
     modelWiseMachineCount, 
     // countryWiseCustomerCount, 

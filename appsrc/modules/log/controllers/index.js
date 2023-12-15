@@ -1,3 +1,3 @@
 module.exports = {
-    logController: require('./logController')
+    erpLogController: require('./erpLogController')
 }
