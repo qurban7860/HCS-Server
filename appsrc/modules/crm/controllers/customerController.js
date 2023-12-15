@@ -12,7 +12,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
-const { Product } = require('../../products/models');
+const { Product, ProductStatus } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 const { Country, Config } = require('../../config/models');
@@ -372,12 +372,18 @@ exports.patchCustomer = async (req, res, next) => {
               console.log("updateOperation -->", updateOperation);
               console.log("req.params.id -->", req.params.id);
               if (Object.keys(updateOperation).length !== 0 && req.params.id) {
-                let queryForProductUpdate = { customer: req.params.id, isActive: true, isArchived: false };
-                Product.updateMany(queryForProductUpdate, updateOperation, (err, result) => {
+                ProductStatus.find({ slug: 'transphered'}).select('id').exec((err, documents) => {
                   if (err) {
-                    console.error('Error updating documents:', err);
+                    console.error('Error finding documents:', err);
                   } else {
-                    console.log(`${result.nModified} documents updated`);
+                    let queryForProductUpdate = { customer: req.params.id, isActive: true, isArchived: false, status:{$nin:documents} };
+                    Product.updateMany(queryForProductUpdate, updateOperation, (err, result) => {
+                      if (err) {
+                        console.error('Error updating documents:', err);
+                      } else {
+                        console.log(`${result.nModified} documents updated`);
+                      }
+                    });
                   }
                 });
               }
