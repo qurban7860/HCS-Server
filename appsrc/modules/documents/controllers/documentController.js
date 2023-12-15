@@ -209,7 +209,8 @@ exports.getDocuments = async (req, res, next) => {
             }
 
             if(isDrawing) {
-              document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1});
+              document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
+              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item.machine.serialNo).join(', ');
             }
             document_.documentVersions = documentVersions;
           }
@@ -558,7 +559,6 @@ exports.patchDocument = async (req, res, next) => {
 
       if(req.body.isArchived) {
         let productDrawingObj__ = await ProductDrawing.find({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
-
         const serialNosString = productDrawingObj__.map(obj => obj.machine ? obj.machine.serialNo : null).filter(serialNo => serialNo !== null).join(', ');
 
         if(productDrawingObj__ && productDrawingObj__.length > 0) 
