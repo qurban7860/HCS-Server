@@ -215,6 +215,7 @@ exports.getDocuments = async (req, res, next) => {
             document_.documentVersions = documentVersions;
           }
           documents[documentIndex] = document_;
+          console.log("documents[documentIndex].productDrawings.serialNumbers", documents[documentIndex].productDrawings.serialNumbers);
           documentIndex++;
         }
       }
