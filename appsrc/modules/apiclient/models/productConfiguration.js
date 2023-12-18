@@ -16,6 +16,9 @@ const docSchema = new Schema({
     inputSerialNo: { type: String , required: true },
     // Serial No of machine
 
+    type: {type: String, enum: ['CLIENT','SYSTEM'], default: 'SYSTEM'},
+    //type means from our application or from client application.
+
     machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
 
     configuration: { type: Schema.Types.Mixed },
