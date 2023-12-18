@@ -79,6 +79,34 @@ exports.postLog = async (req, res, next) => {
   }
 };
 
+exports.postLogMulti = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      
+      const respArr = []
+      if(Array.isArray(req.body.csvData) && req.body.csvData.length>0 ) {
+        for(const logObj of req.body.csvData) {
+          logObj.machine = req.body.machine;
+          logObj.customer = req.body.customer;
+          const fakeReq = { body: logObj};
+          const response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
+          respArr.push(response);
+        } 
+      }     
+
+      res.status(StatusCodes.CREATED).json({ Logs: respArr });
+    
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
+
+
 exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

@@ -18,6 +18,8 @@ router.get(`/erp/:id`, controller.getLog);
 
 router.post(`/erp/`, controller.postLog);
 
+router.post(`/erp/multi`, controller.postLogMulti);
+
 router.patch(`/erp/:id`, controller.patchLog);
 
 module.exports = router;
