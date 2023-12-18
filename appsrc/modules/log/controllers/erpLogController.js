@@ -70,6 +70,12 @@ exports.postLog = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+
+      if(!mongoose.Types.ObjectId.isValid(req.body.machine) || 
+        !mongoose.Types.ObjectId.isValid(req.body.customer)) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data machine/customer not found');
+      }
+
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ Log: response });
     } catch (error) {
@@ -78,6 +84,44 @@ exports.postLog = async (req, res, next) => {
     }
   }
 };
+
+exports.postLogMulti = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      
+      if(!mongoose.Types.ObjectId.isValid(req.body.machine) || 
+        !mongoose.Types.ObjectId.isValid(req.body.customer)) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data machine/customer not found');
+      }
+      
+      const respArr = []
+      if(Array.isArray(req.body.csvData) && req.body.csvData.length>0 ) {
+        for(const logObj of req.body.csvData) {
+          logObj.machine = req.body.machine;
+          logObj.customer = req.body.customer;
+          const fakeReq = { body: logObj};
+          const response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
+          respArr.push(response);
+        } 
+        res.status(StatusCodes.CREATED).json({ Logs: respArr });
+      } 
+      else {
+        res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data');
+
+      }   
+
+
+    
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
+
 
 exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);
