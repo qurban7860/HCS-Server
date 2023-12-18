@@ -45,9 +45,7 @@ exports.getMachineByCountries = async (req, res, next) => {
     }
     matchQuery.machineModel = { $in : modelsIds };
 
-  }
-  else {
-
+  } else {
     let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
       { $match: { "machineCategory.connections": {$ne:true}} },
@@ -56,8 +54,12 @@ exports.getMachineByCountries = async (req, res, next) => {
     matchQuery.machineModel = { $in : modelsIds };
   }
 
+  console.log("matchQuery.machineModel", matchQuery.machineModel);
+
   if(mongoose.Types.ObjectId.isValid(req.query.category)) {
     if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
+      console.log({category:req.query.category , _id : matchQuery.machineModel });
+      
       let machineModel = await ProductModel.find({category:req.query.category , _id : matchQuery.machineModel } );
       if(!machineModel) {
         delete matchQuery.machineModel;
@@ -68,7 +70,8 @@ exports.getMachineByCountries = async (req, res, next) => {
       modelsIds = machineModels.map(m => m._id);
       matchQuery.machineModel = { $in : modelsIds };
     }
-    
+  } else {
+
   }
 
   req.query.year = parseInt(req.query.year);
