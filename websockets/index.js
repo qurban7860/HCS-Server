@@ -79,7 +79,7 @@ WebSocket.on('connection', async function(ws, req) {
 
         let sendEventData = {};
         if(eventName=='getNotifications') {
-            let queryString__ =  {receivers:userId,readBy:{$ne:userId}};
+            let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
             console.log("queryString__", queryString__);
             let notifications = await SecurityNotification.find(queryString__).populate('sender');
             console.log("notifications", notifications);
@@ -99,6 +99,23 @@ WebSocket.on('connection', async function(ws, req) {
             emitEvent(ws,sendEventData)
         }
         
+
+        if(eventName=='markAsArchived') {
+            let query = { receivers: userId};
+            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                query._id = data._id;
+                let update = { isArchived: true };
+                console.log("query", query);
+                console.log("update", update);
+                let notifications = await SecurityNotification.query(query,update);
+                sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+            } else {
+                sendEventData = { eventName:'markAsArchived', data : {success:'no'} };
+            }
+            emitEvent(ws,sendEventData)
+        }
+        
+        
         console.log(eventName);
         if(eventName=='markAsUnRead') {
             console.log("eventName 1");
@@ -107,8 +124,6 @@ WebSocket.on('connection', async function(ws, req) {
                 let query = { receivers: userId, readBy: userId, _id: data._id };
                 let update = { $pull: { readBy:userId } };
                 
-                console.log("query", query);
-                console.log("update", update);
 
                 let notifications = await SecurityNotification.updateMany(query,update);
                 sendEventData = { eventName:'readMarked', data : {success:'yes'} };
