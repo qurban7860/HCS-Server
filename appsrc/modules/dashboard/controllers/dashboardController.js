@@ -13,7 +13,7 @@ let rtnMsg = require('../../config/static/static')
 
 
 exports.getMachineByCountries = async (req, res, next) => {
-  console.log("getMachineByCountries", req.query);
+
   const wss = getAllWebSockets();
   const userIds = wss.map((ws)=> ws.userId);
   wss.map((ws)=> {
@@ -45,22 +45,19 @@ exports.getMachineByCountries = async (req, res, next) => {
     }
     matchQuery.machineModel = { $in : modelsIds };
 
-  } else {
+  }
+  else {
+
     let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-      { $match: { "machineCategory.connections": {$ne:true}} },
+      // { $match: { "machineCategory.connections": {$ne:true}} },
     ]);
     modelsIds = machineModels.map(m => m._id);
     matchQuery.machineModel = { $in : modelsIds };
   }
 
-  console.log("matchQuery.machineModel", matchQuery.machineModel);
-  console.log("req.query.category", req.query.category);
-
   if(mongoose.Types.ObjectId.isValid(req.query.category)) {
     if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
-      console.log({category:req.query.category , _id : matchQuery.machineModel });
-
       let machineModel = await ProductModel.find({category:req.query.category , _id : matchQuery.machineModel } );
       if(!machineModel) {
         delete matchQuery.machineModel;
@@ -71,8 +68,7 @@ exports.getMachineByCountries = async (req, res, next) => {
       modelsIds = machineModels.map(m => m._id);
       matchQuery.machineModel = { $in : modelsIds };
     }
-  } else {
-
+    
   }
 
   req.query.year = parseInt(req.query.year);
@@ -106,7 +102,7 @@ exports.getMachineByModels = async (req, res, next) => {
   // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-    { $match: { "machineCategory.connections": {$ne:true}} },
+    // { $match: { "machineCategory.connections": {$ne:true}} },
   ]);
 
 
@@ -274,7 +270,7 @@ exports.getCount = async (req, res, next) => {
     
     let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-      { $match: { "machineCategory.connections": true} },
+      // { $match: { "machineCategory.connections": true} },
     ]);
     let modelsIds = machineModels.map(m => m._id);
     let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}}).countDocuments();
@@ -325,7 +321,7 @@ exports.getData = async (req, res, next) => {
 
     let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-      { $match: { "machineCategory.connections": true} },
+      // { $match: { "machineCategory.connections": true} },
     ]);
     let modelsIds = machineModels.map(m => m._id);
     let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}}).countDocuments();
