@@ -13,7 +13,7 @@ let rtnMsg = require('../../config/static/static')
 
 
 exports.getMachineByCountries = async (req, res, next) => {
-  console.log("getMachineByCountries");
+  console.log("getMachineByCountries", req.query);
   const wss = getAllWebSockets();
   const userIds = wss.map((ws)=> ws.userId);
   wss.map((ws)=> {
@@ -55,6 +55,7 @@ exports.getMachineByCountries = async (req, res, next) => {
   }
 
   console.log("matchQuery.machineModel", matchQuery.machineModel);
+  console.log("req.query.category", req.query.category);
 
   if(mongoose.Types.ObjectId.isValid(req.query.category)) {
     if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
