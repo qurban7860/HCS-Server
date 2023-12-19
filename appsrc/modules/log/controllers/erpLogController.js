@@ -53,6 +53,24 @@ exports.getLogs = async (req, res, next) => {
   }
 };
 
+exports.getLogsGraph = async (req, res, next) => {
+  try {
+    this.query = req.query != "undefined" ? req.query : {};  
+
+    let graphResults = await ErpLog.aggregate([
+      { $group: {
+        _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
+        total: { $count: {} }
+      }}
+    ]);
+    let response = await this.dbservice.getObjectList(ErpLog, this.fields, this.query, this.orderBy, this.populate);
+    
+    return res.json(response);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
 
 exports.deleteLog = async (req, res, next) => {
   try {
@@ -140,23 +158,34 @@ exports.patchLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { coilBatchName, ccThickness, coilLength, operator, frameSet, componentLabel, customer, 
-  isActive, isArchived, webWidth, componentLength, loginUser, flangeHeight, profileShape, componentWeight, date,
-  waste, time, machine, type } = req.body;
+  const { coilBatchName, ccThickness, ccThicknessUnit, coilLength, coilLengthUnit, operator, frameSet, 
+  componentLabel, customer, isActive, isArchived, webWidth, webWidthUnit, componentLength, 
+  componentLengthUnit, loginUser, flangeHeight, flangeHeightUnit, profileShape, componentWeight, 
+  componentWeightUnit, date, waste, wasteUnit, time, timeUnit, machine, type } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
     doc = new ErpLog({});
   }
+
   if ("coilBatchName" in req.body) {
     doc.coilBatchName = coilBatchName;
   }
+
   if ("ccThickness" in req.body) {
     doc.ccThickness = ccThickness;
   }
 
+  if ("ccThicknessUnit" in req.body) {
+    doc.ccThicknessUnit = ccThicknessUnit;
+  }
+
   if ("coilLength" in req.body) {
     doc.coilLength = coilLength;
+  }
+
+  if ("coilLengthUnit" in req.body) {
+    doc.coilLengthUnit = coilLengthUnit;
   }
 
   if ("operator" in req.body) {
@@ -175,16 +204,32 @@ function getDocumentFromReq(req, reqType) {
     doc.webWidth = webWidth;
   }
 
+  if ("webWidthUnit" in req.body) {
+    doc.webWidthUnit = webWidthUnit;
+  }
+
   if ("componentLength" in req.body) {
     doc.componentLength = componentLength;
+  }
+
+  if ("componentLengthUnit" in req.body) {
+    doc.componentLengthUnit = componentLengthUnit;
   }
 
   if ("componentWeight" in req.body) {
     doc.componentWeight = componentWeight;
   }
 
+  if ("componentWeightUnit" in req.body) {
+    doc.componentWeightUnit = componentWeightUnit;
+  }
+
   if ("flangeHeight" in req.body) {
     doc.flangeHeight = flangeHeight;
+  }
+
+  if ("flangeHeightUnit" in req.body) {
+    doc.flangeHeightUnit = flangeHeightUnit;
   }
 
   if ("profileShape" in req.body) {
@@ -195,8 +240,16 @@ function getDocumentFromReq(req, reqType) {
     doc.waste = waste;
   }
 
+  if ("wasteUnit" in req.body) {
+    doc.wasteUnit = wasteUnit;
+  }
+
   if ("time" in req.body) {
     doc.time = time;
+  }
+
+  if ("timeUnit" in req.body) {
+    doc.timeUnit = timeUnit;
   }
 
   if ("date" in req.body) {

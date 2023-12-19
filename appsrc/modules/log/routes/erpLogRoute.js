@@ -13,6 +13,8 @@ router.use(checkAuth, checkCustomer);
 
 router.get(`/erp/`, controller.getLogs);
 
+router.get(`/erp/graph`, controller.getLogsGraph);
+
 router.get(`/erp/:id`, controller.getLog);
 
 
