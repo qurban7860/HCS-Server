@@ -266,16 +266,6 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
       req.body = {isArchived: true};
     } else {
       let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
-
-      // if((req.body.status == 'SUBMITTED' || req.body.status == 'APPROVED') &&
-      //    ((  (productServiceRecordsConfig.isActive == false && (req.body.isActive != "true" || req.body.isActive != true) ) || 
-      //       (productServiceRecordsConfig.isArchived == true  && (req.body.isArchived != "false" || req.body.isArchived != false))
-      //    ) 
-      //   || (req.body.isActive == "false" || req.body.isActive == false || req.body.isArchived == "true" || req.body.isArchived == true)
-      //   )) { 
-      //     return res.status(StatusCodes.BAD_REQUEST).send("Inactive configuration can't be moved to submit and approved!");
-      // }
-
       if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
 
         req.body.submittedInfo = {
@@ -288,8 +278,6 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
         console.log("roles", roles);
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
-          console.log("users", users);
-
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
             console.log("userIds", userIds);

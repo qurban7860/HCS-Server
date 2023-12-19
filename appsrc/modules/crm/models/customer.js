@@ -54,6 +54,9 @@ const docSchema = new Schema({
         isFinancialCompany: { type: Boolean , default: false },
         // Company deals financial matters.
 
+        excludeReports : { type: Boolean , default: false },
+        // Company deals financial matters.
+
         verifications : [{
                 verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
                 verifiedDate: { type: Date }

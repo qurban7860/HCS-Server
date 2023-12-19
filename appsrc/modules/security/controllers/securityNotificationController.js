@@ -123,9 +123,10 @@ exports.createNotification = async(description='', sender='', receiver='', type=
 
     if(Array.isArray(notification.receiver) && notification.receiver.length>0) {
       notification.receiver.forEach((notifRecevier)=>{
+        console.log("notifRecevier", notifRecevier);
         const wss = getSocketConnectionByUserId(notifRecevier);
 
-        wss.map((ws)=> {  
+        wss.map((ws)=> { 
           ws.send(Buffer.from(JSON.stringify({'eventName' : 'newNotification', notifRecevier, notification})));
         });
 
