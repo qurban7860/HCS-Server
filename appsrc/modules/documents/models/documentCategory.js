@@ -25,6 +25,8 @@ const docSchema = new Schema({
         drawing: { type: Boolean, default: false },
         //can customer access files under this category.},
 
+        isDefault: { type: Boolean, default:false },
+
 },
         {
                 collection: 'DocumentCategories'

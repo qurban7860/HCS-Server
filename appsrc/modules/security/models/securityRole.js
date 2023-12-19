@@ -24,6 +24,8 @@ const docSchema = new Schema({
 
   allWriteAccess: { type: Boolean, default: false},
   //enable write access for all module , like for Administrator
+
+  isDefault: { type: Boolean, default:false },
   
   modules: [
     {

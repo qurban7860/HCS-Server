@@ -133,7 +133,7 @@ function getModelFromReq(req){
 */
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, category, isActive, isArchived, loginUser } = req.body;
+  const { name, description, category, isDefault, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -148,6 +148,10 @@ function getDocumentFromReq(req, reqType){
   }
   if ("category" in req.body){
     doc.category = category;
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
   
   if ("isActive" in req.body){

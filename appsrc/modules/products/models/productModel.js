@@ -15,6 +15,8 @@ const docSchema = new Schema({
     
     category: { type: Schema.Types.ObjectId , ref: 'MachineCategory' },
     // product information
+
+    isDefault: { type: Boolean, default:false }
 },
 {
     collection: 'MachineModels'

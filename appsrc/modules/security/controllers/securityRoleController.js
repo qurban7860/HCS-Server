@@ -165,7 +165,7 @@ exports.searchRoles = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { name, description, allModules, allWriteAccess, disableDelete,
-        roleType, modules, loginUser, isActive, isArchived} = req.body;
+        roleType, modules, loginUser, isDefault, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -195,6 +195,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("modules" in req.body){
     doc.modules = modules;
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
 
   if ("isActive" in req.body){

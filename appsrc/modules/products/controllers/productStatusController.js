@@ -110,7 +110,7 @@ exports.patchProductStatus = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, displayOrderNo, isActive, isArchived, loginUser, slug } = req.body;
+  const { name, description, displayOrderNo, isDefault, isActive, isArchived, loginUser, slug } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -130,6 +130,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("slug" in req.body){
     doc.slug = req.body.slug.toLowerCase();
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
   
   if ("isActive" in req.body){
