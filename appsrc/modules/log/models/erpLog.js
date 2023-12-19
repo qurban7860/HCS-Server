@@ -9,9 +9,13 @@ const docSchema = new Schema({
 
         coilBatchName : { type: String },
         
-        ccThickness : { type: String },
+        ccThickness : { type: Number },
         
-        coilLength : {type: String },
+        ccThicknessUnit : { type: String },
+        
+        coilLength : {type: Number },
+        
+        coilLengthUnit : {type: String },
         
         operator : { type: String },
 
@@ -19,21 +23,33 @@ const docSchema = new Schema({
         
         componentLabel : { type: String },
         
-        componentLength : { type: String },
+        componentLength : { type: Number },
+        
+        componentLengthUnit : { type: String },
 
-        componentWeight : { type: String },
+        componentWeight : { type: Number },
         
-        webWidth : { type: String },
+        componentWeightUnit : { type: String },
         
-        flangeHeight : { type: String },
+        webWidth : { type: Number },
+        
+        webWidthUnit : { type: String },
+        
+        flangeHeight : { type: Number },
+        
+        flangeHeightUnit : { type: String },
         
         profileShape : { type: String },
         
-        waste : { type: String },
+        waste : { type: Number },
+        
+        wasteUnit : { type: String },
         
         type : { type: String, enum: [ 'ERP','EVENT','HOURLYRATE', 'JOBS', 'LICENSE', 'MODE_DURATION','PRODUCTION','SYSTEM','TOOLCOUNT','WASTE','ALERT','COIL'] },
         
-        time : { type: String },
+        time : { type: Number },
+        
+        timeUnit : { type: String },
         
         date : { type: Date },
         
