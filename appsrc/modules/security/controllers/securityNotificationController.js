@@ -121,15 +121,12 @@ exports.createNotification = async(description='', sender='', receiver='', type=
 
     notification = await SecurityNotification.findById(notification.id).populate('sender');
 
-    console.log("@1 -------------->", notification);
-    
     if(Array.isArray(notification.receivers) && notification.receivers.length>0) {
-      console.log("@2", notification?.receivers?.length);
       notification.receivers.forEach((notifRecevier)=>{
-        console.log("notifRecevier", notifRecevier);
+        console.log("notifRecevier --------------------->", notifRecevier);
         const wss = getSocketConnectionByUserId(notifRecevier);
 
-        wss.map((ws)=> { 
+        wss.map((ws)=> {  
           ws.send(Buffer.from(JSON.stringify({'eventName' : 'newNotification', notifRecevier, notification})));
         });
 
