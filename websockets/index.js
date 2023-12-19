@@ -80,9 +80,7 @@ WebSocket.on('connection', async function(ws, req) {
         let sendEventData = {};
         if(eventName=='getNotifications') {
             let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
-            console.log("queryString__", queryString__);
             let notifications = await SecurityNotification.find(queryString__).populate('sender');
-            console.log("notifications", notifications);
             sendEventData = { eventName:'notificationsSent', data : notifications };
             emitEvent(ws, sendEventData);
         }
@@ -97,6 +95,12 @@ WebSocket.on('connection', async function(ws, req) {
             let notifications = await SecurityNotification.updateMany(query,update);
             sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             emitEvent(ws,sendEventData)
+
+
+            let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
+            let notifications = await SecurityNotification.find(queryString__).populate('sender');
+            sendEventData = { eventName:'notificationsSent', data : notifications };
+            emitEvent(ws, sendEventData);
         }
         
 
