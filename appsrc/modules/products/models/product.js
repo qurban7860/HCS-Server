@@ -65,13 +65,13 @@ const docSchema = new Schema({
     operators: [ {type: Schema.Types.ObjectId , ref: 'CustomerContact'}],
     // list of contacts from customer end who will work at this machine
   
-    accountManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+    accountManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
     // account manager for this machine from Howick
   
-    projectManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+    projectManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
     // technical project manager for this machine from Howick
   
-    supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+    supportManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
     // support project manager for this machine from Howick
   
     license: { type: Schema.Types.ObjectId , ref: 'MachineLicense' },

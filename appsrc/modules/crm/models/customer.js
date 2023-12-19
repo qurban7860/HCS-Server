@@ -39,17 +39,19 @@ const docSchema = new Schema({
         primaryTechnicalContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         // primary Technical Contact for the customer
         
-        accountManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+        accountManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
         // account manager for this customer from Howick Side 
         
-        projectManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+        projectManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
         // technical project manager for this customer from Howick Side
         
+        supportManager: [{ type: Schema.Types.ObjectId , ref: 'Custome]rContact' }],
+        // support project manager for this customer from Howick Side
+
         supportSubscription: { type: Boolean , default: false },
         // support subscription forthis customer from Howick Side
 
-        supportManager: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
-        // support project manager for this customer from Howick Side
+
 
         isFinancialCompany: { type: Boolean , default: false },
         // Company deals financial matters.
