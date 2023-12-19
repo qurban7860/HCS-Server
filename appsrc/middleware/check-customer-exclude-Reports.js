@@ -17,7 +17,7 @@ module.exports = (req, res, next) => {
       next();
     }
     else{
-      const excludeReports = req.body.loginUser?.excludeReports == 'true' || req.body.loginUser?.excludeReports == true ? true : false;
+      let excludeReports = req.body.loginUser?.excludeReports == 'true' || req.body.loginUser?.excludeReports == true ? true : false;
       excludeReports = false;
       if(excludeReports) {
         return res.status(StatusCodes.BAD_REQUEST).send({message: 'Customer not allowed to access information!'});
