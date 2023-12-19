@@ -18,8 +18,10 @@ module.exports = (req, res, next) => {
     }
     else{
       let excludeReports = req.body.loginUser?.excludeReports == 'true' || req.body.loginUser?.excludeReports == true ? true : false;
-      excludeReports = false;
+      
+      console.log(excludeReports);
       if(excludeReports) {
+        console.log("--------------------------------------------------------------------------------------------->>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
         return res.status(StatusCodes.BAD_REQUEST).send({message: 'Customer not allowed to access information!'});
       }
       next();
