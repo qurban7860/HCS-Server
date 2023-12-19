@@ -78,7 +78,7 @@ exports.login = async (req, res, next) => {
 
 
     if(matchedwhiteListIPs && !matchedBlackListIps){
-      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
+      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived excludeReports' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
       async function getObjectCallback(error, response) {
 
         if (error) {
@@ -285,11 +285,8 @@ exports.login = async (req, res, next) => {
   }
 };
 
-
 async function validateAndLoginUser(req, res, existingUser) {
-  
-
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles);
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.customer.excludeReports );
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -404,7 +401,7 @@ exports.multifactorverifyCode = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID })
-    .populate({ path: 'customer', select: 'name type isActive isArchived' })
+    .populate({ path: 'customer', select: 'name type isActive isArchived excludeReports' })
     .populate({ path: 'contact', select: 'name isActive isArchived' })
     .populate('roles');
 
@@ -758,14 +755,17 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail, sessionID, roles) {
+async function issueToken(userID, userEmail, sessionID, roles, excludeReports) {
   const filteredRoles = roles
   .filter(role => role.isActive && !role.isArchived)
   .map(role => role.roleType);
 
   let token;
-  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles };
-  // console.log("tokenData",tokenData);
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles, excludeReports:excludeReports };
+  
+  
+  
+  console.log("tokenData",tokenData);
 
   try {
 

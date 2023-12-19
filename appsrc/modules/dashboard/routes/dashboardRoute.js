@@ -5,12 +5,13 @@ const controllers = require('../controllers');
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
+const checkcustomerexcludeReports = require('../../../middleware/check-customer-exclude-Reports');
 
 const router = express.Router();
 const dashBoardController = controllers.dashboardController;
 
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth, checkCustomer, checkcustomerexcludeReports);
 
 router.get('/', dashBoardController.getData);
 router.get('/machineCountries', dashBoardController.getMachineByCountries);

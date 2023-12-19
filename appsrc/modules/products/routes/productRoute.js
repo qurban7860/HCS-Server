@@ -5,6 +5,7 @@ const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
+const checkcustomerexcludeReports = require('../../../middleware/check-customer-exclude-Reports');
 
 const controllers = require('../controllers');
 const controller = controllers.productController;
@@ -20,7 +21,7 @@ const baseRouteForObject = `/machines`;
 // localhost://api/1.0.0/products/machines/ 
 //localhost://api/1.0.0/products/search/
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth, checkCustomer, checkcustomerexcludeReports);
 
 router.get(`${baseRouteForObject}/export`, controller.exportProductsJSONforCSV);
 
