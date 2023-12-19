@@ -45,7 +45,7 @@ const docSchema = new Schema({
         projectManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
         // technical project manager for this customer from Howick Side
         
-        supportManager: [{ type: Schema.Types.ObjectId , ref: 'Custome]rContact' }],
+        supportManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
         // support project manager for this customer from Howick Side
 
         supportSubscription: { type: Boolean , default: false },
