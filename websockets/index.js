@@ -81,7 +81,7 @@ WebSocket.on('connection', async function(ws, req) {
         let sendEventData = {};
         if(eventName=='getNotifications') {
             let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
-            let notifications = await SecurityNotification.find(queryString__).populate('sender');
+            let notifications = await SecurityNotification.find(queryString__).sort({_id: -1}).populate('sender');
             sendEventData = { eventName:'notificationsSent', data : notifications };
             emitEvent(ws, sendEventData);
         }
