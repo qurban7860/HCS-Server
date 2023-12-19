@@ -105,8 +105,6 @@ WebSocket.on('connection', async function(ws, req) {
             if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
                 query._id = data._id;
                 let update = { isArchived: true };
-                console.log("query", query);
-                console.log("update", update);
                 let notifications = await SecurityNotification.query(query,update);
                 sendEventData = { eventName:'readMarked', data : {success:'yes'} };
             } else {
@@ -116,11 +114,8 @@ WebSocket.on('connection', async function(ws, req) {
         }
         
         
-        console.log(eventName);
         if(eventName=='markAsUnRead') {
-            console.log("eventName 1");
             if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
-                console.log("eventName 2");
                 let query = { receivers: userId, readBy: userId, _id: data._id };
                 let update = { $pull: { readBy:userId } };
                 
