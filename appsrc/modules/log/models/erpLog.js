@@ -9,7 +9,7 @@ const docSchema = new Schema({
 
         coilBatchName : { type: String },
         
-        ccThickess : { type: String },
+        ccThickness : { type: String },
         
         coilLength : {type: String },
         

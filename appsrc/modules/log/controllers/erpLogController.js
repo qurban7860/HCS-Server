@@ -140,7 +140,7 @@ exports.patchLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { coilBatchName, ccThickess, coilLength, operator, frameSet, componentLabel, customer, 
+  const { coilBatchName, ccThickness, coilLength, operator, frameSet, componentLabel, customer, 
   isActive, isArchived, webWidth, componentLength, loginUser, flangeHeight, profileShape, componentWeight, date,
   waste, time, machine, type } = req.body;
 
@@ -151,8 +151,8 @@ function getDocumentFromReq(req, reqType) {
   if ("coilBatchName" in req.body) {
     doc.coilBatchName = coilBatchName;
   }
-  if ("ccThickess" in req.body) {
-    doc.ccThickess = ccThickess;
+  if ("ccThickness" in req.body) {
+    doc.ccThickness = ccThickness;
   }
 
   if ("coilLength" in req.body) {
