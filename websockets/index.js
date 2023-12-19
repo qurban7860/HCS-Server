@@ -128,6 +128,11 @@ WebSocket.on('connection', async function(ws, req) {
                 sendEventData = { eventName:'readMarked', data : {success:'yes'} };
                 emitEvent(ws,sendEventData)
             }
+
+            let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
+            notifications = await SecurityNotification.find(queryString__).populate('sender');
+            sendEventData = { eventName:'notificationsSent', data : notifications };
+            emitEvent(ws, sendEventData);
         }
 
         if(eventName=='getOnlineUsers') {
