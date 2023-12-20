@@ -797,12 +797,13 @@ exports.patchDocumentVersion = async (req, res, next) => {
     let gtVersionNoValue;
 
     await DocumentVersion.findOne({
-        VersionNo: {
+        versionNo: {
           $lt: req.body.updatedVersion,
-        },
+        }, 
+        document: req.params.id, isActive: true, isArchived: false
       })
       .sort({
-        VersionNo: -1
+        versionNo: -1
       })
       .select('versionNo')
       .exec((err, lowerVersion) => {
@@ -819,12 +820,12 @@ exports.patchDocumentVersion = async (req, res, next) => {
 
     // Find documents with VersionNo greater than the specified version
     await DocumentVersion.findOne({
-        VersionNo: {
+        versionNo: {
           $gt: req.body.updatedVersion,
-        },
+        }, document: req.params.id, isActive: true, isArchived: false
       })
       .sort({
-        VersionNo: 1
+        versionNo: 1
       })
       .select('versionNo')
       .exec((err, higherVersion) => {
@@ -844,8 +845,8 @@ exports.patchDocumentVersion = async (req, res, next) => {
     console.log("gtVersionNoValue", gtVersionNoValue);
 
     if (
-      (ltVersionNoValue === null || req.body.updatedVersion < ltVersionNoValue.VersionNo || req.body.updatedVersion === ltVersionNoValue.VersionNo) &&
-      (gtVersionNoValue === null || req.body.updatedVersion > gtVersionNoValue.VersionNo || req.body.updatedVersion === gtVersionNoValue.VersionNo)
+      (ltVersionNoValue === null || req.body.updatedVersion < ltVersionNoValue?.VersionNo || req.body.updatedVersion === ltVersionNoValue?.VersionNo) &&
+      (gtVersionNoValue === null || req.body.updatedVersion > gtVersionNoValue?.VersionNo || req.body.updatedVersion === gtVersionNoValue?.VersionNo)
     ) {
       console.log("here ***************** Allowed to update", req.body.updatedVersion);
     } else{
