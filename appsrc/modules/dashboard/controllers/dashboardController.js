@@ -302,7 +302,7 @@ exports.getData = async (req, res, next) => {
   try{
     let customerCount = await Customer.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
-    
+    let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
     
     let listCustomers = await Customer.find({"excludeReports": { $ne: false }}).select('_id').lean();
     let machineCountQuery = {isActive:true, isArchived:false, customer: { $in: listCustomers }};
@@ -312,6 +312,7 @@ exports.getData = async (req, res, next) => {
 
     let nonVerifiedMachineCountQuery = {isActive:true, isArchived:false,"verifications.0":{$exists:false}, customer: { $in: listCustomers } };
     let nonVerifiedMachineCount = await Product.find(nonVerifiedMachineCountQuery).countDocuments();
+
     let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
     let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
     let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
@@ -332,6 +333,7 @@ exports.getData = async (req, res, next) => {
       // { $match: { "machineCategory.connections": true} },
     ]);
     let modelsIds = machineModels.map(m => m._id);
+
     let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}}).countDocuments();
 
     let countryWiseMachineCount = await Product.aggregate([
@@ -376,6 +378,7 @@ exports.getData = async (req, res, next) => {
     nonVerifiedCustomerCount, 
     nonVerifiedMachineCount,
     connectAbleMachinesCount,
+    excludeReportingCustomersCount,
     machineCount, 
     userTotalCount, 
     userActiveCount, 
