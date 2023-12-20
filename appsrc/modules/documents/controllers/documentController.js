@@ -839,18 +839,23 @@ exports.patchDocumentVersion = async (req, res, next) => {
   if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    const requestedVersionNo = req.body.updatedVersion;
+    if((!requestedVersionNo || isNaN(parseFloat(requestedVersionNo)))) {
+      return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
+    }
     let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
-    let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
-    if(documentVersions) {
-      if((!req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion))) || (req.body.updatedVersion < documentVersions.versionNo)) {
-        if(req.body.updatedVersion < documentVersions.versionNo) {
-          return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
-        } else {
-          return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid or not found!"});
-        }
-      } 
+    let documentVersionsObj = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
+    if(documentVersionsObj) {
+      let queryString__ = { _id: {$ne: documentVersionsObj._id},  document: req.params.id, isActive: true, isArchived: false};
+      const ltVersionNoValue = await DocumentVersion.findOne(queryString__).sort({versionNo: -1}).select('versionNo').exec();
+
+      console.log(requestedVersionNo , ltVersionNoValue?.versionNo);
+
+      if(requestedVersionNo <= ltVersionNoValue?.versionNo) {
+        return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
+      }
       else {
-        DocumentVersion.updateOne({_id: documentVersions._id}, {versionNo: req.body.updatedVersion}, function(err, result) {
+        DocumentVersion.updateOne({_id: documentVersionsObj._id}, {versionNo: requestedVersionNo}, function(err, result) {
           if (err) {
             console.error("Error updating document:", err);
             return;
