@@ -777,119 +777,93 @@ exports.patchDocument = async (req, res, next) => {
   }
 };
 
-exports.patchDocumentVersion = async (req, res, next) => { 
+// exports.patchDocumentVersion = async (req, res, next) => { 
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+//     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+//   } else {
+//     let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
+//     let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
+//     console.log("documentVersions", documentVersions);
+//     if(documentVersions) {
+
+//       const requestedVersionNo = req.body.updatedVersion;
+
+//     if( !requestedVersionNo || isNaN(parseFloat(requestedVersionNo) ) ) {
+//       return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
+//   } 
+//   else {
+//     let queryString__ = { versionNo: { $lt: requestedVersionNo },  document: req.params.id, isActive: true, isArchived: false};
+//     const ltVersionNoValue = await DocumentVersion.findOne(queryString__).sort({versionNo: -1}).select('versionNo').exec();
+//     queryString__.versionNo = { versionNo: { $gt: requestedVersionNo },  document: req.params.id, isActive: true, isArchived: false};
+//     const gtVersionNoValue = await DocumentVersion.findOne(queryString__.versionNo).sort({versionNo: 1}).select('versionNo').exec();
+
+
+//     console.log("ltVersionNoValue", ltVersionNoValue);
+//     console.log("gtVersionNoValue", gtVersionNoValue);
+
+//     if(requestedVersionNo == ltVersionNoValue?.versionNo || requestedVersionNo == gtVersionNoValue?.versionNo) {
+//       return res.status(StatusCodes.BAD_REQUEST).send({"message": `Version equal to  ${requestedVersionNo == ltVersionNoValue?.versionNo? "least":"uper"} version value`});
+//     }
+
+//     if (
+//       (requestedVersionNo > ltVersionNoValue?.versionNo || requestedVersionNo === ltVersionNoValue?.versionNo) &&
+//       (requestedVersionNo < gtVersionNoValue?.versionNo || requestedVersionNo === gtVersionNoValue?.versionNo)
+//     ) {
+//       DocumentVersion.updateOne({_id: documentVersions._id}, {versionNo: requestedVersionNo}, function(err, result) {
+//         if (err) {
+//           console.error("Error updating document:", err);
+//           return;
+//         }
+//         console.log("Document updated successfully:", result);
+//         return res.status(StatusCodes.ACCEPTED).send(getReasonPhrase(StatusCodes.ACCEPTED));
+//       });
+//     } else{
+//       if(requestedVersionNo < ltVersionNoValue?.versionNo)
+//         return res.status(StatusCodes.BAD_REQUEST).send({"message": `conflict against lower version!`});  
+//       else (requestedVersionNo > gtVersionNoValue?.versionNo)
+//         return res.status(StatusCodes.BAD_REQUEST).send({"message": `conflict against uper version!`});
+//     }
+
+//             }
+
+//     } else {
+//       return res.status(StatusCodes.BAD_REQUEST).send({"message": "document details not found!"});
+//     }
+//     }
+//   }  
+
+
+exports.patchDocumentVersion = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    // let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
-    // let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
-    // if(documentVersions) {
-
-
-    if( !req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion) ) ) {
-      return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
-  } 
-  else {
-
-
-    let ltVersionNoValue;
-    let gtVersionNoValue;
-
-    await DocumentVersion.findOne({
-        versionNo: {
-          $lt: req.body.updatedVersion,
-        }, 
-        document: req.params.id, isActive: true, isArchived: false
-      })
-      .sort({
-        versionNo: -1
-      })
-      .select('versionNo')
-      .exec((err, lowerVersion) => {
-        if (err) {
-          console.error(err);
-          return;
+    let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
+    let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
+    if(documentVersions) {
+      if((!req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion))) || (req.body.updatedVersion < documentVersions.versionNo)) {
+        if(req.body.updatedVersion < documentVersions.versionNo) {
+          return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
+        } else {
+          return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid or not found!"});
         }
-
-        // Check if there is a matching document
-        if (lowerVersion) {
-          ltVersionNoValue = lowerVersion;
-        }
-      });
-
-    // Find documents with VersionNo greater than the specified version
-    await DocumentVersion.findOne({
-        versionNo: {
-          $gt: req.body.updatedVersion,
-        }, document: req.params.id, isActive: true, isArchived: false
-      })
-      .sort({
-        versionNo: 1
-      })
-      .select('versionNo')
-      .exec((err, higherVersion) => {
-        if (err) {
-          console.error(err);
-          return;
-        }
-
-        // Check if there is a matching document
-        if (higherVersion) {
-          gtVersionNoValue = higherVersion;
-        }
-      });
-
-
-    console.log("ltVersionNoValue", ltVersionNoValue);
-    console.log("gtVersionNoValue", gtVersionNoValue);
-
-    if (
-      (ltVersionNoValue === null || req.body.updatedVersion < ltVersionNoValue?.VersionNo || req.body.updatedVersion === ltVersionNoValue?.VersionNo) &&
-      (gtVersionNoValue === null || req.body.updatedVersion > gtVersionNoValue?.VersionNo || req.body.updatedVersion === gtVersionNoValue?.VersionNo)
-    ) {
-      console.log("here ***************** Allowed to update", req.body.updatedVersion);
-    } else{
-      console.log("here ***************** Not allowed to update", req.body.updatedVersion);
-    }
-
-    return false;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    DocumentVersion.updateOne({_id: documentVersions._id}, {versionNo: req.body.updatedVersion}, function(err, result) {
-      if (err) {
-        console.error("Error updating document:", err);
-        return;
+      } 
+      else {
+        DocumentVersion.updateOne({_id: documentVersions._id}, {versionNo: req.body.updatedVersion}, function(err, result) {
+          if (err) {
+            console.error("Error updating document:", err);
+            return;
+          }
+          console.log("Document updated successfully:", result);
+          return res.status(StatusCodes.ACCEPTED).send(getReasonPhrase(StatusCodes.ACCEPTED));
+        });
       }
-      console.log("Document updated successfully:", result);
-      return res.status(StatusCodes.ACCEPTED).send(getReasonPhrase(StatusCodes.ACCEPTED));
-    });
-  }
-
-    // } else {
-    //   return res.status(StatusCodes.BAD_REQUEST).send({"message": "document details not found!"});
-    // }
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).send({"message": "document details not found!"});
     }
-  }  
+  }
+}
 
 async function readFileAsBase64(filePath) {
   try {
