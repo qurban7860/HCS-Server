@@ -78,7 +78,7 @@ exports.login = async (req, res, next) => {
 
 
     if(matchedwhiteListIPs && !matchedBlackListIps){
-      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived excludeReports' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
+      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
       async function getObjectCallback(error, response) {
 
         if (error) {
@@ -286,7 +286,7 @@ exports.login = async (req, res, next) => {
 };
 
 async function validateAndLoginUser(req, res, existingUser) {
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.customer.excludeReports );
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles );
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -341,8 +341,7 @@ async function validateAndLoginUser(req, res, existingUser) {
               login: existingUser.login,
               email: existingUser.email,
               displayName: existingUser.name,
-              roles: existingUser.roles,
-              excludeReports: existingUser.customer.excludeReports
+              roles: existingUser.roles
             }
           });
           
@@ -359,7 +358,7 @@ function delay(time) {
   return new Promise(resolve => setTimeout(resolve, time));
 } 
 
-async function removeAndCreateNewSession(req, userId, excludeReports) {
+async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
@@ -375,7 +374,6 @@ async function removeAndCreateNewSession(req, userId, excludeReports) {
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
-      req.session.excludeReports = excludeReports;
       
       await req.session.save();
       await delay(500);
@@ -404,7 +402,7 @@ exports.multifactorverifyCode = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID })
-    .populate({ path: 'customer', select: 'name type isActive isArchived excludeReports' })
+    .populate({ path: 'customer', select: 'name type isActive isArchived' })
     .populate({ path: 'contact', select: 'name isActive isArchived' })
     .populate('roles');
 
@@ -758,13 +756,13 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail, sessionID, roles, excludeReports) {
+async function issueToken(userID, userEmail, sessionID, roles) {
   const filteredRoles = roles
   .filter(role => role.isActive && !role.isArchived)
   .map(role => role.roleType);
 
   let token;
-  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles, excludeReports:excludeReports };
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles };
   
   
   
