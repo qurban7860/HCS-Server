@@ -782,15 +782,12 @@ exports.patchDocumentVersion = async (req, res, next) => {
   if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
-    let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
-    if(documentVersions) {
-      if((!req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion))) || (req.body.updatedVersion < documentVersions.versionNo)) {
-        if(req.body.updatedVersion < documentVersions.versionNo) {
+    // let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
+    // let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
+    // if(documentVersions) {
+
+      if((!req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion))))) {
           return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
-        } else {
-          return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid or not found!"});
-        }
       } 
       else {
 
@@ -885,9 +882,9 @@ exports.patchDocumentVersion = async (req, res, next) => {
           return res.status(StatusCodes.ACCEPTED).send(getReasonPhrase(StatusCodes.ACCEPTED));
         });
       }
-    } else {
-      return res.status(StatusCodes.BAD_REQUEST).send({"message": "document details not found!"});
-    }
+    // } else {
+    //   return res.status(StatusCodes.BAD_REQUEST).send({"message": "document details not found!"});
+    // }
   }
 }
 
