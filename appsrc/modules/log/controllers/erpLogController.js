@@ -56,16 +56,20 @@ exports.getLogs = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-
-    let graphResults = await ErpLog.aggregate([
+    const match = {}
+    if(this.query.year) {
+      match.date = {$gte: new Date(`${this.query.year}-01-01`) }
+    }
+    const graphResults = await ErpLog.aggregate([
+      {$match:match},
       { $group: {
         _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
-        total: { $count: {} }
+        componentLength: { $sum: "$componentLength" },
+        waste: { $sum: "$waste" },
       }}
     ]);
-    let response = await this.dbservice.getObjectList(ErpLog, this.fields, this.query, this.orderBy, this.populate);
     
-    return res.json(response);
+    return res.json(graphResults);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
