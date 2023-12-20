@@ -105,6 +105,9 @@ exports.patchProductCategory = async (req, res, next) => {
         return res.status(StatusCodes.CONFLICT).send(`This Machine Category is attached with Models. So it can't be deleted. Attached with Models Names: ${modelNames}`);
     }
 
+
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) ProductCategory.updateMany({}, {isDefault : false});
+
     this.dbservice.patchObject(ProductCategory, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
