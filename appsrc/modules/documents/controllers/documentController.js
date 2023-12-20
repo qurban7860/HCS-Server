@@ -793,6 +793,89 @@ exports.patchDocumentVersion = async (req, res, next) => {
         }
       } 
       else {
+
+
+        let ltVersionNoValue;
+        let gtVersionNoValue;
+
+        await DocumentVersion.findOne({
+        		VersionNo: {
+        			$lt: req.body.updatedVersion,
+        		},
+        	})
+        	.sort({
+        		VersionNo: -1
+        	})
+        	.select('versionNo')
+        	.exec((err, lowerVersion) => {
+        		if (err) {
+        			console.error(err);
+        			return;
+        		}
+
+        		// Check if there is a matching document
+        		if (lowerVersion) {
+        			ltVersionNoValue = lowerVersion;
+        		}
+        	});
+
+        // Find documents with VersionNo greater than the specified version
+        await DocumentVersion.findOne({
+        		VersionNo: {
+        			$gt: req.body.updatedVersion,
+        		},
+        	})
+        	.sort({
+        		VersionNo: 1
+        	})
+        	.select('versionNo')
+        	.exec((err, higherVersion) => {
+        		if (err) {
+        			console.error(err);
+        			return;
+        		}
+
+        		// Check if there is a matching document
+        		if (higherVersion) {
+        			gtVersionNoValue = higherVersion;
+        		}
+        	});
+
+
+        console.log("ltVersionNoValue", ltVersionNoValue);
+        console.log("gtVersionNoValue", gtVersionNoValue);
+
+        if (
+        	(ltVersionNoValue === null || req.body.updatedVersion < ltVersionNoValue.VersionNo || req.body.updatedVersion === ltVersionNoValue.VersionNo) &&
+        	(gtVersionNoValue === null || req.body.updatedVersion > gtVersionNoValue.VersionNo || req.body.updatedVersion === gtVersionNoValue.VersionNo)
+        ) {
+        	console.log("here ***************** Allowed to update", req.body.updatedVersion);
+        } else{
+			    console.log("here ***************** Not allowed to update", req.body.updatedVersion);
+		    }
+
+        return false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         DocumentVersion.updateOne({_id: documentVersions._id}, {versionNo: req.body.updatedVersion}, function(err, result) {
           if (err) {
             console.error("Error updating document:", err);
