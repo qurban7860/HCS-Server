@@ -132,7 +132,7 @@ exports.patchProductSupplier = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, contactName, contactTitle, phone, email, fax, website, address,
+  const { name, contactName, contactTitle, phone, email, fax, website, address, isDefault, 
     isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -166,7 +166,9 @@ function getDocumentFromReq(req, reqType){
     doc.address = address;
   }
 
-  
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
+  }
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
