@@ -341,7 +341,8 @@ async function validateAndLoginUser(req, res, existingUser) {
               login: existingUser.login,
               email: existingUser.email,
               displayName: existingUser.name,
-              roles: existingUser.roles
+              roles: existingUser.roles,
+              excludeReports: existingUser.customer.excludeReports
             }
           });
           
@@ -358,7 +359,7 @@ function delay(time) {
   return new Promise(resolve => setTimeout(resolve, time));
 } 
 
-async function removeAndCreateNewSession(req, userId) {
+async function removeAndCreateNewSession(req, userId, excludeReports) {
 
   try {
     await removeSessions(userId);
@@ -374,6 +375,8 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
+      req.session.excludeReports = excludeReports;
+      
       await req.session.save();
       await delay(500);
       let user = await SecuritySession.findOne({"session.user":userId});

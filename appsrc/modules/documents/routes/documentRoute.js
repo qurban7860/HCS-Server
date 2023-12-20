@@ -45,6 +45,9 @@ router.post(`${baseRoute}/`, (req, res, next) => {
       }
     });
   }, controller.postDocument);
+  
+// - /api/1.0.0/documents/updatedVersion/:id
+router.patch(`${baseRoute}/updatedVersion/:id`, controller.patchDocumentVersion);
 
 // - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
