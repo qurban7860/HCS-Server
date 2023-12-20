@@ -304,7 +304,7 @@ exports.getData = async (req, res, next) => {
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
     
-    let listCustomers = await Customer.find({"excludeReports": { $ne: false }}).select('_id').lean();
+    let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     let machineCountQuery = {isActive:true, isArchived:false, customer: { $in: listCustomers }};
     let machineCount = await Product.find(machineCountQuery).countDocuments();
     
