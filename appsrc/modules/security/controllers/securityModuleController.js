@@ -107,9 +107,7 @@ exports.deleteSecurityModule = async (req, res, next) => {
   const response = await SecurityModule.findById(req.params.id);
   if(response === null) {
     try {
-      console.log("@1");
       const result = await this.dbservice.deleteObject(SecurityModule, req.params.id, res);
-      console.log("@2", result);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
       console.log("@3");
     } catch (error) {

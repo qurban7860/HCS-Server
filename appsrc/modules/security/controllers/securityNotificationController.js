@@ -121,8 +121,9 @@ exports.createNotification = async(description='', sender='', receiver='', type=
 
     notification = await SecurityNotification.findById(notification.id).populate('sender');
 
-    if(Array.isArray(notification.receiver) && notification.receiver.length>0) {
-      notification.receiver.forEach((notifRecevier)=>{
+    if(Array.isArray(notification.receivers) && notification.receivers.length>0) {
+      notification.receivers.forEach((notifRecevier)=>{
+        console.log("notifRecevier --------------------->", notifRecevier);
         const wss = getSocketConnectionByUserId(notifRecevier);
 
         wss.map((ws)=> {  

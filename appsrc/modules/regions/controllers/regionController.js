@@ -109,7 +109,7 @@ exports.patchRegion = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, countries, isActive, isArchived, loginUser } = req.body;
+  const { name, description, countries, isDefault, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -124,6 +124,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("countries" in req.body) {
     doc.countries = countries;
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
 
   if ("isArchived" in req.body) {

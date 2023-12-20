@@ -25,8 +25,8 @@ this.orderBy = { name: 1 };
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'},
-  {path: 'customer', select: 'name'},
-  {path: 'contact', select: 'firstName lastName'},
+  {path: 'customer', select: 'name isActive'},
+  {path: 'contact', select: 'firstName lastName isActive'},
   {path: 'roles', select: ''},
   {path: 'regions', populate: {
     path: 'countries',

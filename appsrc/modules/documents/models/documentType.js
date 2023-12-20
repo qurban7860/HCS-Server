@@ -18,6 +18,8 @@ const docSchema = new Schema({
 
         customerAccess: {type: Boolean, default: false},
         //can customer access documents and files under this type.
+
+        isDefault: { type: Boolean, default:false },
 },
 {
         collection: 'DocumentTypes'

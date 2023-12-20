@@ -8,6 +8,8 @@ const Schema = mongoose.Schema;
 const docSchema = new Schema({
         departmentName: { type: String, required: true},
         // Department Name
+
+        isDefault: { type: Boolean, default:false }
 },
 {
         collection: 'Departments'

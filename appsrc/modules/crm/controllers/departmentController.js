@@ -143,7 +143,7 @@ exports.patchDepartment = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { departmentName, isActive, isArchived, loginUser } = req.body;
+  const { departmentName, isDefault, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -152,6 +152,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("departmentName" in req.body){
     doc.departmentName = departmentName.trim();
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
 
   if ("isActive" in req.body){
