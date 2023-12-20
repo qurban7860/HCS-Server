@@ -259,6 +259,7 @@ exports.getCount = async (req, res, next) => {
   try{
     let customerCount = await Customer.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
+    let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
     let machineCount = await Product.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedMachineCount = await Product.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
@@ -279,6 +280,7 @@ exports.getCount = async (req, res, next) => {
 
   res.json({customerCount, 
     nonVerifiedCustomerCount, 
+    excludeReportingCustomersCount,
     nonVerifiedMachineCount,
     connectAbleMachinesCount,
     machineCount, 
@@ -302,6 +304,7 @@ exports.getData = async (req, res, next) => {
   try{
     let customerCount = await Customer.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
+    let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
     let machineCount = await Product.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedMachineCount = await Product.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
@@ -366,6 +369,7 @@ exports.getData = async (req, res, next) => {
 
   res.json({customerCount, 
     nonVerifiedCustomerCount, 
+    excludeReportingCustomersCount,
     nonVerifiedMachineCount,
     connectAbleMachinesCount,
     machineCount, 

@@ -115,7 +115,6 @@ exports.getProducts = async (req, res, next) => {
   this.orderBy = { serialNo: 1,  name: 1};
   
 
-  console.log("req.body.loginUser", req.body.loginUser);
   if(this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
@@ -191,6 +190,10 @@ exports.getProducts = async (req, res, next) => {
     delete this.query.unfiltered;
   }
 
+  if(!this.query.customer) {
+    let listCustomers = await Customer.find({"excludeReports": { $ne: false }}).select('_id').lean();
+    this.query.customer = { $in: listCustomers };
+  }
 
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, products) {
