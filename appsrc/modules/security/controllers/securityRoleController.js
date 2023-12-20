@@ -110,6 +110,13 @@ exports.patchSecurityRole = async (req, res, next) => {
       }
     }
     
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
+
     this.dbservice.patchObject(SecurityRole, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {

@@ -126,6 +126,13 @@ exports.patchDepartment = async (req, res, next) => {
   if (!errors.isEmpty() || !ObjectId.isValid(req.params.id)) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await Department.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
+
     this.dbservice.patchObject(Department, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {

@@ -195,6 +195,7 @@ exports.getProducts = async (req, res, next) => {
     this.query.customer = { $in: listCustomers };
   }
 
+  console.log("this.query", this.query);
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {

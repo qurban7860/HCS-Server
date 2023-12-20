@@ -96,6 +96,13 @@ exports.patchDocumentCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await DocumentCategory.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+          if (err) console.error(err);  
+          else console.log(result);
+        });
+      }
+
       const result = await this.dbservice.patchObject(DocumentCategory, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
