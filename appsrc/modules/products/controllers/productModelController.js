@@ -77,6 +77,12 @@ exports.postProductModel = async (req, res, next) => {
     if(duplicateEntry){
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
     }else{
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await ProductModel.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+          if (err) console.error(err);  
+          else console.log(result);
+        });
+      }
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       function callbackFunc(error, response) {
         if (error) {

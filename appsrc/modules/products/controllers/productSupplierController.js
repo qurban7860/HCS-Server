@@ -76,6 +76,12 @@ exports.postProductSupplier = async (req, res, next) => {
     if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
     }
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await ProductSupplier.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
