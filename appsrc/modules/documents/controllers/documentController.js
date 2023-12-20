@@ -786,7 +786,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
     // let documentVersions = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
     // if(documentVersions) {
 
-      if((!req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion))))) {
+      if( !req.body.updatedVersion || isNaN(parseFloat(req.body.updatedVersion) ) {
           return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
       } 
       else {
