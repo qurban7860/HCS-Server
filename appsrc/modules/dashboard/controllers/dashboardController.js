@@ -354,7 +354,7 @@ exports.getData = async (req, res, next) => {
 
     let machineModels = await ProductModel.aggregate([
       { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
-      // { $match: { "machineCategory.connections": true} },
+      { $match: { "machineCategory.connections": true} },
     ]);
     let modelsIds = machineModels.map(m => m._id);
 
