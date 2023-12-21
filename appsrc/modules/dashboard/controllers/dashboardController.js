@@ -342,7 +342,7 @@ exports.getData = async (req, res, next) => {
     console.log("customerIds", JSON.stringify(customerIds));
     console.log("listTrsIds", JSON.stringify(listTrsIds));
 
-    let machineCountQuery = {isArchived:false, $or: [
+    let machineCountQuery = {isActive: true, isArchived:false, $or: [
       { customer: { $in: customerIds } },
       { customer: { $exists: false } },
       { customer: null }
@@ -350,7 +350,7 @@ exports.getData = async (req, res, next) => {
     let machineCount = await Product.find(machineCountQuery).countDocuments(); 
 
 
-    let machineCountQuery_ex = {isArchived:false, $or: [
+    let machineCountQuery_ex = {isActive: true, isArchived:false, $or: [
       { customer: { $nin: customerIds } },
       { customer: { $exists: false } },
       { customer: null }
@@ -358,14 +358,14 @@ exports.getData = async (req, res, next) => {
     let machineExcludedCount = await Product.find(machineCountQuery_ex).countDocuments(); 
 
 
-    let nonVerifiedMachineCountQuery = {isArchived:false,"verifications.0":{$exists:false},   $or: [
+    let nonVerifiedMachineCountQuery = {isActive: true, isArchived:false,"verifications.0":{$exists:false},   $or: [
       { customer: { $in: customerIds } },
       { customer: { $exists: false } },
       { customer: null }
     ], status: { $nin: listTrsIds } };
     let nonVerifiedMachineCount = await Product.find(nonVerifiedMachineCountQuery).countDocuments();
 
-    let userTotalCount = await SecurityUser.find({isArchived:false, $or: [
+    let userTotalCount = await SecurityUser.find({isActive: true, isArchived:false, $or: [
       { customer: { $in: customerIds } },
       { customer: { $exists: false } },
       { customer: null }
@@ -433,7 +433,7 @@ exports.getData = async (req, res, next) => {
     ]);
 
     let yearWiseMachines = await Product.aggregate([
-      { $match: { installationDate : { $ne:null }, $or: [
+      { $match: { isActive: true, isArchived: false, installationDate : { $ne:null }, $or: [
         { customer: { $in: customerIds } },
         { customer: { $exists: false } },
         { customer: null }
