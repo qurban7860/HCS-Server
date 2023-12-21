@@ -305,6 +305,7 @@ exports.getData = async (req, res, next) => {
     let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
     
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+    console.log("listCustomers", JSON.stringify(listCustomers));
     let machineCountQuery = {isActive:true, isArchived:false,   $or: [
       { customer: { $in: listCustomers } },
       { customer: { $exists: false } },
