@@ -228,12 +228,16 @@ exports.getDocuments = async (req, res, next) => {
 };
 
 exports.getdublicateDrawings = async (req, res, next) => {
+  
+  let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
+  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id); 
+
   let machineModels = await Document.aggregate([
     {
       $match: {
           isArchived: false,
           isActive: true,
-          // docCategory: {$in: [ObjectId("649518fae0c318fc54771862")]}
+          docCategory: {$in: [categoryDrawingIds]}
       }
     },
     {
