@@ -308,6 +308,8 @@ exports.getData = async (req, res, next) => {
     let listTransferredStatuses = await ProductStatus.find({slug: 'transferred'}).select('_id').lean();
 
     console.log("listCustomers", JSON.stringify(listCustomers));
+    console.log("listTransferredStatuses", JSON.stringify(listTransferredStatuses));
+
     let machineCountQuery = {isArchived:false,   $or: [
       { customer: { $in: listCustomers } },
       { status: { $nin: listTransferredStatuses } },
