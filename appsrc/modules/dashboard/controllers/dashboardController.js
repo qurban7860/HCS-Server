@@ -311,17 +311,17 @@ exports.getData = async (req, res, next) => {
     let machineCountQuery = {isArchived:false,   $or: [
       { customer: { $in: listCustomers } },
       { status: { $nin: listTransferredStatuses } },
+      
       { customer: { $exists: false } },
       { customer: null }
-    ]};
+    ], status: { $nin: listTransferredStatuses } };
     let machineCount = await Product.find(machineCountQuery).countDocuments();  
 
     let nonVerifiedMachineCountQuery = {isArchived:false,"verifications.0":{$exists:false},   $or: [
       { customer: { $in: listCustomers } },
-      { status: { $nin: listTransferredStatuses } },
       { customer: { $exists: false } },
       { customer: null }
-    ] };
+    ], status: { $nin: listTransferredStatuses } };
     let nonVerifiedMachineCount = await Product.find(nonVerifiedMachineCountQuery).countDocuments();
 
     let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
