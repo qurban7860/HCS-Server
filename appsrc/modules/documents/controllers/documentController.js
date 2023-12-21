@@ -852,7 +852,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
       console.log(requestedVersionNo , ltVersionNoValue?.versionNo);
 
       if(requestedVersionNo <= ltVersionNoValue?.versionNo) {
-        return res.status(StatusCodes.BAD_REQUEST).send({"message": `Please enter version greater then ${ltVersionNoValue}`});  
+        return res.status(StatusCodes.BAD_REQUEST).send({"message": `Please enter version greater then ${ltVersionNoValue?.versionNo}`});  
       }
       else {
         DocumentVersion.updateOne({_id: documentVersionsObj._id}, {versionNo: requestedVersionNo}, function(err, result) {
