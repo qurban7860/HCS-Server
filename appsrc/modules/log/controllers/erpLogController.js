@@ -66,7 +66,8 @@ exports.getLogsGraph = async (req, res, next) => {
         _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
         componentLength: { $sum: "$componentLength" },
         waste: { $sum: "$waste" },
-      }}
+      }},
+      { $sort: { "_id": 1 } }
     ]);
     
     return res.json(graphResults);
