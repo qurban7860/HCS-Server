@@ -61,60 +61,110 @@ WebSocket.on('connection', async function(ws, req) {
     
 
     ws.on('message', async function(data) {
-        console.log("data", data);
         data = Buffer.from(data,'utf8'.toString());
         try{
             data = JSON.parse(data);
         }catch(e) {
             console.log('Invalid Event data',data,e);
         }
-
-        console.log("data JSON", data);
         
         
         let eventName = data.eventName;
 
 
-        console.log("eventName", eventName);
-
         let sendEventData = {};
         if(eventName=='getNotifications') {
-            let queryString__ =  {receivers:userId,readBy:{$ne:userId}};
-            console.log("queryString__", queryString__);
-            let notifications = await SecurityNotification.find(queryString__).populate('sender');
-            console.log("notifications", notifications);
+            let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
+            let notifications = await SecurityNotification.find(queryString__).sort({createdAt: -1}).populate('sender');
             sendEventData = { eventName:'notificationsSent', data : notifications };
             emitEvent(ws, sendEventData);
         }
 
-        if(eventName=='markAsRead') {
-            let query = { receivers: userId, readBy: { $ne: userId } };
-            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
-                query._id = data._id;
-            }
+        // if(eventName=='markAsRead') {
+        //     let query = { receivers: userId, readBy: { $ne: userId } };
+        //     if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+        //         query._id = data._id;
+        //     }
 
-            let update = { $push: { readBy:userId } };
-            let notifications = await SecurityNotification.updateMany(query,update);
-            sendEventData = { eventName:'readMarked', data : {success:'yes'} };
-            emitEvent(ws,sendEventData)
-        }
-        
-        console.log(eventName);
-        if(eventName=='markAsUnRead') {
-            console.log("eventName 1");
-            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
-                console.log("eventName 2");
-                let query = { receivers: userId, readBy: userId, _id: data._id };
-                let update = { $pull: { readBy:userId } };
+        //     let update = { $push: { readBy:userId } };
+        //     let notifications = await SecurityNotification.updateMany(query,update);
+        //     sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+        //     emitEvent(ws,sendEventData)
+
+
+        //     let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
+        //     notifications = await SecurityNotification.find(queryString__).populate('sender');
+        //     sendEventData = { eventName:'notificationsSent', data : notifications };
+        //     emitEvent(ws, sendEventData);
+        // }
+
+        if(eventName=='markAs') {
+            let status = data.status;
+            if(status) {
+                let query = { receivers: userId, readBy: { $ne: userId } };
                 
-                console.log("query", query);
-                console.log("update", update);
-
+                if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                    query._id = data._id;
+                }
+    
+                let update = { $push: { readBy:userId } };
                 let notifications = await SecurityNotification.updateMany(query,update);
                 sendEventData = { eventName:'readMarked', data : {success:'yes'} };
                 emitEvent(ws,sendEventData)
+            } else {
+                if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                    let query = { receivers: userId, readBy: userId, _id: data._id };
+                    let update = { $pull: { readBy:userId } };
+                    
+    
+                    let notifications = await SecurityNotification.updateMany(query,update);
+                    sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+                    emitEvent(ws,sendEventData)
+                }
             }
+            
+
+            let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
+            notifications = await SecurityNotification.find(queryString__).populate('sender');
+            sendEventData = { eventName:'notificationsSent', data : notifications };
+            emitEvent(ws, sendEventData);
         }
+
+
+        // if(eventName=='markAsUnRead') {
+        //     if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+        //         let query = { receivers: userId, readBy: userId, _id: data._id };
+        //         let update = { $pull: { readBy:userId } };
+                
+
+        //         let notifications = await SecurityNotification.updateMany(query,update);
+        //         sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+        //         emitEvent(ws,sendEventData)
+        //     }
+
+        //     let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
+        //     notifications = await SecurityNotification.find(queryString__).populate('sender');
+        //     sendEventData = { eventName:'notificationsSent', data : notifications };
+        //     emitEvent(ws, sendEventData);
+        // }
+        
+        
+
+        if(eventName=='markAsArchived') {
+            let query = { receivers: userId};
+            if(data._id && mongoose.Types.ObjectId.isValid(data._id)) {
+                query._id = data._id;
+                let update = { isArchived: true };
+                let notifications = await SecurityNotification.query(query,update);
+                sendEventData = { eventName:'readMarked', data : {success:'yes'} };
+            } else {
+                sendEventData = { eventName:'markAsArchived', data : {success:'no'} };
+            }
+            emitEvent(ws,sendEventData)
+        }
+        
+        
+
 
         if(eventName=='getOnlineUsers') {
             const userIds = []
@@ -148,8 +198,8 @@ function closeSocket(ws) {
 }
 
 function emitEvent(ws,sendEventData = {}) {
-  console.log(`\nSending eventName : ${sendEventData.eventName}`);
-  console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
+//   console.log(`\nSending eventName : ${sendEventData.eventName}`);
+//   console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
   ws.send(Buffer.from(JSON.stringify(sendEventData)));
 }
 

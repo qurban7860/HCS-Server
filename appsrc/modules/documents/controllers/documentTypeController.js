@@ -114,7 +114,7 @@ exports.patchDocumentType = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, customerAccess, isActive, isArchived, loginUser, docCategory } = req.body;
+  const { name, description, customerAccess, isDefault, isActive, isArchived, loginUser, docCategory } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -129,6 +129,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("customerAccess" in req.body) {
     doc.customerAccess = customerAccess;
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
 
   if ("isActive" in req.body) {

@@ -17,6 +17,8 @@ const docSchema = new Schema({
     
     displayOrderNo: { type: Number },
     // order to display in dropdown lists
+
+    isDefault: { type: Boolean, default:false }
 },
 {
     collection: 'MachineStatuses'

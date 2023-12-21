@@ -53,6 +53,29 @@ exports.getLogs = async (req, res, next) => {
   }
 };
 
+exports.getLogsGraph = async (req, res, next) => {
+  try {
+    this.query = req.query != "undefined" ? req.query : {};  
+    const match = {}
+    if(this.query.year) {
+      match.date = {$gte: new Date(`${this.query.year}-01-01`) }
+    }
+    const graphResults = await ErpLog.aggregate([
+      {$match:match},
+      { $group: {
+        _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
+        componentLength: { $sum: "$componentLength" },
+        waste: { $sum: "$waste" },
+      }},
+      { $sort: { "_id": 1 } }
+    ]);
+    
+    return res.json(graphResults);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
 
 exports.deleteLog = async (req, res, next) => {
   try {
@@ -70,6 +93,12 @@ exports.postLog = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+
+      if(!mongoose.Types.ObjectId.isValid(req.body.machine) || 
+        !mongoose.Types.ObjectId.isValid(req.body.customer)) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data machine/customer not found');
+      }
+
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ Log: response });
     } catch (error) {
@@ -78,6 +107,44 @@ exports.postLog = async (req, res, next) => {
     }
   }
 };
+
+exports.postLogMulti = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      
+      if(!mongoose.Types.ObjectId.isValid(req.body.machine) || 
+        !mongoose.Types.ObjectId.isValid(req.body.customer)) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data machine/customer not found');
+      }
+      
+      const respArr = []
+      if(Array.isArray(req.body.csvData) && req.body.csvData.length>0 ) {
+        for(const logObj of req.body.csvData) {
+          logObj.machine = req.body.machine;
+          logObj.customer = req.body.customer;
+          const fakeReq = { body: logObj};
+          const response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
+          respArr.push(response);
+        } 
+        res.status(StatusCodes.CREATED).json({ Logs: respArr });
+      } 
+      else {
+        res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data');
+
+      }   
+
+
+    
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
+
 
 exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);
@@ -96,23 +163,34 @@ exports.patchLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { coilBatchName, ccThickess, coilLength, operator, frameSet, componentLabel, customer, 
-  isActive, isArchived, webWidth, componentLength, loginUser, flangeHeight, profileShape, componentWeight, date,
-  waste, time, machine, type } = req.body;
+  const { coilBatchName, ccThickness, ccThicknessUnit, coilLength, coilLengthUnit, operator, frameSet, 
+  componentLabel, customer, isActive, isArchived, webWidth, webWidthUnit, componentLength, 
+  componentLengthUnit, loginUser, flangeHeight, flangeHeightUnit, profileShape, componentWeight, 
+  componentWeightUnit, date, waste, wasteUnit, time, timeUnit, machine, type } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
     doc = new ErpLog({});
   }
+
   if ("coilBatchName" in req.body) {
     doc.coilBatchName = coilBatchName;
   }
-  if ("ccThickess" in req.body) {
-    doc.ccThickess = ccThickess;
+
+  if ("ccThickness" in req.body) {
+    doc.ccThickness = ccThickness;
+  }
+
+  if ("ccThicknessUnit" in req.body) {
+    doc.ccThicknessUnit = ccThicknessUnit;
   }
 
   if ("coilLength" in req.body) {
     doc.coilLength = coilLength;
+  }
+
+  if ("coilLengthUnit" in req.body) {
+    doc.coilLengthUnit = coilLengthUnit;
   }
 
   if ("operator" in req.body) {
@@ -131,16 +209,32 @@ function getDocumentFromReq(req, reqType) {
     doc.webWidth = webWidth;
   }
 
+  if ("webWidthUnit" in req.body) {
+    doc.webWidthUnit = webWidthUnit;
+  }
+
   if ("componentLength" in req.body) {
     doc.componentLength = componentLength;
+  }
+
+  if ("componentLengthUnit" in req.body) {
+    doc.componentLengthUnit = componentLengthUnit;
   }
 
   if ("componentWeight" in req.body) {
     doc.componentWeight = componentWeight;
   }
 
+  if ("componentWeightUnit" in req.body) {
+    doc.componentWeightUnit = componentWeightUnit;
+  }
+
   if ("flangeHeight" in req.body) {
     doc.flangeHeight = flangeHeight;
+  }
+
+  if ("flangeHeightUnit" in req.body) {
+    doc.flangeHeightUnit = flangeHeightUnit;
   }
 
   if ("profileShape" in req.body) {
@@ -151,8 +245,16 @@ function getDocumentFromReq(req, reqType) {
     doc.waste = waste;
   }
 
+  if ("wasteUnit" in req.body) {
+    doc.wasteUnit = wasteUnit;
+  }
+
   if ("time" in req.body) {
     doc.time = time;
+  }
+
+  if ("timeUnit" in req.body) {
+    doc.timeUnit = timeUnit;
   }
 
   if ("date" in req.body) {

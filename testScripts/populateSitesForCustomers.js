@@ -8,14 +8,12 @@ async function main() {
 	
 	for(let customer of customers) {
 		let site = await CustomerSite.findOne({name:customer.name,customer:customer.id});
-		console.log('fetching site');
 		
 		if(!site) {
 			site = await CustomerSite.create({
 				name:customer.name,
 				customer:customer.id
 			});
-			console.log('adding site');
 		}
 
 		if(site) {
@@ -23,7 +21,6 @@ async function main() {
 			customer.mainSite = site.id;
 			customer = await customer.save();
 			let response = await Product.updateMany({customer:customer.id},{instalationSite:site.id})
-			console.log(site.id,response);
 		}
 	}
 }

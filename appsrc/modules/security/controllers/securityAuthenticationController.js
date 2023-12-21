@@ -285,11 +285,8 @@ exports.login = async (req, res, next) => {
   }
 };
 
-
 async function validateAndLoginUser(req, res, existingUser) {
-  
-
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles);
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles );
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -331,7 +328,6 @@ async function validateAndLoginUser(req, res, existingUser) {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
-          console.log(wss);
           wss.map((ws)=> {  
             ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
           });
@@ -377,6 +373,7 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.isLoggedIn = true;
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
+      
       await req.session.save();
       await delay(500);
       let user = await SecuritySession.findOne({"session.user":userId});
@@ -540,8 +537,6 @@ exports.logout = async (req, res, next) => {
   await removeSessions(req.params.userID);
 
   const wss = getAllWebSockets();
-  console.log("testing.");
-  console.log(wss);
   wss.map((ws)=> {  
     ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
   });
@@ -765,7 +760,9 @@ async function issueToken(userID, userEmail, sessionID, roles) {
 
   let token;
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles };
-  // console.log("tokenData",tokenData);
+  
+  
+  
 
   try {
 

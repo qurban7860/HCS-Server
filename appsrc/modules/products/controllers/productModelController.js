@@ -77,6 +77,12 @@ exports.postProductModel = async (req, res, next) => {
     if(duplicateEntry){
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
     }else{
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await ProductModel.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+          if (err) console.error(err);  
+          else console.log(result);
+        });
+      }
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       function callbackFunc(error, response) {
         if (error) {
@@ -103,6 +109,13 @@ exports.patchProductModel = async (req, res, next) => {
     if(duplicateEntry && duplicateEntry._id != req.params.id){
       return res.status(StatusCodes.CONFLICT).send("Record found with existing name!");
     }else{
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await ProductModel.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+          if (err) console.error(err);  
+          else console.log(result);
+        });
+      }
+
       this.dbservice.patchObject(ProductModel, req.params.id, getDocumentFromReq(req), callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
@@ -133,7 +146,7 @@ function getModelFromReq(req){
 */
 
 function getDocumentFromReq(req, reqType){
-  const { name, description, category, isActive, isArchived, loginUser } = req.body;
+  const { name, description, category, isDefault, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -148,6 +161,10 @@ function getDocumentFromReq(req, reqType){
   }
   if ("category" in req.body){
     doc.category = category;
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
   
   if ("isActive" in req.body){

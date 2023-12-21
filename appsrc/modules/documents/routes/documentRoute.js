@@ -24,6 +24,9 @@ const baseRoute = `/document`;
 
 router.use(checkAuth, checkCustomer);
 
+// - /api/1.0.0/document/documents/dublicateDrawings/
+router.get(`${baseRoute}/dublicateDrawings/`, controller.getdublicateDrawings);
+
 // - /api/1.0.0/documents/:id
 router.get(`${baseRoute}/:id`,controller.getDocument);
 
@@ -45,6 +48,9 @@ router.post(`${baseRoute}/`, (req, res, next) => {
       }
     });
   }, controller.postDocument);
+  
+// - /api/1.0.0/documents/updatedVersion/:id
+router.patch(`${baseRoute}/updatedVersion/:id`, controller.patchDocumentVersion);
 
 // - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
