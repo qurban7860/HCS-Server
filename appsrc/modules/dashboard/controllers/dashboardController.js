@@ -316,7 +316,16 @@ exports.getData = async (req, res, next) => {
       { customer: { $exists: false } },
       { customer: null }
     ], status: { $nin: listTrsIds } };
-    let machineCount = await Product.find(machineCountQuery).countDocuments();  
+    let machineCount = await Product.find(machineCountQuery).countDocuments(); 
+
+
+    let machineCountQuery_ex = {isArchived:false, $or: [
+      { customer: { $nin: customerIds } },
+      { customer: { $exists: false } },
+      { customer: null }
+    ], status: { $nin: listTrsIds } };
+    let machineExcludedCount = await Product.find(machineCountQuery_ex).countDocuments(); 
+
 
     let nonVerifiedMachineCountQuery = {isArchived:false,"verifications.0":{$exists:false},   $or: [
       { customer: { $in: customerIds } },
@@ -420,6 +429,7 @@ exports.getData = async (req, res, next) => {
     connectAbleMachinesCount,
     excludeReportingCustomersCount,
     machineCount, 
+    machineExcludedCount,
     userTotalCount, 
     userActiveCount, 
     
