@@ -349,9 +349,7 @@ exports.getData = async (req, res, next) => {
 
 
     let machineCountQuery_ex = {isActive: true, isArchived:false, $or: [
-      { customer: { $nin: customerIds } },
-      { customer: { $exists: false } },
-      { customer: null }
+      { customer: { $nin: customerIds } }
     ], status: { $nin: listTrsIds } };
     let machineExcludedCount = await Product.find(machineCountQuery_ex).countDocuments(); 
 
