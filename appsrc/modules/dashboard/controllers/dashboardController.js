@@ -303,16 +303,15 @@ exports.getData = async (req, res, next) => {
     let customerCount = await Customer.find({isActive:true, isArchived:false}).countDocuments();
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
-    
+
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     let listTransferredStatuses = await ProductStatus.find({slug: 'transferred'}).select('_id').lean();
-
     let customerIds = listCustomers.map((c)=>c._id); 
     let listTrsIds = listTransferredStatuses.map((c)=>c._id); 
-
     console.log("customerIds", JSON.stringify(customerIds));
     console.log("listTrsIds", JSON.stringify(listTrsIds));
 
+    
     let machineCountQuery = {isArchived:false,   $or: [
       { customer: { $in: customerIds } },
       { customer: { $exists: false } },
@@ -327,9 +326,9 @@ exports.getData = async (req, res, next) => {
     ], status: { $nin: listTrsIds } };
     let nonVerifiedMachineCount = await Product.find(nonVerifiedMachineCountQuery).countDocuments();
 
-    let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
-    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
-    let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
+    let userTotalCount = await SecurityUser.find({isArchived:false, customer: { $in: customerIds }}).countDocuments();
+    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false, customer: { $in: customerIds }}).countDocuments();
+    let siteCount = await CustomerSite.find({isActive:true, isArchived:false, customer: { $in: customerIds }}).countDocuments();
 
 
     // let countryWiseCustomerCount = await Customer.aggregate([
@@ -348,10 +347,18 @@ exports.getData = async (req, res, next) => {
     ]);
     let modelsIds = machineModels.map(m => m._id);
 
-    let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}}).countDocuments();
+    let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}, $or: [
+      { customer: { $in: customerIds } },
+      { customer: { $exists: false } },
+      { customer: null }
+    ]}).countDocuments();
 
     let countryWiseMachineCount = await Product.aggregate([
-      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
+      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds}, $or: [
+        { customer: { $in: customerIds } },
+        { customer: { $exists: false } },
+        { customer: null }
+      ] } }, 
       { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
       { $unwind: "$instalationSite" },
       { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
@@ -361,7 +368,11 @@ exports.getData = async (req, res, next) => {
     ]);
 
     let modelWiseMachineCount = await Product.aggregate([
-      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
+      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds}, $or: [
+        { customer: { $in: customerIds } },
+        { customer: { $exists: false } },
+        { customer: null }
+      ] } }, 
       { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
       { $unwind: "$machineModel" },
       { $match: { "machineModel": { $nin: ["", null] } } },
@@ -371,7 +382,11 @@ exports.getData = async (req, res, next) => {
     ]);
 
     let yearWiseMachines = await Product.aggregate([
-      { $match: { installationDate : { $ne:null } } },
+      { $match: { installationDate : { $ne:null }, $or: [
+        { customer: { $in: customerIds } },
+        { customer: { $exists: false } },
+        { customer: null }
+      ] } },
       { 
           $group: {
               _id: { year: { $year: "$installationDate" } },
