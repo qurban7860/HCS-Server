@@ -311,7 +311,6 @@ exports.getData = async (req, res, next) => {
     console.log("customerIds", JSON.stringify(customerIds));
     console.log("listTrsIds", JSON.stringify(listTrsIds));
 
-    
     let machineCountQuery = {isArchived:false,   $or: [
       { customer: { $in: customerIds } },
       { customer: { $exists: false } },
@@ -326,9 +325,9 @@ exports.getData = async (req, res, next) => {
     ], status: { $nin: listTrsIds } };
     let nonVerifiedMachineCount = await Product.find(nonVerifiedMachineCountQuery).countDocuments();
 
-    let userTotalCount = await SecurityUser.find({isArchived:false, customer: { $in: customerIds }}).countDocuments();
-    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false, customer: { $in: customerIds }}).countDocuments();
-    let siteCount = await CustomerSite.find({isActive:true, isArchived:false, customer: { $in: customerIds }}).countDocuments();
+    let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
+    let userActiveCount = await SecurityUser.find({isActive:true, isArchived:false}).countDocuments();
+    let siteCount = await CustomerSite.find({isActive:true, isArchived:false}).countDocuments();
 
 
     // let countryWiseCustomerCount = await Customer.aggregate([
@@ -347,18 +346,10 @@ exports.getData = async (req, res, next) => {
     ]);
     let modelsIds = machineModels.map(m => m._id);
 
-    let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}, $or: [
-      { customer: { $in: customerIds } },
-      { customer: { $exists: false } },
-      { customer: null }
-    ]}).countDocuments();
+    let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}}).countDocuments();
 
     let countryWiseMachineCount = await Product.aggregate([
-      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds}, $or: [
-        { customer: { $in: customerIds } },
-        { customer: { $exists: false } },
-        { customer: null }
-      ] } }, 
+      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
       { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
       { $unwind: "$instalationSite" },
       { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
@@ -368,11 +359,7 @@ exports.getData = async (req, res, next) => {
     ]);
 
     let modelWiseMachineCount = await Product.aggregate([
-      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds}, $or: [
-        { customer: { $in: customerIds } },
-        { customer: { $exists: false } },
-        { customer: null }
-      ] } }, 
+      { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds} } }, 
       { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
       { $unwind: "$machineModel" },
       { $match: { "machineModel": { $nin: ["", null] } } },
@@ -382,11 +369,7 @@ exports.getData = async (req, res, next) => {
     ]);
 
     let yearWiseMachines = await Product.aggregate([
-      { $match: { installationDate : { $ne:null }, $or: [
-        { customer: { $in: customerIds } },
-        { customer: { $exists: false } },
-        { customer: null }
-      ] } },
+      { $match: { installationDate : { $ne:null } } },
       { 
           $group: {
               _id: { year: { $year: "$installationDate" } },
