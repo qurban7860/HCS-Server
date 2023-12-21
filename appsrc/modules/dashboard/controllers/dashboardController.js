@@ -307,23 +307,24 @@ exports.getData = async (req, res, next) => {
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     let listTransferredStatuses = await ProductStatus.find({slug: 'transferred'}).select('_id').lean();
 
-    console.log("listCustomers", JSON.stringify(listCustomers));
-    console.log("listTransferredStatuses", JSON.stringify(listTransferredStatuses));
+    let customerIds = listCustomers.map((c)=>c._id); 
+    let listTrsIds = listTransferredStatuses.map((c)=>c._id); 
+
+    console.log("customerIds", JSON.stringify(customerIds));
+    console.log("listTrsIds", JSON.stringify(listTrsIds));
 
     let machineCountQuery = {isArchived:false,   $or: [
-      { customer: { $in: listCustomers } },
-      { status: { $nin: listTransferredStatuses } },
-      
+      { customer: { $in: customerIds } },
       { customer: { $exists: false } },
       { customer: null }
-    ], status: { $nin: listTransferredStatuses } };
+    ], status: { $nin: listTrsIds } };
     let machineCount = await Product.find(machineCountQuery).countDocuments();  
 
     let nonVerifiedMachineCountQuery = {isArchived:false,"verifications.0":{$exists:false},   $or: [
-      { customer: { $in: listCustomers } },
+      { customer: { $in: customerIds } },
       { customer: { $exists: false } },
       { customer: null }
-    ], status: { $nin: listTransferredStatuses } };
+    ], status: { $nin: listTrsIds } };
     let nonVerifiedMachineCount = await Product.find(nonVerifiedMachineCountQuery).countDocuments();
 
     let userTotalCount = await SecurityUser.find({isArchived:false}).countDocuments();
