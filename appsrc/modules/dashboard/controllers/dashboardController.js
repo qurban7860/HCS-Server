@@ -20,6 +20,10 @@ exports.getMachineByCountries = async (req, res, next) => {
     ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
   });
 
+  let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
+  let customerIds = listCustomers.map((c)=>c._id); 
+
+
 
   // let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
   // console.log("queryString__", queryString__);
@@ -30,7 +34,14 @@ exports.getMachineByCountries = async (req, res, next) => {
   // console.log(req.query)
   let modelsIds = []
   let installationSitesId = []
-  let matchQuery = { isArchived: false, isActive: true };
+  let matchQuery = { isArchived: false, isActive: true, $or: [
+    { customer: { $in: customerIds } },
+    { customer: { $exists: false } },
+    { customer: null }
+  ]};
+
+
+
 
 
   if(mongoose.Types.ObjectId.isValid(req.query.model)) {
@@ -80,6 +91,9 @@ exports.getMachineByCountries = async (req, res, next) => {
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
   // console.log(matchQuery);
+
+
+
   let countryWiseMachineCount = await Product.aggregate([
       { $match: matchQuery }, 
       { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
