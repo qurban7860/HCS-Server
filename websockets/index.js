@@ -198,8 +198,8 @@ function closeSocket(ws) {
 }
 
 function emitEvent(ws,sendEventData = {}) {
-  console.log(`\nSending eventName : ${sendEventData.eventName}`);
-  console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
+//   console.log(`\nSending eventName : ${sendEventData.eventName}`);
+//   console.log(`\nSending eventName : `,JSON.stringify(sendEventData));
   ws.send(Buffer.from(JSON.stringify(sendEventData)));
 }
 

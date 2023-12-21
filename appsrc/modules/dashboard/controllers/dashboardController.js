@@ -339,8 +339,6 @@ exports.getData = async (req, res, next) => {
     let listTransferredStatuses = await ProductStatus.find({slug: 'transferred'}).select('_id').lean();
     let customerIds = listCustomers.map((c)=>c._id); 
     let listTrsIds = listTransferredStatuses.map((c)=>c._id); 
-    console.log("customerIds", JSON.stringify(customerIds));
-    console.log("listTrsIds", JSON.stringify(listTrsIds));
 
     let machineCountQuery = {isActive: true, isArchived:false, $or: [
       { customer: { $in: customerIds } },
