@@ -304,7 +304,7 @@ exports.getData = async (req, res, next) => {
     let nonVerifiedCustomerCount = await Customer.find({isActive:true, isArchived:false,"verifications.0":{$exists:false}}).countDocuments();
     let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
 
-    let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+    let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
     let listTransferredStatuses = await ProductStatus.find({slug: 'transferred'}).select('_id').lean();
     let customerIds = listCustomers.map((c)=>c._id); 
     let listTrsIds = listTransferredStatuses.map((c)=>c._id); 
