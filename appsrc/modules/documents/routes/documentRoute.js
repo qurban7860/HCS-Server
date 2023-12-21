@@ -24,6 +24,9 @@ const baseRoute = `/document`;
 
 router.use(checkAuth, checkCustomer);
 
+// - /api/1.0.0/documents/dublicateDrawings/
+router.patch(`${baseRoute}/dublicateDrawings/`, controller.getdublicateDrawings);
+
 // - /api/1.0.0/documents/:id
 router.get(`${baseRoute}/:id`,controller.getDocument);
 

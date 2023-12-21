@@ -227,6 +227,35 @@ exports.getDocuments = async (req, res, next) => {
   }
 };
 
+exports.getdublicateDrawings = async (req, res, next) => {
+  let machineModels = await Document.aggregate([
+    {
+      $match: {
+          isArchived: false,
+          isActive: true,
+          // docCategory: {$in: [ObjectId("649518fae0c318fc54771862")]}
+      }
+    },
+    {
+      $group: {
+        _id: { docCategory: "$docCategory", docType: "$docType" , name: "$name" },
+        count: { $sum: 1 },
+        ids: { $push: "$_id" }
+      }
+    },
+    {
+      $match: {
+        count: { $gt: 1 }
+      }
+    } ,{
+      $sort: {
+        "_id.name": 1
+      }
+    }
+  ]);
+  res.json(machineModels);
+};
+
 exports.deleteDocument = async (req, res, next) => {
   try {
     const document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
