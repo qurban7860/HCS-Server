@@ -358,11 +358,19 @@ exports.getData = async (req, res, next) => {
     ]);
     let modelsIds = machineModels.map(m => m._id);
 
-    let connectAbleMachinesCount = await Product.find({machineModel:{$in:modelsIds}, $or: [
-      { customer: { $in: customerIds } },
-      { customer: { $exists: false } },
-      { customer: null }
-    ]}).countDocuments();
+    let connectableQuery = {
+      "machineModel": { "$in": modelsIds },
+      "$and": [
+        {
+          "$or": [
+            { "customer": { "$in": customerIds } },
+            { "customer": { "$exists": false } },
+            { "customer": null }
+          ]
+        }
+      ]
+    };
+    let connectAbleMachinesCount = await Product.find(connectableQuery).countDocuments();
 
     let countryWiseMachineCount = await Product.aggregate([
       { $match: { isArchived: false, isActive: true,  machineModel:{$nin:modelsIds}, $or: [
