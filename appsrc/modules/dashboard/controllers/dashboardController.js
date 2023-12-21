@@ -194,10 +194,21 @@ exports.getMachineByModels = async (req, res, next) => {
 
 exports.getMachineByYears = async (req, res, next) => {
 
+  let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
+  let customerIds = listCustomers.map((c)=>c._id); 
+
+
+  
+
+
   // console.log(req.query)
   let modelsIds = []
 
-  let matchQuery = { isArchived: false, isActive: true, installationDate : { $ne:null } } ;
+  let matchQuery = { isArchived: false, isActive: true, installationDate : { $ne:null } , $or: [
+    { customer: { $in: customerIds } },
+    { customer: { $exists: false } },
+    { customer: null }
+  ]} ;
 
   if(mongoose.Types.ObjectId.isValid(req.query.model)) {
     
