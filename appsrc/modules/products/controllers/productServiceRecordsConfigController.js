@@ -212,14 +212,11 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
       if(req.body.status == "SUBMITTED") {
         let type_ = "SERVICE-CONFIG";
         const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
-        console.log("roles", roles);
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
-          console.log("users", users);
-
+        
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
-            console.log("userIds", userIds);
             await securityNotificationController.createNotification(
               `Service Record Config with title ${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
@@ -275,12 +272,10 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
 
         let type_ = "SERVICE-CONFIG";
         const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
-        console.log("roles", roles);
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
-            console.log("userIds", userIds);
             await securityNotificationController.createNotification(
               `Service Record Config with title ${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 

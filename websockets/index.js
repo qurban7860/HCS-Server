@@ -61,28 +61,21 @@ WebSocket.on('connection', async function(ws, req) {
     
 
     ws.on('message', async function(data) {
-        console.log("data", data);
         data = Buffer.from(data,'utf8'.toString());
         try{
             data = JSON.parse(data);
         }catch(e) {
             console.log('Invalid Event data',data,e);
         }
-
-        console.log("data JSON", data);
         
         
         let eventName = data.eventName;
-   
 
-
-        console.log("eventName", eventName);
 
         let sendEventData = {};
         if(eventName=='getNotifications') {
             let queryString__ =  {receivers:userId, isActive: true, isArchived: false};
             let notifications = await SecurityNotification.find(queryString__).sort({createdAt: -1}).populate('sender');
-            console.log("notifications", notifications);
             sendEventData = { eventName:'notificationsSent', data : notifications };
             emitEvent(ws, sendEventData);
         }

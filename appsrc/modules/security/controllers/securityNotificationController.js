@@ -123,7 +123,6 @@ exports.createNotification = async(description='', sender='', receiver='', type=
 
     if(Array.isArray(notification.receivers) && notification.receivers.length>0) {
       notification.receivers.forEach((notifRecevier)=>{
-        console.log("notifRecevier --------------------->", notifRecevier);
         const wss = getSocketConnectionByUserId(notifRecevier);
 
         wss.map((ws)=> {  
