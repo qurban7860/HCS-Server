@@ -23,8 +23,6 @@ exports.getMachineByCountries = async (req, res, next) => {
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
 
-
-
   // let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
   // console.log("queryString__", queryString__);
   // let notifications = await SecurityNotification.find(queryString__).populate('sender');
@@ -112,7 +110,11 @@ exports.getMachineByCountries = async (req, res, next) => {
 
 
 exports.getMachineByModels = async (req, res, next) => {
+  let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
+  let customerIds = listCustomers.map((c)=>c._id); 
 
+
+  
   // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
@@ -122,7 +124,11 @@ exports.getMachineByModels = async (req, res, next) => {
 
   let modelsIds = machineModels.map(m => m._id);
 
-  let matchQuery = { isArchived: false, isActive: true, machineModel:{$in:modelsIds} };
+  let matchQuery = { isArchived: false, isActive: true, machineModel:{$in:modelsIds}, $or: [
+    { customer: { $in: customerIds } },
+    { customer: { $exists: false } },
+    { customer: null }
+  ] };
 
   if(mongoose.Types.ObjectId.isValid(req.query.category)) {
     if(mongoose.Types.ObjectId.isValid(matchQuery.machineModel)) {
