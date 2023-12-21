@@ -77,6 +77,12 @@ exports.postProductCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
 
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await ProductCategory.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
 
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
@@ -103,6 +109,13 @@ exports.patchProductCategory = async (req, res, next) => {
       const modelNames = productModels_.map(obj => obj.name).join(', ');
       if(productModels_ && productModels_.length > 0) 
         return res.status(StatusCodes.CONFLICT).send(`This Machine Category is attached with Models. So it can't be deleted. Attached with Models Names: ${modelNames}`);
+    }
+
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await ProductCategory.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
     }
 
     this.dbservice.patchObject(ProductCategory, req.params.id, getDocumentFromReq(req), callbackFunc);

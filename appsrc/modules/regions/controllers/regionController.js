@@ -83,6 +83,12 @@ exports.postRegion = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await Region.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+          if (err) console.error(err);  
+          else console.log(result);
+        });
+      }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ Region: response });
     } catch (error) {
@@ -98,6 +104,13 @@ exports.patchRegion = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await Region.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+          if (err) console.error(err);  
+          else console.log(result);
+        });
+      }
+
       const result = await this.dbservice.patchObject(Region, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {

@@ -72,6 +72,12 @@ exports.postSecurityRole = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -110,6 +116,13 @@ exports.patchSecurityRole = async (req, res, next) => {
       }
     }
     
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
+
     this.dbservice.patchObject(SecurityRole, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {

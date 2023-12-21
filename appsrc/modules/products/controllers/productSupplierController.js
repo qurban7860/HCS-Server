@@ -76,6 +76,12 @@ exports.postProductSupplier = async (req, res, next) => {
     if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
     }
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await ProductSupplier.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -101,6 +107,14 @@ exports.patchProductSupplier = async (req, res, next) => {
     if(alreadyExists) {
       return res.status(StatusCodes.BAD_REQUEST).send('Product Supplier with this name alreadyExists');
     }
+
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await ProductSupplier.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
+
     this.dbservice.patchObject(ProductSupplier, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
@@ -118,7 +132,7 @@ exports.patchProductSupplier = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, contactName, contactTitle, phone, email, fax, website, address,
+  const { name, contactName, contactTitle, phone, email, fax, website, address, isDefault, 
     isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -152,7 +166,9 @@ function getDocumentFromReq(req, reqType){
     doc.address = address;
   }
 
-  
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
+  }
   if ("isActive" in req.body){
     doc.isActive = isActive;
   }
