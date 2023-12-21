@@ -191,11 +191,12 @@ exports.getProducts = async (req, res, next) => {
   }
 
   if(!this.query.customer) {
-    let listCustomers = await Customer.find({"excludeReports": { $ne: false }}).select('_id').lean();
-    this.query.customer = { $in: listCustomers };
+    let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+    let customerIds = listCustomers.map((c)=>c._id); 
+    this.query.customer = { $in: customerIds };
   }
 
-  console.log("this.query", this.query);
+
   dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
