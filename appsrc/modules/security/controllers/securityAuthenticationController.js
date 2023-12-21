@@ -328,7 +328,6 @@ async function validateAndLoginUser(req, res, existingUser) {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
-          console.log(wss);
           wss.map((ws)=> {  
             ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
           });
@@ -764,7 +763,6 @@ async function issueToken(userID, userEmail, sessionID, roles) {
   
   
   
-  console.log("tokenData",tokenData);
 
   try {
 
