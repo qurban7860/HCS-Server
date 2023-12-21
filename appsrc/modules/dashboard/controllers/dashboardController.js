@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { Customer, CustomerSite } = require('../../crm/models');
-const { Product, ProductModel } = require('../../products/models');
+const { Product, ProductModel, ProductStatus } = require('../../products/models');
 const { SecurityUser, SecurityNotification} = require('../../security/models');
 const { Country } = require('../../config/models');
 const HttpError = require('../../config/models/http-error');
@@ -305,16 +305,20 @@ exports.getData = async (req, res, next) => {
     let excludeReportingCustomersCount = await Customer.find({isActive:true, isArchived:false, excludeReports: true}).countDocuments();
     
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+    let listTransferredStatuses = await ProductStatus.find({slug: 'transferred'}).select('_id').lean();
+
     console.log("listCustomers", JSON.stringify(listCustomers));
-    let machineCountQuery = {isActive:true, isArchived:false,   $or: [
+    let machineCountQuery = {isArchived:false,   $or: [
       { customer: { $in: listCustomers } },
+      { status: { $nin: listTransferredStatuses } },
       { customer: { $exists: false } },
       { customer: null }
     ]};
     let machineCount = await Product.find(machineCountQuery).countDocuments();  
 
-    let nonVerifiedMachineCountQuery = {isActive:true, isArchived:false,"verifications.0":{$exists:false},   $or: [
+    let nonVerifiedMachineCountQuery = {isArchived:false,"verifications.0":{$exists:false},   $or: [
       { customer: { $in: listCustomers } },
+      { status: { $nin: listTransferredStatuses } },
       { customer: { $exists: false } },
       { customer: null }
     ] };
