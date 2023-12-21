@@ -238,7 +238,7 @@ exports.getdublicateDrawings = async (req, res, next) => {
       $match: {
           isArchived: false,
           isActive: true,
-          docCategory: {$in: [categoryDrawingIds]}
+          docCategory: {$in: categoryDrawingIds}
       }
     },
     {
