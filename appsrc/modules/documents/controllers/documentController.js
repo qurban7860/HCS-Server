@@ -228,17 +228,18 @@ exports.getDocuments = async (req, res, next) => {
 };
 
 exports.getdublicateDrawings = async (req, res, next) => {
-  
   let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
-  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id); 
-  console.log("categoryDrawingIds", categoryDrawingIds);
+  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id);
+  let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document machine').populate([{path: 'machine',select: 'serialNo'}]).lean();
+  let listDrawingsIds = listProductDrawing.map((c)=>c.document);
 
   let aggregateQuery__ = [
     {
       $match: {
           isArchived: false,
           isActive: true,
-          docCategory: {$in: categoryDrawingIds}
+          docCategory: {$in: categoryDrawingIds},
+          _id: {$in: listDrawingsIds}
       }
     },
     {
@@ -258,9 +259,31 @@ exports.getdublicateDrawings = async (req, res, next) => {
       }
     }
   ];
-  console.log(aggregateQuery__)
-  let machineModels = await Document.aggregate(aggregateQuery__);
-  res.json(machineModels);
+  let dublicateDrawingList = await Document.aggregate(aggregateQuery__);
+  const modifiedList = [];
+  const promises = dublicateDrawingList.map(async (doc) => {
+    const listIds = [];
+    const promisesids = doc.ids.map(async (docId) => {
+      const foundProductDrawing = listProductDrawing.find(drwng => {
+        const matchCondition = _.isEqual(drwng.document, docId);
+        return matchCondition;
+      });
+
+      let idsValues = {
+        docId,
+        machine: foundProductDrawing.machine._id,
+        serialNo: foundProductDrawing.machine.serialNo
+      }
+      listIds.push(idsValues);
+    });
+
+    await Promise.all(promisesids);
+    doc.ids = listIds;
+    modifiedList.push(doc);
+    return doc;
+  });
+  await Promise.all(promises);
+  res.json(modifiedList);
 };
 
 exports.deleteDocument = async (req, res, next) => {
