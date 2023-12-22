@@ -60,6 +60,10 @@ exports.getLogsGraph = async (req, res, next) => {
     if(this.query.year) {
       match.date = {$gte: new Date(`${this.query.year}-01-01`) }
     }
+
+    if(mongoose.Types.ObjectId.isValid(this.query.machine)) {
+      match.machine =  new mongoose.Types.ObjectId(this.query.machine);
+    }
     const graphResults = await ErpLog.aggregate([
       {$match:match},
       { $group: {
