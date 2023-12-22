@@ -11,6 +11,8 @@ const docSchema = new Schema({
         description: { type: String  },
         // name of organization
         countries: [{ type: Schema.Types.ObjectId, ref: 'Country' }],
+
+        isDefault: { type: Boolean, default:false },
 },
 {
         collection: 'Regions'

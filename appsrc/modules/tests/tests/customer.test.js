@@ -41,7 +41,6 @@ const customerId = "646ef6eabea00b354cdcc655y";
 const URL = env.getHost_Url() + moduleName;
 // const URL_update = env.getHost_Url() + moduleName + ID;
 const URL_update = `${env.getHost_Url()}${moduleName}/${customerId}`;
-console.log(URL_update, "@1")
 // const URL_Update = `${env.getHost_Url()}${moduleName}/${Id}`;
 const headers = env.getHeaders();
 
@@ -310,7 +309,6 @@ describe('Customer API', () => {
 
       const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
-      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(updateObject.name);
@@ -374,7 +372,6 @@ describe('Customer API', () => {
 
       const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
-      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(updateObject.name);
@@ -439,7 +436,6 @@ describe('Customer API', () => {
 
       const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
-      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(updateObject.name);
@@ -504,7 +500,6 @@ describe('Customer API', () => {
 
       const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
-      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(updateObject.name);
@@ -569,7 +564,6 @@ describe('Customer API', () => {
 
       const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
-      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(updateObject.name);
@@ -634,7 +628,6 @@ describe('Customer API', () => {
 
       const response = await axios.patch(URL_update, updateObject, { headers });
       const customer = response.data.Customer._id;
-      // console.log(customer, '@1')
 
       let dbCustomer = await this.dbservice.getObjectById(Customer, this.fields, customer, this.populate);
       expect(dbCustomer.name).toEqual(updateObject.name);

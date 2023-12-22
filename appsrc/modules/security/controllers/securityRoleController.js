@@ -72,6 +72,12 @@ exports.postSecurityRole = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -110,6 +116,13 @@ exports.patchSecurityRole = async (req, res, next) => {
       }
     }
     
+    if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        if (err) console.error(err);  
+        else console.log(result);
+      });
+    }
+
     this.dbservice.patchObject(SecurityRole, req.params.id, getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
@@ -165,7 +178,7 @@ exports.searchRoles = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType){
   const { name, description, allModules, allWriteAccess, disableDelete,
-        roleType, modules, loginUser, isActive, isArchived} = req.body;
+        roleType, modules, loginUser, isDefault, isActive, isArchived} = req.body;
 
 
   let doc = {};
@@ -195,6 +208,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("modules" in req.body){
     doc.modules = modules;
+  }
+
+  if ("isDefault" in req.body){
+    doc.isDefault = isDefault;
   }
 
   if ("isActive" in req.body){
