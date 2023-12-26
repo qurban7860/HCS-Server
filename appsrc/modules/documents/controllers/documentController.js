@@ -91,10 +91,13 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+
+
   let isVersionNeeded = true;
   let isDrawing = false;
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
+    this.query = req.query != "undefined" ? req.query : {};
+    console.log("req.query", req.query);  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
@@ -174,7 +177,7 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }
     ];
-    
+    console.log("this.query", this.query);
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
