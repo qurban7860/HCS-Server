@@ -20,7 +20,7 @@ const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion,
 const {  } = require('../../products/models');
 
 const { Customer, CustomerSite } = require('../../crm/models');
-const { Machine, MachineModel, ProductDrawing } = require('../../products/models');
+const { Product, MachineModel, ProductDrawing } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -230,6 +230,187 @@ exports.getDocuments = async (req, res, next) => {
   }
 };
 
+
+exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
+
+
+
+
+  
+  let includeMachines = false;
+  let includeDrawings = false;
+  
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    console.log("basic Query", req.query);  
+    if(this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
+    if(!this.query.isActive) this.query.isActive = true;
+    if(!this.query.isArchived) this.query.isArchived = false;
+
+    console.log("@ 0 this.query", this.query);
+    const customer = req.query.customer;
+    if(Customer) {
+      let CustomerObj = await Customer.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
+      if(!CustomerObj) {
+        if(!CustomerObj) return res.status(StatusCodes.BAD_REQUEST).send({"message":"Customer validation failed not found!. Please check customer is not archived and is Active."});
+      }
+    }
+    const machine = req.query.machine;
+    const document = req.query.document;
+    
+    console.log(customer);
+    console.log(machine);
+    console.log(document);
+    
+    console.log("@ 1 this.query", this.query);
+
+    if(!customer && !machine && !document) return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    
+    var queryConditions = [];
+
+    if (customer) {
+      queryConditions.push({ customer: true });
+    }
+
+    if (includeMachines) {
+      queryConditions.push({ machine: true });
+    }
+    
+    if (includeDrawings) {
+      queryConditions.push({ drawing: true });
+    }
+
+    var query = {};
+
+    if (queryConditions.length > 0) {
+      query.$or = queryConditions;
+      if(query) {
+        let docCats = await DocumentCategory.find(query).select('_id').lean();
+        if(Array.isArray(docCats) && docCats.length>0) {
+          let docCatIds = docCats.map((dc)=>dc._id.toString());
+          this.query.docCategory = {'$in':docCatIds};
+        }
+      }
+    }
+
+
+    
+    console.log("@ this.query", this.query);
+
+
+    if(this.query.isArchived=='true')
+      this.query.isArchived = true;
+
+    if(this.query.isArchived=='false')
+      this.query.isArchived = false;
+
+    if(this.query.isActive=='true')
+      this.query.isActive = true;
+    
+    if(this.query.isActive=='false')
+      this.query.isActive = false;
+
+    if(this.query.includeMachines=='true'){
+      includeMachines = true;
+      delete this.query.includeMachines;
+    }
+
+    if(this.query.includeDrawings=='true'){
+      includeDrawings = true;
+      delete this.query.includeDrawings;
+    }
+
+    this.populate = [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' },
+      { path: 'docType', select: 'name' },
+      { path: 'docCategory', select: 'name drawing' },
+      { path: 'customer', select: 'name' },
+      { path: 'machine', select: 'name serialNo' }
+    ];
+
+    const queryString__ = [];  
+    let machineList = [];
+    let customerMachines_ = [];
+    if(customer && includeMachines) {
+      machineList = await Product.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
+      console.log("@1", machineList);
+        
+      if(Array.isArray(machineList) && machineList.length>0) {
+        customerMachines_ = machineList.map((dc)=>dc._id.toString());
+      }
+    }
+    if(machine) customerMachines_.push(machine);
+    queryString__.push({machine : {'$in':customerMachines_}});
+
+    console.log("==>", customer , includeDrawings , Array.isArray(machineList) , machineList.length>0);
+    if(customer && includeDrawings && Array.isArray(machineList) && machineList.length>0) {
+      let machineDrawings = await ProductDrawing.find({machine : {'$in':customerMachines_}, isActive: true, isArchived: false}).select('document').lean();  
+      console.log("machineDrawings", machineDrawings);    
+      if(Array.isArray(machineDrawings) && machineDrawings.length>0) {
+        let drawingIds = machineDrawings.map((dc)=>dc.document.toString());
+        console.log("drawingIds", drawingIds);
+        queryString__.push({_id : {'$in':drawingIds}});
+      }
+    }
+    
+    if (customer) {queryString__.push({ customer: customer}); delete this.query.customer};
+    if (machine) {queryString__.push({ machine: machine}); delete this.query.machine};
+    
+    this.query.$or = queryString__;
+
+
+
+    console.log("this.query", this.query);
+    
+    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    if(documents && Array.isArray(documents) && documents.length>0) {
+      documents = JSON.parse(JSON.stringify(documents));
+      let documentIndex = 0;
+      for(let document_ of documents) {
+
+        if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+          
+          document_ = JSON.parse(JSON.stringify(document_));
+
+          let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
+          let documentVersions = [];
+          documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
+          if(Array.isArray(documentVersions) && documentVersions.length>0) {
+            documentVersions = JSON.parse(JSON.stringify(documentVersions));
+            for(let documentVersion of documentVersions) {
+              if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
+                let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                documentVersion.files = documentFiles;
+              }
+            }
+          }
+          else {
+            let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
+            documentVersions = [documentVersion]
+          }
+
+
+          document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
+          document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item.machine.serialNo).join(', ');
+          document_.documentVersions = documentVersions;
+        }
+        documents[documentIndex] = document_;
+        documentIndex++;
+      }
+    }
+    
+    res.json(documents);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
 exports.getdublicateDrawings = async (req, res, next) => {
   let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
   let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id);
@@ -381,7 +562,7 @@ exports.postDocument = async (req, res, next) => {
         let mach = {};
         if(mongoose.Types.ObjectId.isValid(machine)){
 
-          mach = await dbservice.getObjectById(Machine,this.fields,machine);
+          mach = await dbservice.getObjectById(Product,this.fields,machine);
 
           if(!mach) {
             console.error("Machine Not Found");
@@ -982,24 +1163,29 @@ async function processFile(file, userId) {
   const fileName = userId+"-"+new Date().getTime();
   const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
 
+
+  return {
+    fileName,
+    name,
+    fileExt,
+    s3FilePath,
+    type: file.mimetype,
+    physicalPath: file.path,
+    base64thumbNailData
+  };
+
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
-  
+
+
+
   if (!s3FilePath || s3FilePath === '') {
     throw new Error('AWS file saving failed');
   }
   else{
-    return {
-      fileName,
-      name,
-      fileExt,
-      s3FilePath,
-      type: file.mimetype,
-      physicalPath: file.path,
-      base64thumbNailData
-    };
+
   }
 }
 
