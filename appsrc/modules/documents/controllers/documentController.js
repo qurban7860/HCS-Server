@@ -366,6 +366,7 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
 
     console.log("this.query", this.query);
     
+    let listOfFiles = [];
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
@@ -385,6 +386,11 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
               if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
                 let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                
+                if(documentFiles && documentFiles.length > 0) {
+                  let updatedDocumentFiles = documentFiles.map(file => ({ ...file.toObject(), versionNo: documentVersion.versionNo , customerAccess: document_.customerAccess, isActive: document_.isActive, isArchived: document_.isArchived, _id: document_._id, name: document_.name, displayName: document_.displayName, docType: document_.docType, docCategory: document_.docCategory, machine: document_.machine, versionPrefix: document_.versionPrefix, createdBy: document_.createdBy, updatedBy: document_.updatedBy}));
+                  listOfFiles.push(...updatedDocumentFiles);
+                }
                 documentVersion.files = documentFiles;
               }
             }
@@ -403,8 +409,9 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
-    
-    res.json(documents);
+
+    res.json(listOfFiles);    
+    // res.json(documents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
