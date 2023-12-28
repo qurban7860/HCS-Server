@@ -82,7 +82,16 @@ exports.postDocumentCategory = async (req, res, next) => {
   } else {
     try {
       if(req.body.isDefault === 'true' || req.body.isDefault === true) {
-        await DocumentCategory.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        let updateDefaultString = [];
+        let updateDefaultQuery = {};
+        if (req.body.machine) updateDefaultString.push({ machine: true });
+        if (req.body.customer) updateDefaultString.push({ customer: true });
+        if (req.body.drawing) updateDefaultString.push({ drawing: true });
+        if (updateDefaultString.length > 0) {
+          updateDefaultQuery.$or = updateDefaultString;
+        }
+        let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
+        await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
           if (err) console.error(err);  
           else console.log(result);
         });
@@ -103,7 +112,17 @@ exports.patchDocumentCategory = async (req, res, next) => {
   } else {
     try {
       if(req.body.isDefault === 'true' || req.body.isDefault === true) {
-        await DocumentCategory.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
+        let updateDefaultString = [];
+        let updateDefaultQuery = {};
+        if (req.body.machine) updateDefaultString.push({ machine: true });
+        if (req.body.customer) updateDefaultString.push({ customer: true });
+        if (req.body.drawing) updateDefaultString.push({ drawing: true });
+        if (updateDefaultString.length > 0) {
+          updateDefaultQuery.$or = updateDefaultString;
+        }
+        let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
+
+        await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
           if (err) console.error(err);  
           else console.log(result);
         });

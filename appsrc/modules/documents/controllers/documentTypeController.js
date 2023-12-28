@@ -23,7 +23,7 @@ this.orderBy = { name: 1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'docCategory', select: 'name' },
+  { path: 'docCategory', select: 'name customer machine drawing isDefault' },
   
 ];
 
