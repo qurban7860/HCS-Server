@@ -363,9 +363,7 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     this.query.$or = queryString__;
 
 
-
-    console.log("this.query", this.query);
-    
+   
     let listOfFiles = [];
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
@@ -379,12 +377,14 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
 
           let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
           let documentVersions = [];
-          documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
+          documentVersions = await DocumentVersion.find(documentVersionQuery).sort({_id: -1}).select('files versionNo description').limit(1);
           if(Array.isArray(documentVersions) && documentVersions.length>0) {
             documentVersions = JSON.parse(JSON.stringify(documentVersions));
             for(let documentVersion of documentVersions) {
               if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
                 let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
+                
+                documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 
                 if(documentFiles && documentFiles.length > 0) {
