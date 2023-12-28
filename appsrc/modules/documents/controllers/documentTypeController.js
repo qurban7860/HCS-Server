@@ -41,7 +41,30 @@ exports.getDocumentType = async (req, res, next) => {
 
 exports.getDocumentTypes = async (req, res, next) => {
   try {
+
     this.query = req.query != "undefined" ? req.query : {};
+
+    let machine =  req.query.machine === 'true' || req.query.machine === true ? true : false;
+    let customer =  req.query.customer === 'true' || req.query.customer === true ? true : false;
+    let drawing =  req.query.drawing === 'true' || req.query.drawing === true ? true : false;
+    
+    let QueryString = [];
+    if(machine || customer || drawing) {
+      delete req.query.machine;
+      delete req.query.customer;
+      delete req.query.drawing;
+      
+      if(machine) QueryString.push({machine: true});
+      if(customer) QueryString.push({customer: true});
+      if(drawing) QueryString.push({drawing: true});
+      let CategoryQuery = {};
+      if(QueryString) {
+        CategoryQuery.$and = QueryString;
+      }
+      let documentCategoryObject = await DocumentCategory.find(CategoryQuery).select('_id customer machine drawing').lean();
+      if(documentCategoryObject && documentCategoryObject.length > 0 ) this.query.docCategory = {$in: documentCategoryObject}
+    }
+
     const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
