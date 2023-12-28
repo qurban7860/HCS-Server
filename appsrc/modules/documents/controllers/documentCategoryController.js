@@ -81,20 +81,31 @@ exports.postDocumentCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
-        let updateDefaultString = [];
-        let updateDefaultQuery = {};
-        if (req.body.machine) updateDefaultString.push({ machine: true });
-        if (req.body.customer) updateDefaultString.push({ customer: true });
-        if (req.body.drawing) updateDefaultString.push({ drawing: true });
-        if (updateDefaultString.length > 0) {
-          updateDefaultQuery.$or = updateDefaultString;
+      if(req.body.customer || req.body.machine || req.body.drawing) {
+        if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+          let updateDefaultString = [];
+          let updateDefaultQuery = {};
+          if (req.body.machine) updateDefaultString.push({ machine: true });
+          if (req.body.customer) updateDefaultString.push({ customer: true });
+          if (req.body.drawing) updateDefaultString.push({ drawing: true });
+          
+          
+          if (!req.body.machine) updateDefaultQuery.machine = false;
+          if (!req.body.customer) updateDefaultQuery.customer = false;
+          if (!req.body.drawing) updateDefaultQuery.drawing = false;
+
+          if (updateDefaultString.length > 0) {
+            updateDefaultQuery.$or = updateDefaultString;
+          }
+          let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
+
+          await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
+            if (err) console.error(err);  
+            else console.log(result);
+          });
         }
-        let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
-        await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
-          if (err) console.error(err);  
-          else console.log(result);
-        });
+      } else {
+        req.body.isDefault = false;
       }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ DocumentCategory: response });
@@ -111,21 +122,31 @@ exports.patchDocumentCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
-        let updateDefaultString = [];
-        let updateDefaultQuery = {};
-        if (req.body.machine) updateDefaultString.push({ machine: true });
-        if (req.body.customer) updateDefaultString.push({ customer: true });
-        if (req.body.drawing) updateDefaultString.push({ drawing: true });
-        if (updateDefaultString.length > 0) {
-          updateDefaultQuery.$or = updateDefaultString;
-        }
-        let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
+      if(req.body.customer || req.body.machine || req.body.drawing) {
+        if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+          let updateDefaultString = [];
+          let updateDefaultQuery = {};
+          if (req.body.machine) updateDefaultString.push({ machine: true });
+          if (req.body.customer) updateDefaultString.push({ customer: true });
+          if (req.body.drawing) updateDefaultString.push({ drawing: true });
+          
+          
+          if (!req.body.machine) updateDefaultQuery.machine = false;
+          if (!req.body.customer) updateDefaultQuery.customer = false;
+          if (!req.body.drawing) updateDefaultQuery.drawing = false;
 
-        await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
-          if (err) console.error(err);  
-          else console.log(result);
-        });
+          if (updateDefaultString.length > 0) {
+            updateDefaultQuery.$or = updateDefaultString;
+          }
+          let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
+
+          await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
+            if (err) console.error(err);  
+            else console.log(result);
+          });
+        }
+      } else {
+        req.body.isDefault = false;
       }
 
       const result = await this.dbservice.patchObject(DocumentCategory, req.params.id, getDocumentFromReq(req));
