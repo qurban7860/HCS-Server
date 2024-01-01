@@ -232,11 +232,6 @@ exports.getDocuments = async (req, res, next) => {
 
 
 exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
-
-
-
-
-  
   let includeMachines = false;
   let includeDrawings = false;
   
@@ -409,13 +404,27 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
+    let arraylistOfFiles = [];
+    for (let file of listOfFiles) {
+      console.log("file.path", file.path);
+      if(file.path) {
+        const fileContent = await downloadFileContent(file.path);
+        file.content = fileContent;
+      }
+      arraylistOfFiles.push(file);
+    }
 
-    res.json(listOfFiles);    
+    res.json(arraylistOfFiles);    
     // res.json(documents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
+};
+
+const downloadFileContent = async (filePath) => {
+  const fileContent = await awsService.downloadFileS3(filePath);
+  return fileContent;
 };
 
 exports.getdublicateDrawings = async (req, res, next) => {
