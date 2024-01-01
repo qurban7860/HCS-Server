@@ -394,7 +394,7 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
-    console.log("listOfFiles", listOfFiles);
+    // console.log("listOfFiles", listOfFiles);
     res.json(listOfFiles);    
   } catch (error) {
     logger.error(new Error(error));
