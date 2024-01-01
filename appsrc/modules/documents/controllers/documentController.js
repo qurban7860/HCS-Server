@@ -342,8 +342,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     
     this.query.$or = queryString__;
 
-
-   
     let listOfFiles = [];
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
@@ -368,9 +366,11 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
           
                 if (documentFiles && documentFiles.length > 0) {
                   for (let file of documentFiles) {
-                    const fileContent = await downloadFileContent(file.path);
-                    file.content = fileContent;
-      
+                    file = file.toObject();
+                    if(file.path){
+                      const fileContent = await downloadFileContent(file.path);
+                      file.content = fileContent;
+                    }
                     file.versionNo = documentVersion.versionNo;
                     file.customerAccess = document_.customerAccess;
                     file.isActive= document_.isActive;
@@ -382,12 +382,11 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
                     file.docCategory= document_.docCategory;
                     file.machine= document_.machine; 
                     file.versionPrefix= document_.versionPrefix; 
-                    file.createdBy= document_.createdBy; 
-                    file.updatedBy= document_.updatedBy;        
+                    // file.createdBy= document_.createdBy; 
+                    // file.updatedBy= document_.updatedBy;
                     listOfFiles.push(file);
                   }
                 }
-                documentVersion.files = documentFiles;
               }
             }
           }
@@ -395,18 +394,8 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
-    // let arraylistOfFiles = [];
-    // for (let file of listOfFiles) {
-    //   console.log("file.path", file.path);
-    //   if(file.path) {
-    //     const fileContent = await downloadFileContent(file.path);
-    //     file.content = fileContent;
-    //   }
-    //   arraylistOfFiles.push(file);
-    // }
-
+    console.log("listOfFiles", listOfFiles);
     res.json(listOfFiles);    
-    // res.json(documents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
