@@ -137,6 +137,12 @@ exports.postSecurityUser = async (req, res, next) => {
   } 
   else {
     // check if email exists
+    console.log("req.body.email", req.body.email);
+    console.log("req.body.login", req.body.login);
+    
+    if(!req.body.email) req.body.email = req.body.login;
+    if(!req.body.login) req.body.login = req.body.email;
+    
     var _this = this;
     let queryString = { 
       isArchived: false, 

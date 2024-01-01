@@ -12,8 +12,8 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 this.dbservice = new documentDBService();
 
-const { Document, DocumentType } = require('../models');
-
+const { Document, DocumentType, DocumentCategory } = require('../models');
+const ObjectId = require('mongoose').Types.ObjectId;
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -23,7 +23,7 @@ this.orderBy = { name: 1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'docCategory', select: 'name' },
+  { path: 'docCategory', select: 'name customer machine drawing isDefault' },
   
 ];
 
@@ -41,7 +41,30 @@ exports.getDocumentType = async (req, res, next) => {
 
 exports.getDocumentTypes = async (req, res, next) => {
   try {
+
     this.query = req.query != "undefined" ? req.query : {};
+
+    let machine =  req.query.machine === 'true' || req.query.machine === true ? true : false;
+    let customer =  req.query.customer === 'true' || req.query.customer === true ? true : false;
+    let drawing =  req.query.drawing === 'true' || req.query.drawing === true ? true : false;
+    
+    let QueryString = [];
+    if(machine || customer || drawing) {
+      delete req.query.machine;
+      delete req.query.customer;
+      delete req.query.drawing;
+      
+      if(machine) QueryString.push({machine: true});
+      if(customer) QueryString.push({customer: true});
+      if(drawing) QueryString.push({drawing: true});
+      let CategoryQuery = {};
+      if(QueryString) {
+        CategoryQuery.$and = QueryString;
+      }
+      let documentCategoryObject = await DocumentCategory.find(CategoryQuery).select('_id customer machine drawing').lean();
+      if(documentCategoryObject && documentCategoryObject.length > 0 ) this.query.docCategory = {$in: documentCategoryObject}
+    }
+
     const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
@@ -88,6 +111,30 @@ exports.postDocumentType = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+      if(req.body.isDefault === 'true' || req.body.isDefault === true && ObjectId.isValid(req.body.docCategory)) {
+        let documentCategoryObject = await DocumentCategory.findOne({_id: req.body.docCategory}).select('_id customer machine drawing').lean();
+        if(documentCategoryObject) {
+          let updateDefaultString = [];
+          let queryString__ = {};
+          if (documentCategoryObject.machine) updateDefaultString.push({ machine: true });
+          if (documentCategoryObject.customer) updateDefaultString.push({ customer: true });
+          if (documentCategoryObject.drawing) updateDefaultString.push({ drawing: true });
+          if (!documentCategoryObject.machine) queryString__.machine = false;
+          if (!documentCategoryObject.customer) queryString__.customer = false;
+          if (!documentCategoryObject.drawing) queryString__.drawing = false;
+  
+          if (updateDefaultString.length > 0) {
+            queryString__.$or = updateDefaultString;
+          }
+          console.log("queryString__", queryString__);
+          let docxCategories = await DocumentCategory.find(queryString__).select('_id').lean();
+          
+          await DocumentType.updateMany({docCategory: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
+            if (err) console.error(err);  
+            else console.log(result);
+          });
+        }
+      }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       res.status(StatusCodes.CREATED).json({ DocumentType: response });
     } catch (error) {
@@ -103,6 +150,30 @@ exports.patchDocumentType = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+        let documentCategoryObject = await DocumentCategory.findOne({_id: req.body.docCategory}).select('_id customer machine drawing').lean();
+        if(documentCategoryObject) {
+          let updateDefaultString = [];
+          let queryString__ = {};
+          if (documentCategoryObject.machine) updateDefaultString.push({ machine: true });
+          if (documentCategoryObject.customer) updateDefaultString.push({ customer: true });
+          if (documentCategoryObject.drawing) updateDefaultString.push({ drawing: true });
+          if (!documentCategoryObject.machine) queryString__.machine = false;
+          if (!documentCategoryObject.customer) queryString__.customer = false;
+          if (!documentCategoryObject.drawing) queryString__.drawing = false;
+  
+          if (updateDefaultString.length > 0) {
+            queryString__.$or = updateDefaultString;
+          }
+          console.log("queryString__", queryString__);
+          let docxCategories = await DocumentCategory.find(queryString__).select('_id').lean();
+          
+          await DocumentType.updateMany({docCategory: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
+            if (err) console.error(err);  
+            else console.log(result);
+          });
+        }
+      }
       const result = await this.dbservice.patchObject(DocumentType, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
