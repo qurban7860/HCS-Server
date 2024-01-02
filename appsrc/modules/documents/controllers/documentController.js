@@ -372,6 +372,8 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
                     //   file.content = fileContent;
                     // }
                     file.versionNo = documentVersion.versionNo;
+                    file.version_id = documentVersion._id;
+                    file.document_id = document_._id;
                     file.customerAccess = document_.customerAccess;
                     file.isActive= document_.isActive;
                     file.isArchived= document_.isArchived;
