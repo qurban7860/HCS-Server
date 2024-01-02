@@ -367,10 +367,10 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
                 if (documentFiles && documentFiles.length > 0) {
                   for (let file of documentFiles) {
                     file = file.toObject();
-                    if(file.path){
-                      const fileContent = await downloadFileContent(file.path);
-                      file.content = fileContent;
-                    }
+                    // if(file.path){
+                    //   const fileContent = await downloadFileContent(file.path);
+                    //   file.content = fileContent;
+                    // }
                     file.versionNo = documentVersion.versionNo;
                     file.customerAccess = document_.customerAccess;
                     file.isActive= document_.isActive;
@@ -382,8 +382,8 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
                     file.docCategory= document_.docCategory;
                     file.machine= document_.machine; 
                     file.versionPrefix= document_.versionPrefix; 
-                    // file.createdBy= document_.createdBy; 
-                    // file.updatedBy= document_.updatedBy;
+                    file.createdBy= document_.createdBy; 
+                    file.updatedBy= document_.updatedBy;
                     listOfFiles.push(file);
                   }
                 }
