@@ -24,7 +24,7 @@ const baseRoute = `/document`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/documents/documentFile/:id
-router.get(`${baseRoute}/files/:id/download/`, controller.downloadDocumentFile);
+router.get(`/files/:id/download/`, controller.downloadDocumentFile);
 
 // - /api/1.0.0/documents/documentFile/:id
 router.get(`${baseRoute}/:documentid/versions/:versionid/files/:id`,controller.getDocumentFile);
