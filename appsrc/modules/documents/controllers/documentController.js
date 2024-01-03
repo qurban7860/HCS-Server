@@ -518,6 +518,9 @@ exports.getdublicateDrawings = async (req, res, next) => {
         console.log(`ETag: ${etag}, Indexes: ${indexes}, Indexes: ${indexes.length}`);
 
         if(indexes.length > 1) {
+          indexes.forEach((record, index) => {
+            console.log("dublicate records found.!", results[record]);
+          })
           console.log(`Dublicate --> ETag: ${etag}`);
         }
 
