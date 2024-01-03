@@ -52,7 +52,7 @@ exports.getDocumentFiles = async (req, res, next) => {
     
     this.query = req.query != "undefined" ? req.query : {};  
     
-    let documentFiles = await dbservice.getObjectList(DocumentFile, this.fields, this.query, this.orderBy, this.populate);
+    let documentFiles = await dbservice.getObjectList(req, DocumentFile, this.fields, this.query, this.orderBy, this.populate);
     
     res.json(documentFiles);
   

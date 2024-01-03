@@ -40,7 +40,7 @@ exports.searchSecurityConfigWhiteListIP = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    this.dbservice.getObjectList(SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    this.dbservice.getObjectList(req, SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
     
     function callbackFunc(error, securityConfigs) {
 
@@ -86,7 +86,7 @@ exports.getSecurityConfigWhiteListIP = async (req, res, next) => {
 
 exports.getSecurityConfigWhiteListIPs = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  this.dbservice.getObjectList(SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

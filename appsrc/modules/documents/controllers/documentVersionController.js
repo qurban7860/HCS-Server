@@ -63,7 +63,7 @@ exports.getDocumentVersions = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     this.query.document = req.params.documentid;
-    let documentVersions = await dbservice.getObjectList(DocumentVersion, this.fields, this.query, this.orderBy, this.populate);
+    let documentVersions = await dbservice.getObjectList(req, DocumentVersion, this.fields, this.query, this.orderBy, this.populate);
     
     if(documentVersions && Array.isArray(documentVersions) && documentVersions.length>0) {
       documentVersions = JSON.parse(JSON.stringify(documentVersions));

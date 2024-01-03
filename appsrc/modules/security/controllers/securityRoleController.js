@@ -30,7 +30,7 @@ exports.getSecurityRole = async (req, res, next) => {
     response = JSON.parse(JSON.stringify(response))
     let querySecurityUser = { roles : req.params.id, isArchived:false, isActive:true };
     let fieldsSecurityUser = { name:1, login:1, email:1 }
-    const securityUsers = await this.dbservice.getObjectList(SecurityUser, fieldsSecurityUser, querySecurityUser, {}, []);
+    const securityUsers = await this.dbservice.getObjectList(req, SecurityUser, fieldsSecurityUser, querySecurityUser, {}, []);
     response.securityUsers = securityUsers;
     res.json(response);
   } else {
@@ -40,7 +40,7 @@ exports.getSecurityRole = async (req, res, next) => {
 
 exports.getSecurityRoles = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.dbservice.getObjectList(SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -145,7 +145,7 @@ exports.searchRoles = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    this.dbservice.getObjectList(SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    this.dbservice.getObjectList(req, SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
     
     function callbackFunc(error, roles) {
 

@@ -43,7 +43,7 @@ exports.getCountries = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    const response = await this.dbservice.getObjectList(Country, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, Country, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));

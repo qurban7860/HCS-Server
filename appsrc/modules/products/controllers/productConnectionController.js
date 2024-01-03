@@ -150,7 +150,7 @@ exports.getParentMachines = async (req, res, next) => {
 
     console.log("this.query", this.query);
 
-    const response = await dbservice.getObjectList(ProductConnection, {machine: 1}, this.query, {_id: -1}, this.populate);
+    const response = await dbservice.getObjectList(req, ProductConnection, {machine: 1}, this.query, {_id: -1}, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));

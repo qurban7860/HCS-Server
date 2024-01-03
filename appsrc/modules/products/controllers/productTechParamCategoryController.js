@@ -31,7 +31,7 @@ exports.getProductTechParamCategory = async (req, res, next) => {
     response = JSON.parse(JSON.stringify(response))
     let docTypeQuery = { category : req.params.id, isArchived:false, isActive:true };
     let docTypeFields = { name:1, code:1 }
-    const categoryParams = await this.dbservice.getObjectList(ProductTechParam, docTypeFields, docTypeQuery, {}, []);
+    const categoryParams = await this.dbservice.getObjectList(req, ProductTechParam, docTypeFields, docTypeQuery, {}, []);
     response.categoryParams = categoryParams;
     res.json(response);
   } else {
@@ -42,7 +42,7 @@ exports.getProductTechParamCategory = async (req, res, next) => {
 exports.getProductTechParamCategories = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { name: 1 };
-  this.dbservice.getObjectList(ProductTechParamCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductTechParamCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

@@ -41,7 +41,7 @@ exports.getSecurityAuditLog = async (req, res, next) => {
 };
 
 exports.getSecurityAuditLogs = async (req, res, next) => {
-  this.dbservice.getObjectList(SecurityAuditLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityAuditLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

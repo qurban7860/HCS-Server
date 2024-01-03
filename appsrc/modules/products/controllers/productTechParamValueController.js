@@ -48,7 +48,7 @@ exports.getProductTechParamValues = async (req, res, next) => {
     delete this.query.orderBy;
   }
   this.query.machine = this.machineId;
-  this.dbservice.getObjectList(ProductTechParamValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductTechParamValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -60,7 +60,7 @@ exports.getProductTechParamValues = async (req, res, next) => {
 };
 
 exports.searchProductTechParamValues = async (req, res, next) => {
-  this.dbservice.getObjectList(ProductTechParamValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductTechParamValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

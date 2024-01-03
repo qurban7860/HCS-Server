@@ -44,7 +44,7 @@ exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    let response = await this.dbservice.getObjectList(ErpLog, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, ErpLog, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
   } catch (error) {

@@ -54,7 +54,7 @@ exports.getCustomerSites = async (req, res, next) => {
     }
     this.customerId = req.params.customerId;
     this.query.customer = this.customerId; 
-    this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -67,7 +67,7 @@ exports.getCustomerSites = async (req, res, next) => {
 
 exports.searchCustomerSites = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};   
-  this.dbservice.getObjectList(CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

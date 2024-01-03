@@ -46,7 +46,7 @@ exports.getProductNotes = async (req, res, next) => {
     delete this.query.orderBy;
   }
   this.query.machine = this.machineId;
-  this.dbservice.getObjectList(ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -59,7 +59,7 @@ exports.getProductNotes = async (req, res, next) => {
 
 exports.searchProductNotes = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.dbservice.getObjectList(ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

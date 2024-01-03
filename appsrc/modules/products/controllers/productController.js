@@ -63,7 +63,7 @@ exports.getProduct = async (req, res, next) => {
         machine = JSON.parse(JSON.stringify(machine));
 
 
-        let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
+        let machineConnections = await dbservice.getObjectList(req, ProductConnection,this.fields, query_, {}, populate);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
           machineConnections = JSON.parse(JSON.stringify(machineConnections));
           let index = 0;
@@ -197,7 +197,7 @@ exports.getProducts = async (req, res, next) => {
   }
 
 
-  dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  dbservice.getObjectList(req, Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
       logger.error(new Error(error));
@@ -519,6 +519,10 @@ exports.transferOwnership = async (req, res, next) => {
 
               let listSettings = await ProductTechParamValue.find(query___);
               let listProfiles = await ProductProfile.find(query___);
+
+              // let listDocuments = await Document.find(query___);
+              // let listDrawings = await ProductDrawing.find(query___);
+
               
               let newMachineId = transferredMachine._id;
               for (const setting of listSettings) {
@@ -536,6 +540,8 @@ exports.transferOwnership = async (req, res, next) => {
                 profileClone.machine = newMachineId;
                 const profileClone_ = await ProductProfile.create(profileClone);
               }
+
+
 
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {

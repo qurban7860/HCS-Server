@@ -49,7 +49,7 @@ exports.getConfigs = async (req, res, next) => {
   console.log("test...");
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await this.dbservice.getObjectList(MetaSchema, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, MetaSchema, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));

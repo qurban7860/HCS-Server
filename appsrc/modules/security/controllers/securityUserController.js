@@ -79,7 +79,7 @@ exports.getSecurityUsers = async (req, res, next) => {
     delete req.query.roleType;
   }
 
-  this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, users) {
     if (error) {
       logger.error(new Error(error));

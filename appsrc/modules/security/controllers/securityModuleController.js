@@ -36,7 +36,7 @@ exports.getSecurityModule = async (req, res, next) => {
 exports.getSecurityModules = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   // if(this.query){
-    this.dbservice.getObjectList(SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    this.dbservice.getObjectList(req, SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   // } else {
   //   var aggregate = [
   //     {
@@ -71,7 +71,7 @@ exports.getSecurityModules = async (req, res, next) => {
 exports.searchSecurityModules = async (req, res, next) => {
   // this.query = req.query != "undefined" ? req.query : {};
   // if(this.query){
-    this.dbservice.getObjectList(SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    this.dbservice.getObjectList(req, SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   // } else {
   //   var aggregate = [
   //     {

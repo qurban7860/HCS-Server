@@ -178,7 +178,7 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'machine', select: 'name serialNo' }
     ];
     console.log("this.query", this.query);
-    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
 
@@ -343,7 +343,7 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     this.query.$or = queryString__;
 
     let listOfFiles = [];
-    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
       let documentIndex = 0;
