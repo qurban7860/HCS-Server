@@ -484,13 +484,13 @@ exports.getdublicateDrawings = async (req, res, next) => {
 
 
   
-  let filteredFiles = await DocumentFile.find({_id: {$in: listFIlesIds}, isActive: true, isArchived: false}).select('document version path').lean();
+  let filteredFiles = await DocumentFile.find({_id: {$in: listFIlesIds}, isActive: true, isArchived: false}).select('document version path').populate([{path: "version", select: "document"}]).lean();
   //let listFilesIds = listDocumentVersions.map((c)=>c.documentVersions);
   console.log("filteredFiles", filteredFiles);
 
     // Apply the downloadFileS3 function to each file in parallel
     const downloadPromises = filteredFiles.map(async (file) => {
-      return awsService.fetchETag(file._id, file.path, file.document);
+      return awsService.fetchETag(file._id, file.path, file.version?.document);
     });
   
     try {
