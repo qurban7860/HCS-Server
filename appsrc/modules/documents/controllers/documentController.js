@@ -509,6 +509,8 @@ exports.getdublicateDrawings = async (req, res, next) => {
 
       console.log("Download results", results);
 
+      console.log("duplicateRecords", duplicateRecords);
+
       const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1);
       console.log("dublicate records.", result);
 
