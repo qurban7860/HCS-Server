@@ -490,7 +490,7 @@ exports.getdublicateDrawings = async (req, res, next) => {
 
     // Apply the downloadFileS3 function to each file in parallel
     const downloadPromises = filteredFiles.map(async (file) => {
-      return awsService.fetchETag(file._id, file.path);
+      return awsService.fetchETag(file._id, file.path, file.document);
     });
   
     try {
@@ -511,7 +511,8 @@ exports.getdublicateDrawings = async (req, res, next) => {
 
       console.log("duplicateRecords", duplicateRecords);
 
-      const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1);
+      const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1 && indexes.includes(index));
+
       console.log("dublicate records.", result);
 
       res.sendStatus(200);
