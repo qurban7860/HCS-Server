@@ -469,6 +469,7 @@ const downloadFileContent = async (filePath) => {
 
 
 exports.getdublicateDrawings = async (req, res, next) => {
+  let dublicateFiles = [];
   let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document').lean();
   let listDrawingsIds = listProductDrawing.map((c)=>c.document);
   console.log("listDrawingsIds", listDrawingsIds);
@@ -519,14 +520,14 @@ exports.getdublicateDrawings = async (req, res, next) => {
 
         if(indexes.length > 1) {
           indexes.forEach((record, index) => {
-            console.log("dublicate records found.!", results[record]);
+            dublicateFiles.push(results[record]);
           })
           console.log(`Dublicate --> ETag: ${etag}`);
         }
 
       });
 
-      res.sendStatus(200);
+      return res.status(StatusCodes.ACCEPTED).json(dublicateFiles);
     } catch (error) {
       console.error("Error downloading files", error);
       res.sendStatus(500);
