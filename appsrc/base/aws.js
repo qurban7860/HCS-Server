@@ -224,6 +224,21 @@ async function downloadFileS3(filePath) {
   }
 }
 
+async function fetchETag(filePath) {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: filePath
+  };
+
+  try {
+    const data = await s3.getObject(params).promise();
+    return data.ETag;
+  } catch (err) {
+    console.log(err.message);
+    return err;
+  }
+}
+
 module.exports = {
   sendEmail,
   sendEmailWithRawData,
@@ -231,5 +246,6 @@ module.exports = {
   checkFileHeader,
   copyFile,
   listBuckets,
-  downloadFileS3
+  downloadFileS3,
+  fetchETag
 };

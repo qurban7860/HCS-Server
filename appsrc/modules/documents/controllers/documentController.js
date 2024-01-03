@@ -408,63 +408,99 @@ const downloadFileContent = async (filePath) => {
   return fileContent;
 };
 
+// exports.getdublicateDrawings = async (req, res, next) => {
+//   let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
+//   let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id);
+//   let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document machine').populate([{path: 'machine',select: 'serialNo'}]).lean();
+//   let listDrawingsIds = listProductDrawing.map((c)=>c.document);
+
+//   let aggregateQuery__ = [
+//     {
+//       $match: {
+//           isArchived: false,
+//           isActive: true,
+//           docCategory: {$in: categoryDrawingIds},
+//           _id: {$in: listDrawingsIds}
+//       }
+//     },
+//     {
+//       $group: {
+//         _id: { docCategory: "$docCategory", docType: "$docType" , name: "$name" },
+//         count: { $sum: 1 },
+//         ids: { $push: "$_id" }
+//       }
+//     },
+//     {
+//       $match: {
+//         count: { $gt: 1 }
+//       }
+//     } ,{
+//       $sort: {
+//         "_id.name": 1
+//       }
+//     }
+//   ];
+//   let dublicateDrawingList = await Document.aggregate(aggregateQuery__);
+//   const modifiedList = [];
+//   const promises = dublicateDrawingList.map(async (doc) => {
+//     const listIds = [];
+//     const promisesids = doc.ids.map(async (docId) => {
+//       const foundProductDrawing = listProductDrawing.find(drwng => {
+//         const matchCondition = _.isEqual(drwng.document, docId);
+//         return matchCondition;
+//       });
+
+//       let idsValues = {
+//         docId,
+//         machine: foundProductDrawing.machine._id,
+//         serialNo: foundProductDrawing.machine.serialNo
+//       }
+//       listIds.push(idsValues);
+//     });
+
+//     await Promise.all(promisesids);
+//     doc.ids = listIds;
+//     modifiedList.push(doc);
+//     return doc;
+//   });
+//   await Promise.all(promises);
+//   res.json(modifiedList);
+// };
+
+
 exports.getdublicateDrawings = async (req, res, next) => {
-  let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
-  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id);
-  let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document machine').populate([{path: 'machine',select: 'serialNo'}]).lean();
+  let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document').lean();
   let listDrawingsIds = listProductDrawing.map((c)=>c.document);
+  console.log("listDrawingsIds", listDrawingsIds);
+  
+  let listDocumentVersions = await Document.find({_id: {$in: listDrawingsIds}, isActive: true, isArchived: false}).select('documentVersions').lean();
+  let listDocumentVersionsIds = [].concat(...listDocumentVersions.map((c) => c.documentVersions));
+  console.log("listDocumentVersionsIds", listDocumentVersionsIds);
 
-  let aggregateQuery__ = [
-    {
-      $match: {
-          isArchived: false,
-          isActive: true,
-          docCategory: {$in: categoryDrawingIds},
-          _id: {$in: listDrawingsIds}
-      }
-    },
-    {
-      $group: {
-        _id: { docCategory: "$docCategory", docType: "$docType" , name: "$name" },
-        count: { $sum: 1 },
-        ids: { $push: "$_id" }
-      }
-    },
-    {
-      $match: {
-        count: { $gt: 1 }
-      }
-    } ,{
-      $sort: {
-        "_id.name": 1
-      }
-    }
-  ];
-  let dublicateDrawingList = await Document.aggregate(aggregateQuery__);
-  const modifiedList = [];
-  const promises = dublicateDrawingList.map(async (doc) => {
-    const listIds = [];
-    const promisesids = doc.ids.map(async (docId) => {
-      const foundProductDrawing = listProductDrawing.find(drwng => {
-        const matchCondition = _.isEqual(drwng.document, docId);
-        return matchCondition;
-      });
+  let listFiles = await DocumentVersion.find({_id: {$in: listDocumentVersionsIds}, isActive: true, isArchived: false}).select('files').lean();
 
-      let idsValues = {
-        docId,
-        machine: foundProductDrawing.machine._id,
-        serialNo: foundProductDrawing.machine.serialNo
-      }
-      listIds.push(idsValues);
+  let listFIlesIds = [].concat(...listFiles.map((c) => c.files));
+  console.log("listFIlesIds", listFIlesIds);
+
+
+  
+  let filteredFiles = await DocumentFile.find({_id: {$in: listFIlesIds}, isActive: true, isArchived: false}).select('document version path').lean();
+  //let listFilesIds = listDocumentVersions.map((c)=>c.documentVersions);
+  console.log("filteredFiles", filteredFiles);
+
+    // Apply the downloadFileS3 function to each file in parallel
+    const downloadPromises = filteredFiles.map(async (file) => {
+      return awsService.fetchETag(file.path);
     });
-
-    await Promise.all(promisesids);
-    doc.ids = listIds;
-    modifiedList.push(doc);
-    return doc;
-  });
-  await Promise.all(promises);
-  res.json(modifiedList);
+  
+    try {
+      const results = await Promise.all(downloadPromises);
+      console.log("Download results", results);
+      res.sendStatus(200);
+    } catch (error) {
+      console.error("Error downloading files", error);
+      res.sendStatus(500);
+    }
 };
 
 exports.deleteDocument = async (req, res, next) => {
