@@ -496,30 +496,39 @@ exports.getdublicateDrawings = async (req, res, next) => {
     try {
       const results = await Promise.all(downloadPromises);
       const duplicateRecords = {};
-
+    
       results.forEach((record, index) => {
         const currentETag = record.ETag;
-
+    
         if (duplicateRecords[currentETag]) {
           duplicateRecords[currentETag].push(index);
         } else {
           duplicateRecords[currentETag] = [index];
         }
       });
-
+    
       console.log("Download results", results);
-
       console.log("duplicateRecords", duplicateRecords);
+    
+      const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1);
+    
+        console.log("duplicate records.", result);
+        // Iterate over duplicateRecords
+        Object.entries(duplicateRecords).forEach(([etag, indexes]) => {
+        console.log(`ETag: ${etag}, Indexes: ${indexes}, Indexes: ${indexes.lenght}`);
 
-      const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1 && indexes.includes(index));
+        if(indexes.lenght > 1) {
+          console.log(`Dublicate --> ETag: ${etag}`);
+        }
 
-      console.log("dublicate records.", result);
+      });
 
       res.sendStatus(200);
     } catch (error) {
       console.error("Error downloading files", error);
       res.sendStatus(500);
     }
+    
 };
 
 exports.deleteDocument = async (req, res, next) => {
