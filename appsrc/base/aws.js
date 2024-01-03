@@ -224,7 +224,7 @@ async function downloadFileS3(filePath) {
   }
 }
 
-async function fetchETag(filePath) {
+async function fetchETag(fileid, filePath) {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: filePath
@@ -232,7 +232,11 @@ async function fetchETag(filePath) {
 
   try {
     const data = await s3.getObject(params).promise();
-    return data.ETag;
+    return {
+      ETag:data.ETag,
+      filePath: filePath,
+      fileid
+    };
   } catch (err) {
     console.log(err.message);
     return err;

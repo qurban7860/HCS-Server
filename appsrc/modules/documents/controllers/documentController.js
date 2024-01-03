@@ -490,7 +490,7 @@ exports.getdublicateDrawings = async (req, res, next) => {
 
     // Apply the downloadFileS3 function to each file in parallel
     const downloadPromises = filteredFiles.map(async (file) => {
-      return awsService.fetchETag(file.path);
+      return awsService.fetchETag(file._id, file.path);
     });
   
     try {
