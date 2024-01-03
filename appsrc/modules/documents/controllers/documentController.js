@@ -495,7 +495,23 @@ exports.getdublicateDrawings = async (req, res, next) => {
   
     try {
       const results = await Promise.all(downloadPromises);
+      const duplicateRecords = {};
+
+      results.forEach((record, index) => {
+        const currentETag = record.ETag;
+
+        if (duplicateRecords[currentETag]) {
+          duplicateRecords[currentETag].push(index);
+        } else {
+          duplicateRecords[currentETag] = [index];
+        }
+      });
+
       console.log("Download results", results);
+
+      const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1);
+      console.log("dublicate records.", result);
+
       res.sendStatus(200);
     } catch (error) {
       console.error("Error downloading files", error);
