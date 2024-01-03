@@ -232,11 +232,6 @@ exports.getDocuments = async (req, res, next) => {
 
 
 exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
-
-
-
-
-  
   let includeMachines = false;
   let includeDrawings = false;
   
@@ -250,7 +245,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     if(!this.query.isActive) this.query.isActive = true;
     if(!this.query.isArchived) this.query.isArchived = false;
 
-    console.log("@ 0 this.query", this.query);
     const customer = req.query.customer;
     if(Customer) {
       let CustomerObj = await Customer.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
@@ -261,12 +255,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     const machine = req.query.machine;
     const document = req.query.document;
     
-    console.log(customer);
-    console.log(machine);
-    console.log(document);
-    
-    console.log("@ 1 this.query", this.query);
-
     if(!customer && !machine && !document) return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     
     var queryConditions = [];
@@ -295,11 +283,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         }
       }
     }
-
-
-    
-    console.log("@ this.query", this.query);
-
 
     if(this.query.isArchived=='true')
       this.query.isArchived = true;
@@ -337,7 +320,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     let customerMachines_ = [];
     if(customer && includeMachines) {
       machineList = await Product.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
-      console.log("@1", machineList);
         
       if(Array.isArray(machineList) && machineList.length>0) {
         customerMachines_ = machineList.map((dc)=>dc._id.toString());
@@ -346,10 +328,8 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     if(machine) customerMachines_.push(machine);
     queryString__.push({machine : {'$in':customerMachines_}});
 
-    console.log("==>", customer , includeDrawings , Array.isArray(machineList) , machineList.length>0);
     if(customer && includeDrawings && Array.isArray(machineList) && machineList.length>0) {
       let machineDrawings = await ProductDrawing.find({machine : {'$in':customerMachines_}, isActive: true, isArchived: false}).select('document').lean();  
-      console.log("machineDrawings", machineDrawings);    
       if(Array.isArray(machineDrawings) && machineDrawings.length>0) {
         let drawingIds = machineDrawings.map((dc)=>dc.document.toString());
         console.log("drawingIds", drawingIds);
@@ -362,8 +342,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     
     this.query.$or = queryString__;
 
-
-   
     let listOfFiles = [];
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
@@ -378,44 +356,56 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
           let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
           let documentVersions = [];
           documentVersions = await DocumentVersion.find(documentVersionQuery).sort({_id: -1}).select('files versionNo description').limit(1);
-          if(Array.isArray(documentVersions) && documentVersions.length>0) {
+          if (Array.isArray(documentVersions) && documentVersions.length > 0) {
             documentVersions = JSON.parse(JSON.stringify(documentVersions));
-            for(let documentVersion of documentVersions) {
-              if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-                let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
-                
+            for (let documentVersion of documentVersions) {
+              if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
+                let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                 documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
-                
-                if(documentFiles && documentFiles.length > 0) {
-                  let updatedDocumentFiles = documentFiles.map(file => ({ ...file.toObject(), versionNo: documentVersion.versionNo , customerAccess: document_.customerAccess, isActive: document_.isActive, isArchived: document_.isArchived, _id: document_._id, name: document_.name, displayName: document_.displayName, docType: document_.docType, docCategory: document_.docCategory, machine: document_.machine, versionPrefix: document_.versionPrefix, createdBy: document_.createdBy, updatedBy: document_.updatedBy}));
-                  listOfFiles.push(...updatedDocumentFiles);
+          
+                if (documentFiles && documentFiles.length > 0) {
+                  for (let file of documentFiles) {
+                    file = file.toObject();
+                    // if(file.path){
+                    //   const fileContent = await downloadFileContent(file.path);
+                    //   file.content = fileContent;
+                    // }
+                    file.versionNo = documentVersion.versionNo;
+                    file.version_id = documentVersion._id;
+                    file.document_id = document_._id;
+                    file.customerAccess = document_.customerAccess;
+                    file.isActive= document_.isActive;
+                    file.isArchived= document_.isArchived;
+                    file.name= document_.name;
+                    file.displayName= document_.displayName;
+                    file.docType= document_.docType;
+                    file.docCategory= document_.docCategory;
+                    file.machine= document_.machine; 
+                    file.versionPrefix= document_.versionPrefix; 
+                    file.createdBy= document_.createdBy; 
+                    file.updatedBy= document_.updatedBy;
+                    listOfFiles.push(file);
+                  }
                 }
-                documentVersion.files = documentFiles;
               }
             }
           }
-          else {
-            let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
-            documentVersions = [documentVersion]
-          }
-
-
-          document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
-          document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item.machine.serialNo).join(', ');
-          document_.documentVersions = documentVersions;
         }
-        documents[documentIndex] = document_;
         documentIndex++;
       }
     }
-
+    // console.log("listOfFiles", listOfFiles);
     res.json(listOfFiles);    
-    // res.json(documents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
+};
+
+const downloadFileContent = async (filePath) => {
+  const fileContent = await awsService.downloadFileS3(filePath);
+  return fileContent;
 };
 
 exports.getdublicateDrawings = async (req, res, next) => {

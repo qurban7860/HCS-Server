@@ -298,6 +298,9 @@ exports.downloadDocumentFile = async (req, res, next) => {
   } else {
     try {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
+
+      console.log("file", file);
+      console.log("req.params.id", req.params.id);
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);

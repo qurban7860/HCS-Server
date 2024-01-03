@@ -61,8 +61,9 @@ exports.getDocumentTypes = async (req, res, next) => {
       if(QueryString) {
         CategoryQuery.$and = QueryString;
       }
+      if(req.query.docCategory) CategoryQuery._id = req.query.docCategory;
       let documentCategoryObject = await DocumentCategory.find(CategoryQuery).select('_id customer machine drawing').lean();
-      if(documentCategoryObject && documentCategoryObject.length > 0 ) this.query.docCategory = {$in: documentCategoryObject}
+      if(documentCategoryObject) this.query.docCategory = {$in: documentCategoryObject}
     }
 
     const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
