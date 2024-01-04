@@ -534,26 +534,35 @@ exports.getdublicateDrawings = async (req, res, next) => {
     }
 };
 
-  exports.putDocumentFilesETag = async (req, res, next) => {
-  console.log("-----------------");
+exports.putDocumentFilesETag = async (req, res, next) => {
   try {
-    let filteredFiles = await DocumentFile.find({
+    const filteredFiles = await DocumentFile.find({
       isActive: true,
       isArchived: false,
       eTag: { $exists: false },
-    }).select('_id path version').limit(2);
+    }).limit(2);
 
-    filteredFiles.forEach(async (fileObj) => {
-      console.log("fileObj", fileObj);
-      const fileData = await awsService.fetchETag(fileObj._id, fileObj.path, fileObj.version?.document);
+    await Promise.all(
+      filteredFiles.map(async (fileObj) => {
+        console.log("Processing fileObj:", fileObj);
 
-      if(fileData.ETag)  {
-        await DocumentFile.updateOne(
-          { _id: fileObj._id },
-          { $set: { eTag: fileData.ETag } }
-        );
-      }
-    });
+        try {
+          const fileData = await awsService.fetchETag(fileObj._id, fileObj.path, fileObj.version?.document);
+
+          if (fileData.ETag) {
+            await DocumentFile.updateOne(
+              { _id: fileObj._id },
+              { $set: { eTag: fileData.ETag } }
+            );
+            console.log(`ETag updated for file with _id: ${fileObj._id}`);
+          } else {
+            console.log(`ETag not found for file with _id: ${fileObj._id}`);
+          }
+        } catch (error) {
+          console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
+        }
+      })
+    );
 
     res.status(200).json({ message: 'ETags patched successfully' });
   } catch (error) {
@@ -561,6 +570,7 @@ exports.getdublicateDrawings = async (req, res, next) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
 
 exports.deleteDocument = async (req, res, next) => {
   try {
