@@ -410,7 +410,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { customer, isActive, isArchived, loginUser, documentVersion , description,
-  name, displayName, user, site, contact, machine, fileType } = req.body;
+  name, displayName, user, site, contact, machine, fileType, eTag } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -425,6 +425,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("fileType" in req.body) {
     doc.fileType = fileType;
+  }
+
+  if ("eTag" in req.body) {
+    doc.eTag = eTag;
   }
 
   if ("description" in req.body) {

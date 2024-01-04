@@ -34,6 +34,9 @@ const docSchema = new Schema({
         thumbnail: {type: String},
         // thumbnail generated and saved in db
 
+        eTag: { type: String },
+        // file path 
+
         customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
         // customer information.
 

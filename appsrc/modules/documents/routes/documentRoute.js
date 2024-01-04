@@ -27,6 +27,9 @@ router.use(checkAuth, checkCustomer);
 // - /api/1.0.0/document/documents/getAllDocumentsAgainstFilter/
 router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getAllDocumentsAgainstFilter);
 
+// - /api/1.0.0/document/documents/patchDocumentFilesETag/
+router.put(`${baseRoute}/putDocumentFilesETag/`, controller.putDocumentFilesETag);
+
 // - /api/1.0.0/document/documents/dublicateDrawings/
 router.get(`${baseRoute}/dublicateDrawings/`, controller.getdublicateDrawings);
 
