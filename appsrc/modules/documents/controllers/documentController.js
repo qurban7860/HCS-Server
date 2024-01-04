@@ -552,7 +552,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
           if (fileData.ETag) {
             await DocumentFile.updateOne(
               { _id: fileObj._id },
-              { $set: { eTag: fileData.ETag } }
+              { $set: { eTag: fileData.ETag.replace(/"/g, '') } }
             );
             console.log(`ETag updated for file with _id: ${fileObj._id}`);
           } else {
