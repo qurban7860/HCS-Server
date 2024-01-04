@@ -539,7 +539,10 @@ exports.putDocumentFilesETag = async (req, res, next) => {
     const filteredFiles = await DocumentFile.find({
       isActive: true,
       isArchived: false,
-      eTag: { $exists: false },
+      $or: [
+        { eTag: { $exists: false } },
+        { eTag: null },
+      ],
     });
 
     console.log(filteredFiles.length);
