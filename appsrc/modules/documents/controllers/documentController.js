@@ -468,81 +468,78 @@ const downloadFileContent = async (filePath) => {
 // };
 
 
-exports.getdublicateDrawings = async (req, res, next) => {
-  let dublicateFiles = [];
-  let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document').lean();
-  let listDrawingsIds = listProductDrawing.map((c)=>c.document);
-  console.log("listDrawingsIds", listDrawingsIds);
+// exports.getdublicateDrawings = async (req, res, next) => {
+//   let dublicateFiles = [];
+//   let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document').lean();
+//   let listDrawingsIds = listProductDrawing.map((c)=>c.document);
+//   console.log("listDrawingsIds", listDrawingsIds);
   
-  let listDocumentVersions = await Document.find({_id: {$in: listDrawingsIds}, isActive: true, isArchived: false}).select('documentVersions').lean();
-  let listDocumentVersionsIds = [].concat(...listDocumentVersions.map((c) => c.documentVersions));
-  console.log("listDocumentVersionsIds", listDocumentVersionsIds);
+//   let listDocumentVersions = await Document.find({_id: {$in: listDrawingsIds}, isActive: true, isArchived: false}).select('documentVersions').lean();
+//   let listDocumentVersionsIds = [].concat(...listDocumentVersions.map((c) => c.documentVersions));
+//   console.log("listDocumentVersionsIds", listDocumentVersionsIds);
 
-  let listFiles = await DocumentVersion.find({_id: {$in: listDocumentVersionsIds}, isActive: true, isArchived: false}).select('files').lean();
+//   let listFiles = await DocumentVersion.find({_id: {$in: listDocumentVersionsIds}, isActive: true, isArchived: false}).select('files').lean();
 
-  let listFIlesIds = [].concat(...listFiles.map((c) => c.files));
-  console.log("listFIlesIds", listFIlesIds);
+//   let listFIlesIds = [].concat(...listFiles.map((c) => c.files));
+//   console.log("listFIlesIds", listFIlesIds);
 
 
   
-  let filteredFiles = await DocumentFile.find({_id: {$in: listFIlesIds}, isActive: true, isArchived: false}).select('document version path').populate([{path: "version", select: "document"}]).lean();
-  //let listFilesIds = listDocumentVersions.map((c)=>c.documentVersions);
-  console.log("filteredFiles", filteredFiles);
+//   let filteredFiles = await DocumentFile.find({_id: {$in: listFIlesIds}, isActive: true, isArchived: false}).select('document version path').populate([{path: "version", select: "document"}]).lean();
+//   //let listFilesIds = listDocumentVersions.map((c)=>c.documentVersions);
+//   console.log("filteredFiles", filteredFiles);
 
-    // Apply the downloadFileS3 function to each file in parallel
-    const downloadPromises = filteredFiles.map(async (file) => {
-      return awsService.fetchETag(file._id, file.path, file.version?.document);
-    });
+//     // Apply the downloadFileS3 function to each file in parallel
+//     const downloadPromises = filteredFiles.map(async (file) => {
+//       return awsService.fetchETag(file._id, file.path, file.version?.document);
+//     });
   
-    try {
-      const results = await Promise.all(downloadPromises);
-      const duplicateRecords = {};
+//     try {
+//       const results = await Promise.all(downloadPromises);
+//       const duplicateRecords = {};
     
-      results.forEach((record, index) => {
-        const currentETag = record.ETag;
+//       results.forEach((record, index) => {
+//         const currentETag = record.ETag;
     
-        if (duplicateRecords[currentETag]) {
-          duplicateRecords[currentETag].push(index);
-        } else {
-          duplicateRecords[currentETag] = [index];
-        }
-      });
+//         if (duplicateRecords[currentETag]) {
+//           duplicateRecords[currentETag].push(index);
+//         } else {
+//           duplicateRecords[currentETag] = [index];
+//         }
+//       });
     
-      console.log("Download results", results);
-      console.log("duplicateRecords", duplicateRecords);
+//       console.log("Download results", results);
+//       console.log("duplicateRecords", duplicateRecords);
     
-      const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1);
+//       const result = Object.values(duplicateRecords).filter((indexes) => indexes.length > 1);
     
-        console.log("duplicate records.", result);
-        // Iterate over duplicateRecords
-        Object.entries(duplicateRecords).forEach(([etag, indexes]) => {
-        console.log(`ETag: ${etag}, Indexes: ${indexes}, Indexes: ${indexes.length}`);
+//         console.log("duplicate records.", result);
+//         // Iterate over duplicateRecords
+//         Object.entries(duplicateRecords).forEach(([etag, indexes]) => {
+//         console.log(`ETag: ${etag}, Indexes: ${indexes}, Indexes: ${indexes.length}`);
 
-        if(indexes.length > 1) {
-          indexes.forEach((record, index) => {
-            dublicateFiles.push(results[record]);
-          })
-          console.log(`Dublicate --> ETag: ${etag}`);
-        }
+//         if(indexes.length > 1) {
+//           indexes.forEach((record, index) => {
+//             dublicateFiles.push(results[record]);
+//           })
+//           console.log(`Dublicate --> ETag: ${etag}`);
+//         }
 
-      });
+//       });
 
-      return res.status(StatusCodes.ACCEPTED).json(dublicateFiles);
-    } catch (error) {
-      console.error("Error downloading files", error);
-      res.sendStatus(500);
-    }
-};
+//       return res.status(StatusCodes.ACCEPTED).json(dublicateFiles);
+//     } catch (error) {
+//       console.error("Error downloading files", error);
+//       res.sendStatus(500);
+//     }
+// };
 
 exports.putDocumentFilesETag = async (req, res, next) => {
   try {
     const filteredFiles = await DocumentFile.find({
       isActive: true,
       isArchived: false,
-      $or: [
-        { eTag: { $exists: false } },
-        { eTag: null },
-      ],
+      eTag: { $exists: false },
     });
 
     console.log(filteredFiles.length);
@@ -577,6 +574,66 @@ exports.putDocumentFilesETag = async (req, res, next) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
+
+exports.getdublicateDrawings = async (req, res, next) => {
+  try {
+    const filteredFiles = await DocumentFile.aggregate([
+      {
+        $match: {
+          isActive: true,
+          isArchived: false
+        }
+      },
+      {
+        $group: {
+          _id: { eTag: "$eTag" },
+          count: { $sum: 1 },
+          duplicates: { $push: "$_id" }
+        }
+      },
+      {
+        $match: {
+          count: { $gt: 1 }
+        }
+      },
+      {
+        $sort: {
+          count: -1
+        }
+      }
+    ]);
+
+    const fileObjWithDocVersions = await Promise.all(
+      filteredFiles.map(async (fileObj) => {
+        console.log("Processing fileObj:", fileObj);
+
+        try {
+          if (fileObj.duplicates.length > 0) {
+            const docVersions = await Promise.all(fileObj.duplicates.map(async (record) => {
+              let docVersion = await DocumentVersion.findOne({ files: record }).populate([{ path: "document" }]);
+              return { record, docVersion };
+            }));
+
+            return { fileObj, docVersions };
+          }
+        } catch (error) {
+          console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
+        }
+      })
+    );
+
+    // Now you have an array of objects with fileObj and associated docVersions
+    console.log(fileObjWithDocVersions);
+
+    res.status(200).json(fileObjWithDocVersions);
+  } catch (error) {
+    console.error('Error patching ETags:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 
 
 exports.deleteDocument = async (req, res, next) => {
