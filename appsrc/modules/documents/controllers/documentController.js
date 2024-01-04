@@ -550,7 +550,7 @@ exports.getdublicateDrawings = async (req, res, next) => {
       if(fileData.ETag)  {
         await DocumentFile.updateOne(
           { _id: fileObj._id },
-          { $set: { eTag: newETag } }
+          { $set: { eTag: fileData.ETag } }
         );
       }
     });
