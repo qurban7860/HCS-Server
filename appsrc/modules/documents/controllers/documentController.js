@@ -540,7 +540,11 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       isActive: true,
       isArchived: false,
       eTag: { $exists: false },
-    }).limit(2);
+    });
+
+    console.log(filteredFiles.length);
+
+
 
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
