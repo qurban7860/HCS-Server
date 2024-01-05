@@ -20,7 +20,7 @@ const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion,
 const {  } = require('../../products/models');
 
 const { Customer, CustomerSite } = require('../../crm/models');
-const { Machine, MachineModel, ProductDrawing } = require('../../products/models');
+const { Product, MachineModel, ProductDrawing } = require('../../products/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -91,10 +91,13 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+
+
   let isVersionNeeded = true;
   let isDrawing = false;
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
+    this.query = req.query != "undefined" ? req.query : {};
+    console.log("req.query", req.query);  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
@@ -174,7 +177,7 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }
     ];
-    
+    console.log("this.query", this.query);
     let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
@@ -227,18 +230,197 @@ exports.getDocuments = async (req, res, next) => {
   }
 };
 
-exports.getdublicateDrawings = async (req, res, next) => {
+
+exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
+  let includeMachines = false;
+  let includeDrawings = false;
   
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    console.log("basic Query", req.query);  
+    if(this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
+    if(!this.query.isActive) this.query.isActive = true;
+    if(!this.query.isArchived) this.query.isArchived = false;
+
+    const customer = req.query.customer;
+    if(Customer) {
+      let CustomerObj = await Customer.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
+      if(!CustomerObj) {
+        if(!CustomerObj) return res.status(StatusCodes.BAD_REQUEST).send({"message":"Customer validation failed not found!. Please check customer is not archived and is Active."});
+      }
+    }
+    const machine = req.query.machine;
+    const document = req.query.document;
+    
+    if(!customer && !machine && !document) return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    
+    var queryConditions = [];
+
+    if (customer) {
+      queryConditions.push({ customer: true });
+    }
+
+    if (includeMachines) {
+      queryConditions.push({ machine: true });
+    }
+    
+    if (includeDrawings) {
+      queryConditions.push({ drawing: true });
+    }
+
+    var query = {};
+
+    if (queryConditions.length > 0) {
+      query.$or = queryConditions;
+      if(query) {
+        let docCats = await DocumentCategory.find(query).select('_id').lean();
+        if(Array.isArray(docCats) && docCats.length>0) {
+          let docCatIds = docCats.map((dc)=>dc._id.toString());
+          this.query.docCategory = {'$in':docCatIds};
+        }
+      }
+    }
+
+    if(this.query.isArchived=='true')
+      this.query.isArchived = true;
+
+    if(this.query.isArchived=='false')
+      this.query.isArchived = false;
+
+    if(this.query.isActive=='true')
+      this.query.isActive = true;
+    
+    if(this.query.isActive=='false')
+      this.query.isActive = false;
+
+    if(this.query.includeMachines=='true'){
+      includeMachines = true;
+      delete this.query.includeMachines;
+    }
+
+    if(this.query.includeDrawings=='true'){
+      includeDrawings = true;
+      delete this.query.includeDrawings;
+    }
+
+    this.populate = [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' },
+      { path: 'docType', select: 'name' },
+      { path: 'docCategory', select: 'name drawing' },
+      { path: 'customer', select: 'name' },
+      { path: 'machine', select: 'name serialNo' }
+    ];
+
+    const queryString__ = [];  
+    let machineList = [];
+    let customerMachines_ = [];
+    if(customer && includeMachines) {
+      machineList = await Product.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
+        
+      if(Array.isArray(machineList) && machineList.length>0) {
+        customerMachines_ = machineList.map((dc)=>dc._id.toString());
+      }
+    }
+    if(machine) customerMachines_.push(machine);
+    queryString__.push({machine : {'$in':customerMachines_}});
+
+    if(customer && includeDrawings && Array.isArray(machineList) && machineList.length>0) {
+      let machineDrawings = await ProductDrawing.find({machine : {'$in':customerMachines_}, isActive: true, isArchived: false}).select('document').lean();  
+      if(Array.isArray(machineDrawings) && machineDrawings.length>0) {
+        let drawingIds = machineDrawings.map((dc)=>dc.document.toString());
+        console.log("drawingIds", drawingIds);
+        queryString__.push({_id : {'$in':drawingIds}});
+      }
+    }
+    
+    if (customer) {queryString__.push({ customer: customer}); delete this.query.customer};
+    if (machine) {queryString__.push({ machine: machine}); delete this.query.machine};
+    
+    this.query.$or = queryString__;
+
+    let listOfFiles = [];
+    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    if(documents && Array.isArray(documents) && documents.length>0) {
+      documents = JSON.parse(JSON.stringify(documents));
+      let documentIndex = 0;
+      for(let document_ of documents) {
+
+        if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
+          
+          document_ = JSON.parse(JSON.stringify(document_));
+
+          let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
+          let documentVersions = [];
+          documentVersions = await DocumentVersion.find(documentVersionQuery).sort({_id: -1}).select('files versionNo description').limit(1);
+          if (Array.isArray(documentVersions) && documentVersions.length > 0) {
+            documentVersions = JSON.parse(JSON.stringify(documentVersions));
+            for (let documentVersion of documentVersions) {
+              if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
+                let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
+                documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+          
+                if (documentFiles && documentFiles.length > 0) {
+                  for (let file of documentFiles) {
+                    file = file.toObject();
+                    // if(file.path){
+                    //   const fileContent = await downloadFileContent(file.path);
+                    //   file.content = fileContent;
+                    // }
+                    file.versionNo = documentVersion.versionNo;
+                    file.version_id = documentVersion._id;
+                    file.document_id = document_._id;
+                    file.customerAccess = document_.customerAccess;
+                    file.isActive= document_.isActive;
+                    file.isArchived= document_.isArchived;
+                    file.name= document_.name;
+                    file.displayName= document_.displayName;
+                    file.docType= document_.docType;
+                    file.docCategory= document_.docCategory;
+                    file.machine= document_.machine; 
+                    file.versionPrefix= document_.versionPrefix; 
+                    file.createdBy= document_.createdBy; 
+                    file.updatedBy= document_.updatedBy;
+                    listOfFiles.push(file);
+                  }
+                }
+              }
+            }
+          }
+        }
+        documentIndex++;
+      }
+    }
+    // console.log("listOfFiles", listOfFiles);
+    res.json(listOfFiles);    
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+const downloadFileContent = async (filePath) => {
+  const fileContent = await awsService.downloadFileS3(filePath);
+  return fileContent;
+};
+
+exports.getdublicateDrawings = async (req, res, next) => {
   let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
-  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id); 
-  console.log("categoryDrawingIds", categoryDrawingIds);
+  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id);
+  let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document machine').populate([{path: 'machine',select: 'serialNo'}]).lean();
+  let listDrawingsIds = listProductDrawing.map((c)=>c.document);
 
   let aggregateQuery__ = [
     {
       $match: {
           isArchived: false,
           isActive: true,
-          docCategory: {$in: categoryDrawingIds}
+          docCategory: {$in: categoryDrawingIds},
+          _id: {$in: listDrawingsIds}
       }
     },
     {
@@ -258,9 +440,31 @@ exports.getdublicateDrawings = async (req, res, next) => {
       }
     }
   ];
-  console.log(aggregateQuery__)
-  let machineModels = await Document.aggregate(aggregateQuery__);
-  res.json(machineModels);
+  let dublicateDrawingList = await Document.aggregate(aggregateQuery__);
+  const modifiedList = [];
+  const promises = dublicateDrawingList.map(async (doc) => {
+    const listIds = [];
+    const promisesids = doc.ids.map(async (docId) => {
+      const foundProductDrawing = listProductDrawing.find(drwng => {
+        const matchCondition = _.isEqual(drwng.document, docId);
+        return matchCondition;
+      });
+
+      let idsValues = {
+        docId,
+        machine: foundProductDrawing.machine._id,
+        serialNo: foundProductDrawing.machine.serialNo
+      }
+      listIds.push(idsValues);
+    });
+
+    await Promise.all(promisesids);
+    doc.ids = listIds;
+    modifiedList.push(doc);
+    return doc;
+  });
+  await Promise.all(promises);
+  res.json(modifiedList);
 };
 
 exports.deleteDocument = async (req, res, next) => {
@@ -355,7 +559,7 @@ exports.postDocument = async (req, res, next) => {
         let mach = {};
         if(mongoose.Types.ObjectId.isValid(machine)){
 
-          mach = await dbservice.getObjectById(Machine,this.fields,machine);
+          mach = await dbservice.getObjectById(Product,this.fields,machine);
 
           if(!mach) {
             console.error("Machine Not Found");
@@ -956,24 +1160,29 @@ async function processFile(file, userId) {
   const fileName = userId+"-"+new Date().getTime();
   const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
 
+
+  return {
+    fileName,
+    name,
+    fileExt,
+    s3FilePath,
+    type: file.mimetype,
+    physicalPath: file.path,
+    base64thumbNailData
+  };
+
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
-  
+
+
+
   if (!s3FilePath || s3FilePath === '') {
     throw new Error('AWS file saving failed');
   }
   else{
-    return {
-      fileName,
-      name,
-      fileExt,
-      s3FilePath,
-      type: file.mimetype,
-      physicalPath: file.path,
-      base64thumbNailData
-    };
+
   }
 }
 

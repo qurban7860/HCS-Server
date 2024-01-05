@@ -808,9 +808,9 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           ShippingDate: shippingDateLTZ,
           InstallationDate: installationDateLTZ,
           SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
-          AccountManager: product?.accountManager?.firstName === undefined ? "" : `${(product?.accountManager?.firstName?.replace(/"/g, "'"))}`,
-          ProjectManager: product?.projectManager?.firstName === undefined ? "" : `${(product?.projectManager?.firstName?.replace(/"/g, "'"))}`,
-          SupportManager: product?.supportManager?.firstName === undefined ? "" : `${(product?.supportManager?.firstName?.replace(/"/g, "'"))}`,
+          AccountManager: product?.accountManager ? getContactName(product.accountManager) :"" ,
+          ProjectManager: product?.projectManager ? getContactName(product.projectManager) :"" , 
+          SupportManager: product?.supportManager ? getContactName(product.supportManager) :"" ,
           SupportExpireDate: SupportExpireDateLTZ,
           TotalSettings: `${(countlistProductTechParamValue != undefined ? countlistProductTechParamValue?.count : '')}`,
           TotalTools: `${(countlistProductToolInstalled != undefined ? countlistProductToolInstalled?.count : '')}`,
@@ -842,9 +842,9 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           ShippingDate: shippingDateLTZ,
           InstallationDate: installationDateLTZ,
           SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
-          AccountManager: product?.accountManager?.firstName === undefined ? "" : `${(product?.accountManager?.firstName?.replace(/"/g, "'"))}`,
-          ProjectManager: product?.projectManager?.firstName === undefined ? "" : `${(product?.projectManager?.firstName?.replace(/"/g, "'"))}`,
-          SupportManager: product?.supportManager?.firstName === undefined ? "" : `${(product?.supportManager?.firstName?.replace(/"/g, "'"))}`,
+          AccountManager: product?.accountManager ? getContactName(product.accountManager) :"" ,
+          ProjectManager: product?.projectManager ? getContactName(product.projectManager) :"" , 
+          SupportManager: product?.supportManager ? getContactName(product.supportManager) :"" ,
           SupportExpireDate: SupportExpireDateLTZ,
           TotalSettings: `${(countlistProductTechParamValue != undefined ? countlistProductTechParamValue?.count : '')}`,
           TotalTools: `${(countlistProductToolInstalled != undefined ? countlistProductToolInstalled?.count : '')}`,
@@ -865,6 +865,42 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
     res.status(500).send({ error: 'Internal Server Error' });
   }
 };
+
+
+function getContactName(contacts) {
+  if (Array.isArray(contacts)) {
+    const names = contacts.map(contact => {
+      let fullName = '';
+
+      if (contact && contact.firstName) {
+        fullName += contact.firstName.replace(/"/g, "'");
+      }
+
+      if (contact && contact.lastName) {
+        fullName += ' ' + contact.lastName.replace(/"/g, "'");
+      }
+
+      return fullName.trim();
+    });
+
+    return names.join(' | ');
+  } else if (contacts && (contacts.firstName || contacts.lastName)) {
+    let fullName = '';
+
+    if (contacts.firstName) {
+      fullName += contacts.firstName.replace(/"/g, "'");
+    }
+
+    if (contacts.lastName) {
+      fullName += ' ' + contacts.lastName.replace(/"/g, "'");
+    }
+
+    return fullName.trim();
+  } else {
+    return '';
+  }
+}
+
 
 function fetchAddressCSV(address) {
   if (!address || typeof address !== 'object') {
