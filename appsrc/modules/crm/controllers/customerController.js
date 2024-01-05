@@ -418,13 +418,16 @@ exports.exportCustomers = async (req, res, next) => {
   for(let customer of customers) {
     
     if(Array.isArray(customer.sites) && customer.sites.length>0) {
-      customer.sites = await CustomerSite.find({_id:{$in:customer.sites},isActive:true,isArchived:false});
-      customer.sitesName = customer.sites.map((s)=>s.name);
-      customer.sitesName = customer.sitesName.join('|')
+      customer.sites = await CustomerSite.find({customer: customer._id,isActive:true,isArchived:false});
+      if(customer.sites) {
+        customer.sitesName = getContactName(customer.sites);
+      }
+      // customer.sitesName = customer.sites.map((s)=>s.name);
+      // customer.sitesName = customer.sitesName.join('|')
     }
 
     if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
-      customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
+      customer.contacts = await CustomerContact.find({customer: customer._id,isActive:true,isArchived:false});
       if(customer.contacts) {
         customer.contactsName = getContactName(customer.contacts);
       }
@@ -447,14 +450,13 @@ exports.exportCustomers = async (req, res, next) => {
         billingContactID:customer.primaryBillingContact?customer.primaryBillingContact._id:'',
         technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
         technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
-        
         accountManager:customer.accountManager?getContactName(customer.accountManager):'',
         accountManagerID:customer.accountManager?getGUIDs(customer.accountManager):'',
         projectManager:customer.projectManager?getContactName(customer.projectManager):'',
         projectManagerID:customer.projectManager?getGUIDs(customer.projectManager):'',
         supportSubscription:customer.supportSubscription?'Yes':'No',
         supportManager:customer.supportManager?getContactName(customer.supportManager):'',
-        supportManagerID:customer.supportManager?customer.supportManager._id:'',
+        supportManagerID:customer.supportManager?getGUIDs(customer.supportManager):'',
       };
     } else {
       finalDataObj = {
@@ -544,7 +546,7 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
           "ProjectManagerID": customer.projectManager ? getGUIDs(customer.projectManager) : '',
           "SupportSubscription": customer.supportSubscription ? 'Yes' : 'No',
           "SupportManager": customer.supportManager ? getContactName(customer.supportManager) : '',
-          "SupportManagerID": customer.supportManager ? customer.supportManager._id : ''
+          "SupportManagerID": customer.supportManager ? getGUIDs(customer.supportManager) : ''
         }
       } else {
         finalDataObj = {
