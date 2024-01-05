@@ -428,7 +428,7 @@ exports.exportCustomers = async (req, res, next) => {
       customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
       customer.contactsName = customer.contactsName.join('|')
     }
-
+    
     if(EXPORT_UUID) {
       finalDataObj = {
         id:customer._id,
@@ -444,6 +444,7 @@ exports.exportCustomers = async (req, res, next) => {
         billingContactID:customer.primaryBillingContact?customer.primaryBillingContact._id:'',
         technicalContact:customer.primaryTechnicalContact?getContactName(customer.primaryTechnicalContact):'',
         technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
+        
         accountManager:customer.accountManager?getContactName(customer.accountManager):'',
         accountManagerID:customer.accountManager?customer.accountManager._id:'',
         projectManager:customer.projectManager?getContactName(customer.projectManager):'',
@@ -571,16 +572,26 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
   }
 }
 
-function getContactName(contact) {
-  let fullName = '';
+function getContactName(contacts) {
+  if (!Array.isArray(contacts)) {
+    return '';
+  }
 
-  if(contact && contact.firstName)
-    fullName+= contact.firstName.replace(/"/g,"'");
+  const names = contacts.map(contact => {
+    let fullName = '';
 
-  if(contact && contact.lastName)
-    fullName+= contact.lastName.replace(/"/g,"'");
+    if (contact && contact.firstName) {
+      fullName += contact.firstName.replace(/"/g, "'");
+    }
 
-  return fullName+'';
+    if (contact && contact.lastName) {
+      fullName += ' ' + contact.lastName.replace(/"/g, "'");
+    }
+
+    return fullName.trim();
+  });
+
+  return names.join(' | ');
 }
 
 
