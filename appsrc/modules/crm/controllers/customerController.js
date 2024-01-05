@@ -425,8 +425,11 @@ exports.exportCustomers = async (req, res, next) => {
 
     if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
       customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
-      customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
-      customer.contactsName = customer.contactsName.join('|')
+      if(customer.contacts) {
+        customer.contactsName = getContactName(customer.contacts);
+      }
+      // customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+      // customer.contactsName = customer.contactsName.join('|')
     }
     
     if(EXPORT_UUID) {
