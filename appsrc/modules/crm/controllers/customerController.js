@@ -446,9 +446,9 @@ exports.exportCustomers = async (req, res, next) => {
         technicalContactID:customer.primaryTechnicalContact?customer.primaryTechnicalContact._id:'',
         
         accountManager:customer.accountManager?getContactName(customer.accountManager):'',
-        accountManagerID:customer.accountManager?customer.accountManager._id:'',
+        accountManagerID:customer.accountManager?getGUIDs(customer.accountManager):'',
         projectManager:customer.projectManager?getContactName(customer.projectManager):'',
-        projectManagerID:customer.projectManager?customer.projectManager._id:'',
+        projectManagerID:customer.projectManager?getGUIDs(customer.projectManager):'',
         supportSubscription:customer.supportSubscription?'Yes':'No',
         supportManager:customer.supportManager?getContactName(customer.supportManager):'',
         supportManagerID:customer.supportManager?customer.supportManager._id:'',
@@ -536,9 +536,9 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
           "TechnicalContact": customer.primaryTechnicalContact ? getContactName(customer.primaryTechnicalContact) : '',
           "TechnicalContactID": customer.primaryTechnicalContact ? customer.primaryTechnicalContact._id : '',
           "AccountManager": customer.accountManager ? getContactName(customer.accountManager) : '',
-          "AccountManagerID": customer.accountManager ? customer.accountManager._id : '',
+          "AccountManagerID": customer.accountManager ? getGUIDs(customer.accountManager) : '',
           "ProjectManager": customer.projectManager ? getContactName(customer.projectManager) : '',
-          "ProjectManagerID": customer.projectManager ? customer.projectManager._id : '',
+          "ProjectManagerID": customer.projectManager ? getGUIDs(customer.projectManager) : '',
           "SupportSubscription": customer.supportSubscription ? 'Yes' : 'No',
           "SupportManager": customer.supportManager ? getContactName(customer.supportManager) : '',
           "SupportManagerID": customer.supportManager ? customer.supportManager._id : ''
@@ -605,6 +605,34 @@ function getContactName(contacts) {
     return '';
   }
 }
+
+function getGUIDs(inputData) {
+  if (Array.isArray(inputData)) {
+    const extractedIds = inputData.map(item => {
+      let idString = '';
+
+      console.log("item", item);
+      if (item && item._id) {
+        idString += item._id;
+      }
+
+      return idString;
+    });
+    return extractedIds.join(' | ');
+  } else if (inputData && inputData._id) {
+    let singleIdString = '';
+
+    if (inputData._id) {
+      singleIdString += inputData._id.replace(/"/g, "'");
+    }
+
+    return singleIdString.trim();
+  } else {
+    return '';
+  }
+}
+
+
 
 
 
