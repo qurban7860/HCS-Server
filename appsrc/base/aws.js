@@ -92,6 +92,7 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
   try {
     const data = await s3UploadAsync(uploadFileParams);
 
+    console.log("data", data);
     if ('Key' in data) {
       url = data.Key;
     } else {
