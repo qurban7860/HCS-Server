@@ -868,26 +868,39 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
 
 
 function getContactName(contacts) {
-  if (!Array.isArray(contacts)) {
-    return '';
-  }
+  if (Array.isArray(contacts)) {
+    const names = contacts.map(contact => {
+      let fullName = '';
 
-  const names = contacts.map(contact => {
+      if (contact && contact.firstName) {
+        fullName += contact.firstName.replace(/"/g, "'");
+      }
+
+      if (contact && contact.lastName) {
+        fullName += ' ' + contact.lastName.replace(/"/g, "'");
+      }
+
+      return fullName.trim();
+    });
+
+    return names.join(' | ');
+  } else if (contacts && (contacts.firstName || contacts.lastName)) {
     let fullName = '';
 
-    if (contact && contact.firstName) {
-      fullName += contact.firstName.replace(/"/g, "'");
+    if (contacts.firstName) {
+      fullName += contacts.firstName.replace(/"/g, "'");
     }
 
-    if (contact && contact.lastName) {
-      fullName += ' ' + contact.lastName.replace(/"/g, "'");
+    if (contacts.lastName) {
+      fullName += ' ' + contacts.lastName.replace(/"/g, "'");
     }
 
     return fullName.trim();
-  });
-
-  return names.join(' | ');
+  } else {
+    return '';
+  }
 }
+
 
 function fetchAddressCSV(address) {
   if (!address || typeof address !== 'object') {
