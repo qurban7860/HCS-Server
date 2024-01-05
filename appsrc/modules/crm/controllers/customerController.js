@@ -419,20 +419,14 @@ exports.exportCustomers = async (req, res, next) => {
     
     if(Array.isArray(customer.sites) && customer.sites.length>0) {
       customer.sites = await CustomerSite.find({customer: customer._id,isActive:true,isArchived:false});
-      if(customer.sites) {
-        customer.sitesName = getContactName(customer.sites);
-      }
-      // customer.sitesName = customer.sites.map((s)=>s.name);
-      // customer.sitesName = customer.sitesName.join('|')
+      customer.sitesName = customer.sites.map((s)=>s.name);
+      customer.sitesName = customer.sitesName.join('|')
     }
 
     if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
       customer.contacts = await CustomerContact.find({customer: customer._id,isActive:true,isArchived:false});
-      if(customer.contacts) {
-        customer.contactsName = getContactName(customer.contacts);
-      }
-      // customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
-      // customer.contactsName = customer.contactsName.join('|')
+      customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+      customer.contactsName = customer.contactsName.join('|')
     }
     
     if(EXPORT_UUID) {
