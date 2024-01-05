@@ -417,17 +417,17 @@ exports.exportCustomers = async (req, res, next) => {
   customers = JSON.parse(JSON.stringify(customers));
   for(let customer of customers) {
     
+
+    customer.sites = await CustomerSite.find({customer: customer._id,isActive:true,isArchived:false});
     if(Array.isArray(customer.sites) && customer.sites.length>0) {
-      customer.sites = await CustomerSite.find({customer: customer._id,isActive:true,isArchived:false});
       customer.sitesName = customer.sites.map((s)=>s.name);
       customer.sitesName = customer.sitesName.join('|')
-    }
-
+    } else {customer.sitesName = "";}
+    customer.contacts = await CustomerContact.find({customer: customer._id,isActive:true,isArchived:false});
     if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
-      customer.contacts = await CustomerContact.find({customer: customer._id,isActive:true,isArchived:false});
       customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
       customer.contactsName = customer.contactsName.join('|')
-    }
+    } else {customer.contactsName = "";}
     
     if(EXPORT_UUID) {
       finalDataObj = {
