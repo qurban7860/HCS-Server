@@ -110,6 +110,7 @@ async function fetchETag(filePath) {
     Bucket: bucketName,
     Key: filePath
   };
+  console.log("params", params);
 
   try {
     const headObjectOutput = await s3.headObject(params).promise();
