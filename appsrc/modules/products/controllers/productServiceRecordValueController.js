@@ -96,6 +96,8 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
       file.path = processedFile.s3FilePath;
       file.fileType  = processedFile.type
       file.extension = processedFile.fileExt;
+      req.body.eTag = processedFile.ETag;
+      
       
       if(processedFile.base64thumbNailData)
         file.thumbnail = processedFile.base64thumbNailData;
@@ -150,6 +152,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
       file.path = processedFile.s3FilePath;
       file.fileType  = processedFile.type
       file.extension = processedFile.fileExt;
+      req.body.eTag = processedFile.ETag;
       
       if(processedFile.base64thumbNailData)
         file.thumbnail = processedFile.base64thumbNailData;
@@ -221,14 +224,14 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
   
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
@@ -236,7 +239,8 @@ async function processFile(file, userId) {
       fileName,
       name,
       fileExt,
-      s3FilePath,
+      s3FilePath: s3Data.Key, 
+      ETag: s3Data.ETag, 
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData

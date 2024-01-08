@@ -79,6 +79,7 @@ async function copyFile(user) {
 
 async function uploadFileS3(filename, folder, content, ext = 'txt') {
   let bucketName = process.env.AWS_S3_BUCKET;
+  let data = null;
 
   const uploadFileParams = {
     Bucket: bucketName,
@@ -87,14 +88,10 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     // ACL:'public-read'
   };
 
-  let url = '';
-
   try {
-    const data = await s3UploadAsync(uploadFileParams);
-
-    console.log("data", data);
-    if ('Key' in data) {
-      url = data.Key;
+    data = await s3UploadAsync(uploadFileParams);
+    if ('Key' in data && 'ETag' in data) {
+      data.ETag = data.ETag.replace(/"/g, '');
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -104,7 +101,7 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     console.log(ex.message);
   }
 
-  return url;
+  return data;
 }
 
 const secretManager = new AWS.SecretsManager({

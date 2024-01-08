@@ -647,6 +647,7 @@ exports.postDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
+              req.body.eTag = processedFile.ETag;
               
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
@@ -928,7 +929,8 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              
+              req.body.eTag = processedFile.ETag;
+
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
               
@@ -1003,7 +1005,8 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              
+              req.body.eTag = processedFile.ETag;
+
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
               
@@ -1193,14 +1196,15 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
 
 
   return {
     fileName,
     name,
     fileExt,
-    s3FilePath,
+    s3FilePath: s3Data.Key, 
+    ETag: s3Data.ETag,
     type: file.mimetype,
     physicalPath: file.path,
     base64thumbNailData
@@ -1213,7 +1217,7 @@ async function processFile(file, userId) {
 
 
 
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
