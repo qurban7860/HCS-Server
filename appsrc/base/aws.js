@@ -104,6 +104,26 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
   return data;
 }
 
+async function fetchETag(filePath) {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: filePath
+  };
+
+  try {
+    const headObjectOutput = await s3.headObject(params).promise();
+    const eTag = headObjectOutput.ETag.replace(/"/g, ''); // Remove double quotes if present
+
+    return {
+      eTag: eTag,
+      filePath: filePath
+    };
+  } catch (err) {
+    console.log(err.message);
+    return err;
+  }
+}
+
 const secretManager = new AWS.SecretsManager({
   region: process.env.AWS_REGION
 });
