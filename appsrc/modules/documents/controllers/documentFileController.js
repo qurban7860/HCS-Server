@@ -62,6 +62,50 @@ exports.getDocumentFiles = async (req, res, next) => {
   }
 };
 
+exports.checkFileExistenceByETag = async (req, res, next) => {
+  try {
+    if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
+      let etag = await generateEtag(req.files.images[0].path);
+      etag = etag.replace(/ /g, "").replace(/"/g, ""); // Replace double quotes in etag
+      
+      console.log("etag", etag);
+      const documentFiles = await DocumentFile.findOne({ eTag: etag });
+
+      if (documentFiles) {
+        res.status(200).send(`File already exists against ${etag}. File ${documentFiles._id}`);
+      } else {
+        res.status(200).send(`No file found against ${etag}.`);
+      }
+    } else {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error generating ETag: ${error.message}`);
+  }
+};
+
+
+function generateEtag(filePath) {
+  const crypto = require('crypto');
+  const md5sum = crypto.createHash('md5');
+  const fileStream = fs.createReadStream(filePath);
+
+  return new Promise((resolve, reject) => {
+    fileStream.on('data', (chunk) => {
+      md5sum.update(chunk);
+    });
+
+    fileStream.on('end', () => {
+      const etag = `"${md5sum.digest('hex')}"`;
+      resolve(etag);
+    });
+
+    fileStream.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
+
 exports.deleteDocumentFile = async (req, res, next) => {
   try {
     const response = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);

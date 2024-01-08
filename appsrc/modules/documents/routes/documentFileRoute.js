@@ -23,6 +23,24 @@ const baseRoute = `/document`;
 
 router.use(checkAuth, checkCustomer);
 
+
+
+router.post(`/checkFileExistenceByETag/`, (req, res, next) => {
+  fileUpload.fields([{name:'images', maxCount:1}])(req, res, (err) => {
+
+    if (err instanceof multer.MulterError) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+    } else if (err) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      next();
+    }
+  });
+}, controller.checkFileExistenceByETag);
+
+
 // - /api/1.0.0/documents/documentFile/:id
 router.get(`/files/:id/download/`, controller.downloadDocumentFile);
 
