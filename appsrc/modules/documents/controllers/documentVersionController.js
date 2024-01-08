@@ -230,7 +230,7 @@ exports.postDocumentVersion = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              req.body.eTag = processedFile.ETag;
+              req.body.eTag = processedFile.eTag;
 
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
@@ -427,7 +427,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
             req.body.path = processedFile.s3FilePath;
             req.body.type = processedFile.type
             req.body.extension = processedFile.fileExt;
-            req.body.eTag = processedFile.ETag;
+            req.body.eTag = processedFile.eTag;
 
             if(processedFile.base64thumbNailData)
               req.body.content = processedFile.base64thumbNailData;
@@ -551,7 +551,7 @@ async function processFile(file, userId) {
       name,
       fileExt,
       s3FilePath: s3Data.Key, 
-      ETag: s3Data.ETag, 
+      eTag: s3Data.ETag, 
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData

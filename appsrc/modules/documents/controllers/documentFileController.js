@@ -154,8 +154,8 @@ exports.postDocumentFile = async (req, res, next) => {
         req.body.path = processedFile.s3FilePath;
         req.body.fileType =req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
-        req.body.eTag = processedFile.ETag;
-        
+        req.body.eTag = processedFile.eTag;
+
         if(processedFile.base64thumbNailData)
           req.body.content = processedFile.base64thumbNailData;
         req.body.originalname = processedFile.name;
@@ -390,7 +390,7 @@ async function processFile(file, userId) {
       name,
       fileExt,
       s3FilePath: s3Data.Key, 
-      ETag: s3Data.ETag, 
+      eTag: s3Data.ETag, 
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData

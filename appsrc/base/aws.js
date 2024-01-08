@@ -231,7 +231,7 @@ async function fetchETag(fileid, filePath, document) {
   try {
     const data = await s3.getObject(params).promise();
     return {
-      ETag:data.ETag,
+      eTag:data.ETag,
       filePath: filePath,
       fileid,
       document,
