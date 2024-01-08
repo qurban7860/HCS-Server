@@ -105,8 +105,8 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
 }
 
 async function fetchETag(filePath) {
-  let bucketName = process.env.AWS_S3_BUCKET;
   console.log("filePath", filePath);
+  let bucketName = process.env.AWS_S3_BUCKET;
   const params = {
     Bucket: bucketName,
     Key: filePath
