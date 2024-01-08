@@ -60,6 +60,8 @@ class dbService {
   //   }
   // }
 
+
+  // TODO: Verify it on mongoose lattest version before updating.
   async getObjectList(req, model, fields, query, orderBy, populate, callback) {
     const collationOptions = {
       locale: 'en',
