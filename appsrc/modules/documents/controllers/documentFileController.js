@@ -68,10 +68,13 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
       let etag = await awsService.generateEtag(req.files.images[0].path);      
       let queryString__ = { eTag: etag };
       console.log("queryString__", queryString__);
-      const documentFiles = await DocumentFile.findOne(queryString__);
+      const documentFiles = await DocumentFile.findOne(queryString__).populate([{ path: 'version'}]);
 
       if (documentFiles) {
-        res.status(200).send(`File already exists against ${etag}. File ${documentFiles._id}`);
+        res.status(409).send({
+          message: `File already exists against ${etag}. File ${documentFiles._id}`,
+          documentFiles
+        });
       } else {
         res.status(200).send(`No file found against ${etag}.`);
       }
