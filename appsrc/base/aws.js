@@ -25,7 +25,7 @@ const AWS = require('aws-sdk');
  *
  */
 
-// const credentials = new AWS.Credentials('AKIA5NXIO6FUAC7JW55U', 'LmKqh3ynZT/HdWlID9N4nynevgt527P/a07gfnvA');
+// const credentials = new AWS.Credentials('xxxx', 'xxxxxx');
 const s3 = new AWS.S3({
   region: process.env.AWS_REGION,
   params: { Bucket: process.env.AWS_S3_BUCKET },
@@ -105,13 +105,12 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
 }
 
 async function fetchETag(filePath) {
-  console.log("filePath", filePath);
   let bucketName = process.env.AWS_S3_BUCKET;
   const params = {
     Bucket: bucketName,
     Key: filePath
+    // ACL:'public-read'
   };
-  console.log("params", params);
 
   try {
     const headObjectOutput = await s3.headObject(params).promise();
@@ -122,7 +121,7 @@ async function fetchETag(filePath) {
       filePath: filePath
     };
   } catch (err) {
-    console.log(err.message);
+    console.log("fetchETag ==>", err.message);
     return err;
   }
 }
