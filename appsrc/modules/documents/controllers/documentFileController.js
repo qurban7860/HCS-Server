@@ -402,10 +402,10 @@ async function processFile(file, userId) {
   s3Data.eTag = awsService.generateEtag(file.path);
   console.log("s3Dataa 2", s3Data);
 
-  fs.unlinkSync(file.path);
-  if(thumbnailPath){
-    fs.unlinkSync(thumbnailPath);
-  }
+  // fs.unlinkSync(file.path);
+  // if(thumbnailPath){
+  //   fs.unlinkSync(thumbnailPath);
+  // }
   
   if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
