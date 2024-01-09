@@ -267,14 +267,17 @@ async function generateEtag(data) {
   const md5sum = crypto.createHash('md5');
 
   let stream;
-
+  console.log("data 0", data);
   if (typeof data === 'string') {
+    console.log("data 1", data);
     // If data is a string, assume it's a file path
     stream = fs.createReadStream(data);
   } else if (Buffer.isBuffer(data)) {
+    console.log("data 2", data);
     // If data is a buffer, create a readable stream from the buffer
     stream = require('stream').Readable.from(data);
   } else {
+    console.log("data 3", data);
     // If the input is neither a string nor a buffer, reject with an error
     return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
   }
