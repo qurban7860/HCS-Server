@@ -260,7 +260,7 @@ async function generateEtag(data) {
     });
 
     stream.on('end', () => {
-      const etag = `"${md5sum.digest('hex')}"`;
+      let etag = `"${md5sum.digest('hex')}"`;
       etag = etag.replace(/ /g, "").replace(/"/g, "");
       resolve(etag);
     });
