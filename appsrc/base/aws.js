@@ -254,6 +254,7 @@ async function fetchETag(fileid, filePath, document) {
 
   try {
     const data = await s3.getObject(params).promise();
+    console.log("data", data);
     return {
       eTag:data.ETag,
       body:data.body,
@@ -262,7 +263,7 @@ async function fetchETag(fileid, filePath, document) {
       document,
     };
   } catch (err) {
-    console.log(err.message);
+    console.log("file fetch error", err.message);
     return err;
   }
 }
