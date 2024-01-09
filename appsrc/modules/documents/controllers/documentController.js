@@ -637,7 +637,7 @@ exports.postDocument = async (req, res, next) => {
           for(let file of files) {
             
             if(file && file.originalname) {
-
+              
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
@@ -1149,23 +1149,13 @@ exports.patchDocumentVersion = async (req, res, next) => {
   }
 }
 
-async function readFileAsBase64(filePath, compressionQuality = 85) {
-  console.log("readFileAsBase64");
+async function readFileAsBase64(filePath) {
   try {
-    // Read the file data
-    const fileData = await fs.readFile(filePath);
-
-    // Compress the image using sharp
-    const compressedData = await sharp(fileData)
-      .resize({ width: 500 }) // Adjust other image processing options as needed
-      .toBuffer();
-
-    // Convert the compressed data to base64
-    const base64Data = compressedData.toString('base64');
-    console.log("base64Data", base64Data);
+    const fileData = await fs.promises.readFile(filePath);
+    const base64Data = fileData.toString('base64');
     return base64Data;
   } catch (error) {
-    console.log('Error reading or compressing file:', error);
+    console.log('Error reading file as base64:', error);
     throw error;
   }
 }
