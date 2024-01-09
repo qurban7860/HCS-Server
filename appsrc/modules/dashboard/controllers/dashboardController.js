@@ -15,7 +15,7 @@ let rtnMsg = require('../../config/static/static')
 exports.getMachineByCountries = async (req, res, next) => {
 
   const wss = getAllWebSockets();
-  const userIds = wss.map((ws)=> ws.userId);
+  const userIds =   [...new Set(wss.map((ws)=> ws.userId))];
   wss.map((ws)=> {
     ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
   });

@@ -167,10 +167,12 @@ WebSocket.on('connection', async function(ws, req) {
 
 
         if(eventName=='getOnlineUsers') {
-            const userIds = []
+            let userIds = []
             WebSocket.clients.forEach((client)=> {
                 userIds.push(client.userId);
             });
+            userIds = [...new Set(userIds)];
+
             broadcastEvent(WebSocket, {'eventName':'onlineUsers',userIds})
 
         }     
