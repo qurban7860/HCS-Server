@@ -1,6 +1,6 @@
 const { promisify } = require('util');
 const AWS = require('aws-sdk');
-
+const fs = require('fs');
 // ############################ START: S3 ############################
 
 /**
