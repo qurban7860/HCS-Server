@@ -65,7 +65,7 @@ exports.getDocumentFiles = async (req, res, next) => {
 exports.checkFileExistenceByETag = async (req, res, next) => {
   try {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
-      let etag = await generateEtag(req.files.images[0].path);
+      let etag = await awsService.generateEtag(req.files.images[0].path);
       console.log("req.files.images[0].path", req.files.images[0].path);
       const eTagReceived = await awsService.fetchETag("uploads/5007b0b0-aebc-11ee-8686-e361173501b7.csv");
       console.log("eTagReceived", eTagReceived);
@@ -87,28 +87,6 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error generating ETag: ${error.message}`);
   }
 };
-
-
-function generateEtag(filePath) {
-  const crypto = require('crypto');
-  const md5sum = crypto.createHash('md5');
-  const fileStream = fs.createReadStream(filePath);
-
-  return new Promise((resolve, reject) => {
-    fileStream.on('data', (chunk) => {
-      md5sum.update(chunk);
-    });
-
-    fileStream.on('end', () => {
-      const etag = `"${md5sum.digest('hex')}"`;
-      resolve(etag);
-    });
-
-    fileStream.on('error', (error) => {
-      reject(error);
-    });
-  });
-}
 
 exports.deleteDocumentFile = async (req, res, next) => {
   try {

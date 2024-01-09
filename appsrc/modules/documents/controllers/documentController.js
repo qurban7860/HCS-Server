@@ -426,11 +426,14 @@ exports.putDocumentFilesETag = async (req, res, next) => {
 
         try {
           const fileData = await awsService.fetchETag(fileObj._id, fileObj.path, fileObj.version?.document);
-
+          
           if (fileData.ETag) {
+            const ETagGenerated = await awsService.generateEtag(fileData.body);
+            console.log("ETagGenerated", ETagGenerated);
+
             await DocumentFile.updateOne(
               { _id: fileObj._id },
-              { $set: { eTag: fileData.ETag.replace(/"/g, '') } }
+              { $set: { eTag: ETagGenerated.replace(/"/g, '') } }
             );
             console.log(`ETag updated for file with _id: ${fileObj._id}`);
           } else {
@@ -448,6 +451,8 @@ exports.putDocumentFilesETag = async (req, res, next) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+
 
 exports.getdublicateDrawings = async (req, res, next) => {
   try {

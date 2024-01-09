@@ -256,6 +256,7 @@ async function fetchETag(fileid, filePath, document) {
     const data = await s3.getObject(params).promise();
     return {
       eTag:data.ETag,
+      body:data.body,
       filePath: filePath,
       fileid,
       document,
@@ -264,6 +265,39 @@ async function fetchETag(fileid, filePath, document) {
     console.log(err.message);
     return err;
   }
+}
+
+async function generateEtag(data) {
+  const crypto = require('crypto');
+  const md5sum = crypto.createHash('md5');
+
+  let stream;
+
+  if (typeof data === 'string') {
+    // If data is a string, assume it's a file path
+    stream = fs.createReadStream(data);
+  } else if (Buffer.isBuffer(data)) {
+    // If data is a buffer, create a readable stream from the buffer
+    stream = require('stream').Readable.from(data);
+  } else {
+    // If the input is neither a string nor a buffer, reject with an error
+    return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => {
+      md5sum.update(chunk);
+    });
+
+    stream.on('end', () => {
+      const etag = `"${md5sum.digest('hex')}"`;
+      resolve(etag);
+    });
+
+    stream.on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
 module.exports = {
