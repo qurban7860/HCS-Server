@@ -62,6 +62,30 @@ exports.getDocumentFiles = async (req, res, next) => {
   }
 };
 
+exports.checkFileExistenceByETag = async (req, res, next) => {
+  try {
+    if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
+      let etag = await awsService.generateEtag(req.files.images[0].path);      
+      let queryString__ = { eTag: etag };
+      console.log("queryString__", queryString__);
+      const documentFiles = await DocumentFile.findOne(queryString__).populate([{ path: 'version'}]);
+
+      if (documentFiles) {
+        res.status(409).send({
+          message: `File already exists against.`,
+          documentFiles
+        });
+      } else {
+        res.status(200).send(`No file found against ${etag}.`);
+      }
+    } else {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error generating ETag: ${error.message}`);
+  }
+};
+
 exports.deleteDocumentFile = async (req, res, next) => {
   try {
     const response = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
@@ -154,7 +178,9 @@ exports.postDocumentFile = async (req, res, next) => {
         req.body.path = processedFile.s3FilePath;
         req.body.fileType =req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
-        
+        req.body.awsETag = processedFile.awsETag;
+        req.body.eTag = processedFile.eTag;
+
         if(processedFile.base64thumbNailData)
           req.body.content = processedFile.base64thumbNailData;
         req.body.originalname = processedFile.name;
@@ -298,9 +324,6 @@ exports.downloadDocumentFile = async (req, res, next) => {
   } else {
     try {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
-
-      console.log("file", file);
-      console.log("req.params.id", req.params.id);
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
@@ -373,14 +396,16 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
+  console.log("s3Dataa 2", s3Data);
 
-  fs.unlinkSync(file.path);
-  if(thumbnailPath){
-    fs.unlinkSync(thumbnailPath);
-  }
+  // fs.unlinkSync(file.path);
+  // if(thumbnailPath){
+  //   fs.unlinkSync(thumbnailPath);
+  // }
   
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
@@ -388,7 +413,9 @@ async function processFile(file, userId) {
       fileName,
       name,
       fileExt,
-      s3FilePath,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData
@@ -410,7 +437,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { customer, isActive, isArchived, loginUser, documentVersion , description,
-  name, displayName, user, site, contact, machine, fileType } = req.body;
+  name, displayName, user, site, contact, machine, fileType, awsETag, eTag } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -425,6 +452,14 @@ function getDocumentFromReq(req, reqType) {
 
   if ("fileType" in req.body) {
     doc.fileType = fileType;
+  }
+
+  if ("awsETag" in req.body) {
+    doc.awsETag = awsETag;
+  }
+
+  if ("eTag" in req.body) {
+    doc.eTag = eTag;
   }
 
   if ("description" in req.body) {

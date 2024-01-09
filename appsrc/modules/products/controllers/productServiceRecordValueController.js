@@ -96,6 +96,9 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
       file.path = processedFile.s3FilePath;
       file.fileType  = processedFile.type
       file.extension = processedFile.fileExt;
+      req.body.awsETag = processedFile.awsETag;
+      req.body.eTag = processedFile.eTag;
+      
       
       if(processedFile.base64thumbNailData)
         file.thumbnail = processedFile.base64thumbNailData;
@@ -150,7 +153,9 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
       file.path = processedFile.s3FilePath;
       file.fileType  = processedFile.type
       file.extension = processedFile.fileExt;
-      
+      req.body.awsETag = processedFile.awsETag;
+      req.body.eTag = processedFile.eTag;
+
       if(processedFile.base64thumbNailData)
         file.thumbnail = processedFile.base64thumbNailData;
 
@@ -221,14 +226,16 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
+  console.log("s3Dataa 5", s3Data);
 
-  fs.unlinkSync(file.path);
-  if(thumbnailPath){
-    fs.unlinkSync(thumbnailPath);
-  }
+  // fs.unlinkSync(file.path);
+  // if(thumbnailPath){
+  //   fs.unlinkSync(thumbnailPath);
+  // }
   
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
@@ -236,7 +243,9 @@ async function processFile(file, userId) {
       fileName,
       name,
       fileExt,
-      s3FilePath,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData

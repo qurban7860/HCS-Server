@@ -230,7 +230,9 @@ exports.postDocumentVersion = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-  
+              req.body.awsETag = processedFile.awsETag;
+              req.body.eTag = processedFile.eTag;
+
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
   
@@ -316,6 +318,8 @@ async function saveDocumentFile(document_,file) {
     description:file.description,
     path:file.path,
     fileType:file.type,
+    eTag:file.eTag,
+    awsETag:file.awsETag,
     extension:file.extension,
     thumbnail:file.content,
     customer:file.customer,
@@ -426,7 +430,9 @@ exports.patchDocumentVersion = async (req, res, next) => {
             req.body.path = processedFile.s3FilePath;
             req.body.type = processedFile.type
             req.body.extension = processedFile.fileExt;
-  
+            req.body.awsETag = processedFile.awsETag;
+            req.body.eTag = processedFile.eTag;
+
             if(processedFile.base64thumbNailData)
               req.body.content = processedFile.base64thumbNailData;
   
@@ -533,14 +539,16 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
+  console.log("s3Dataa4", s3Data);
 
-  fs.unlinkSync(file.path);
-  if(thumbnailPath){
-    fs.unlinkSync(thumbnailPath);
-  }
+  // fs.unlinkSync(file.path);
+  // if(thumbnailPath){
+  //   fs.unlinkSync(thumbnailPath);
+  // }
   
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
@@ -548,7 +556,9 @@ async function processFile(file, userId) {
       fileName,
       name,
       fileExt,
-      s3FilePath,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData

@@ -1,6 +1,6 @@
 const { promisify } = require('util');
 const AWS = require('aws-sdk');
-
+const fs = require('fs');
 // ############################ START: S3 ############################
 
 /**
@@ -25,7 +25,7 @@ const AWS = require('aws-sdk');
  *
  */
 
-// const credentials = new AWS.Credentials('AKIA5NXIO6FUAC7JW55U', 'LmKqh3ynZT/HdWlID9N4nynevgt527P/a07gfnvA');
+// const credentials = new AWS.Credentials('xxxx', 'xxxxxx');
 const s3 = new AWS.S3({
   region: process.env.AWS_REGION,
   params: { Bucket: process.env.AWS_S3_BUCKET },
@@ -79,6 +79,7 @@ async function copyFile(user) {
 
 async function uploadFileS3(filename, folder, content, ext = 'txt') {
   let bucketName = process.env.AWS_S3_BUCKET;
+  let data = null;
 
   const uploadFileParams = {
     Bucket: bucketName,
@@ -87,13 +88,11 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     // ACL:'public-read'
   };
 
-  let url = '';
-
   try {
-    const data = await s3UploadAsync(uploadFileParams);
-
-    if ('Key' in data) {
-      url = data.Key;
+    data = await s3UploadAsync(uploadFileParams);
+    if ('Key' in data && 'ETag' in data) {
+      data.awsETag = data.ETag.replace(/"/g, '');
+      console.log("data.eTag", data.eTag);
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -103,8 +102,10 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     console.log(ex.message);
   }
 
-  return url;
+  return data;
 }
+
+
 
 const secretManager = new AWS.SecretsManager({
   region: process.env.AWS_REGION
@@ -216,12 +217,58 @@ async function downloadFileS3(filePath) {
 
   try {
     const data = await s3.getObject(params).promise();
-    console.log('data------------>', data);
     return data.Body;
   } catch (err) {
     console.log(err.message);
     return err;
   }
+}
+
+async function fetchETag(fileid, filePath) {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: filePath
+  };
+
+  try {
+    return data = await s3.getObject(params).promise();
+  } catch (err) {
+    console.log("file fetch error", err.message);
+    return err;
+  }
+}
+
+async function generateEtag(data) {
+  const crypto = require('crypto');
+  const md5sum = crypto.createHash('md5');
+
+  let stream;
+  if (typeof data === 'string') {
+    // If data is a string, assume it's a file path
+    stream = fs.createReadStream(data);
+  } else if (Buffer.isBuffer(data)) {
+    // If data is a buffer, create a readable stream from the buffer
+    stream = require('stream').Readable.from(data);
+  } else {
+    // If the input is neither a string nor a buffer, reject with an error
+    return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => {
+      md5sum.update(chunk);
+    });
+
+    stream.on('end', () => {
+      let etag = `"${md5sum.digest('hex')}"`;
+      etag = etag.replace(/ /g, "").replace(/"/g, "");
+      resolve(etag);
+    });
+
+    stream.on('error', (error) => {
+      reject(error);
+    });
+  });
 }
 
 module.exports = {
@@ -231,5 +278,7 @@ module.exports = {
   checkFileHeader,
   copyFile,
   listBuckets,
-  downloadFileS3
+  downloadFileS3,
+  fetchETag,
+  generateEtag
 };
