@@ -399,10 +399,10 @@ async function processFile(file, userId) {
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
   s3Data.eTag = await awsService.generateEtag(file.path);
 
-  // fs.unlinkSync(file.path);
-  // if(thumbnailPath){
-  //   fs.unlinkSync(thumbnailPath);
-  // }
+  fs.unlinkSync(file.path);
+  if(thumbnailPath){
+    fs.unlinkSync(thumbnailPath);
+  }
   
   if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
