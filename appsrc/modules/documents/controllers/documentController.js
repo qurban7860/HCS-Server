@@ -409,7 +409,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       isActive: true,
       isArchived: false,
       eTag: { $exists: false },
-    });
+    }).limit(1);
 
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
@@ -419,7 +419,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
             const ETagGenerated = await awsService.generateEtag(fileData.Body);
             await DocumentFile.updateOne(
               { _id: fileObj._id },
-              { $set: { eTag: fileData.ETag.replace(/"/g, ''), ETag: ETagGenerated.replace(/"/g, '') } }
+              { $set: { awsETag: fileData.ETag.replace(/"/g, ''), ETag: ETagGenerated.replace(/"/g, '') } }
             );
             console.log(`ETag updated for file with _id: ${fileObj._id}`);
           } else {
