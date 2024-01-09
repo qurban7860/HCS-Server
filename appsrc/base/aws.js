@@ -239,7 +239,6 @@ async function fetchETag(fileid, filePath) {
 }
 
 async function generateEtag(data) {
-  console.log("generateEtag data", data);
   const crypto = require('crypto');
   const md5sum = crypto.createHash('md5');
 
@@ -262,6 +261,7 @@ async function generateEtag(data) {
 
     stream.on('end', () => {
       const etag = `"${md5sum.digest('hex')}"`;
+      etag = etag.replace(/ /g, "").replace(/"/g, "");
       resolve(etag);
     });
 
