@@ -1198,7 +1198,8 @@ async function processFile(file, userId) {
   
   const fileName = userId+"-"+new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
-  console.log("s3Data", s3Data);
+  s3Data.eTag = awsService.generateEtag(file.path);
+  console.log("s3Dataa", s3Data);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
