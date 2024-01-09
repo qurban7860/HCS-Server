@@ -246,7 +246,7 @@ async function downloadFileS3(filePath) {
   }
 }
 
-async function fetchETag(fileid, filePath, document) {
+async function fetchETag(fileid, filePath) {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: filePath
@@ -254,14 +254,8 @@ async function fetchETag(fileid, filePath, document) {
 
   try {
     const data = await s3.getObject(params).promise();
-    console.log("data", data, fileid, filePath, document);
-    return {
-      eTag:data.ETag,
-      body:data.body,
-      filePath: filePath,
-      fileid,
-      document,
-    };
+    console.log("data", data, fileid, filePath);
+    return data;
   } catch (err) {
     console.log("file fetch error", err.message);
     return err;
