@@ -112,10 +112,12 @@ async function fetchETag(filePath) {
     Key: filePath
     // ACL:'public-read'
   };
+  console.log("@1 params", params);
 
   try {
     const headObjectOutput = await s3.headObject(params).promise();
     const eTag = headObjectOutput.ETag.replace(/"/g, ''); // Remove double quotes if present
+    console.log("eTag", eTag);
 
     return {
       eTag: eTag,
@@ -123,7 +125,6 @@ async function fetchETag(filePath) {
     };
   } catch (err) {
     console.log("fetchETag ==>", err.message);
-    return err;
   }
 }
 
