@@ -35,15 +35,15 @@ class CustomerService {
 
   }
 
-  async getObjectList(model, fields, query, orderBy, populate, callback) {
+  async getObjectList(req, model, fields, query, orderBy, populate, callback) {
     if(callback){
-      this.db.getObjectList(model, fields, query, orderBy, populate, callbackFunc);
+      this.db.getObjectList(req, model, fields, query, orderBy, populate, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
         else callback(null, response);
       }
     } else {
-      return await this.db.getObjectList(model, fields, query, orderBy, populate);
+      return await this.db.getObjectList(req, model, fields, query, orderBy, populate);
     }
   };
 

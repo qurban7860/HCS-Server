@@ -178,7 +178,7 @@ exports.getCustomers = async (req, res, next) => {
     delete this.query.unfiltered;
   }
 
-  this.dbservice.getObjectList(Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

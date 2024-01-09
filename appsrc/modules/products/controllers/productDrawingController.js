@@ -38,7 +38,7 @@ exports.getProductDrawing = async (req, res, next) => {
 exports.getProductDrawings = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   
-  this.dbservice.getObjectList(ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

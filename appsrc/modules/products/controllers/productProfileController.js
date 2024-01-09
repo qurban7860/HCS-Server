@@ -47,7 +47,7 @@ exports.getProductProfiles = async (req, res, next) => {
   this.query.machine = this.machineId;
   this.orderBy = { createdAt: -1 };
   console.log("Testing application");
-  this.dbservice.getObjectList(ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

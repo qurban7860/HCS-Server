@@ -69,7 +69,7 @@ exports.getProductToolInstalledList = async (req, res, next) => {
   if(this.query.orderBy)
     delete this.query.orderBy;
 
-  this.dbservice.getObjectList(ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -121,7 +121,7 @@ exports.getProductToolInstalledList = async (req, res, next) => {
 exports.searchProductToolInstalled = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
-  this.dbservice.getObjectList(ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductToolInstalled, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

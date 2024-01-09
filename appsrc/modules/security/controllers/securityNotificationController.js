@@ -45,7 +45,7 @@ exports.getSecurityNotification = async (req, res, next) => {
 exports.getSecurityNotifications = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
 
-  this.dbservice.getObjectList(SecurityNotification, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityNotification, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

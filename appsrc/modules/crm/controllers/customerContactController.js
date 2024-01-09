@@ -70,7 +70,7 @@ exports.getCustomerContacts = async (req, res, next) => {
   }
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
-  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   async function callbackFunc(error, response) {
     if (error) {
@@ -113,7 +113,7 @@ exports.searchCustomerContacts = async (req, res, next) => {
     delete this.query.customerArr;
   }
   
-  this.dbservice.getObjectList(CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   function callbackFunc(error, response) {
     if (error) {

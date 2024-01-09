@@ -66,7 +66,7 @@ exports.getDocumentTypes = async (req, res, next) => {
       if(documentCategoryObject) this.query.docCategory = {$in: documentCategoryObject}
     }
 
-    const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, DocumentType, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -81,7 +81,7 @@ exports.getDocumentTypeFiles = async (req, res, next) => {
   } else {
     try {
       const queryString = { documentType: req.params.id };
-      const response = await this.dbservice.getObjectList(Document, this.fields, { documentType : req.params.id }, this.orderBy, this.populate);
+      const response = await this.dbservice.getObjectList(req, Document, this.fields, { documentType : req.params.id }, this.orderBy, this.populate);
       res.json(response);
     } catch (error) {
       logger.error(new Error(error));

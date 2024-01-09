@@ -44,7 +44,7 @@ exports.getProductServiceRecordValue = async (req, res, next) => {
 exports.getProductServiceRecordValues = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.orderBy = { name: 1 };
-  this.dbservice.getObjectList(ProductServiceRecordValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductServiceRecordValue, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

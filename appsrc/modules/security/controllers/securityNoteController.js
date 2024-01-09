@@ -45,7 +45,7 @@ exports.getSecurityNotes = async (req, res, next) => {
     delete this.query.orderBy;
   }
   this.query.user = this.userId;
-  this.dbservice.getObjectList(SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -58,7 +58,7 @@ exports.getSecurityNotes = async (req, res, next) => {
 
 exports.searchSecurityNotes = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.dbservice.getObjectList(SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

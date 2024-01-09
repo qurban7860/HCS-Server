@@ -50,7 +50,7 @@ exports.getCustomerNotes = async (req, res, next) => {
   this.customerId = req.params.customerId;
   this.query.customer = this.customerId; 
   console.log("This query ")
-  this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -62,7 +62,7 @@ exports.getCustomerNotes = async (req, res, next) => {
 };
 
 exports.searchCustomerNotes = async (req, res, next) => {
-  this.dbservice.getObjectList(CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
