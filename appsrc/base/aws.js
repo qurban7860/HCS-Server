@@ -91,7 +91,8 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
   try {
     data = await s3UploadAsync(uploadFileParams);
     if ('Key' in data && 'ETag' in data) {
-      data.ETag = data.ETag.replace(/"/g, '');
+      data.awsETag = data.ETag.replace(/"/g, '');
+      data.eTag = generateEtag(`${folder}/${filename}.${ext}`);
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -104,29 +105,7 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
   return data;
 }
 
-async function fetchETag(filePath) {
-  console.log("fetchETag ==> @1");
-  let bucketName = process.env.AWS_S3_BUCKET;
-  const params = {
-    Bucket: bucketName,
-    Key: filePath
-    // ACL:'public-read'
-  };
-  console.log("@1 params", params);
 
-  try {
-    const headObjectOutput = await s3.headObject(params).promise();
-    const eTag = headObjectOutput.ETag.replace(/"/g, ''); // Remove double quotes if present
-    console.log("eTag", eTag);
-
-    return {
-      eTag: eTag,
-      filePath: filePath
-    };
-  } catch (err) {
-    console.log("fetchETag ==>", err.message);
-  }
-}
 
 const secretManager = new AWS.SecretsManager({
   region: process.env.AWS_REGION
@@ -238,7 +217,6 @@ async function downloadFileS3(filePath) {
 
   try {
     const data = await s3.getObject(params).promise();
-    console.log('data------------>', data);
     return data.Body;
   } catch (err) {
     console.log(err.message);
@@ -253,9 +231,7 @@ async function fetchETag(fileid, filePath) {
   };
 
   try {
-    const data = await s3.getObject(params).promise();
-    console.log("data", data, fileid, filePath);
-    return data;
+    return data = await s3.getObject(params).promise();
   } catch (err) {
     console.log("file fetch error", err.message);
     return err;
@@ -267,17 +243,13 @@ async function generateEtag(data) {
   const md5sum = crypto.createHash('md5');
 
   let stream;
-  console.log("data 0", data);
   if (typeof data === 'string') {
-    console.log("data 1", data);
     // If data is a string, assume it's a file path
     stream = fs.createReadStream(data);
   } else if (Buffer.isBuffer(data)) {
-    console.log("data 2", data);
     // If data is a buffer, create a readable stream from the buffer
     stream = require('stream').Readable.from(data);
   } else {
-    console.log("data 3", data);
     // If the input is neither a string nor a buffer, reject with an error
     return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
   }

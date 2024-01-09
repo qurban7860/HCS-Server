@@ -34,6 +34,9 @@ const docSchema = new Schema({
         thumbnail: {type: String},
         // thumbnail generated and saved in db
 
+        awsETag: { type: String },
+        // file path 
+
         eTag: { type: String },
         // file path 
 

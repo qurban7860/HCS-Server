@@ -180,6 +180,7 @@ exports.postDocumentFile = async (req, res, next) => {
         req.body.path = processedFile.s3FilePath;
         req.body.fileType =req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
+        req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
 
         if(processedFile.base64thumbNailData)
@@ -416,7 +417,8 @@ async function processFile(file, userId) {
       name,
       fileExt,
       s3FilePath: s3Data.Key, 
-      eTag: s3Data.ETag, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData
@@ -438,7 +440,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { customer, isActive, isArchived, loginUser, documentVersion , description,
-  name, displayName, user, site, contact, machine, fileType, eTag } = req.body;
+  name, displayName, user, site, contact, machine, fileType, awsETag, eTag } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -453,6 +455,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("fileType" in req.body) {
     doc.fileType = fileType;
+  }
+
+  if ("awsETag" in req.body) {
+    doc.awsETag = awsETag;
   }
 
   if ("eTag" in req.body) {

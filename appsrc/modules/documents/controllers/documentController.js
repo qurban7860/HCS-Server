@@ -416,25 +416,15 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       eTag: { $exists: false },
     });
 
-    console.log(filteredFiles.length);
-
-
-
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
-        console.log("Processing fileObj:", fileObj);
-
         try {
-          const fileData = await awsService.fetchETag(fileObj._id, fileObj.path);
-          console.log("fileObj._id", fileObj._id, fileData);
-          
+          const fileData = await awsService.fetchETag(fileObj._id, fileObj.path);          
           if (fileData.ETag) {
             const ETagGenerated = await awsService.generateEtag(fileData.Body);
-            console.log("ETagGenerated", ETagGenerated);
-
             await DocumentFile.updateOne(
               { _id: fileObj._id },
-              { $set: { eTag: ETagGenerated.replace(/"/g, '') } }
+              { $set: { awsETag: ETagGenerated.replace(/"/g, '') } }
             );
             console.log(`ETag updated for file with _id: ${fileObj._id}`);
           } else {
@@ -445,7 +435,6 @@ exports.putDocumentFilesETag = async (req, res, next) => {
         }
       })
     );
-
     res.status(200).json({ message: 'ETags patched successfully' });
   } catch (error) {
     console.error('Error patching ETags:', error);
@@ -653,7 +642,9 @@ exports.postDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
+              req.body.awsETag = processedFile.awsETag;
               req.body.eTag = processedFile.eTag;
+              
               
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
@@ -936,6 +927,7 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
+              req.body.awsETag = processedFile.awsETag;
               req.body.eTag = processedFile.eTag;
 
               if(processedFile.base64thumbNailData)
@@ -1012,6 +1004,7 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
+              req.body.awsETag = processedFile.awsETag;
               req.body.eTag = processedFile.eTag;
 
               if(processedFile.base64thumbNailData)
@@ -1211,7 +1204,8 @@ async function processFile(file, userId) {
     name,
     fileExt,
     s3FilePath: s3Data.Key, 
-    eTag: s3Data.ETag,
+    awsETag: s3Data.awsETag,
+    eTag: s3Data.eTag,
     type: file.mimetype,
     physicalPath: file.path,
     base64thumbNailData
