@@ -783,6 +783,7 @@ async function saveDocumentFile(document_,file) {
     description:file.description,
     path:file.path,
     eTag:file.eTag,
+    awsETag:file.awsETag,
     fileType:file.type,
     extension:file.extension,
     thumbnail:file.content,
