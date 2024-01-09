@@ -72,7 +72,7 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
 
       if (documentFiles) {
         res.status(409).send({
-          message: `File already exists against ${etag}. File ${documentFiles._id}`,
+          message: `File already exists against.`,
           documentFiles
         });
       } else {
