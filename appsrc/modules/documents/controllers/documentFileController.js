@@ -65,15 +65,10 @@ exports.getDocumentFiles = async (req, res, next) => {
 exports.checkFileExistenceByETag = async (req, res, next) => {
   try {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
-      let etag = await awsService.generateEtag(req.files.images[0].path);
-      console.log("req.files.images[0].path", req.files.images[0].path);
-      const eTagReceived = await awsService.fetchETag("uploads/5007b0b0-aebc-11ee-8686-e361173501b7.csv");
-      console.log("eTagReceived", eTagReceived);
-
-      etag = etag.replace(/ /g, "").replace(/"/g, ""); // Replace double quotes in etag
-      
-      console.log("etag", etag);
-      const documentFiles = await DocumentFile.findOne({ eTag: etag });
+      let etag = await awsService.generateEtag(req.files.images[0].path);      
+      let queryString__ = { eTag: etag };
+      console.log("queryString__", queryString__);
+      const documentFiles = await DocumentFile.findOne(queryString__);
 
       if (documentFiles) {
         res.status(200).send(`File already exists against ${etag}. File ${documentFiles._id}`);
