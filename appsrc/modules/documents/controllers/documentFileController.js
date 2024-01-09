@@ -67,7 +67,7 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
       let etag = await generateEtag(req.files.images[0].path);
       console.log("req.files.images[0].path", req.files.images[0].path);
-      const eTagReceived = await awsService.fetchETag(req.files.images[0].path);
+      const eTagReceived = await awsService.fetchETag("uploads/5007b0b0-aebc-11ee-8686-e361173501b7.csv");
       console.log("eTagReceived", eTagReceived);
 
       etag = etag.replace(/ /g, "").replace(/"/g, ""); // Replace double quotes in etag
