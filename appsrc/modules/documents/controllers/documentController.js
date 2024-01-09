@@ -639,6 +639,7 @@ exports.postDocument = async (req, res, next) => {
             
             if(file && file.originalname) {
               const processedFile = await processFile(file, req.body.loginUser.userId);
+              console.log("processedFile", processedFile);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
@@ -1197,32 +1198,28 @@ async function processFile(file, userId) {
   
   const fileName = userId+"-"+new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
-
-
-  return {
-    fileName,
-    name,
-    fileExt,
-    s3FilePath: s3Data.Key, 
-    awsETag: s3Data.awsETag,
-    eTag: s3Data.eTag,
-    type: file.mimetype,
-    physicalPath: file.path,
-    base64thumbNailData
-  };
+  console.log("s3Data", s3Data);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
 
-
-
   if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
-
+    return {
+      fileName,
+      name,
+      fileExt,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
+      type: file.mimetype,
+      physicalPath: file.path,
+      base64thumbNailData
+    };
   }
 }
 

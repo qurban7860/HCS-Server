@@ -93,6 +93,7 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     if ('Key' in data && 'ETag' in data) {
       data.awsETag = data.ETag.replace(/"/g, '');
       data.eTag = generateEtag(`${folder}/${filename}.${ext}`);
+      console.log("data.eTag", data.eTag);
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -239,6 +240,7 @@ async function fetchETag(fileid, filePath) {
 }
 
 async function generateEtag(data) {
+  console.log("generateEtag data", data);
   const crypto = require('crypto');
   const md5sum = crypto.createHash('md5');
 
