@@ -303,5 +303,6 @@ module.exports = {
   copyFile,
   listBuckets,
   downloadFileS3,
-  fetchETag
+  fetchETag,
+  generateEtag
 };
