@@ -92,7 +92,7 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     data = await s3UploadAsync(uploadFileParams);
     if ('Key' in data && 'ETag' in data) {
       data.awsETag = data.ETag.replace(/"/g, '');
-      data.eTag = generateEtag(`${folder}/${filename}.${ext}`);
+      data.eTag = await generateEtag(`${folder}/${filename}.${ext}`);
       console.log("data.eTag", data.eTag);
     } else {
       console.log('Location not found, inside services/aws.js');
