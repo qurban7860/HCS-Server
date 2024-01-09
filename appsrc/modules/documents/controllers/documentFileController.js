@@ -67,6 +67,12 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
       let etag = await awsService.generateEtag(req.files.images[0].path);      
       let queryString__ = { eTag: etag };
+      const queryString = {
+        $or: [
+          { eTag: etag },
+          { awsETag: etag }
+        ]
+      };
 
       const documentFiles = await DocumentFile.findOne(queryString__).populate([{ path: 'version'}]);
 
