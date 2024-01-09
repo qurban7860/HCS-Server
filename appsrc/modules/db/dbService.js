@@ -139,7 +139,6 @@ class dbService {
       let existingRecord = await model.findById(id);
      
       if(existingRecord == null) {
-        console.log("----------------------------------------------------------------");
         const error = new Error("Invalid record");
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;

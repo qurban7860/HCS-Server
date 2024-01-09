@@ -46,7 +46,6 @@ exports.getConfig = async (req, res, next) => {
 
 
 exports.getConfigs = async (req, res, next) => {
-  console.log("test...");
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     const response = await this.dbservice.getObjectList(req, MetaSchema, this.fields, this.query, this.orderBy, this.populate);
@@ -74,7 +73,6 @@ exports.postConfig = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      console.log("Object.keys(req.body).length", Object.keys(req.body).length);
       if (Object.keys(req.body).length !== 0) {
         let existingConfig = await MetaSchema.findOne({collectionType: { $regex: req.body.collectionType.trim(), $options: 'i' }, isActive: true, isArchived: false});
         if(existingConfig){

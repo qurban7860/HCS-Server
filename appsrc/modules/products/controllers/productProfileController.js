@@ -46,7 +46,6 @@ exports.getProductProfiles = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.query.machine = this.machineId;
   this.orderBy = { createdAt: -1 };
-  console.log("Testing application");
   this.dbservice.getObjectList(req, ProductProfile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

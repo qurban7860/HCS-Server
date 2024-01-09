@@ -92,7 +92,6 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     data = await s3UploadAsync(uploadFileParams);
     if ('Key' in data && 'ETag' in data) {
       data.awsETag = data.ETag.replace(/"/g, '');
-      console.log("data.eTag", data.eTag);
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -201,7 +200,6 @@ async function sendEmailWithRawData(params, file) {
     if (err) {
       console.error(`Error sending raw email: ${err}`);
     }
-    console.log("message",message);
     let SES = new AWS.SES({region: process.env.AWS_REGION})
     let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
     console.log(response);

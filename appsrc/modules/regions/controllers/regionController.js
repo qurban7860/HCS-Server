@@ -57,7 +57,6 @@ exports.getRegions = async (req, res, next) => {
       delete this.query.orderBy;
     }
     
-    console.log("this.query", this.query);
     const response = await this.dbservice.getObjectList(req, Region, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {

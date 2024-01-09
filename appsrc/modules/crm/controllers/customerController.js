@@ -609,8 +609,6 @@ function getGUIDs(inputData) {
   if (Array.isArray(inputData)) {
     const extractedIds = inputData.map(item => {
       let idString = '';
-
-      console.log("item", item);
       if (item && item._id) {
         idString += item._id;
       }
@@ -631,19 +629,11 @@ function getGUIDs(inputData) {
   }
 }
 
-
-
-
-
 function getDocumentFromReq(req, reqType){
   const { name, clientCode, tradingName, type, mainSite, sites, contacts,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
-
-
-
-
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new Customer({});

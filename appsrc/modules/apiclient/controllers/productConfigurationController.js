@@ -87,8 +87,6 @@ exports.postProductConfiguration = async (req, res, next) => {
   // userObject.roles = userObject.roles.filter(role => (role.roleType === 'APIAccess' && role.isActive == true && role.isArchived == false));
   // const roleAPIFound = userObject.roles && userObject.roles.length > 0 ? true : false;
 
-  console.log("req.body.loginUser.roleTypes", req.body.loginUser);
-
   req.body.response = "APPROVED";
   const roleAPIFound = true;
   // const roleAPIFound = req.body.loginUser.roleTypes.filter(type => type === 'APIAccess'); if(roleAPIFound) {req.body.response = "APPROVED"} else {req.body.response = "DENIED"}; 

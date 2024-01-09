@@ -67,7 +67,7 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
       let etag = await awsService.generateEtag(req.files.images[0].path);      
       let queryString__ = { eTag: etag };
-      console.log("queryString__", queryString__);
+
       const documentFiles = await DocumentFile.findOne(queryString__).populate([{ path: 'version'}]);
 
       if (documentFiles) {
@@ -398,7 +398,6 @@ async function processFile(file, userId) {
   const fileName = userId+"-"+new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
   s3Data.eTag = await awsService.generateEtag(file.path);
-  console.log("s3Dataa 2", s3Data);
 
   // fs.unlinkSync(file.path);
   // if(thumbnailPath){

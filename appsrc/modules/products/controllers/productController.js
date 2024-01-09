@@ -400,15 +400,12 @@ exports.patchProduct = async (req, res, next) => {
     else{ 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
-
-          console.log("req.body.machineConnections", req.body.machineConnections, machine.machineConnections);
         
         let oldMachineConnections = machine.machineConnections;
         let newMachineConnections = req.body.machineConnections;
 
         let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
 
-        console.log("isSame", isSame);
         if(!isSame) {
 
           let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
@@ -419,7 +416,6 @@ exports.patchProduct = async (req, res, next) => {
 
           let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
           
-          console.log("toBeConnected", toBeConnected);
           if(toBeConnected.length>0) 
             machine = await connectMachines(machine.id, toBeConnected);
           

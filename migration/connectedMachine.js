@@ -24,15 +24,11 @@ async function main() {
 				let customerName = matches.ClientName;
 
 				let machineSerialNo = machine.EquipmentID;
-				console.log("machineSerialNo",machineSerialNo);
 				
 				if(typeof machineSerialNo == 'string')
 					machineSerialNo = machine.EquipmentID.trim();
 
 				let parentMachineSerialNo = matches[1].trim();
-
-				console.log("parentMachineSerialNo",parentMachineSerialNo);
-
 				let parentMachine = await Product.findOne({serialNo:parentMachineSerialNo});
 
 				let machineDB = await Product.findOne({serialNo:machineSerialNo});

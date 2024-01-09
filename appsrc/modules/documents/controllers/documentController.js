@@ -97,13 +97,11 @@ exports.getDocuments = async (req, res, next) => {
   let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    console.log("req.query", req.query);  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
 
-    console.log("this.query.isVersionNeeded", this.query.isVersionNeeded);
     if(this.query && (this.query.isVersionNeeded==false || this.query.isVersionNeeded=='false')) {
       isVersionNeeded = false;
       delete this.query.isVersionNeeded;
@@ -177,7 +175,6 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }
     ];
-    console.log("this.query", this.query);
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
@@ -237,7 +234,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
   
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    console.log("basic Query", req.query);  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
@@ -332,7 +328,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
       let machineDrawings = await ProductDrawing.find({machine : {'$in':customerMachines_}, isActive: true, isArchived: false}).select('document').lean();  
       if(Array.isArray(machineDrawings) && machineDrawings.length>0) {
         let drawingIds = machineDrawings.map((dc)=>dc.document.toString());
-        console.log("drawingIds", drawingIds);
         queryString__.push({_id : {'$in':drawingIds}});
       }
     }
@@ -639,7 +634,6 @@ exports.postDocument = async (req, res, next) => {
             
             if(file && file.originalname) {
               const processedFile = await processFile(file, req.body.loginUser.userId);
-              console.log("processedFile", processedFile);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
@@ -1200,7 +1194,6 @@ async function processFile(file, userId) {
   const fileName = userId+"-"+new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
   s3Data.eTag = await awsService.generateEtag(file.path);
-  console.log("s3Dataa", s3Data);
 
   // fs.unlinkSync(file.path);
   // if(thumbnailPath){

@@ -86,8 +86,6 @@ exports.postApiLog = async (req, res, next) => {
       
       let reqBodyInsertion = getDocumentFromReq(req, 'new');
       
-
-      console.log("reqBodyInsertion", reqBodyInsertion);
       const response = await this.dbservice.postObject(reqBodyInsertion);
       res.status(StatusCodes.CREATED).json({ ApiLog: response });
     } catch (error) {
@@ -147,7 +145,6 @@ function getDocumentFromReq(req, reqType) {
     doc.createdIP = loginUser.userIP;
   }
 
-  console.log("doc", doc);
   return doc;
 }
 

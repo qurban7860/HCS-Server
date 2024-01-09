@@ -148,8 +148,6 @@ exports.getParentMachines = async (req, res, next) => {
     
     this.query = {connectedMachine: req.params.connectedMachine, disconnectionDate: {$exists: false}};
 
-    console.log("this.query", this.query);
-
     const response = await dbservice.getObjectList(req, ProductConnection, {machine: 1}, this.query, {_id: -1}, this.populate);
     res.json(response);
   } catch (error) {

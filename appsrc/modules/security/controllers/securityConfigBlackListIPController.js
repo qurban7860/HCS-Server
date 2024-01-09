@@ -87,7 +87,6 @@ exports.getSecurityConfigBlackListIP = async (req, res, next) => {
 
 exports.getSecurityConfigBlackListIPs = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  console.log("here....");
   this.dbservice.getObjectList(req, SecurityConfigBlackListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

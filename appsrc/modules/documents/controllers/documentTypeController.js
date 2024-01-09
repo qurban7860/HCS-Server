@@ -127,7 +127,6 @@ exports.postDocumentType = async (req, res, next) => {
           if (updateDefaultString.length > 0) {
             queryString__.$or = updateDefaultString;
           }
-          console.log("queryString__", queryString__);
           let docxCategories = await DocumentCategory.find(queryString__).select('_id').lean();
           
           await DocumentType.updateMany({docCategory: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
@@ -166,7 +165,6 @@ exports.patchDocumentType = async (req, res, next) => {
           if (updateDefaultString.length > 0) {
             queryString__.$or = updateDefaultString;
           }
-          console.log("queryString__", queryString__);
           let docxCategories = await DocumentCategory.find(queryString__).select('_id').lean();
           
           await DocumentType.updateMany({docCategory: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
