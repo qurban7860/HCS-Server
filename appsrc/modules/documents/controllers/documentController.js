@@ -419,7 +419,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
             const ETagGenerated = await awsService.generateEtag(fileData.Body);
             await DocumentFile.updateOne(
               { _id: fileObj._id },
-              { $set: { awsETag: ETagGenerated.replace(/"/g, '') } }
+              { $set: { eTag: fileData.ETag.replace(/"/g, ''), ETag: ETagGenerated.replace(/"/g, '') } }
             );
             console.log(`ETag updated for file with _id: ${fileObj._id}`);
           } else {
