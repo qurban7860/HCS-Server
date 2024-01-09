@@ -222,7 +222,7 @@ async function downloadFileS3(filePath) {
   }
 }
 
-async function fetchETag(fileid, filePath) {
+async function fetAWSFileInfo(fileid, filePath) {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: filePath
@@ -277,6 +277,6 @@ module.exports = {
   copyFile,
   listBuckets,
   downloadFileS3,
-  fetchETag,
+  fetAWSFileInfo,
   generateEtag
 };
