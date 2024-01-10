@@ -67,6 +67,10 @@ module.exports = async (req, res, next) => {
     //console.log(`The client's IP Address is: ${clientIP}`);
     // console.log('decoded token ---------->', decodedToken);
     req.body.loginUser = decodedToken;
+
+    if(req.query) {
+      console.log("req.query", req.query);
+    }
     next();
   } catch (err) {
     console.log('middleware------------------------111');
