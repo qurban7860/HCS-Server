@@ -453,28 +453,6 @@ exports.testing = async (req, res, next) => {
   try {
     const uploadedFile = req.file;
     console.log('File uploaded:', uploadedFile);
-
-    if (uploadedFile.mimetype === 'application/pdf') {
-      // If the uploaded file is a PDF, use pdf-lib to reduce its size
-      console.log("uploadedFile.path", uploadedFile.path);
-      const pdfBytes = await fs.readFile(uploadedFile.path);
-      const pdfDoc = await PDFDocument.load(pdfBytes);
-
-      // Perform modifications or optimizations here if needed
-      // For example, you can remove unnecessary elements, compress images, etc.
-
-      const modifiedPdfBytes = await pdfDoc.save();
-      const modifiedPdfFileName = 'modified_' + uploadedFile.filename;
-      const modifiedPdfFilePath = 'uploads/' + modifiedPdfFileName;
-      await fs.writeFile(modifiedPdfFilePath, modifiedPdfBytes);
-
-      console.log('Modified PDF saved:', modifiedPdfFilePath);
-
-      req.modifiedFile = {
-        filename: modifiedPdfFileName,
-        path: modifiedPdfFilePath,
-      };
-    } else {
       // If the uploaded file is an image, use sharp to resize it
       const resizedImageBuffer = await sharp(uploadedFile.path)
         .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
@@ -490,7 +468,6 @@ exports.testing = async (req, res, next) => {
         filename: resizedFileName,
         path: resizedFilePath,
       };
-    }
 
     res.sendStatus(200);
     next();
