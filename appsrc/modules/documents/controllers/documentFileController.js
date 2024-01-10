@@ -348,6 +348,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           let bufferValue = null;
           if(file.fileType.includes('image')){
             try {
+              console.log("ok");
               const dimensions = sizeOf(data.Body);
               const detectedFormat = dimensions.type;
               console.log("detectedFormat", detectedFormat);
