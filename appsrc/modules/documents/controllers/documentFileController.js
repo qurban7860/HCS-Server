@@ -340,7 +340,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const data = await awsService.fetAWSFileInfo(file._id, file.path);
-
+          console.log("data", data);
           let resizedImageBuffer = null;
           console.log("file.fileType", file.fileType);
           if(file.fileType.includes('image')){
