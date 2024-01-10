@@ -97,6 +97,7 @@ exports.getDocuments = async (req, res, next) => {
 
 
   console.log("req.data", req?.data);
+  console.log("req", req);
 
   let isVersionNeeded = true;
   let isDrawing = false;
