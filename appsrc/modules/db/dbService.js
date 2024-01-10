@@ -84,7 +84,9 @@ class dbService {
 
     try {
       let documents = await query_.exec();
+      console.log("@", req.body.page);
       if(req.body.page) {
+        console.log("@2", req.body.page);
         let listDocuments = {
           documents,
           ...(req.body.page && {
