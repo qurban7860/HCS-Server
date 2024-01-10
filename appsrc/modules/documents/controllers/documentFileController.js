@@ -351,8 +351,6 @@ exports.downloadDocumentFile = async (req, res, next) => {
                 .jpeg({ quality: 1, mozjpeg: true }) // Adjust quality to 80
                 .toBuffer();
                 bufferValue = Buffer.from(resizedImageBuffer, 'base64');
-
-              console.log("resizedImageBuffer", resizedImageBuffer);
             } catch (error) {
                 console.error("Error processing image:", error);
             }
@@ -368,7 +366,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           }
 
           await createAuditLog(documentAuditLogObj,req);
-          console.log("----end...");
+          console.log("----end...", bufferValue);
           return res.status(StatusCodes.ACCEPTED).send(bufferValue);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
