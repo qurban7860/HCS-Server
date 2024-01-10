@@ -349,16 +349,16 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if(file.fileType.includes('image')){
             try {
               console.log("ok");
-              const dimensions = await sizeOf(data.Body);
-              const detectedFormat = dimensions.type;
-              console.log("detectedFormat", detectedFormat);
-              console.log("detectedFormat", detectedFormat.ext);
+              // const dimensions = await sizeOf(data.Body);
+              // const detectedFormat = dimensions.type;
+              // console.log("detectedFormat", detectedFormat);
+              // console.log("detectedFormat", detectedFormat.ext);
 
               console.log("data.Body", data.Body);
 
               resizedImageBuffer = await sharp(data.Body)
                 // .jpeg({ quality: 10, mozjpeg: true })
-                .toFormat(detectedFormat.ext)
+                // .toFormat(detectedFormat.ext)
                 .resize({ width: 300, height: 200 })
                 .toBuffer();
             } catch (error) {
