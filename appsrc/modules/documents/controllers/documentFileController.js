@@ -9,6 +9,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const awsService = require('../../../../appsrc/base/aws');
 
 const _ = require('lodash');
+
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -20,6 +21,7 @@ const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion,
 const { Customer, CustomerSite } = require('../../crm/models');
 const { Machine } = require('../../products/models');
 
+const sizeOf = require('image-size');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -328,7 +330,7 @@ exports.patchDocumentFile = async (req, res, next) => {
     }
   }
 };
-// const imageType = require('image-type');
+
 exports.downloadDocumentFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -346,12 +348,14 @@ exports.downloadDocumentFile = async (req, res, next) => {
           let bufferValue = null;
           if(file.fileType.includes('image')){
             try {
-              // const detectedFormat = imageType(data.Body);
+              const dimensions = sizeOf(data.Body);
+              const detectedFormat = dimensions.type;
+
               console.log("data.Body", data.Body);
 
               resizedImageBuffer = await sharp(data.Body)
                 // .jpeg({ quality: 10, mozjpeg: true })
-                // .toFormat(detectedFormat.ext)
+                .toFormat(detectedFormat.ext)
                 .resize({ width: 300, height: 200 })
                 .toBuffer();
             } catch (error) {
