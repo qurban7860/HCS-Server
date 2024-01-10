@@ -377,7 +377,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
 
           await createAuditLog(documentAuditLogObj,req);
           console.log("----end...", resizedImageBuffer);
-          return res.status(StatusCodes.ACCEPTED).send(resizedImageBuffer);
+          return res.status(StatusCodes.ACCEPTED).send(data.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
