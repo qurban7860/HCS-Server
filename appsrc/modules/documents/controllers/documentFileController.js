@@ -349,16 +349,27 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if(file.fileType.includes('image')){
             try {
               console.log("ok");
-              // const dimensions = await sizeOf(data.Body);
-              // const detectedFormat = dimensions.type;
-              // console.log("detectedFormat", detectedFormat);
-              // console.log("detectedFormat", detectedFormat.ext);
+              
+              const fileContent = data.Body;
+
+              // Specify the file path where you want to save the file
+              const filePath = 'uploads/testing.jpg'; // Replace with your desired file path and name
+              
+              // Write the file content to the specified file path
+              await fs.writeFile(filePath, fileContent, (err) => {
+                if (err) {
+                  console.error('Error saving file:', err);
+                } else {
+                  console.log('File saved successfully:', filePath);
+                }
+              });
+
 
               const base64Data = data.Body.toString('base64');
               const buffer = await Buffer.from(data.Body);
               console.log("buffer", buffer);
               
-              resizedImageBuffer = await sharp(buffer)
+              resizedImageBuffer = await sharp(filePath)
                 // .jpeg({ quality: 10, mozjpeg: true })
                 .toFormat('jpeg')
                 .resize({ width: 300, height: 200 })
