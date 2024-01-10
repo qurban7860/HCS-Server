@@ -229,11 +229,10 @@ async function fetchAWSFileInfo(fileid, filePath) {
   };
 
   try {
-    const data = await s3.getObject(params).createReadStream();
-    return data;
+    return data = await s3.getObject(params).promise();
   } catch (err) {
     console.log("file fetch error", err.message);
-    throw err; // Re-throw the error to propagate it to the calling code
+    return err;
   }
 }
 
