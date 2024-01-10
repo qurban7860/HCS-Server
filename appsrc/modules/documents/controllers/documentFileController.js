@@ -349,7 +349,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
               console.log("data.Body", data.Body);
 
               resizedImageBuffer = await sharp(data.Body)
-                .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
+                // .jpeg({ quality: 10, mozjpeg: true })
+                .resize({ width: 300, height: 200 })
                 .toBuffer();
             } catch (error) {
                 console.error("Error processing image:", error);
@@ -366,7 +367,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           }
 
           await createAuditLog(documentAuditLogObj,req);
-          console.log("----end...", bufferValue);
+          console.log("----end...", resizedImageBuffer);
           return res.status(StatusCodes.ACCEPTED).send(resizedImageBuffer);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
