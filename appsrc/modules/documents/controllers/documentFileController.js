@@ -339,15 +339,18 @@ exports.downloadDocumentFile = async (req, res, next) => {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
-          const fileContent = await awsService.downloadFileS3(file.path);
+          const data = await awsService.fetAWSFileInfo(file.path);
 
-          console.log("file.mimetype", file.mimetype);
-          if(file.mimetype.includes('image')){
+          let resizedImageBuffer = null;
+          console.log("file.fileType", file.fileType);
+          if(file.fileType.includes('image')){
             console.log("resizedImageBuffer @1");
-            const resizedImageBuffer = await sharp(fileContent)
+            resizedImageBuffer = await sharp(data.body)
               .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
               .toBuffer();
               console.log("resizedImageBuffer", resizedImageBuffer);
+          } else {
+            resizedImageBuffer = data.body;
           }
 
           let documentAuditLogObj = {
