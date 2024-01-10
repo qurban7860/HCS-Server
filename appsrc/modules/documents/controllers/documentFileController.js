@@ -360,11 +360,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
                 if (err) {
                   console.error('Error saving file:', err);
                 } else {
-                  const base64Data = data.Body.toString('base64');
-                  const buffer = await Buffer.from(data.Body);
-                  console.log("buffer", buffer);
-                  
-                  resizedImageBuffer = await sharp(filePath)
+
+                  resizedImageBuffer = sharp(filePath)
                     // .jpeg({ quality: 10, mozjpeg: true })
                     .toFormat('jpeg')
                     .resize({ width: 300, height: 200 })
