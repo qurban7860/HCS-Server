@@ -344,13 +344,13 @@ exports.downloadDocumentFile = async (req, res, next) => {
           let resizedImageBuffer = null;
           console.log("file.fileType", file.fileType);
           if(file.fileType.includes('image')){
-            console.log("resizedImageBuffer @1");
-            resizedImageBuffer = await sharp(data.body)
+            console.log("resizedImageBuffer @1", data.Body);
+            resizedImageBuffer = await sharp(data.Body)
               .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
               .toBuffer();
               console.log("resizedImageBuffer", resizedImageBuffer);
           } else {
-            resizedImageBuffer = data.body;
+            resizedImageBuffer = data.Body;
           }
 
           let documentAuditLogObj = {
