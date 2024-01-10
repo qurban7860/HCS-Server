@@ -341,7 +341,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
-          const data = await awsService.fetAWSFileInfo(file._id, file.path);
+          const data = await awsService.fetchAWSFileInfo(file._id, file.path);
           console.log("data", data);
           let resizedImageBuffer = null;
           console.log("file.fileType", file.fileType);
