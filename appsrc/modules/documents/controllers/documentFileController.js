@@ -341,6 +341,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
+          const w = parseInt(req.params.w) || 50;
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
           console.log("data", data);
           let resizedImageBuffer = null;
@@ -353,8 +354,16 @@ exports.downloadDocumentFile = async (req, res, next) => {
               const fileContent = data.Body;
               console.log("fileContent", fileContent);
 
-              resizedImageBuffer = sharp(fileContent)
-              .toBuffer();
+              const transformer = (w) => sharp().resize(w)
+              pipeline(readStream, transformer(w), res, (err) => {
+                  if (err) {
+                      next(err)
+                  }
+              })
+
+              // resizedImageBuffer = sharp(fileContent)
+              // .toBuffer();
+              console.log("transformer", transformer);
 
 
 
