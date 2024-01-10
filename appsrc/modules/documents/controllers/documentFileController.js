@@ -340,8 +340,10 @@ exports.downloadDocumentFile = async (req, res, next) => {
     try {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
       if(file){
+        const { promisify } = require('util');
+        const pipeline = promisify(require('stream').pipeline);
+        
         if (file.path && file.path !== '') {
-          const w = parseInt(req.params.w) || 50;
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
           console.log("data", data);
           let resizedImageBuffer = null;
@@ -350,19 +352,20 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if(file.fileType.includes('image')){
             try {
               console.log("ok");
-              
+    
+              // Assuming you obtain the width (w) from somewhere, e.g., request parameters
+              const w = 100; // Replace with your actual width or obtain it dynamically
+          
               const fileContent = data.Body;
               console.log("fileContent", fileContent);
-
-              const transformer = (w) => sharp().resize(w)
-              pipeline(readStream, transformer(w), res, (err) => {
-                  if (err) {
-                      next(err)
-                  }
-              })
-
-              // resizedImageBuffer = sharp(fileContent)
-              // .toBuffer();
+          
+              // Define the transformer function with the width parameter
+              const transformer = (w) => sharp().resize(w);
+          
+              // Use promisified pipeline to handle the stream processing
+              await pipeline(fileContent, transformer(w), res);
+          
+              // resizedImageBuffer = sharp(fileContent).toBuffer();
               console.log("transformer", transformer);
 
 
