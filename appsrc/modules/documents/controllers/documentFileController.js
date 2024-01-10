@@ -345,8 +345,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
           console.log("file.fileType", file.fileType);
           if(file.fileType.includes('image')){
             try {
-              console.log("resizedImageBuffer @1", data.Body);
-              resizedImageBuffer = await sharp(data.Body)
+              console.log("resizedImageBuffer @1", data.Body.toString('base64'));
+              resizedImageBuffer = await sharp((data.Body).toString('base64'))
                 .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
                 .toBuffer();
               console.log("resizedImageBuffer", resizedImageBuffer);
