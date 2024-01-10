@@ -354,10 +354,11 @@ exports.downloadDocumentFile = async (req, res, next) => {
               // console.log("detectedFormat", detectedFormat);
               // console.log("detectedFormat", detectedFormat.ext);
 
-              console.log("data.Body", data.Body);
               const base64Data = data.Body.toString('base64');
-
-              resizedImageBuffer = await sharp(base64Data)
+              const buffer = Buffer.from(data.Body);
+              console.log("buffer", buffer);
+              
+              resizedImageBuffer = await sharp(buffer)
                 // .jpeg({ quality: 10, mozjpeg: true })
                 .toFormat('jpeg')
                 .resize({ width: 300, height: 200 })
