@@ -91,7 +91,12 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+  console.log("req.body", req.body);
 
+  console.log("req.query", req.query);
+
+
+  console.log("req.data", req.data);
 
   let isVersionNeeded = true;
   let isDrawing = false;
