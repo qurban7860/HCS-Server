@@ -222,17 +222,18 @@ async function downloadFileS3(filePath) {
   }
 }
 
-async function fetAWSFileInfo(fileid, filePath) {
+async function fetchAWSFileInfo(fileid, filePath) {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: filePath
   };
 
   try {
-    return data = await s3.getObject(params).createReadStream().promise();
+    const data = await s3.getObject(params).createReadStream();
+    return data;
   } catch (err) {
     console.log("file fetch error", err.message);
-    return err;
+    throw err; // Re-throw the error to propagate it to the calling code
   }
 }
 
