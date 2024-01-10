@@ -71,10 +71,17 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
         $or: [
           { eTag: etag },
           { awsETag: etag }
+          // Add more conditions as needed
         ]
       };
 
       const documentFiles = await DocumentFile.findOne(queryString__).populate([{ path: 'version'}]);
+
+
+      // res.status(409).send({
+      //   message: `File already exists against.`,
+      //   documentFiles" :{'6381928301928302':{'message',documentFiles}}
+      // });
 
       if (documentFiles) {
         res.status(409).send({
@@ -333,6 +340,16 @@ exports.downloadDocumentFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const fileContent = await awsService.downloadFileS3(file.path);
+
+          console.log("file.mimetype", file.mimetype);
+          if(file.mimetype.includes('image')){
+            console.log("resizedImageBuffer @1");
+            const resizedImageBuffer = await sharp(fileContent)
+              .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
+              .toBuffer();
+              console.log("resizedImageBuffer", resizedImageBuffer);
+          }
+
           let documentAuditLogObj = {
             documentFile : file.id,
             activityType : "Download",
@@ -341,7 +358,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           }
 
           await createAuditLog(documentAuditLogObj,req);
-          return res.status(StatusCodes.ACCEPTED).send(fileContent);
+          return res.status(StatusCodes.ACCEPTED).send(resizedImageBuffer);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
