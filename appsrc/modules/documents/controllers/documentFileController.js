@@ -351,24 +351,13 @@ exports.downloadDocumentFile = async (req, res, next) => {
               console.log("ok");
               
               const fileContent = data.Body;
+              console.log("fileContent", fileContent);
 
-              // Specify the file path where you want to save the file
-              const filePath = 'uploads/testing.jpg'; // Replace with your desired file path and name
-              
-              // Write the file content to the specified file path
-              await fs.writeFile(filePath, fileContent, (err) => {
-                if (err) {
-                  console.error('Error saving file:', err);
-                } else {
-
-                  resizedImageBuffer = sharp(filePath)
-                    // .jpeg({ quality: 10, mozjpeg: true })
-                    .toFormat('jpeg')
-                    .resize({ width: 300, height: 200 })
-                    .toBuffer();
-                  console.log('File saved successfully:', filePath);
-                }
-              });
+              resizedImageBuffer = sharp(fileContent)
+              // .jpeg({ quality: 10, mozjpeg: true })
+              .toFormat('image/jpeg')
+              .resize({ width: 300, height: 200 })
+              .toBuffer();
 
 
 
