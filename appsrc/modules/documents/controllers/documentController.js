@@ -447,7 +447,6 @@ exports.putDocumentFilesETag = async (req, res, next) => {
   }
 };
 
-const { PDFDocument } = require('pdf-lib');
 
 exports.testing = async (req, res, next) => {
   try {
