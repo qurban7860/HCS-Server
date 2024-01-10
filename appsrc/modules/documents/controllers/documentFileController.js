@@ -350,6 +350,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
             try {
               const dimensions = sizeOf(data.Body);
               const detectedFormat = dimensions.type;
+              console.log("detectedFormat", detectedFormat);
+              console.log("detectedFormat", detectedFormat.ext);
 
               console.log("data.Body", data.Body);
 
