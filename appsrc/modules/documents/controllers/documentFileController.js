@@ -362,6 +362,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
                 .resize({ width: 300, height: 200 })
                 .toBuffer();
             } catch (error) {
+                return res.status(StatusCodes.ACCEPTED).send(data.Body);
                 console.error("Error processing image:", error);
             }
           } else {
