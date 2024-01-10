@@ -360,24 +360,24 @@ exports.downloadDocumentFile = async (req, res, next) => {
                 if (err) {
                   console.error('Error saving file:', err);
                 } else {
+
+                  
+                  resizedImageBuffer = await sharp(filePath)
+                    // .jpeg({ quality: 10, mozjpeg: true })
+                    .toFormat('jpeg')
+                    .resize({ width: 300, height: 200 })
+                    .toBuffer();
+                } catch (error) {
+                    console.error("Error processing image:", error);
+                    return res.status(StatusCodes.ACCEPTED).send(data.Body);
+                }
+
                   console.log('File saved successfully:', filePath);
                 }
               });
 
 
-              const base64Data = data.Body.toString('base64');
-              const buffer = await Buffer.from(data.Body);
-              console.log("buffer", buffer);
-              
-              resizedImageBuffer = await sharp(filePath)
-                // .jpeg({ quality: 10, mozjpeg: true })
-                .toFormat('jpeg')
-                .resize({ width: 300, height: 200 })
-                .toBuffer();
-            } catch (error) {
-                console.error("Error processing image:", error);
-                return res.status(StatusCodes.ACCEPTED).send(data.Body);
-            }
+
           } else {
             resizedImageBuffer = data.Body;
           }
