@@ -346,11 +346,10 @@ exports.downloadDocumentFile = async (req, res, next) => {
           let bufferValue = null;
           if(file.fileType.includes('image')){
             try {
-              console.log("resizedImageBuffer @1", data.Body.toString('base64'));
               resizedImageBuffer = await sharp((data.Body).toString('base64'))
                 .jpeg({ quality: 1, mozjpeg: true }) // Adjust quality to 80
                 .toBuffer();
-                bufferValue = Buffer.from(resizedImageBuffer, 'base64');
+                bufferValue = await Buffer.from(resizedImageBuffer, 'base64');
             } catch (error) {
                 console.error("Error processing image:", error);
             }
