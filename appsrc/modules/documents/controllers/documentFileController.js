@@ -347,7 +347,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if(file.fileType.includes('image')){
             try {
               resizedImageBuffer = await sharp((data.Body).toString('base64'))
-                .jpeg({ quality: 1, mozjpeg: true }) // Adjust quality to 80
+                .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
                 .toBuffer();
                 bufferValue = await Buffer.from(resizedImageBuffer, 'base64');
             } catch (error) {
@@ -366,7 +366,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
 
           await createAuditLog(documentAuditLogObj,req);
           console.log("----end...", bufferValue);
-          return res.status(StatusCodes.ACCEPTED).send(bufferValue);
+          return res.status(StatusCodes.ACCEPTED).send(file.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
