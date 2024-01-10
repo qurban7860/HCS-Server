@@ -447,58 +447,58 @@ exports.putDocumentFilesETag = async (req, res, next) => {
   }
 };
 
-// const { PDFDocument } = require('pdf-lib');
+const { PDFDocument } = require('pdf-lib');
 
-// exports.testing = async (req, res, next) => {
-//   try {
-//     const uploadedFile = req.file;
-//     console.log('File uploaded:', uploadedFile);
+exports.testing = async (req, res, next) => {
+  try {
+    const uploadedFile = req.file;
+    console.log('File uploaded:', uploadedFile);
 
-//     if (uploadedFile.mimetype === 'application/pdf') {
-//       // If the uploaded file is a PDF, use pdf-lib to reduce its size
-//       console.log("uploadedFile.path", uploadedFile.path);
-//       const pdfBytes = await fs.readFile(uploadedFile.path);
-//       const pdfDoc = await PDFDocument.load(pdfBytes);
+    if (uploadedFile.mimetype === 'application/pdf') {
+      // If the uploaded file is a PDF, use pdf-lib to reduce its size
+      console.log("uploadedFile.path", uploadedFile.path);
+      const pdfBytes = await fs.readFile(uploadedFile.path);
+      const pdfDoc = await PDFDocument.load(pdfBytes);
 
-//       // Perform modifications or optimizations here if needed
-//       // For example, you can remove unnecessary elements, compress images, etc.
+      // Perform modifications or optimizations here if needed
+      // For example, you can remove unnecessary elements, compress images, etc.
 
-//       const modifiedPdfBytes = await pdfDoc.save();
-//       const modifiedPdfFileName = 'modified_' + uploadedFile.filename;
-//       const modifiedPdfFilePath = 'uploads/' + modifiedPdfFileName;
-//       await fs.writeFile(modifiedPdfFilePath, modifiedPdfBytes);
+      const modifiedPdfBytes = await pdfDoc.save();
+      const modifiedPdfFileName = 'modified_' + uploadedFile.filename;
+      const modifiedPdfFilePath = 'uploads/' + modifiedPdfFileName;
+      await fs.writeFile(modifiedPdfFilePath, modifiedPdfBytes);
 
-//       console.log('Modified PDF saved:', modifiedPdfFilePath);
+      console.log('Modified PDF saved:', modifiedPdfFilePath);
 
-//       req.modifiedFile = {
-//         filename: modifiedPdfFileName,
-//         path: modifiedPdfFilePath,
-//       };
-//     } else {
-//       // If the uploaded file is an image, use sharp to resize it
-//       const resizedImageBuffer = await sharp(uploadedFile.path)
-//         .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
-//         .toBuffer();
+      req.modifiedFile = {
+        filename: modifiedPdfFileName,
+        path: modifiedPdfFilePath,
+      };
+    } else {
+      // If the uploaded file is an image, use sharp to resize it
+      const resizedImageBuffer = await sharp(uploadedFile.path)
+        .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
+        .toBuffer();
 
-//       const resizedFileName = 'resized_' + uploadedFile.filename;
-//       const resizedFilePath = 'uploads/' + resizedFileName;
-//       await sharp(resizedImageBuffer).toFile(resizedFilePath);
+      const resizedFileName = 'resized_' + uploadedFile.filename;
+      const resizedFilePath = 'uploads/' + resizedFileName;
+      await sharp(resizedImageBuffer).toFile(resizedFilePath);
 
-//       console.log('Resized image saved:', resizedFilePath);
+      console.log('Resized image saved:', resizedFilePath);
 
-//       req.resizedFile = {
-//         filename: resizedFileName,
-//         path: resizedFilePath,
-//       };
-//     }
+      req.resizedFile = {
+        filename: resizedFileName,
+        path: resizedFilePath,
+      };
+    }
 
-//     res.sendStatus(200);
-//     next();
-//   } catch (error) {
-//     console.error('Error processing the uploaded file:', error);
-//     res.status(500).send('Internal Server Error');
-//   }
-// };
+    res.sendStatus(200);
+    next();
+  } catch (error) {
+    console.error('Error processing the uploaded file:', error);
+    res.status(500).send('Internal Server Error');
+  }
+};
 
 
 

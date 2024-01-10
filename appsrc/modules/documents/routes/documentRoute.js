@@ -39,8 +39,8 @@ router.get(`${baseRoute}/:id`,controller.getDocument);
 // - /api/1.0.0/documents/
 router.get(`${baseRoute}/`, controller.getDocuments);
 
-// const upload = multer({ dest: 'uploads/' })
-// router.post(`/aaaaaaaa/`,upload.single('document'),  controller.testing);
+const upload = multer({ dest: 'uploads/' })
+router.post(`/aaaaaaaa/`,upload.single('document'),  controller.testing);
 
 // - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
