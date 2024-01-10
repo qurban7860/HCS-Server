@@ -350,6 +350,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
 
               resizedImageBuffer = await sharp(data.Body)
                 // .jpeg({ quality: 10, mozjpeg: true })
+                .toFormat('jpeg')
                 .resize({ width: 300, height: 200 })
                 .toBuffer();
             } catch (error) {
