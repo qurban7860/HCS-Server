@@ -77,7 +77,7 @@ class dbService {
     
     if (req.body.page) {
       page = parseInt(req.body.page) || 1; // Current page number
-      pageSize = parseInt(req.body.pageSize) || 10; // Number of documents per page
+      pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       countDocuments = await model.find(query).countDocuments();
       query_ = query_.skip((page - 1) * pageSize).limit(pageSize);
     }  

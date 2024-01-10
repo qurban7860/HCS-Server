@@ -68,8 +68,10 @@ module.exports = async (req, res, next) => {
     // console.log('decoded token ---------->', decodedToken);
     req.body.loginUser = decodedToken;
 
-    if(req.query) {
-      console.log("req.query", req.query);
+    if(req.query?.pagination?.page) {
+      req.body.page = req.query?.pagination?.page;
+      req.body.pageSize = req.query?.pagination?.pageSize;
+      delete req.query?.pagination;
     }
     next();
   } catch (err) {
