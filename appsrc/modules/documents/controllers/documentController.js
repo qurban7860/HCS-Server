@@ -91,14 +91,6 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
-  console.log("req.body", req?.body);
-
-  console.log("req.query", req?.query);
-
-
-  console.log("req.data", req?.data);
-  console.log("req", req);
-
   let isVersionNeeded = true;
   let isDrawing = false;
   try {
@@ -463,13 +455,8 @@ exports.testing = async (req, res, next) => {
 
       console.log('Resized image saved:', resizedFilePath);
 
-      req.resizedFile = {
-        filename: resizedFileName,
-        path: resizedFilePath,
-      };
 
     res.sendStatus(200);
-    next();
   } catch (error) {
     console.error('Error processing the uploaded file:', error);
     res.status(500).send('Internal Server Error');
