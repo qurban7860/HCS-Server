@@ -328,7 +328,7 @@ exports.patchDocumentFile = async (req, res, next) => {
     }
   }
 };
-const imageType = require('image-type');
+// const imageType = require('image-type');
 exports.downloadDocumentFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -346,12 +346,12 @@ exports.downloadDocumentFile = async (req, res, next) => {
           let bufferValue = null;
           if(file.fileType.includes('image')){
             try {
-              const detectedFormat = imageType(data.Body);
+              // const detectedFormat = imageType(data.Body);
               console.log("data.Body", data.Body);
 
               resizedImageBuffer = await sharp(data.Body)
                 // .jpeg({ quality: 10, mozjpeg: true })
-                .toFormat(detectedFormat.ext)
+                // .toFormat(detectedFormat.ext)
                 .resize({ width: 300, height: 200 })
                 .toBuffer();
             } catch (error) {
