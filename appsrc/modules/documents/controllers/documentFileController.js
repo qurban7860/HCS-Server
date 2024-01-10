@@ -350,7 +350,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
             try {
               console.log("ok");
               
-              const base64ImageString = data.Body;
+              let base64ImageString = data.Body;
               base64ImageString = 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAA2ElEQVR42mP8//8/AyJgAgn+ZFA4/gHx8FfGBlAy5Bc8BnGoMxg8BOwHgDzjgCpyRg+Pn7cOLmCP4D5kgmCOmFGzQaDAcBfITqQ4UpIIKlRBBGKASUlGgAqIoyFAHdVwDIdqYI+CbHgFmwCWoqMCZiArMFkAuF2gAA5FAFpK7AAhkgAgFAGC6JIBACF7ZgAAyEgBtDgAA+LwBeMSEAXobnQAAezgBwHHAjSAAAAAElFTkSuQmCC';
 
               const buffer = Buffer.from(base64ImageString, 'base64');
