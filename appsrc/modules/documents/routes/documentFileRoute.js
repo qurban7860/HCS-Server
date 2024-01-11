@@ -26,7 +26,7 @@ router.use(checkAuth, checkCustomer);
 
 
 router.post(`/checkFileExistenceByETag/`, (req, res, next) => {
-  fileUpload.fields([{name:'images', maxCount:1}])(req, res, (err) => {
+  fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
 
     if (err instanceof multer.MulterError) {
       console.log(err);
