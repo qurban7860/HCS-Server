@@ -2,6 +2,6 @@
 module.exports = {
     HttpError: require('./http-error'),
     Config: require('./config'),
-    MetaSchema: require('./metaSchema'),
+    ServiceSetting: require('./serviceSetting'),
     Country: require('./country'),
 }

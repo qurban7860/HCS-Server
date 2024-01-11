@@ -1,5 +1,5 @@
 module.exports = {
     configController: require('./configController'),
-    metaSchemaController: require('./metaSchemaController')
+    serviceSettingController: require('./serviceSettingController')
     
 }

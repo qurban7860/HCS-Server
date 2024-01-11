@@ -13,7 +13,7 @@ const ObjectId = require('mongoose').Types.ObjectId;
 let configDBService = require('../service/configDBService') 
 this.dbservice = new configDBService();
 
-const { MetaSchema } = require('../models');
+const { ServiceSetting } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -32,7 +32,7 @@ exports.getConfig = async (req, res, next) => {
 
   if (ObjectId.isValid(req.params.id)) {
     try {
-      const response = await this.dbservice.getObjectById(MetaSchema, this.fields, req.params.id, this.populate);
+      const response = await this.dbservice.getObjectById(ServiceSetting, this.fields, req.params.id, this.populate);
       res.json(response);
     } catch (error) {
       logger.error(new Error(error));
@@ -48,7 +48,7 @@ exports.getConfig = async (req, res, next) => {
 exports.getConfigs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await this.dbservice.getObjectList(req, MetaSchema, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, ServiceSetting, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -59,7 +59,7 @@ exports.getConfigs = async (req, res, next) => {
 
 exports.deleteConfig = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(MetaSchema, req.params.id);
+    const result = await this.dbservice.deleteObject(ServiceSetting, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -74,7 +74,7 @@ exports.postConfig = async (req, res, next) => {
   } else {
     try {
       if (Object.keys(req.body).length !== 0) {
-        let existingConfig = await MetaSchema.findOne({collectionType: { $regex: req.body.collectionType.trim(), $options: 'i' }, isActive: true, isArchived: false});
+        let existingConfig = await ServiceSetting.findOne({collectionType: { $regex: req.body.collectionType.trim(), $options: 'i' }, isActive: true, isArchived: false});
         if(existingConfig){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Collection Type already exists. Please enter a unique collection Type!', true));
         }
@@ -98,12 +98,12 @@ exports.patchConfig = async (req, res, next) => {
     try {
       let existingConfig;
       if(req.body.collectionType)
-        existingConfig = await MetaSchema.findOne({collectionType: { $regex: req.body.collectionType.trim(), $options: 'i' }, isActive: true});
+        existingConfig = await ServiceSetting.findOne({collectionType: { $regex: req.body.collectionType.trim(), $options: 'i' }, isActive: true});
       
       if(existingConfig && existingConfig._id != req.params.id){
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Collection Type already exists. Please enter a unique collection Type!', true));
       }
-      const result = await this.dbservice.patchObject(MetaSchema, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(ServiceSetting, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       console.log("error", error);
@@ -119,7 +119,7 @@ function getDocumentFromReq(req, reqType) {
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new MetaSchema({});
+    doc = new ServiceSetting({});
   }
   if ("configJSON" in req.body) {
     doc.configJSON = configJSON;

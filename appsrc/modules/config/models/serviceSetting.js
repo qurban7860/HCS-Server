@@ -13,7 +13,7 @@ const docSchema = new Schema({
         description: { type: String},
 },
 {
-        collection: 'metaSchemas'
+        collection: 'serviceSettings'
 });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -22,7 +22,7 @@ docSchema.index({"name":1})
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('metaSchema', docSchema);
+module.exports = mongoose.model('serviceSetting', docSchema);
 
 
 
