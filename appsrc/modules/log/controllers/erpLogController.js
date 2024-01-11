@@ -44,6 +44,25 @@ exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
+    console.log(this.query);
+    if(this.query?.fromDate && this.query?.fromDate) {
+      this.query.date =  {
+        $gte: new Date(this.query.fromDate),
+        $lte: new Date(this.query.toDate)
+      };
+      this.query.date = {
+        $gte: new Date(this.query.date.$gte.toISOString()),
+        $lte: new Date(this.query.date.$lte.toISOString())
+      };
+    }
+    
+    delete this.query?.fromDate;
+    delete this.query?.toDate;
+
+
+ 
+
+    console.log("this.query", this.query);
     let response = await this.dbservice.getObjectList(req, ErpLog, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
