@@ -17,7 +17,7 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
-const { DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
+const { Document, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Machine, ProductDrawing } = require('../../products/models');
 
@@ -67,21 +67,19 @@ exports.getDocumentFiles = async (req, res, next) => {
 exports.checkFileExistenceByETag = async (req, res, next) => {
   try {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
-      let etag = await awsService.generateEtag(req.files.images[0].path);      
-
-
-      let drawingLists = await ProductDrawing.find({isActive: true, isArchived: false}).select('document');
-      console.log("drawingLists", drawingLists);
-
-      let drawingDocumentsIds = drawingLists.map(dc => dc.document);
-      console.log(drawingDocumentsIds);
+      console.log("req.files?", req.files.images);
+      let etag = await awsService.generateEtag(req.files.images[0].path);
       
+      
+      const documentCategoryIds = await DocumentCategory.find({drawing: true, isActive: true, isArchived: false}).select('_id');
 
-
+      let documentIds = await Document.find({docCategory: {$in: documentCategoryIds}, isActive: true, isArchived: false}).select('_id');
+      console.log("documentIds", documentIds);
+      
       let latestVersions = await DocumentVersion.aggregate([
         {
           $match: {
-            document: { $in: drawingDocumentsIds }
+            document: { $in: documentIds }
           }
         },
         {

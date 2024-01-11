@@ -86,7 +86,7 @@ class dbService {
       let documents = await query_.exec();
       if(req.body.page || req.body.page === 0) {
         let listDocuments = {
-          documents,
+          data:documents,
           ...(req.body.page && {
             totalPages: Math.ceil(countDocuments / pageSize),
             currentPage: page,
