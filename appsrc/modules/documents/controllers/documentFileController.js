@@ -146,6 +146,7 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
 
           let documentIds = await Document.find({ docCategory: { $in: documentCategoryIds }, isActive: true, isArchived: false }).select('_id');
 
+          console.log("documentIds", documentIds);
           let latestVersions = await DocumentVersion.aggregate([
             {
               $match: {
