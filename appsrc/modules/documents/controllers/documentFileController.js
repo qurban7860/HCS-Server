@@ -17,9 +17,9 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
-const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
-const { Customer, CustomerSite } = require('../../crm/models');
-const { Machine } = require('../../products/models');
+const { DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
+const { Customer } = require('../../crm/models');
+const { Machine, ProductDrawing } = require('../../products/models');
 
 const sizeOf = require('image-size');
 
@@ -68,30 +68,60 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
   try {
     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
       let etag = await awsService.generateEtag(req.files.images[0].path);      
-      let queryString__ = { eTag: etag };
-      const queryString = {
-        $or: [
+
+
+      let drawingLists = await ProductDrawing.find({isActive: true, isArchived: false}).select('document');
+      console.log("drawingLists", drawingLists);
+
+      let drawingDocumentsIds = drawingLists.map(dc => dc.document);
+      console.log(drawingDocumentsIds);
+      
+
+
+      let latestVersions = await DocumentVersion.aggregate([
+        {
+          $match: {
+            document: { $in: drawingDocumentsIds }
+          }
+        },
+        {
+          $sort: { versionNo: -1 }
+        },
+        {
+          $group: {
+            _id: '$document',
+            latestVersion: { $first: '$$ROOT' }
+          }
+        },
+        {
+          $replaceRoot: { newRoot: '$latestVersion' }
+        }
+      ]);
+
+      let filesList = latestVersions.flatMap(version => version.files);
+
+      console.log("filesList", filesList);
+
+
+      const queryString = { _id: { $in: filesList } , 
+      $or: [
           { eTag: etag },
           { awsETag: etag }
           // Add more conditions as needed
         ]
       };
 
-      const documentFiles = await DocumentFile.findOne(queryString__).populate([{ path: 'version'}]);
+      console.log("queryString", queryString);
+      
+      const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version'}]);
 
-
-      // res.status(409).send({
-      //   message: `File already exists against.`,
-      //   documentFiles" :{'6381928301928302':{'message',documentFiles}}
-      // });
-
-      if (documentFiles) {
+      if (documentFiles && documentFiles.length > 0) {
         res.status(409).send({
           message: `File already exists against.`,
           documentFiles
         });
       } else {
-        res.status(200).send(`No file found against ${etag}.`);
+        res.status(200).send(`No file found against.`);
       }
     } else {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -369,8 +399,6 @@ exports.downloadDocumentFile = async (req, res, next) => {
                       } else {
                         return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
                       }
-      
-      
                     });
 
 
