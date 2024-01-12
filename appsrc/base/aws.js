@@ -232,6 +232,7 @@ async function fetchAWSFileInfo(fileid, filePath) {
   try {
       // Fetch the image from S3
       s3.getObject(params, (err, data) => {
+        console.log("data...", data.Body);
         if (err) {
           console.error(err);
         } else {
