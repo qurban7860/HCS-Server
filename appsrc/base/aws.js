@@ -222,6 +222,7 @@ async function downloadFileS3(filePath) {
   }
 }
 
+const sharp = require('sharp');
 async function fetchAWSFileInfo(fileid, filePath) {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
