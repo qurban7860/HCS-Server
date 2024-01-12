@@ -462,7 +462,6 @@ exports.downloadDocumentFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-          console.log("data", data);
 
 
 
@@ -479,7 +478,9 @@ exports.downloadDocumentFile = async (req, res, next) => {
           };
 
           // Fetch the image from S3
+          console.log("@1");
           s3.getObject(params, (err, data) => {
+            console.log("data....", data);
             if (err) {
               console.error(err);
             } else {
