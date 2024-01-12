@@ -461,7 +461,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
 
-          let dataReceived = data.Body;
+          const dataReceived = data.Body.toString('utf-8');
 
           console.log("dataReceived", dataReceived);
 
