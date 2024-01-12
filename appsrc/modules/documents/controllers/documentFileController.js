@@ -455,15 +455,18 @@ exports.downloadDocumentFile = async (req, res, next) => {
   } else {
     try {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
+      console.log("file", file);
       if(file){
+        console.log("file.path", file.path);
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
 
+          let dataReceived = data.Body;
 
-        console.log("data.Body", data.Body);
+          console.log("dataReceived", dataReceived);
 
         // Remove the "data:image/jpeg;base64," prefix if it exists
-        const base64Data = data.Body.replace(/^data:image\/\w+;base64,/, '');
+        const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
 
         // Create a buffer from the base64 data
         const imageBuffer = Buffer.from(base64Data, 'base64');
@@ -475,6 +478,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           withoutEnlargement: true,
         };
 
+        console.log("imageBuffer .....", imageBuffer);
         // Resize the image using sharp
         sharp(imageBuffer)
         .resize(resizeOptions)
