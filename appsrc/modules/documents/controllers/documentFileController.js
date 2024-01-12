@@ -457,72 +457,57 @@ exports.downloadDocumentFile = async (req, res, next) => {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
-          console.log("@1");
-
-          const params = {
-            Bucket: process.env.AWS_S3_BUCKET,
-            Key: file.path
-          };
-          const data = awsService.s3.getObject(params).createReadStream();
-          console.log("@2");
-          const THUMB_MAX_WIDTH = 200;
-          const THUMB_MAX_HEIGHT = 200;
-          const pipeline = sharp();
-          pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
-          console.log("@3");
-          pipeline.pipe(res);
-          console.log("@4");
-          
-          // console.log("data", data);
-          // let resizedImageBuffer = null;
-          // console.log("file.fileType", file.fileType);
-          // let bufferValue = null;
-          // if(file.fileType.includes('image')){
-          //   try {
-          //     console.log("ok");
+          const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+          console.log("data", data);
+          let resizedImageBuffer = null;
+          console.log("file.fileType", file.fileType);
+          let bufferValue = null;
+          if(file.fileType.includes('image')){
+            try {
+              console.log("ok");
               
-          //     let base64ImageString = data.Body;
+              let base64ImageString = data.Body;
 
-          //           const resizeOptions = {
-          //             width: 100, // Set your desired width
-          //             height: 100, // Set your desired height
-          //             fit: sharp.fit.inside,
-          //             withoutEnlargement: true,
-          //           };
+                    const resizeOptions = {
+                      width: 100, // Set your desired width
+                      height: 100, // Set your desired height
+                      fit: sharp.fit.inside,
+                      withoutEnlargement: true,
+                    };
       
-          //               // Resize the image using sharp
-          //           sharp(base64ImageString)
-          //           .resize(resizeOptions)
-          //           .toBuffer((resizeErr, outputBuffer) => {
-          //             if (resizeErr) {
-          //               console.error('Error resizing image:', resizeErr);
-          //               return;
-          //             } else {
-          //               return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
-          //             }
-          //           });
+                        // Resize the image using sharp
+                    sharp(base64ImageString)
+                    .resize(resizeOptions)
+                    .toBuffer((resizeErr, outputBuffer) => {
+                      if (resizeErr) {
+                        console.error('Error resizing image:', resizeErr);
+                        return;
+                      } else {
+                        return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
+                      }
+                    });
 
 
 
 
-          //   } catch (error) {
-          //       console.error("Error processing image:", error);
-          //       return res.status(StatusCodes.ACCEPTED).send(data.Body);
-          //   }
-          // } else {
-          //   resizedImageBuffer = data.Body;
-          // }
+            } catch (error) {
+                console.error("Error processing image:", error);
+                return res.status(StatusCodes.ACCEPTED).send(data.Body);
+            }
+          } else {
+            resizedImageBuffer = data.Body;
+          }
 
-          // let documentAuditLogObj = {
-          //   documentFile : file.id,
-          //   activityType : "Download",
-          //   activitySummary : "Download DocumentFile",
-          //   activityDetail : "Download DocumentFile",
-          // }
+          let documentAuditLogObj = {
+            documentFile : file.id,
+            activityType : "Download",
+            activitySummary : "Download DocumentFile",
+            activityDetail : "Download DocumentFile",
+          }
 
-          // await createAuditLog(documentAuditLogObj,req);
-          // console.log("----end...", resizedImageBuffer);
-          // return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          await createAuditLog(documentAuditLogObj,req);
+          console.log("----end...", resizedImageBuffer);
+          return res.status(StatusCodes.ACCEPTED).send(data.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
