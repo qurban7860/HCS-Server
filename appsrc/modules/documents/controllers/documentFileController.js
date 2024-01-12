@@ -458,57 +458,36 @@ exports.downloadDocumentFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-          console.log("here..............................................................");
-          // console.log("data", data);
-          // let resizedImageBuffer = null;
-          // console.log("file.fileType", file.fileType);
-          // let bufferValue = null;
-          // if(file.fileType.includes('image')){
-          //   try {
-          //     console.log("ok");
-              
-          //     let base64ImageString = data.Body;
-
-          //           const resizeOptions = {
-          //             width: 100, // Set your desired width
-          //             height: 100, // Set your desired height
-          //             fit: sharp.fit.inside,
-          //             withoutEnlargement: true,
-          //           };
-      
-          //               // Resize the image using sharp
-          //           sharp(base64ImageString)
-          //           .resize(resizeOptions)
-          //           .toBuffer((resizeErr, outputBuffer) => {
-          //             if (resizeErr) {
-          //               console.error('Error resizing image:', resizeErr);
-          //               return;
-          //             } else {
-          //               return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
-          //             }
-          //           });
 
 
+        console.log("data.Body", data.Body);
+
+        // Remove the "data:image/jpeg;base64," prefix if it exists
+        const base64Data = data.Body.replace(/^data:image\/\w+;base64,/, '');
+
+        // Create a buffer from the base64 data
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+
+        const resizeOptions = {
+          width: 100, // Set your desired width
+          height: 100, // Set your desired height
+          fit: sharp.fit.inside,
+          withoutEnlargement: true,
+        };
+
+        // Resize the image using sharp
+        sharp(imageBuffer)
+        .resize(resizeOptions)
+        .toBuffer((resizeErr, outputBuffer) => {
+          if (resizeErr) {
+            console.error('Error resizing image:', resizeErr);
+            return;
+          } else {
+          return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
+          }
+        });
 
 
-          //   } catch (error) {
-          //       console.error("Error processing image:", error);
-          //       return res.status(StatusCodes.ACCEPTED).send(data.Body);
-          //   }
-          // } else {
-          //   resizedImageBuffer = data.Body;
-          // }
-
-          // let documentAuditLogObj = {
-          //   documentFile : file.id,
-          //   activityType : "Download",
-          //   activitySummary : "Download DocumentFile",
-          //   activityDetail : "Download DocumentFile",
-          // }
-
-          // await createAuditLog(documentAuditLogObj,req);
-          // console.log("----end...", resizedImageBuffer);
-          // return res.status(StatusCodes.ACCEPTED).send(data.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
