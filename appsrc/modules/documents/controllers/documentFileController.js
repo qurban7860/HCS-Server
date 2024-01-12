@@ -463,8 +463,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
             Key: file.path
           };
           const data = awsService.s3.getObject(options).createReadStream();
-          const THUMB_MAX_WIDTH = 200;
-          const THUMB_MAX_HEIGHT = 200;
+          // const THUMB_MAX_WIDTH = 200;
+          // const THUMB_MAX_HEIGHT = 200;
    
             
           // console.log("data", data);
@@ -516,9 +516,9 @@ exports.downloadDocumentFile = async (req, res, next) => {
 
           await createAuditLog(documentAuditLogObj,req);
           
-          const pipeline = sharp();
-          pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
-          pipeline.pipe(res);
+          // const pipeline = sharp();
+          // pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
+          data.pipe(res);
 
           // console.log("----end...", resizedImageBuffer);
           // return res.status(StatusCodes.ACCEPTED).send(data.Body);
