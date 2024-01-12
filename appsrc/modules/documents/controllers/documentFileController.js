@@ -455,9 +455,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
   } else {
     try {
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
-      console.log("file", file);
       if(file){
-        console.log("file.path", file.path);
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
           const dataReceived = data.Body.toString('utf-8');
@@ -475,7 +473,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           };
           // Resize the image using sharp
           sharp(imageBuffer)
-          .resize(resizeOptions)
+          .jpeg({ quality: 30, mozjpeg: true }) // Adjust quality to 80
           .toBuffer((resizeErr, outputBuffer) => {
             if (resizeErr) {
               console.error('Error resizing image:', resizeErr);
