@@ -233,7 +233,7 @@ async function fetchAWSFileInfo(fileid, filePath) {
     console.log("==================================================@3");
         s3.getObject(params, (err, data) => {
         console.log("==================================================");
-        console.log("data...", data.Body);
+        console.log("data...", data.Body.toString('utf-8'));
         if (err) {
           console.error(err);
         } else {
