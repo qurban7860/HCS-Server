@@ -278,5 +278,6 @@ module.exports = {
   listBuckets,
   downloadFileS3,
   fetchAWSFileInfo,
-  generateEtag
+  generateEtag,
+  s3
 };
