@@ -229,7 +229,26 @@ async function fetchAWSFileInfo(fileid, filePath) {
   };
 
   try {
-    return data = await s3.getObject(params).promise();
+      // Fetch the image from S3
+      s3.getObject(params, (err, data) => {
+        if (err) {
+          console.error(err);
+        } else {
+          // S3 transfer is complete, now process the image using sharp
+          sharp(data.Body)
+            .resize({ width: 300 }) // Set your desired width
+            .toBuffer()
+            .then((resizedBuffer) => {
+              // Now you can use the resizedBuffer as needed
+              // For example, save it to a new file or send it as a response
+              console.log('Image resized successfully!');
+            })
+            .catch((sharpErr) => {
+              console.error(sharpErr);
+            });
+        }
+      });
+
   } catch (err) {
     console.log("file fetch error", err.message);
     return err;

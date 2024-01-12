@@ -454,100 +454,60 @@ exports.downloadDocumentFile = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-
-      
-
-
       const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
       if(file){
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-
-
-
-          // const credentials = new AWS.Credentials('xxxx', 'xxxxxx');
-          const s3 = new AWS.S3({
-            region: process.env.AWS_REGION,
-            params: { Bucket: process.env.AWS_S3_BUCKET },
-            // credentials
-          });
-
-          const params = {
-            Bucket: process.env.AWS_S3_BUCKET,
-            Key: file.path
-          };
-
-          // Fetch the image from S3
-          console.log("@1");
-          s3.getObject(params, (err, data) => {
-            console.log("data....", data);
-            if (err) {
-              console.error(err);
-            } else {
-              // S3 transfer is complete, now process the image using sharp
-              sharp(data.Body)
-                .resize({ width: 300 }) // Set your desired width
-                .toBuffer()
-                .then((resizedBuffer) => {
-                  // Now you can use the resizedBuffer as needed
-                  // For example, save it to a new file or send it as a response
-                  console.log('Image resized successfully!');
-                })
-                .catch((sharpErr) => {
-                  console.error(sharpErr);
-                });
-            }
-          });
-          
-          // let resizedImageBuffer = null;
-          // console.log("file.fileType", file.fileType);
-          // let bufferValue = null;
-          // if(file.fileType.includes('image')){
-          //   try {
-          //     console.log("ok");
+          console.log("data", data);
+          let resizedImageBuffer = null;
+          console.log("file.fileType", file.fileType);
+          let bufferValue = null;
+          if(file.fileType.includes('image')){
+            try {
+              console.log("ok");
               
-          //     let base64ImageString = data.Body;
+              let base64ImageString = data.Body;
 
-          //           const resizeOptions = {
-          //             width: 100, // Set your desired width
-          //             height: 100, // Set your desired height
-          //             fit: sharp.fit.inside,
-          //             withoutEnlargement: true,
-          //           };
+                    const resizeOptions = {
+                      width: 100, // Set your desired width
+                      height: 100, // Set your desired height
+                      fit: sharp.fit.inside,
+                      withoutEnlargement: true,
+                    };
       
-          //               // Resize the image using sharp
-          //           sharp(base64ImageString)
-          //           .resize(resizeOptions)
-          //           .toBuffer((resizeErr, outputBuffer) => {
-          //             if (resizeErr) {
-          //               console.error('Error resizing image:', resizeErr);
-          //               return;
-          //             } else {
-          //               return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
-          //             }
-          //           });
+                        // Resize the image using sharp
+                    sharp(base64ImageString)
+                    .resize(resizeOptions)
+                    .toBuffer((resizeErr, outputBuffer) => {
+                      if (resizeErr) {
+                        console.error('Error resizing image:', resizeErr);
+                        return;
+                      } else {
+                        return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
+                      }
+                    });
 
 
 
 
-          //   } catch (error) {
-          //       console.error("Error processing image:", error);
-          //       return res.status(StatusCodes.ACCEPTED).send(data.Body);
-          //   }
-          // } else {
-          //   resizedImageBuffer = data.Body;
-          // }
+            } catch (error) {
+                console.error("Error processing image:", error);
+                return res.status(StatusCodes.ACCEPTED).send(data.Body);
+            }
+          } else {
+            resizedImageBuffer = data.Body;
+          }
 
-          // let documentAuditLogObj = {
-          //   documentFile : file.id,
-          //   activityType : "Download",
-          //   activitySummary : "Download DocumentFile",
-          //   activityDetail : "Download DocumentFile",
-          // }
+          let documentAuditLogObj = {
+            documentFile : file.id,
+            activityType : "Download",
+            activitySummary : "Download DocumentFile",
+            activityDetail : "Download DocumentFile",
+          }
 
-          // await createAuditLog(documentAuditLogObj,req);
-          // console.log("----end...", resizedImageBuffer);
-          // return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          await createAuditLog(documentAuditLogObj,req);
+          console.log("----end...", resizedImageBuffer);
+          return res.status(StatusCodes.ACCEPTED).send(data.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
