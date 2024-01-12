@@ -448,95 +448,96 @@ exports.patchDocumentFile = async (req, res, next) => {
 };
 
 exports.downloadDocumentFile = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    console.log(errors)
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    try {
-      const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
-      if(file){
-        if (file.path && file.path !== '') {
+  res.send(200);
+  // const errors = validationResult(req);
+  // if (!errors.isEmpty()) {
+  //   console.log(errors)
+  //   res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  // } else {
+  //   try {
+  //     const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
+  //     if(file){
+  //       if (file.path && file.path !== '') {
 
-          const params = {
-            Bucket: process.env.AWS_S3_BUCKET,
-            Key: file.path
-          };
-          const data = awsService.s3.getObject(options).createReadStream();
-          // const THUMB_MAX_WIDTH = 200;
-          // const THUMB_MAX_HEIGHT = 200;
+  //         const params = {
+  //           Bucket: process.env.AWS_S3_BUCKET,
+  //           Key: file.path
+  //         };
+  //         const data = awsService.s3.getObject(options).createReadStream();
+  //         // const THUMB_MAX_WIDTH = 200;
+  //         // const THUMB_MAX_HEIGHT = 200;
    
             
-          // console.log("data", data);
-          // let resizedImageBuffer = null;
-          // console.log("file.fileType", file.fileType);
-          // let bufferValue = null;
-          // if(file.fileType.includes('image')){
-          //   try {
-          //     console.log("ok");
+  //         // console.log("data", data);
+  //         // let resizedImageBuffer = null;
+  //         // console.log("file.fileType", file.fileType);
+  //         // let bufferValue = null;
+  //         // if(file.fileType.includes('image')){
+  //         //   try {
+  //         //     console.log("ok");
               
-          //     let base64ImageString = data.Body;
+  //         //     let base64ImageString = data.Body;
 
-          //           const resizeOptions = {
-          //             width: 100, // Set your desired width
-          //             height: 100, // Set your desired height
-          //             fit: sharp.fit.inside,
-          //             withoutEnlargement: true,
-          //           };
+  //         //           const resizeOptions = {
+  //         //             width: 100, // Set your desired width
+  //         //             height: 100, // Set your desired height
+  //         //             fit: sharp.fit.inside,
+  //         //             withoutEnlargement: true,
+  //         //           };
       
-          //               // Resize the image using sharp
-          //           sharp(base64ImageString)
-          //           .resize(resizeOptions)
-          //           .toBuffer((resizeErr, outputBuffer) => {
-          //             if (resizeErr) {
-          //               console.error('Error resizing image:', resizeErr);
-          //               return;
-          //             } else {
-          //               return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
-          //             }
-          //           });
+  //         //               // Resize the image using sharp
+  //         //           sharp(base64ImageString)
+  //         //           .resize(resizeOptions)
+  //         //           .toBuffer((resizeErr, outputBuffer) => {
+  //         //             if (resizeErr) {
+  //         //               console.error('Error resizing image:', resizeErr);
+  //         //               return;
+  //         //             } else {
+  //         //               return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
+  //         //             }
+  //         //           });
 
 
 
 
-          //   } catch (error) {
-          //       console.error("Error processing image:", error);
-          //       return res.status(StatusCodes.ACCEPTED).send(data.Body);
-          //   }
-          // } else {
-          //   resizedImageBuffer = data.Body;
-          // }
+  //         //   } catch (error) {
+  //         //       console.error("Error processing image:", error);
+  //         //       return res.status(StatusCodes.ACCEPTED).send(data.Body);
+  //         //   }
+  //         // } else {
+  //         //   resizedImageBuffer = data.Body;
+  //         // }
 
-          // let documentAuditLogObj = {
-          //   documentFile : file.id,
-          //   activityType : "Download",
-          //   activitySummary : "Download DocumentFile",
-          //   activityDetail : "Download DocumentFile",
-          // }
+  //         // let documentAuditLogObj = {
+  //         //   documentFile : file.id,
+  //         //   activityType : "Download",
+  //         //   activitySummary : "Download DocumentFile",
+  //         //   activityDetail : "Download DocumentFile",
+  //         // }
 
-          // await createAuditLog(documentAuditLogObj,req);
+  //         // await createAuditLog(documentAuditLogObj,req);
           
-          const pipeline = sharp();
-          pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
-          // data.pipe(res);
-          const writeStream = fs.createWriteStream(path.join(__dirname, 's3data.txt'));
-          pipeline.pipe(writeStream);
-          writeStream.on('finish', (err,data)=>{
-            console.log(err,data);
-          })
-          // console.log("----end...", resizedImageBuffer);
-          return res.status(StatusCodes.ACCEPTED).send(data.Body);
-        }else{
-          res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
-        }
-      }else{
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
-      }
-    }
-    catch(err){
-      return err;
-    }
-  }
+  //         const pipeline = sharp();
+  //         pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
+  //         // data.pipe(res);
+  //         const writeStream = fs.createWriteStream(path.join(__dirname, 's3data.txt'));
+  //         pipeline.pipe(writeStream);
+  //         writeStream.on('finish', (err,data)=>{
+  //           console.log(err,data);
+  //         })
+  //         // console.log("----end...", resizedImageBuffer);
+  //         return res.status(StatusCodes.ACCEPTED).send(data.Body);
+  //       }else{
+  //         res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
+  //       }
+  //     }else{
+  //       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
+  //     }
+  //   }
+  //   catch(err){
+  //     return err;
+  //   }
+  // }
 };
 
 
