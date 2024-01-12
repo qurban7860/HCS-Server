@@ -499,55 +499,55 @@ exports.downloadDocumentFile = async (req, res, next) => {
             }
           });
           
-          let resizedImageBuffer = null;
-          console.log("file.fileType", file.fileType);
-          let bufferValue = null;
-          if(file.fileType.includes('image')){
-            try {
-              console.log("ok");
+          // let resizedImageBuffer = null;
+          // console.log("file.fileType", file.fileType);
+          // let bufferValue = null;
+          // if(file.fileType.includes('image')){
+          //   try {
+          //     console.log("ok");
               
-              let base64ImageString = data.Body;
+          //     let base64ImageString = data.Body;
 
-                    const resizeOptions = {
-                      width: 100, // Set your desired width
-                      height: 100, // Set your desired height
-                      fit: sharp.fit.inside,
-                      withoutEnlargement: true,
-                    };
+          //           const resizeOptions = {
+          //             width: 100, // Set your desired width
+          //             height: 100, // Set your desired height
+          //             fit: sharp.fit.inside,
+          //             withoutEnlargement: true,
+          //           };
       
-                        // Resize the image using sharp
-                    sharp(base64ImageString)
-                    .resize(resizeOptions)
-                    .toBuffer((resizeErr, outputBuffer) => {
-                      if (resizeErr) {
-                        console.error('Error resizing image:', resizeErr);
-                        return;
-                      } else {
-                        return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
-                      }
-                    });
+          //               // Resize the image using sharp
+          //           sharp(base64ImageString)
+          //           .resize(resizeOptions)
+          //           .toBuffer((resizeErr, outputBuffer) => {
+          //             if (resizeErr) {
+          //               console.error('Error resizing image:', resizeErr);
+          //               return;
+          //             } else {
+          //               return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
+          //             }
+          //           });
 
 
 
 
-            } catch (error) {
-                console.error("Error processing image:", error);
-                return res.status(StatusCodes.ACCEPTED).send(data.Body);
-            }
-          } else {
-            resizedImageBuffer = data.Body;
-          }
+          //   } catch (error) {
+          //       console.error("Error processing image:", error);
+          //       return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          //   }
+          // } else {
+          //   resizedImageBuffer = data.Body;
+          // }
 
-          let documentAuditLogObj = {
-            documentFile : file.id,
-            activityType : "Download",
-            activitySummary : "Download DocumentFile",
-            activityDetail : "Download DocumentFile",
-          }
+          // let documentAuditLogObj = {
+          //   documentFile : file.id,
+          //   activityType : "Download",
+          //   activitySummary : "Download DocumentFile",
+          //   activityDetail : "Download DocumentFile",
+          // }
 
-          await createAuditLog(documentAuditLogObj,req);
-          console.log("----end...", resizedImageBuffer);
-          return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          // await createAuditLog(documentAuditLogObj,req);
+          // console.log("----end...", resizedImageBuffer);
+          // return res.status(StatusCodes.ACCEPTED).send(data.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
