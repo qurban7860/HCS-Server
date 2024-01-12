@@ -460,36 +460,31 @@ exports.downloadDocumentFile = async (req, res, next) => {
         console.log("file.path", file.path);
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-
           const dataReceived = data.Body.toString('utf-8');
+          // Remove the "data:image/jpeg;base64," prefix if it exists
+          const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
 
-          console.log("dataReceived", dataReceived);
+          // Create a buffer from the base64 data
+          const imageBuffer = Buffer.from(base64Data, 'base64');
 
-        // Remove the "data:image/jpeg;base64," prefix if it exists
-        const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
-
-        // Create a buffer from the base64 data
-        const imageBuffer = Buffer.from(base64Data, 'base64');
-
-        const resizeOptions = {
-          width: 100, // Set your desired width
-          height: 100, // Set your desired height
-          fit: sharp.fit.inside,
-          withoutEnlargement: true,
-        };
-
-        console.log("imageBuffer .....", imageBuffer);
-        // Resize the image using sharp
-        sharp(imageBuffer)
-        .resize(resizeOptions)
-        .toBuffer((resizeErr, outputBuffer) => {
-          if (resizeErr) {
-            console.error('Error resizing image:', resizeErr);
-            return;
-          } else {
-          return res.status(StatusCodes.ACCEPTED).send(outputBuffer);
-          }
-        });
+          const resizeOptions = {
+            width: 100, // Set your desired width
+            height: 100, // Set your desired height
+            fit: sharp.fit.inside,
+            withoutEnlargement: true,
+          };
+          // Resize the image using sharp
+          sharp(imageBuffer)
+          .resize(resizeOptions)
+          .toBuffer((resizeErr, outputBuffer) => {
+            if (resizeErr) {
+              console.error('Error resizing image:', resizeErr);
+              return;
+            } else {
+              const base64String = outputBuffer.toString('base64');
+            return res.status(StatusCodes.ACCEPTED).send(base64String);
+            }
+          });
 
 
         }else{
