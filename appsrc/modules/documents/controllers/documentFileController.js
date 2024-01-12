@@ -514,14 +514,18 @@ exports.downloadDocumentFile = async (req, res, next) => {
           //   activityDetail : "Download DocumentFile",
           // }
 
-          await createAuditLog(documentAuditLogObj,req);
+          // await createAuditLog(documentAuditLogObj,req);
           
-          // const pipeline = sharp();
-          // pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
-          data.pipe(res);
-
+          const pipeline = sharp();
+          pipeline.resize(THUMB_MAX_WIDTH, THUMB_MAX_HEIGHT).max().pipe(data);
+          // data.pipe(res);
+          const writeStream = fs.createWriteStream(path.join(__dirname, 's3data.txt'));
+          pipeline.pipe(writeStream);
+          writeStream.on('finish', (err,data)=>{
+            console.log(err,data);
+          })
           // console.log("----end...", resizedImageBuffer);
-          // return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          return res.status(StatusCodes.ACCEPTED).send(data.Body);
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
