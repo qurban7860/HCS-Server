@@ -66,7 +66,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
           let configObject = await Config.findOne({ name: 'OPTIMIZE_IMAGE' }).select('value').lean();
 
           const regex = new RegExp("^EXPORT_UUID$", "i");
-          let configObject = await Config.findOne({name: regex, type: "OPTIMIZE_IMAGE", isArchived: false, isActive: true}).select('value');
+          configObject = await Config.findOne({name: regex, type: "OPTIMIZE_IMAGE", isArchived: false, isActive: true}).select('value');
           configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
 
           if(configObject){
