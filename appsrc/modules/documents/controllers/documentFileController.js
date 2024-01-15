@@ -460,20 +460,12 @@ exports.downloadDocumentFile = async (req, res, next) => {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
                   const isImage = file?.fileType && file.fileType.startsWith('image');
                   if (isImage) {
-                      console.log("isImage", isImage);
-                      console.log("file", file);
-
                       const dataReceived = data.Body.toString('utf-8');
                       const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
                       const imageBuffer = Buffer.from(base64Data, 'base64');
                       const ImageResolution = await getImageResolution(imageBuffer);
-                      console.log("ImageResolution", ImageResolution);
-
                       const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
-
-
                       console.log("desiredQuality", desiredQuality);
-
                       sharp(imageBuffer)
                           .jpeg({
                               quality: desiredQuality,
@@ -564,7 +556,6 @@ function calculateDesiredQuality(imageBuffer, imageResolution) {
 
   // Ensure the desired quality stays within a reasonable range
   desiredQuality = Math.max(10, Math.min(100, desiredQuality));
-
   return desiredQuality;
 }
 
