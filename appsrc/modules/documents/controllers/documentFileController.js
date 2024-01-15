@@ -132,85 +132,72 @@ exports.getDocumentFiles = async (req, res, next) => {
 
 
 exports.checkFileExistenceByETag = async (req, res, next) => {
+  console.log("eTags", req.query.eTags);
+  console.log(req.query.eTags.length);
   try {
-    if (req.files?.images && req.files?.images.length > 0) {
-      const filesResponse = [];
-
-      for (const file of req.files.images) {
-        if (file.path) {
-          console.log("Processing file:", file.path);
-
-          let etag = await awsService.generateEtag(file.path);
-
-          const documentCategoryIds = await DocumentCategory.find({ drawing: true, isActive: true, isArchived: false }).select('_id');
-
-          let documentLists = await Document.find({ docCategory: { $in: documentCategoryIds }, isActive: true, isArchived: false }).select('_id');
-
-
-          let documentIds = documentLists.map(dc => dc._id);
-          console.log("documentIds", documentIds);
-
-          let latestVersions = await DocumentVersion.aggregate([
-            {
-              $match: {
-                document: { $in: documentIds }
+      const eTagsArray = req.query.eTags.split(',');
+      if(req?.query?.eTags && req?.query?.eTags.length > 0) {
+        const filesResponse = [];
+        for (const etag of req.query.eTags) {
+          if (etag) {
+            console.log("etag", etag);
+            const documentCategoryIds = await DocumentCategory.find({ drawing: true, isActive: true, isArchived: false }).select('_id');
+            let documentLists = await Document.find({ docCategory: { $in: documentCategoryIds }, isActive: true, isArchived: false }).select('_id');
+            let documentIds = documentLists.map(dc => dc._id);
+            let latestVersions = await DocumentVersion.aggregate([
+              {
+                $match: {
+                  document: { $in: documentIds }
+                }
+              },
+              {
+                $sort: { versionNo: -1 }
+              },
+              {
+                $group: {
+                  _id: '$document',
+                  latestVersion: { $first: '$$ROOT' }
+                }
+              },
+              {
+                $replaceRoot: { newRoot: '$latestVersion' }
               }
-            },
-            {
-              $sort: { versionNo: -1 }
-            },
-            {
-              $group: {
-                _id: '$document',
-                latestVersion: { $first: '$$ROOT' }
-              }
-            },
-            {
-              $replaceRoot: { newRoot: '$latestVersion' }
+            ]);
+            let filesList = latestVersions.flatMap(version => version.files);
+            const queryString = {
+              _id: { $in: filesList },
+              $or: [
+                { eTag: etag },
+                { awsETag: etag }
+              ]
+            };
+            const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version' }]);
+            if (documentFiles && documentFiles.length > 0) {
+              filesResponse.push({
+                etag,
+                status: 409,
+                message: `File already exists against.`,
+                documentFiles
+              });
+            } else {
+              filesResponse.push({
+                etag,
+                status: 200,
+                message: `No file found against.`
+              });
             }
-          ]);
-
-          let filesList = latestVersions.flatMap(version => version.files);
-
-          const queryString = {
-            _id: { $in: filesList },
-            $or: [
-              { eTag: etag },
-              { awsETag: etag }
-            ]
-          };
-
-          console.log("queryString", queryString);
-
-          const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version' }]);
-
-          if (documentFiles && documentFiles.length > 0) {
-            filesResponse.push({
-              file: file.path,
-              status: 409,
-              message: `File already exists against.`,
-              documentFiles
-            });
           } else {
             filesResponse.push({
-              file: file.path,
-              status: 200,
-              message: `No file found against.`
+              file: 'Unknown',
+              status: StatusCodes.INTERNAL_SERVER_ERROR,
+              message: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
             });
           }
-        } else {
-          filesResponse.push({
-            file: 'Unknown',
-            status: StatusCodes.INTERNAL_SERVER_ERROR,
-            message: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          });
         }
+        res.status(200).send(filesResponse);
+      } else {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`No eTag Received`);
       }
-
-      res.status(200).send(filesResponse);
-    } else {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    }
   } catch (error) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error generating ETag: ${error.message}`);
   }

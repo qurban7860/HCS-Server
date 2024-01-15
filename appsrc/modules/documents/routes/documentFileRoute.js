@@ -25,20 +25,7 @@ router.use(checkAuth, checkCustomer);
 
 
 
-router.post(`/checkFileExistenceByETag/`, (req, res, next) => {
-  fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
-
-    if (err instanceof multer.MulterError) {
-      console.log(err);
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
-    } else if (err) {
-      console.log(err);
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      next();
-    }
-  });
-}, controller.checkFileExistenceByETag);
+router.get(`/checkFileExistenceByETag/`, controller.checkFileExistenceByETag);
 
 
 // - /api/1.0.0/documents/documentFile/:id
