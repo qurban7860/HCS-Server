@@ -60,7 +60,10 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
           const buffer = await sharp(image.path)
-            .resize(5000, 5000)
+            .jpeg({
+            quality: 10,
+            mozjpeg: true
+            })
             .toBuffer();
             const base64String = buffer.toString('base64');
           image.buffer = base64String;
