@@ -504,6 +504,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
                       PDFDocument.load(pdfBuffer).then(async (pdfDoc) => {
                         const modifiedPdfBytes = await pdfDoc.save();
                         const modifiedBase64 = modifiedPdfBytes.toString('base64');
+                        console.log("all worked........ for pdf......");
                         return res.status(StatusCodes.ACCEPTED).send(modifiedBase64);
                       }).catch((err) => {
                         console.error('Error loading PDF document:', err);
