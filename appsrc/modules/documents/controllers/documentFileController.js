@@ -133,9 +133,7 @@ exports.getDocumentFiles = async (req, res, next) => {
 
 exports.checkFileExistenceByETag = async (req, res, next) => {
   console.log("eTags", req.query.eTags);
-  console.log(req.query.eTags.length);
   try {
-      const eTagsArray = req.query.eTags.split(',');
       if(req?.query?.eTags && req?.query?.eTags.length > 0) {
         const filesResponse = [];
         for (const etag of req.query.eTags) {
