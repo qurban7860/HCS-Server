@@ -117,6 +117,8 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
     }
   }
 
+
+
 // - /api/1.0.0/documents/files/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocument);
 

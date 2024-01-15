@@ -59,15 +59,18 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
       if(req.files && req.files['images']) {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
-          const buffer = await sharp(image.path)
-            .jpeg({
-            quality: 10,
-            mozjpeg: true
-            })
-            .toBuffer();
-            const base64String = buffer.toString('base64');
-          image.buffer = base64String;
-          image.eTag = await awsService.generateEtag(buffer);
+          console.log("image", image);
+          if(image.mimetype.includes('image')){ 
+            const buffer = await sharp(image.path)
+              .jpeg({
+              quality: 10,
+              mozjpeg: true
+              })
+              .toBuffer();
+              const base64String = buffer.toString('base64');
+            image.buffer = base64String;
+            image.eTag = await awsService.generateEtag(buffer);
+          }
         }));
       }
       next();
