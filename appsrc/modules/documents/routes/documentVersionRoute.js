@@ -59,6 +59,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
       if(req.files && req.files['images']) {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
+          console.log("image", image);
           const buffer = await sharp(image.buffer)
             .resize(300, 300)
             .toBuffer();
