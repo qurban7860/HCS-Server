@@ -459,13 +459,17 @@ exports.downloadDocumentFile = async (req, res, next) => {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
                   const downloadFile = req?.query?.download === true || req?.query?.download === 'true' ? true : false;
+                  console.log("downloadFile", downloadFile);
                   if(downloadFile){
+                    console.log("Directly Downloading...............");
                     return res.status(StatusCodes.ACCEPTED).send(data.Body);
                   } else {
                     const isImage = file?.fileType && file.fileType.startsWith('image');
                     const isPDF = file?.fileType && file.fileType.startsWith('pdf');
+                    console.log("isImage", isImage);
                     console.log("isPDF", isPDF);
                     console.log("fileType", fileType);
+
                     if (isImage) {
                         const dataReceived = data.Body.toString('utf-8');
                         const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
