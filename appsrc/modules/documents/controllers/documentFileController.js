@@ -458,30 +458,35 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-                  const isImage = file?.fileType && file.fileType.startsWith('image');
-                  if (isImage) {
-                      const dataReceived = data.Body.toString('utf-8');
-                      const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
-                      const imageBuffer = Buffer.from(base64Data, 'base64');
-                      const ImageResolution = await getImageResolution(imageBuffer);
-                      const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
-                      console.log("desiredQuality", desiredQuality);
-                      sharp(imageBuffer)
-                          .jpeg({
-                              quality: desiredQuality,
-                              mozjpeg: true
-                          })
-                          .toBuffer((resizeErr, outputBuffer) => {
-                              if (resizeErr) {
-                                  console.error('Error resizing image:', resizeErr);
-                                  return;
-                              } else {
-                                  const base64String = outputBuffer.toString('base64');
-                                  return res.status(StatusCodes.ACCEPTED).send(base64String);
-                              }
-                          });
+                  const downloadFile = req?.query?.download === true || req?.query?.download === 'true' ? true : false;
+                  if(downloadFile){
+                    return res.status(StatusCodes.ACCEPTED).send(data.Body);
                   } else {
-                      return res.status(StatusCodes.ACCEPTED).send(data.Body);
+                    const isImage = file?.fileType && file.fileType.startsWith('image');
+                    if (isImage) {
+                        const dataReceived = data.Body.toString('utf-8');
+                        const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
+                        const imageBuffer = Buffer.from(base64Data, 'base64');
+                        const ImageResolution = await getImageResolution(imageBuffer);
+                        const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
+                        console.log("desiredQuality", desiredQuality);
+                        sharp(imageBuffer)
+                            .jpeg({
+                                quality: desiredQuality,
+                                mozjpeg: true
+                            })
+                            .toBuffer((resizeErr, outputBuffer) => {
+                                if (resizeErr) {
+                                    console.error('Error resizing image:', resizeErr);
+                                    return;
+                                } else {
+                                    const base64String = outputBuffer.toString('base64');
+                                    return res.status(StatusCodes.ACCEPTED).send(base64String);
+                                }
+                            });
+                    } else {
+                        return res.status(StatusCodes.ACCEPTED).send(data.Body);
+                    }
                   }
               } else {
                   res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
