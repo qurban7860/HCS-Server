@@ -450,65 +450,92 @@ exports.patchDocumentFile = async (req, res, next) => {
 exports.downloadDocumentFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log(errors)
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      console.log(errors)
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    try {
-      const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
-      if(file){
-        if (file.path && file.path !== '') {
-          const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-          console.log("data", data);
-          const isImage = data.ContentType && data.ContentType.startsWith('image');
-          console.log("isImage", isImage);
-          console.log("file", file);
+      try {
+          const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
+          if (file) {
+              if (file.path && file.path !== '') {
+                  const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+                  const isImage = file?.fileType && file.fileType.startsWith('image');
+                  if (isImage) {
+                      console.log("isImage", isImage);
+                      console.log("file", file);
 
-          const dataReceived = data.Body.toString('utf-8');
-          const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
-          const imageBuffer = Buffer.from(base64Data, 'base64');
-          // Determine the desired quality based on the size of the image
-          let desiredQuality = 100;
+                      const dataReceived = data.Body.toString('utf-8');
+                      const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
+                      const imageBuffer = Buffer.from(base64Data, 'base64');
+                      const ImageResolution = getImageResolution(imageBuffer);
+                      console.log("ImageResolution", ImageResolution);
 
-          // Example: Adjust quality based on the size of the image buffer
-          if (imageBuffer.length > 5 * 1024 * 1024) {
-            // If the image size is greater than 5MB, reduce quality aggressively
-            desiredQuality = 10;
-          } else if (imageBuffer.length > 2 * 1024 * 1024) {
-            // If the image size is between 2MB and 5MB, reduce quality moderately
-            desiredQuality = 20;
+                      const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
+
+
+                      console.log("desiredQuality", desiredQuality);
+
+                      sharp(imageBuffer)
+                          .jpeg({
+                              quality: desiredQuality,
+                              mozjpeg: true
+                          })
+                          .toBuffer((resizeErr, outputBuffer) => {
+                              if (resizeErr) {
+                                  console.error('Error resizing image:', resizeErr);
+                                  return;
+                              } else {
+                                  const base64String = outputBuffer.toString('base64');
+                                  return res.status(StatusCodes.ACCEPTED).send(base64String);
+                              }
+                          });
+                  } else {
+                      return res.status(StatusCodes.ACCEPTED).send(data.Body);
+                  }
+              } else {
+                  res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
+              }
           } else {
-            // For smaller images, use a default quality
-            desiredQuality = 30;
+              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
           }
-
-          console.log("desiredQuality", desiredQuality);
-
-          sharp(imageBuffer)
-          .jpeg({ quality: desiredQuality, mozjpeg: true })
-          .toBuffer((resizeErr, outputBuffer) => {
-            if (resizeErr) {
-              console.error('Error resizing image:', resizeErr);
-              return;
-            } else {
-              const base64String = outputBuffer.toString('base64');
-              return res.status(StatusCodes.ACCEPTED).send(base64String);
-            }
-          });
-        }else{
-          res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
-        }
-      }else{
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
+      } catch (err) {
+          if (data.Body)
+              return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          else
+              return err;
       }
-    }
-    catch(err){
-      if(data.Body)
-        return res.status(StatusCodes.ACCEPTED).send(base64String);
-      else 
-        return err;
-    }
   }
 };
+
+async function getImageResolution(imageBuffer) {
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    const width = metadata.width;
+    const height = metadata.height;
+    
+    console.log(`Image Resolution: ${width} x ${height}`);
+    
+    // You can return the resolution or perform other actions as needed
+    return { width, height };
+  } catch (err) {
+    console.error('Error reading image metadata:', err);
+    throw err; // Propagate the error or handle it as per your application's requirements
+  }
+}
+
+function calculateDesiredQuality(imageBuffer) {
+  let desiredQuality = 100;
+  if (imageBuffer.length > 5 * 1024 * 1024) {
+    // If the image size is greater than 5MB, reduce quality aggressively
+    desiredQuality = 10;
+  } else if (imageBuffer.length > 2 * 1024 * 1024) {
+    // If the image size is between 2MB and 5MB, reduce quality moderately
+    desiredQuality = 20;
+  } else {
+    // For smaller images, use a default quality
+    desiredQuality = 30;
+  }
+  return desiredQuality;
+}
 
 
 async function readFileAsBase64(filePath) {
