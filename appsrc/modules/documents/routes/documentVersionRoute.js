@@ -63,9 +63,9 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
           console.log("image", image);
-          let configObject = Config.findOne({name: 'optimizeImage'}).select('value').lean();
+          let configObject = await Config.findOne({name: 'optimizeImage'}).select('value').lean();
           console.log("configObject", configObject);
-          
+
           if(configObject && (configObject?.value === true || configObject?.value === 'true')){
             if(image.mimetype.includes('image')){ 
               const buffer = await sharp(image.path)
