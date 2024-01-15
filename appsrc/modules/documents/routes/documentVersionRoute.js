@@ -6,6 +6,9 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
+
+const { Config } = require('../../config/models');
+
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
@@ -60,16 +63,21 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
           console.log("image", image);
-          if(image.mimetype.includes('image')){ 
-            const buffer = await sharp(image.path)
-              .jpeg({
-              quality: 10,
-              mozjpeg: true
-              })
-              .toBuffer();
-              const base64String = buffer.toString('base64');
-            image.buffer = base64String;
-            image.eTag = await awsService.generateEtag(buffer);
+          let configObject = Config.findOne({name: 'optimizeImage'}).select('value').lean();
+          console.log("configObject", configObject);
+          
+          if(configObject && (configObject?.value === true || configObject?.value === 'true')){
+            if(image.mimetype.includes('image')){ 
+              const buffer = await sharp(image.path)
+                .jpeg({
+                quality: 10,
+                mozjpeg: true
+                })
+                .toBuffer();
+                const base64String = buffer.toString('base64');
+              image.buffer = base64String;
+              image.eTag = await awsService.generateEtag(buffer);
+            }
           }
         }));
       }
