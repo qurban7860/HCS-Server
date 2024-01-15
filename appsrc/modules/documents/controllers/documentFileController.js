@@ -458,33 +458,42 @@ exports.downloadDocumentFile = async (req, res, next) => {
       if(file){
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+          console.log("data", data);
+          const isImage = data.ContentType && data.ContentType.startsWith('image');
+          console.log("isImage", isImage);
+          console.log("file", file);
+
           const dataReceived = data.Body.toString('utf-8');
-          // Remove the "data:image/jpeg;base64," prefix if it exists
           const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
-
-          // Create a buffer from the base64 data
           const imageBuffer = Buffer.from(base64Data, 'base64');
+          // Determine the desired quality based on the size of the image
+          let desiredQuality = 100;
 
-          const resizeOptions = {
-            width: 100, // Set your desired width
-            height: 100, // Set your desired height
-            fit: sharp.fit.inside,
-            withoutEnlargement: true,
-          };
-          // Resize the image using sharp
+          // Example: Adjust quality based on the size of the image buffer
+          if (imageBuffer.length > 5 * 1024 * 1024) {
+            // If the image size is greater than 5MB, reduce quality aggressively
+            desiredQuality = 10;
+          } else if (imageBuffer.length > 2 * 1024 * 1024) {
+            // If the image size is between 2MB and 5MB, reduce quality moderately
+            desiredQuality = 20;
+          } else {
+            // For smaller images, use a default quality
+            desiredQuality = 30;
+          }
+
+          console.log("desiredQuality", desiredQuality);
+
           sharp(imageBuffer)
-          .jpeg({ quality: 30, mozjpeg: true }) // Adjust quality to 80
+          .jpeg({ quality: desiredQuality, mozjpeg: true })
           .toBuffer((resizeErr, outputBuffer) => {
             if (resizeErr) {
               console.error('Error resizing image:', resizeErr);
               return;
             } else {
               const base64String = outputBuffer.toString('base64');
-            return res.status(StatusCodes.ACCEPTED).send(base64String);
+              return res.status(StatusCodes.ACCEPTED).send(base64String);
             }
           });
-
-
         }else{
           res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
         }
@@ -493,7 +502,10 @@ exports.downloadDocumentFile = async (req, res, next) => {
       }
     }
     catch(err){
-      return err;
+      if(data.Body)
+        return res.status(StatusCodes.ACCEPTED).send(base64String);
+      else 
+        return err;
     }
   }
 };
