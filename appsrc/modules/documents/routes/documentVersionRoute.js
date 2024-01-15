@@ -62,7 +62,8 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
           const buffer = await sharp(image.path)
             .resize(500, 500)
             .toBuffer();
-          image.buffer = buffer;
+            const base64String = buffer.toString('base64');
+          image.buffer = base64String;
           image.eTag = await awsService.generateEtag(buffer);
         }));
       }
