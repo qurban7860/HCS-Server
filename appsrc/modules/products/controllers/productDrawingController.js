@@ -13,6 +13,8 @@ this.dbservice = new productDBService();
 
 const { ProductCategory, ProductModel, ProductDrawing } = require('../models');
 
+const { Document } = require('../../documents/models');
+
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
@@ -67,9 +69,21 @@ exports.postProductDrawing = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let documentId = req.body.documentId;
+    
     let documentCategory = req.body.documentCategory;
     let documentType = req.body.documentType;
     let machine = req.body.machine
+    if(documentId) {
+      const documentObject = await Document.find({_id: documentId}).select('docCategory docType');
+      
+      if(!req.body.documentCategory)
+        documentCategory = documentObject.docCategory;
+      
+      if(!req.body.documentType)
+        documentType = documentObject.docType;
+      
+    };
+
 
     let alreadyExists = await ProductDrawing.findOne( { machine, document:documentId, documentCategory, documentType } );
     if(!alreadyExists) {
