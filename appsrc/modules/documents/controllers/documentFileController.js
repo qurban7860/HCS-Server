@@ -465,7 +465,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
                     return res.status(StatusCodes.ACCEPTED).send(data.Body);
                   } else {
                     const isImage = file?.fileType && file.fileType.startsWith('image');
-                    const isPDF = file?.fileType && file.fileType.startsWith('pdf');
+                    const isPDF = file?.fileType && file.fileType.toLowerCase().includes('pdf');
+
                     console.log("isImage", isImage);
                     console.log("isPDF", isPDF);
                     console.log("file?.fileType", file?.fileType);
