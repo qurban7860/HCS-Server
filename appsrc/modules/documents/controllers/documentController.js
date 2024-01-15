@@ -842,6 +842,7 @@ exports.patchDocument = async (req, res, next) => {
   if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    console.log("Here.....");
     try {
       if(!req.body.loginUser){
         req.body.loginUser = await getToken(req);
