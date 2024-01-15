@@ -43,8 +43,6 @@ exports.getLog = async (req, res, next) => {
 exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-
-    console.log(this.query);
     if(this.query?.fromDate && this.query?.fromDate) {
       this.query.date =  {
         $gte: new Date(this.query.fromDate),
@@ -59,10 +57,6 @@ exports.getLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-
- 
-
-    console.log("this.query", this.query);
     let response = await this.dbservice.getObjectList(req, ErpLog, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
@@ -148,6 +142,8 @@ exports.postLogMulti = async (req, res, next) => {
         for(const logObj of req.body.csvData) {
           logObj.machine = req.body.machine;
           logObj.customer = req.body.customer;
+          logObj.loginUser = req.body.loginUser;
+
           const fakeReq = { body: logObj};
           const response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
           respArr.push(response);
