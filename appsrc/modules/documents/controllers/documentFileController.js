@@ -468,6 +468,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
                         const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
                         const imageBuffer = Buffer.from(base64Data, 'base64');
                         const ImageResolution = await getImageResolution(imageBuffer);
+                        console.log("ImageResolution", ImageResolution);
                         const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
                         console.log("desiredQuality", desiredQuality);
                         sharp(imageBuffer)
