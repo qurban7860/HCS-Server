@@ -463,6 +463,9 @@ exports.downloadDocumentFile = async (req, res, next) => {
                     return res.status(StatusCodes.ACCEPTED).send(data.Body);
                   } else {
                     const isImage = file?.fileType && file.fileType.startsWith('image');
+                    const isPDF = file?.fileType && file.fileType.startsWith('pdf');
+                    console.log("isPDF", isPDF);
+                    console.log("fileType", fileType);
                     if (isImage) {
                         const dataReceived = data.Body.toString('utf-8');
                         const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
@@ -485,6 +488,19 @@ exports.downloadDocumentFile = async (req, res, next) => {
                                     return res.status(StatusCodes.ACCEPTED).send(base64String);
                                 }
                             });
+                    } else if(isPDF) {
+                      const { PDFDocument } = require('@hopding/pdf-lib');
+                      const inputBase64 = data.Body.toString('utf-8');
+                      const base64Data = inputBase64.replace(/^data:application\/pdf;base64,/, '');
+                      const pdfBuffer = Buffer.from(base64Data, 'base64');
+                      PDFDocument.load(pdfBuffer).then(async (pdfDoc) => {
+                        const modifiedPdfBytes = await pdfDoc.save();
+                        const modifiedBase64 = modifiedPdfBytes.toString('base64');
+                        return res.status(StatusCodes.ACCEPTED).send(modifiedBase64);
+                      }).catch((err) => {
+                        console.error('Error loading PDF document:', err);
+                        return res.status(StatusCodes.ACCEPTED).send(data.Body);
+                      });
                     } else {
                         return res.status(StatusCodes.ACCEPTED).send(data.Body);
                     }
