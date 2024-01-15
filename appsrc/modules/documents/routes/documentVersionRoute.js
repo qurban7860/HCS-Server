@@ -79,7 +79,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
                 .toBuffer();
                 const base64String = buffer.toString('base64');
               image.buffer = base64String;
-              image.eTag = await awsService.generateEtag(buffer);
+              image.eTag = await awsService.generateEtag(image.path);
             }
           }
         }));
