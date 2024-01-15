@@ -468,9 +468,11 @@ exports.downloadDocumentFile = async (req, res, next) => {
                     const isPDF = file?.fileType && file.fileType.startsWith('pdf');
                     console.log("isImage", isImage);
                     console.log("isPDF", isPDF);
-                    console.log("fileType", fileType);
+                    console.log("file?.fileType", file?.fileType);
+
 
                     if (isImage) {
+                        console.log("isImage -->", isImage);
                         const dataReceived = data.Body.toString('utf-8');
                         const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
                         const imageBuffer = Buffer.from(base64Data, 'base64');
