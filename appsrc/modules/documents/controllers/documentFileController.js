@@ -501,6 +501,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
                       const inputBase64 = data.Body.toString('utf-8');
                       const base64Data = inputBase64.replace(/^data:application\/pdf;base64,/, '');
                       const pdfBuffer = Buffer.from(base64Data, 'base64');
+                      console.log("pdf buffer.....");
                       PDFDocument.load(pdfBuffer).then(async (pdfDoc) => {
                         const modifiedPdfBytes = await pdfDoc.save();
                         const modifiedBase64 = modifiedPdfBytes.toString('base64');
