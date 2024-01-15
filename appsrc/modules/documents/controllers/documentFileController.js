@@ -522,20 +522,52 @@ async function getImageResolution(imageBuffer) {
   }
 }
 
-function calculateDesiredQuality(imageBuffer) {
+function calculateDesiredQuality(imageBuffer, imageResolution) {
   let desiredQuality = 100;
-  if (imageBuffer.length > 5 * 1024 * 1024) {
-    // If the image size is greater than 5MB, reduce quality aggressively
-    desiredQuality = 10;
-  } else if (imageBuffer.length > 2 * 1024 * 1024) {
-    // If the image size is between 2MB and 5MB, reduce quality moderately
-    desiredQuality = 20;
+
+  // Set thresholds based on image size
+  const sizeThresholds = {
+    small: 2 * 1024 * 1024, // 2MB
+    medium: 5 * 1024 * 1024, // 5MB
+    large: 10 * 1024 * 1024, // 10MB
+    extraLarge: 20 * 1024 * 1024, // 20MB
+  };
+
+  // Set resolution thresholds
+  const resolutionThresholds = {
+    low: 800,  // Low resolution threshold (e.g., 800 pixels)
+    medium: 1200, // Medium resolution threshold (e.g., 1200 pixels)
+    high: 2000, // High resolution threshold (e.g., 2000 pixels)
+    extraHigh: 3000, // Extra high resolution threshold (e.g., 3000 pixels)
+  };
+
+  const imageSize = imageBuffer.length;
+  const imageWidth = imageResolution.width;
+
+  // Adjust quality based on image size
+  if (imageSize > sizeThresholds.extraLarge) {
+    desiredQuality = 10; // Aggressive reduction for extra-large images
+  } else if (imageSize > sizeThresholds.large) {
+    desiredQuality = 20; // Moderate reduction for large images
+  } else if (imageSize > sizeThresholds.medium) {
+    desiredQuality = 30; // Moderate reduction for medium-sized images
   } else {
-    // For smaller images, use a default quality
-    desiredQuality = 30;
+    desiredQuality = 50; // Default quality for smaller images
   }
+
+  // Adjust quality based on image resolution
+  if (imageWidth < resolutionThresholds.low) {
+    desiredQuality += 10; // Increase quality for low-resolution images
+  } else if (imageWidth > resolutionThresholds.extraHigh) {
+    desiredQuality -= 10; // Decrease quality for extra high-resolution images
+  }
+
+  // Ensure the desired quality stays within a reasonable range
+  desiredQuality = Math.max(10, Math.min(100, desiredQuality));
+
   return desiredQuality;
 }
+
 
 
 async function readFileAsBase64(filePath) {
