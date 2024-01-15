@@ -77,10 +77,10 @@ exports.postProductDrawing = async (req, res, next) => {
       const documentObject = await Document.findOne({_id: documentId}).select('docCategory docType').lean();
       console.log("documentObject", documentObject);
       
-      if(!req.body.documentCategory)
+      if(documentObject)
         documentCategory = documentObject.docCategory;
       
-      if(!req.body.documentType)
+      if(documentObject)
         documentType = documentObject.docType;
       
     };
