@@ -433,7 +433,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
             req.body.type = processedFile.type
             req.body.extension = processedFile.fileExt;
             req.body.awsETag = processedFile.awsETag;
-            req.body.eTag = processedFile.eTag;
+            req.body.eTag = file.eTag;
 
             if(processedFile.base64thumbNailData)
               req.body.content = processedFile.base64thumbNailData;

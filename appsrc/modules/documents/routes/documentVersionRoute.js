@@ -10,6 +10,7 @@ const checkCustomerID = require('../../../middleware/check-parentID')('customer'
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
 const sharp = require('sharp');
+const awsService = require('../../../../appsrc/base/aws');
 
 const controllers = require('../controllers');
 const controller = controllers.documentVersionController;
@@ -55,20 +56,16 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
       console.log(err);
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      console.log("Before req.files", req.files);
       if(req.files && req.files['images']) {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
-          console.log("image", image);
           const buffer = await sharp(image.path)
             .resize(300, 300)
             .toBuffer();
-
-          // Replace the original buffer with the processed buffer
           image.buffer = buffer;
+          image.eTag = await awsService.generateEtag(buffer);
         }));
       }
-      console.log("After req.files", req.files);
       next();
     }
   });
