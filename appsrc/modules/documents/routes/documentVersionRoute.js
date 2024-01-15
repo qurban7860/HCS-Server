@@ -63,10 +63,13 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
           console.log("image", image);
-          let configObject = await Config.findOne({name: 'optimizeImage'}).select('value').lean();
-          console.log("configObject", configObject);
+          let configObject = await Config.findOne({ name: 'OPTIMIZE_IMAGE' }).select('value').lean();
 
-          if(configObject && (configObject?.value === true || configObject?.value === 'true')){
+          const regex = new RegExp("^EXPORT_UUID$", "i");
+          let configObject = await Config.findOne({name: regex, type: "OPTIMIZE_IMAGE", isArchived: false, isActive: true}).select('value');
+          configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+
+          if(configObject){
             if(image.mimetype.includes('image')){ 
               const buffer = await sharp(image.path)
                 .jpeg({
