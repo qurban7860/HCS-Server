@@ -77,6 +77,46 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
     });
   }, controller.patchDocument);
 
+
+  // router.patch(`${baseRoute}/:id`, (req, res, next) => {
+  //   // Resize images before uploading
+  //   resizeImages(req, res, () => {
+  //     // Now, call the multer middleware
+  //     fileUpload.fields([{ name: 'images', maxCount: 20 }])(req, res, (err) => {
+  //       if (err instanceof multer.MulterError) {
+  //         console.log(err);
+  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+  //       } else if (err) {
+  //         console.log(err);
+  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  //       } else {
+  //         next();
+  //       }
+  //     });
+  //   });
+  // }, controller.patchDocument);
+
+  // Define a middleware to resize images
+  function resizeImages(req, res, next) {
+    const images = req.files['images'];
+    // Check if 'images' field exists and contains files
+    if (images && images.length > 0) {
+      // Loop through each image and resize
+      images.forEach((image) => {
+        sharp(image.path)
+          .resize({ width: 500, height: 500 })
+          .toFile(`path/to/resize/${image.filename}`, (err) => {
+            if (err) {
+              console.error('Error resizing image:', err);
+            }
+          });
+      });
+      next();
+    } else {
+      next();
+    }
+  }
+
 // - /api/1.0.0/documents/files/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocument);
 
