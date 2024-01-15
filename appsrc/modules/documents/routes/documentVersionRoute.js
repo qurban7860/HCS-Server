@@ -63,10 +63,8 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
           console.log("image", image);
-          let configObject = await Config.findOne({ name: 'OPTIMIZE_IMAGE' }).select('value').lean();
-
-          const regex = new RegExp("^EXPORT_UUID$", "i");
-          configObject = await Config.findOne({name: regex, type: "OPTIMIZE_IMAGE", isArchived: false, isActive: true}).select('value');
+          const regex = new RegExp("^OPTIMIZE_IMAGE$", "i");
+          let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
           console.log("configObject", configObject);
           configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
           console.log("configObject", configObject);
