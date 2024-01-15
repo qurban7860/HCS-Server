@@ -60,7 +60,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
         const images = req.files['images'];
         await Promise.all(images.map(async (image) => {
           const buffer = await sharp(image.path)
-            .resize(300, 300)
+            .resize(500, 500)
             .toBuffer();
           image.buffer = buffer;
           image.eTag = await awsService.generateEtag(buffer);

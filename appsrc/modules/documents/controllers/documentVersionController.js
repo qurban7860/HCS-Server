@@ -356,7 +356,6 @@ exports.patchDocumentVersion = async (req, res, next) => {
   if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    console.log("here...");
     try {
       
       if(!req.body.loginUser){
@@ -532,7 +531,12 @@ async function processFile(file, userId) {
   let thumbnailPath;
   let base64thumbNailData;
 
-  const base64fileData = await readFileAsBase64(file.path);
+  let base64fileData = null;
+  if(file.buffer)
+    base64fileData = file.buffer;
+  else 
+    base64fileData = await readFileAsBase64(file.path);
+
 
   if(file.mimetype.includes('image')){
     thumbnailPath = await generateThumbnail(file.path);
@@ -542,7 +546,7 @@ async function processFile(file, userId) {
   
   const fileName = userId+"-"+new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
-  s3Data.eTag = await awsService.generateEtag(file.path);
+  // s3Data.eTag = await awsService.generateEtag(file.path);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
