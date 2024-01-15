@@ -495,6 +495,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
                                 }
                             });
                     } else if(isPDF) {
+                      console.log("isPDF", isPDF);
                       const { PDFDocument } = require('@hopding/pdf-lib');
                       const inputBase64 = data.Body.toString('utf-8');
                       const base64Data = inputBase64.replace(/^data:application\/pdf;base64,/, '');
