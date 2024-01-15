@@ -46,20 +46,39 @@ router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
   }, controller.postDocumentVersion);
 
 // - /api/1.0.0/documents/documentVersion/:id
-router.patch(`${baseRoute}/:documentid/versions/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
+router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
+  fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+    } else if (err) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      console.log("Before req.files", req.files);
+      if(req.files && req.files['images']) {
+        const images = req.files['images'];
+        await Promise.all(images.map(async (image) => {
+          const buffer = await sharp(image.buffer)
+            .resize(300, 300)
+            .toBuffer();
 
-      if (err instanceof multer.MulterError) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
-      } else if (err) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-        next();
+          // Replace the original buffer with the processed buffer
+          image.buffer = buffer;
+        }));
       }
-    });
-  }, controller.patchDocumentVersion);
+      console.log("After req.files", req.files);
+      next();
+    }
+  });
+}, controller.patchDocumentVersion);
+
+
+
+
+
+
+  
 
 // - /api/1.0.0/documents/documentVersion/:id
 router.delete(`${baseRoute}/:documentid/versions/:id`, controller.deleteDocumentVersion);
