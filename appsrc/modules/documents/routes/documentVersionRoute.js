@@ -67,8 +67,10 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
 
           const regex = new RegExp("^EXPORT_UUID$", "i");
           configObject = await Config.findOne({name: regex, type: "OPTIMIZE_IMAGE", isArchived: false, isActive: true}).select('value');
+          console.log("configObject", configObject);
           configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-
+          console.log("configObject", configObject);
+          
           if(configObject){
             if(image.mimetype.includes('image')){ 
               const buffer = await sharp(image.path)
