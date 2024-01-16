@@ -228,7 +228,7 @@ exports.getDocuments = async (req, res, next) => {
 
 exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
   const page = 1; // Specify the page number you want (e.g., from request query parameter)
-  const pageSize = 10; // Specify the number of documents per page (adjust as needed)
+  const pageSize = 100; // Specify the number of documents per page (adjust as needed)
 
 
   let includeMachines = false;
