@@ -63,43 +63,14 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
     } else {
       const regex = new RegExp("^OPTIMIZE_IMAGE$", "i");
       let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-      console.log("configObject", configObject);
       configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
       console.log("configObject", configObject);
-
       if(req.files && req.files['images']) {
         const documents_ = req.files['images'];
         await Promise.all(documents_.map(async (docx, index) => {
           console.log("docx", docx);
           if(configObject){
-            if(docx.mimetype.includes('image')){
-              const fileSizeBefore = await getFileSize(docx.path);
-              const fileSizeBeforeInMB = fileSizeBefore / (1024 * 1024); // Convert bytes to megabytes
-              let imageResolution = await awsService.getImageResolution(docx.path);
-              console.log("imageResolution", imageResolution);
-              let desiredQuality = await awsService.calculateDesiredQuality(docx.path, imageResolution);
-              console.log("desiredQuality", desiredQuality);
-
-              const buffer = await sharp(docx.path)
-                .jpeg({
-                quality: desiredQuality,
-                mozjpeg: true
-                })
-                .toBuffer();
-                const fileSizeInBytes = Buffer.byteLength(buffer);
-                const fileSizeInKilobytes = fileSizeInBytes / 1024;
-                const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
-
-                console.log("________________________Starting_Converting_Files_____________________________________");
-                console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
-                console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
-                console.log(`File Size: ${fileSizeInBytes} bytes`);
-                console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
-                console.log("________________________File_Conversion_Completed_____________________________________");
-
-                const base64String = buffer.toString('base64');
-                docx.buffer = base64String;
-            }
+            await processImageFile(docx);
             docx.eTag = await awsService.generateEtag(docx.path);
           }
         }));
@@ -109,16 +80,37 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
   });
 }, controller.patchDocumentVersion);
 
-// Function to calculate file size
-async function getFileSize(filePath) {
-  try {
-    const stats = await fs.stat(filePath);
-    return stats.size;
-  } catch (error) {
-    console.error('Error reading file:', error.message);
-    throw error; // Re-throw the error for the calling function to handle
+const processImageFile = async (docx) => {
+  if (docx.mimetype.includes('image')) {
+    const fileSizeBefore = await getFileSize(docx.path);
+    const fileSizeBeforeInMB = fileSizeBefore / (1024 * 1024); // Convert bytes to megabytes
+    let imageResolution = await awsService.getImageResolution(docx.path);
+    console.log("imageResolution", imageResolution);
+    let desiredQuality = await awsService.calculateDesiredQuality(docx.path, imageResolution);
+    console.log("desiredQuality", desiredQuality);
+
+    const buffer = await sharp(docx.path)
+      .jpeg({
+        quality: desiredQuality,
+        mozjpeg: true
+      })
+      .toBuffer();
+
+    const fileSizeInBytes = Buffer.byteLength(buffer);
+    const fileSizeInKilobytes = fileSizeInBytes / 1024;
+    const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
+
+    console.log("________________________Starting_Converting_Files_____________________________________");
+    console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
+    console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
+    console.log(`File Size: ${fileSizeInBytes} bytes`);
+    console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
+    console.log("________________________File_Conversion_Completed_____________________________________");
+
+    const base64String = buffer.toString('base64');
+    docx.buffer = base64String;
   }
-}
+};
 
 
 
