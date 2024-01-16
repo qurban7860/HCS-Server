@@ -112,7 +112,11 @@ exports.getMachineByModels = async (req, res, next) => {
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
 
-
+  const allRecords = null;
+  if(req.query?.allRecords){
+    delete req.query.allRecords
+    allRecords = req.query.allRecords === true || req.query.allRecords === 'true' ? true : false;
+  }
   
   // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
@@ -171,18 +175,31 @@ exports.getMachineByModels = async (req, res, next) => {
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
 
-  // console.log(matchQuery);
-
-  let modelWiseMachineCount = await Product.aggregate([
-    { $match: matchQuery }, 
+  let aggregationPipeline = [
+    { $match: matchQuery },
     { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
     { $unwind: "$machineModel" },
     { $match: { "machineModel": { $nin: ["", null] } } },
     { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
-    // { '$addFields': { count: { $toString: '$count' } } },
     { $sort: { count: -1 } },
-    { $limit: 20 }
-  ]);
+  ];
+  
+  if (!allRecords) {
+    aggregationPipeline.push({ $limit: 20 });
+  }
+  
+  let modelWiseMachineCount = await Product.aggregate(aggregationPipeline);
+
+  // let modelWiseMachineCount = await Product.aggregate([
+  //   { $match: matchQuery }, 
+  //   { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
+  //   { $unwind: "$machineModel" },
+  //   { $match: { "machineModel": { $nin: ["", null] } } },
+  //   { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
+  //   // { '$addFields': { count: { $toString: '$count' } } },
+  //   { $sort: { count: -1 } },
+  //   { $limit: 20 }
+  // ]);
 
   return res.json({ 
     modelWiseMachineCount,
