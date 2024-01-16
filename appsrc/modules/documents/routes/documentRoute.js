@@ -10,6 +10,7 @@ const checkCustomerID = require('../../../middleware/check-parentID')('customer'
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
 const { Config } = require('../../config/models');
+const awsService = require('../../../../appsrc/base/aws');
 
 
 const controllers = require('../controllers');
