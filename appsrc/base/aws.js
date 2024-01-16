@@ -350,7 +350,6 @@ const processImageFile = async (docx) => {
     const base64String = buffer.toString('base64');
     docx.buffer = base64String;
   }
-  return docx;
 };
 
 module.exports = {
