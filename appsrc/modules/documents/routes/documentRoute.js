@@ -41,7 +41,7 @@ router.get(`${baseRoute}/`, controller.getDocuments);
 
 // - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -50,6 +50,16 @@ router.post(`${baseRoute}/`, (req, res, next) => {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
+        const regex = new RegExp("^OPTIMIZE_IMAGE$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+        if(req.files && req.files['images']) {
+          const documents_ = req.files['images'];
+          await Promise.all(documents_.map(async (docx, index) => {
+            if(configObject){
+              await awsService.processImageFile(docx);
+              docx.eTag = await awsService.generateEtag(docx.path);
+            }
+          }));
+        }
         next();
       }
     });
@@ -60,7 +70,7 @@ router.patch(`${baseRoute}/updatedVersion/:id`, controller.patchDocumentVersion)
 
 // - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -69,6 +79,16 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
+        const regex = new RegExp("^OPTIMIZE_IMAGE$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+        if(req.files && req.files['images']) {
+          const documents_ = req.files['images'];
+          await Promise.all(documents_.map(async (docx, index) => {
+            if(configObject){
+              await awsService.processImageFile(docx);
+              docx.eTag = await awsService.generateEtag(docx.path);
+            }
+          }));
+        }
         next();
       }
     });
