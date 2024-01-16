@@ -440,31 +440,6 @@ exports.putDocumentFilesETag = async (req, res, next) => {
 };
 
 
-exports.testing = async (req, res, next) => {
-  try {
-    const uploadedFile = req.file;
-    console.log('File uploaded:', uploadedFile);
-      // If the uploaded file is an image, use sharp to resize it
-      const resizedImageBuffer = await sharp(uploadedFile.path)
-        .jpeg({ quality: 10, mozjpeg: true }) // Adjust quality to 80
-        .toBuffer();
-
-      const resizedFileName = 'resized_' + uploadedFile.filename;
-      const resizedFilePath = 'uploads/' + resizedFileName;
-      await sharp(resizedImageBuffer).toFile(resizedFilePath);
-
-      console.log('Resized image saved:', resizedFilePath);
-
-
-    res.sendStatus(200);
-  } catch (error) {
-    console.error('Error processing the uploaded file:', error);
-    res.status(500).send('Internal Server Error');
-  }
-};
-
-
-
 exports.getdublicateDrawings = async (req, res, next) => {
   try {
     const filteredFiles = await DocumentFile.aggregate([

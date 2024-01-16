@@ -444,7 +444,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
                   const downloadFile = req?.query?.download === true || req?.query?.download === 'true' ? true : false;
-                  console.log("downloadFile", downloadFile);
+                  downloadFile = true;
                   if(downloadFile){
                     console.log("Directly Downloading...............");
                     return res.status(StatusCodes.ACCEPTED).send(data.Body);

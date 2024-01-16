@@ -65,15 +65,17 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
           console.log("image", image);
           const regex = new RegExp("^OPTIMIZE_IMAGE$", "i");
           let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-          console.log("configObject", configObject);
           configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
           console.log("configObject", configObject);
-          
           if(configObject){
-            if(image.mimetype.includes('image')){ 
+            if(image.mimetype.includes('image')){
+
+              let imageResolution = getImageResolution(image.path);
+              let calculateDesiredQuality = calculateDesiredQuality(image.path, imageResolution);
+
               const buffer = await sharp(image.path)
                 .jpeg({
-                quality: 10,
+                quality: calculateDesiredQuality,
                 mozjpeg: true
                 })
                 .toBuffer();
@@ -90,9 +92,67 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
 }, controller.patchDocumentVersion);
 
 
+async function getImageResolution(imageBuffer) {
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    console.log("metadata", metadata);
+    const width = metadata.width;
+    const height = metadata.height;
+    
+    console.log(`Image Resolution: ${width} x ${height}`);
+    
+    // You can return the resolution or perform other actions as needed
+    return { width, height };
+  } catch (err) {
+    console.error('Error reading image metadata:', err);
+    throw err; // Propagate the error or handle it as per your application's requirements
+  }
+}
 
+function calculateDesiredQuality(imageBuffer, imageResolution) {
+  let desiredQuality = 100;
 
+  // Set thresholds based on image size
+  const sizeThresholds = {
+    small: 2 * 1024 * 1024, // 2MB
+    medium: 5 * 1024 * 1024, // 5MB
+    large: 10 * 1024 * 1024, // 10MB
+    extraLarge: 20 * 1024 * 1024, // 20MB
+  };
 
+  // Set resolution thresholds
+  const resolutionThresholds = {
+    low: 800,  // Low resolution threshold (e.g., 800 pixels)
+    medium: 1200, // Medium resolution threshold (e.g., 1200 pixels)
+    high: 2000, // High resolution threshold (e.g., 2000 pixels)
+    extraHigh: 3000, // Extra high resolution threshold (e.g., 3000 pixels)
+  };
+
+  const imageSize = imageBuffer.length;
+  const imageWidth = imageResolution.width;
+
+  // Adjust quality based on image size
+  if (imageSize > sizeThresholds.extraLarge) {
+    desiredQuality = 10; // Aggressive reduction for extra-large images
+  } else if (imageSize > sizeThresholds.large) {
+    desiredQuality = 20; // Moderate reduction for large images
+  } else if (imageSize > sizeThresholds.medium) {
+    desiredQuality = 30; // Moderate reduction for medium-sized images
+  } else {
+    desiredQuality = 50; // Default quality for smaller images
+  }
+
+  // Adjust quality based on image resolution
+  if (imageWidth < resolutionThresholds.low) {
+    desiredQuality += 10; // Increase quality for low-resolution images
+  } else if (imageWidth > resolutionThresholds.extraHigh) {
+    desiredQuality -= 10; // Decrease quality for extra high-resolution images
+  }
+
+  // Ensure the desired quality stays within a reasonable range
+  desiredQuality = Math.max(10, Math.min(100, desiredQuality));
+  return desiredQuality;
+}
 
   
 
