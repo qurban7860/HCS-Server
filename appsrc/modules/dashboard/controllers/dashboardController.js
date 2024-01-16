@@ -112,7 +112,7 @@ exports.getMachineByModels = async (req, res, next) => {
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
 
-  const allRecords = null;
+  let allRecords = null;
   if(req.query?.allRecords){
     delete req.query.allRecords
     allRecords = req.query.allRecords === true || req.query.allRecords === 'true' ? true : false;
