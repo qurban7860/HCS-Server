@@ -311,13 +311,13 @@ async function calculateDesiredQuality(imageBuffer, imageResolution) {
 
   // Adjust quality based on image size
   if (imageSize > sizeThresholds.extraLarge) {
-    desiredQuality = 10; // Aggressive reduction for extra-large images
+    desiredQuality = 5; // Aggressive reduction for extra-large images
   } else if (imageSize > sizeThresholds.large) {
-    desiredQuality = 20; // Moderate reduction for large images
+    desiredQuality = 10; // Moderate reduction for large images
   } else if (imageSize > sizeThresholds.medium) {
-    desiredQuality = 30; // Moderate reduction for medium-sized images
+    desiredQuality = 20; // Moderate reduction for medium-sized images
   } else {
-    desiredQuality = 50; // Default quality for smaller images
+    desiredQuality = 30; // Default quality for smaller images
   }
 
   // Adjust quality based on image resolution
