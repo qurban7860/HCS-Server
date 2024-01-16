@@ -117,6 +117,10 @@ exports.getMachineByModels = async (req, res, next) => {
     delete req.query.allRecords
     allRecords = req.query.allRecords === true || req.query.allRecords === 'true' ? true : false;
   }
+
+  console.log(req.query);
+  console.log(allRecords);
+  
   
   // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
