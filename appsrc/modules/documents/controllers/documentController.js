@@ -227,6 +227,10 @@ exports.getDocuments = async (req, res, next) => {
 
 
 exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
+  const page = 1; // Specify the page number you want (e.g., from request query parameter)
+  const pageSize = 10; // Specify the number of documents per page (adjust as needed)
+
+
   let includeMachines = false;
   let includeDrawings = false;
   
@@ -355,15 +359,13 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
                 let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                 documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
-                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail')  
+                                    .skip((page - 1) * pageSize)
+                                    .limit(pageSize);
           
                 if (documentFiles && documentFiles.length > 0) {
                   for (let file of documentFiles) {
                     file = file.toObject();
-                    // if(file.path){
-                    //   const fileContent = await downloadFileContent(file.path);
-                    //   file.content = fileContent;
-                    // }
                     file.versionNo = documentVersion.versionNo;
                     file.version_id = documentVersion._id;
                     file.document_id = document_._id;
