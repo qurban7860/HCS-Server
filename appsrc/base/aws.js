@@ -342,11 +342,11 @@ const processImageFile = async (docx) => {
         mozjpeg: true
       })
       .toBuffer();
-    // const fileSizeInBytes = Buffer.byteLength(buffer);
-    // const fileSizeInKilobytes = fileSizeInBytes / 1024;
-    // const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
-    // console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
-    // console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
+    const fileSizeInBytes = Buffer.byteLength(buffer);
+    const fileSizeInKilobytes = fileSizeInBytes / 1024;
+    const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
+    console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
+    console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
     const base64String = buffer.toString('base64');
     docx.buffer = base64String;
   }
