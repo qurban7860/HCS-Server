@@ -519,7 +519,6 @@ exports.deleteDocument = async (req, res, next) => {
 };
 
 exports.postDocument = async (req, res, next) => {
-
   try{
 
     const errors = validationResult(req);

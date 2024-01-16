@@ -71,11 +71,11 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
             if(image.mimetype.includes('image')){
 
               let imageResolution = getImageResolution(image.path);
-              let calculateDesiredQuality = calculateDesiredQuality(image.path, imageResolution);
+              // let desiredQuality = calculateDesiredQuality(image.path, imageResolution);
 
               const buffer = await sharp(image.path)
                 .jpeg({
-                quality: calculateDesiredQuality,
+                quality: desiredQuality,
                 mozjpeg: true
                 })
                 .toBuffer();
