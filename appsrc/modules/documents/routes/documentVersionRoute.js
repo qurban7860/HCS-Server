@@ -112,6 +112,17 @@ const processImageFile = async (docx) => {
   }
 };
 
+// Function to calculate file size
+async function getFileSize(filePath) {
+  try {
+    const stats = await fs.stat(filePath);
+    return stats.size;
+  } catch (error) {
+    console.error('Error reading file:', error.message);
+    throw error; // Re-throw the error for the calling function to handle
+  }
+}
+
 
 
 
