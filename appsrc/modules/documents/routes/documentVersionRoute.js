@@ -71,17 +71,12 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
           console.log("configObject", configObject);
           if(configObject){
             if(docx.mimetype.includes('image')){
+              const fileSizeBefore = await getFileSize(docx.path);
+              const fileSizeBeforeInMB = fileSizeBefore / (1024 * 1024); // Convert bytes to megabytes
               let imageResolution = await awsService.getImageResolution(docx.path);
               console.log("imageResolution", imageResolution);
               let desiredQuality = await awsService.calculateDesiredQuality(docx.path, imageResolution);
-
               console.log("desiredQuality", desiredQuality);
-
-              const fileSizeBefore = await getFileSize(docx.path);
-              const fileSizeBeforeInMB = fileSizeBefore / (1024 * 1024); // Convert bytes to megabytes
-
-              console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
-          
 
               const buffer = await sharp(docx.path)
                 .jpeg({
@@ -89,18 +84,20 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
                 mozjpeg: true
                 })
                 .toBuffer();
-
                 const fileSizeInBytes = Buffer.byteLength(buffer);
                 const fileSizeInKilobytes = fileSizeInBytes / 1024;
                 const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
 
+                console.log("Uploading Before **********************");
+                console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
+                console.log("Uploading After **********************");
+                console.log(`File Size: ${fileSizeInMegabytes.toFixed(2)} MB`);
                 console.log(`File Size: ${fileSizeInBytes} bytes`);
                 console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
-                console.log(`File Size: ${fileSizeInMegabytes.toFixed(2)} MB`);
-
+                console.log("_____________________________________________________________");
 
                 const base64String = buffer.toString('base64');
-              docx.buffer = base64String;
+                docx.buffer = base64String;
             }
             docx.eTag = await awsService.generateEtag(docx.path);
           }
