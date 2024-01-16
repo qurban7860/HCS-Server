@@ -443,66 +443,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-                  const downloadFile = req?.query?.download === true || req?.query?.download === 'true' ? true : false;
-                  downloadFile = true;
-                  if(downloadFile){
-                    console.log("Directly Downloading...............");
-                    return res.status(StatusCodes.ACCEPTED).send(data.Body);
-                  } else {
-                    const isImage = file?.fileType && file.fileType.startsWith('image');
-                    const isPDF = file?.fileType && file.fileType.toLowerCase().includes('pdf');
-                    isImage = false;
-                    isPDF = false;
-
-                    console.log("isImage", isImage);
-                    console.log("isPDF", isPDF);
-                    console.log("file?.fileType", file?.fileType);
-
-
-                    if (isImage) {
-                        console.log("isImage -->", isImage);
-                        const dataReceived = data.Body.toString('utf-8');
-                        const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
-                        const imageBuffer = Buffer.from(base64Data, 'base64');
-                        const ImageResolution = await getImageResolution(imageBuffer);
-                        console.log("ImageResolution", ImageResolution);
-                        const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
-                        console.log("desiredQuality", desiredQuality);
-                        sharp(imageBuffer)
-                            .jpeg({
-                                quality: desiredQuality,
-                                mozjpeg: true
-                            })
-                            .toBuffer((resizeErr, outputBuffer) => {
-                                if (resizeErr) {
-                                    console.error('Error resizing image:', resizeErr);
-                                    return;
-                                } else {
-                                    const base64String = outputBuffer.toString('base64');
-                                    return res.status(StatusCodes.ACCEPTED).send(base64String);
-                                }
-                            });
-                    } else if(isPDF) {
-                      console.log("isPDF ........", isPDF);
-                      const { PDFDocument } = require('@hopding/pdf-lib');
-                      const inputBase64 = data.Body.toString('utf-8');
-                      const base64Data = inputBase64.replace(/^data:application\/pdf;base64,/, '');
-                      const pdfBuffer = Buffer.from(base64Data, 'base64');
-                      console.log("pdf buffer.....");
-                      PDFDocument.load(pdfBuffer).then(async (pdfDoc) => {
-                        const modifiedPdfBytes = await pdfDoc.save();
-                        const modifiedBase64 = modifiedPdfBytes.toString('base64');
-                        console.log("all worked........ for pdf......");
-                        return res.status(StatusCodes.ACCEPTED).send(modifiedBase64);
-                      }).catch((err) => {
-                        console.error('Error loading PDF document:', err);
-                        return res.status(StatusCodes.ACCEPTED).send(data.Body);
-                      });
-                    } else {
-                        console.log("ELSE");
-                        return res.status(StatusCodes.ACCEPTED).send(data.Body);
-                    }
-                  }
+                  return res.status(StatusCodes.ACCEPTED).send(data.Body);
               } else {
                   res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
               }
