@@ -63,7 +63,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
     } else {
       if(req.files && req.files['images']) {
         const documents_ = req.files['images'];
-        await Promise.all(documents_.map(async (docx) => {
+        await Promise.all(documents_.map(async (docx, index) => {
           console.log("docx", docx);
           const regex = new RegExp("^OPTIMIZE_IMAGE$", "i");
           let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
@@ -88,13 +88,14 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
                 const fileSizeInKilobytes = fileSizeInBytes / 1024;
                 const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
 
-                console.log("Uploading Before **********************");
+                console.log("________________________Starting_Converting_Files_____________________________________");
+                console.log("Uploading Before ********************** FileID: ", (index+1));
                 console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
                 console.log("Uploading After **********************");
                 console.log(`File Size: ${fileSizeInMegabytes.toFixed(2)} MB`);
                 console.log(`File Size: ${fileSizeInBytes} bytes`);
                 console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
-                console.log("_____________________________________________________________");
+                console.log("________________________File_Conversion_Completed_____________________________________");
 
                 const base64String = buffer.toString('base64');
                 docx.buffer = base64String;
