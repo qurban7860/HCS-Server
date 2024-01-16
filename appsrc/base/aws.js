@@ -332,6 +332,26 @@ async function calculateDesiredQuality(imageBuffer, imageResolution) {
   return desiredQuality;
 }
 
+const processImageFile = async (docx) => {
+  if (docx.mimetype.includes('image')) {
+    let imageResolution = await getImageResolution(docx.path);
+    let desiredQuality = await calculateDesiredQuality(docx.path, imageResolution);
+    const buffer = await sharp(docx.path)
+      .jpeg({
+        quality: desiredQuality,
+        mozjpeg: true
+      })
+      .toBuffer();
+    // const fileSizeInBytes = Buffer.byteLength(buffer);
+    // const fileSizeInKilobytes = fileSizeInBytes / 1024;
+    // const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
+    // console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
+    // console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
+    const base64String = buffer.toString('base64');
+    docx.buffer = base64String;
+  }
+};
+
 module.exports = {
   sendEmail,
   sendEmailWithRawData,
@@ -342,7 +362,6 @@ module.exports = {
   downloadFileS3,
   fetchAWSFileInfo,
   generateEtag,
-  getImageResolution,
-  calculateDesiredQuality,
+  processImageFile,
   s3
 };
