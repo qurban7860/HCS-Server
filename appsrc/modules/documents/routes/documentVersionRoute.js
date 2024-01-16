@@ -89,10 +89,8 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
                 const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
 
                 console.log("________________________Starting_Converting_Files_____________________________________");
-                console.log("Uploading Before ********************** FileID: ", (index+1));
                 console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
-                console.log("Uploading After **********************");
-                console.log(`File Size: ${fileSizeInMegabytes.toFixed(2)} MB`);
+                console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
                 console.log(`File Size: ${fileSizeInBytes} bytes`);
                 console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
                 console.log("________________________File_Conversion_Completed_____________________________________");
