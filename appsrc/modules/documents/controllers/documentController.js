@@ -1182,7 +1182,11 @@ async function processFile(file, userId) {
   let thumbnailPath;
   let base64thumbNailData;
 
-  const base64fileData = await readFileAsBase64(file.path);
+  let base64fileData = null;
+  if(file.buffer)
+    base64fileData = file.buffer;
+  else 
+    base64fileData = await readFileAsBase64(file.path);
 
   if(file.mimetype.includes('image')){
 
