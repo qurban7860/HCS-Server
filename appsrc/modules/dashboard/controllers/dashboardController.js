@@ -116,8 +116,8 @@ exports.getMachineByModels = async (req, res, next) => {
 
   let allRecords = null;
   if(req.query?.allRecords == 'true' || req.query?.allRecords === true){
-    delete req.query.allRecords
     allRecords = req.query.allRecords === true || req.query.allRecords === 'true' ? true : false;
+    delete req.query.allRecords
   }
 
   console.log(allRecords);
