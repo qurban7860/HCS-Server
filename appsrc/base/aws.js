@@ -274,7 +274,6 @@ async function generateEtag(data) {
 async function getImageResolution(imageBuffer) {
   try {
     const metadata = await sharp(imageBuffer).metadata();
-    console.log("metadata", metadata);
     const width = metadata.width;
     const height = metadata.height;
     

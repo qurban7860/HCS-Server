@@ -73,14 +73,24 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
               let imageResolution = await awsService.getImageResolution(docx.path);
               console.log("imageResolution", imageResolution);
               let desiredQuality = await awsService.calculateDesiredQuality(docx.path, imageResolution);
-              console.log("desiredQuality", desiredQuality);
 
+              console.log("desiredQuality", desiredQuality);
               const buffer = await sharp(docx.path)
                 .jpeg({
                 quality: desiredQuality,
                 mozjpeg: true
                 })
                 .toBuffer();
+
+                const fileSizeInBytes = Buffer.byteLength(buffer);
+                const fileSizeInKilobytes = fileSizeInBytes / 1024;
+                const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
+
+                console.log(`File Size: ${fileSizeInBytes} bytes`);
+                console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
+                console.log(`File Size: ${fileSizeInMegabytes.toFixed(2)} MB`);
+
+
                 const base64String = buffer.toString('base64');
               docx.buffer = base64String;
             }
