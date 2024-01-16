@@ -364,7 +364,6 @@ exports.patchDocumentVersion = async (req, res, next) => {
 
       let files = [];
       
-      console.log("req.files.images", req.files.images);
       if(req.files && req.files.images)
         files = req.files.images;
 
