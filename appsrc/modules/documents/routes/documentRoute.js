@@ -9,7 +9,7 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
-
+const { Config } = require('../../config/models');
 
 
 const controllers = require('../controllers');
