@@ -75,7 +75,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
 
               const buffer = await sharp(image.path)
                 .jpeg({
-                quality: desiredQuality,
+                quality: 10,
                 mozjpeg: true
                 })
                 .toBuffer();
