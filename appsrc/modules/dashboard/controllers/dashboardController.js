@@ -22,6 +22,9 @@ exports.getMachineByCountries = async (req, res, next) => {
 
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
+  
+  let allRecords = req.query?.allRecords == 'true' || req.query?.allRecords === true ? true : false;
+  if(allRecords) delete req.query.allRecords;  
 
   // let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
   // let notifications = await SecurityNotification.find(queryString__).populate('sender');
@@ -90,17 +93,20 @@ exports.getMachineByCountries = async (req, res, next) => {
   // console.log(matchQuery);
 
 
+  let aggregationPipeline = [
+    { $match: matchQuery }, 
+    { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
+    { $unwind: "$instalationSite" },
+    { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
+    { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+    // { '$addFields': { count: { $toString: '$count' } } },
+    { $sort: { count: -1 } }
+  ]
+  if (!allRecords) {
+    aggregationPipeline.push({ $limit: 20 });
+  }
 
-  let countryWiseMachineCount = await Product.aggregate([
-      { $match: matchQuery }, 
-      { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
-      { $unwind: "$instalationSite" },
-      { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
-      { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
-      // { '$addFields': { count: { $toString: '$count' } } },
-      { $sort: { count: -1 } },
-      { $limit: 20 }
-    ]);
+  let countryWiseMachineCount = await Product.aggregate(aggregationPipeline);
   return res.json({ 
     countryWiseMachineCount,
   });
@@ -111,21 +117,9 @@ exports.getMachineByCountries = async (req, res, next) => {
 exports.getMachineByModels = async (req, res, next) => {
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
-  console.log(req.query);
+  let allRecords = req.query?.allRecords == 'true' || req.query?.allRecords === true ? true : false;
+  if(allRecords) delete req.query.allRecords;  
   
-
-  let allRecords = null;
-  if(req.query?.allRecords == 'true' || req.query?.allRecords === true){
-    allRecords = req.query.allRecords === true || req.query.allRecords === 'true' ? true : false;
-    delete req.query.allRecords
-  }
-
-  console.log(allRecords);
-
-
-  
-  
-  // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
     // { $match: { "machineCategory.connections": {$ne:true}} },
