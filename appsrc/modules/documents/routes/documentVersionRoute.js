@@ -70,9 +70,9 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
           console.log("configObject", configObject);
           if(configObject){
             if(docx.mimetype.includes('image')){
-              let imageResolution = awsService.getImageResolution(docx.path);
+              let imageResolution = await awsService.getImageResolution(docx.path);
               console.log("imageResolution", imageResolution);
-              let desiredQuality = awsService.calculateDesiredQuality(docx.path, imageResolution);
+              let desiredQuality = await awsService.calculateDesiredQuality(docx.path, imageResolution);
               console.log("desiredQuality", desiredQuality);
 
               const buffer = await sharp(docx.path)
