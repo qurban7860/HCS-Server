@@ -51,6 +51,7 @@ router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
   }, controller.postDocumentVersion);
 
 // - /api/1.0.0/documents/documentVersion/:id
+const fs = require('fs').promises;
 router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
   fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
@@ -75,6 +76,13 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
               let desiredQuality = await awsService.calculateDesiredQuality(docx.path, imageResolution);
 
               console.log("desiredQuality", desiredQuality);
+
+              const fileSizeBefore = await getFileSize(docx.path);
+              const fileSizeBeforeInMB = fileSizeBefore / (1024 * 1024); // Convert bytes to megabytes
+
+              console.log(`File Size Before: ${fileSizeBeforeInMB.toFixed(2)} MB`);
+          
+
               const buffer = await sharp(docx.path)
                 .jpeg({
                 quality: desiredQuality,
@@ -102,6 +110,17 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
     }
   });
 }, controller.patchDocumentVersion);
+
+// Function to calculate file size
+async function getFileSize(filePath) {
+  try {
+    const stats = await fs.stat(filePath);
+    return stats.size;
+  } catch (error) {
+    console.error('Error reading file:', error.message);
+    throw error; // Re-throw the error for the calling function to handle
+  }
+}
 
 
 

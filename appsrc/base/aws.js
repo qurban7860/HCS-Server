@@ -276,7 +276,6 @@ async function getImageResolution(imageBuffer) {
     const metadata = await sharp(imageBuffer).metadata();
     const width = metadata.width;
     const height = metadata.height;
-    console.log(metadata);
     
     console.log(`Image Resolution: ${width} x ${height}`);
     
