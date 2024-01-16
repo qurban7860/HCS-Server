@@ -58,7 +58,7 @@ router.post(`${baseRoute}/`, (req, res, next) => {
           await Promise.all(documents_.map(async (docx, index) => {
             console.log("@2", configObject, docx);
             if(configObject){
-              await awsService.processImageFile(docx);
+              docx = await awsService.processImageFile(docx);
               docx.eTag = await awsService.generateEtag(docx.path);
             }
           }));
