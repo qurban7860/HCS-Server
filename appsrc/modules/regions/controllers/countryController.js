@@ -19,7 +19,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { country_name: -1 };
+this.orderBy = { country_name: 1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
