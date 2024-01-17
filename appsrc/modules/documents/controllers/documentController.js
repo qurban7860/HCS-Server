@@ -561,6 +561,10 @@ exports.postDocument = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
+      if(req.body.drawingMachine) {
+        req.body.machine = req.body.drawingMachine;
+      }
+
       let files = [];
         
       if(req.files && req.files.images)
@@ -713,7 +717,6 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
-          console.log("req.body.drawingMachine ==>", req.body.drawingMachine);
           if(docCategory.drawing && req.body.drawingMachine) {
             req.body.documentId = document_._id;
             req.body.machine = req.body.drawingMachine;
