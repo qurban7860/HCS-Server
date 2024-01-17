@@ -136,32 +136,33 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
   try {
       if(req?.query?.eTags && req?.query?.eTags.length > 0) {
         const filesResponse = [];
+
+        const documentCategoryIds = await DocumentCategory.find({ drawing: true, isActive: true, isArchived: false }).select('_id');
+        let documentLists = await Document.find({ docCategory: { $in: documentCategoryIds }, isActive: true, isArchived: false }).select('_id');
+        let documentIds = documentLists.map(dc => dc._id);
+        let latestVersions = await DocumentVersion.aggregate([
+          {
+            $match: {
+              document: { $in: documentIds }
+            }
+          },
+          {
+            $sort: { versionNo: -1 }
+          },
+          {
+            $group: {
+              _id: '$document',
+              latestVersion: { $first: '$$ROOT' }
+            }
+          },
+          {
+            $replaceRoot: { newRoot: '$latestVersion' }
+          }
+        ]);
+        let filesList = latestVersions.flatMap(version => version.files);
+
         for (const etag of req.query.eTags) {
           if (etag) {
-            console.log("etag", etag);
-            const documentCategoryIds = await DocumentCategory.find({ drawing: true, isActive: true, isArchived: false }).select('_id');
-            let documentLists = await Document.find({ docCategory: { $in: documentCategoryIds }, isActive: true, isArchived: false }).select('_id');
-            let documentIds = documentLists.map(dc => dc._id);
-            let latestVersions = await DocumentVersion.aggregate([
-              {
-                $match: {
-                  document: { $in: documentIds }
-                }
-              },
-              {
-                $sort: { versionNo: -1 }
-              },
-              {
-                $group: {
-                  _id: '$document',
-                  latestVersion: { $first: '$$ROOT' }
-                }
-              },
-              {
-                $replaceRoot: { newRoot: '$latestVersion' }
-              }
-            ]);
-            let filesList = latestVersions.flatMap(version => version.files);
             const queryString = {
               _id: { $in: filesList },
               $or: [
@@ -169,7 +170,16 @@ exports.checkFileExistenceByETag = async (req, res, next) => {
                 { awsETag: etag }
               ]
             };
-            const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version' }]);
+            // const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version' }]);
+            const documentFiles = await DocumentFile.find(queryString).populate({
+              path: 'version',
+              populate: {
+                path: 'document',
+                model: 'Document',
+                select: 'name displayName'
+              },
+            }).select('-thumbnail');
+
             if (documentFiles && documentFiles.length > 0) {
               filesResponse.push({
                 etag,
