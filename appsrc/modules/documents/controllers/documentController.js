@@ -380,6 +380,9 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail')  
                                     .skip((page - 1) * pageSize)
                                     .limit(pageSize);
+
+                const totalCounts = await DocumentFile.find(documentFileQuery).count();
+                
           
                 if (documentFiles && documentFiles.length > 0) {
                   for (let file of documentFiles) {
@@ -408,8 +411,11 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
-    // console.log("listOfFiles", listOfFiles);
-    res.json(listOfFiles);    
+    const documentsLists = {
+      data: listOfFiles,
+      totalCounts
+    };
+    res.json(documentsLists);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
