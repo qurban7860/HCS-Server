@@ -713,6 +713,7 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
+          console.log("req.body.drawingMachine ==>", req.body.drawingMachine);
           if(docCategory.drawing && req.body.drawingMachine) {
             req.body.documentId = document_._id;
             req.body.machine = req.body.drawingMachine;
