@@ -231,6 +231,20 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
   let pageSize = 1000; // Specify the number of documents per page (adjust as needed)
   let includeMachines = false;
   let includeDrawings = false;
+
+
+
+  if(req.body?.page) {
+    page = parseInt(req.body.page);
+    if(req.body?.pageSize)
+      pageSize = parseInt(req.body.pageSize);
+    delete req.body.page;
+    delete req.body.pageSize;
+  }
+
+  console.log("page", page);
+  console.log("pageSize", pageSize);
+
   
   try {
     this.query = req.query != "undefined" ? req.query : {};
@@ -337,15 +351,7 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     
     this.query.$or = queryString__;
 
-    if(req.body?.page) {
-      page = req.body.page;
-      if(req.body?.pageSize)
-        pageSize = req.body.pageSize;
-      delete req.body.page;
-      delete req.body.pageSize;
-    }
 
-    console.log(req.body);
 
     let listOfFiles = [];
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
@@ -367,6 +373,9 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
                 let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                 documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
+                console.log("page", page);
+                console.log("pageSize", pageSize);
+                
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail')  
                                     .skip((page - 1) * pageSize)
                                     .limit(pageSize);
