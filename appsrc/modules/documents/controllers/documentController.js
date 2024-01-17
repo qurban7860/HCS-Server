@@ -374,14 +374,8 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
                 let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                 documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
-                console.log("page", page);
-                console.log("pageSize", pageSize);
                 
-                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail')  
-                                    .skip((page - 1) * pageSize)
-                                    .limit(pageSize);
-
-                const totalCounts = await DocumentFile.find(documentFileQuery).count();
+                let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 
           
                 if (documentFiles && documentFiles.length > 0) {
@@ -411,10 +405,19 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const slicedFiles = listOfFiles.slice(startIndex, endIndex);
+    
     const documentsLists = {
-      data: listOfFiles,
-      totalCounts
+      data: slicedFiles,
+      totalPages: Math.ceil(listOfFiles.length / pageSize),
+      currentPage: page,
+      pageSize: pageSize,
+      totalCount: listOfFiles.length,
     };
+
+
     res.json(documentsLists);
   } catch (error) {
     logger.error(new Error(error));
