@@ -107,7 +107,7 @@ exports.getProduct = async (req, res, next) => {
       }
 
       if(machine?.transferredMachine?.customer && ObjectId.isValid(machine?.transferredMachine?.customer)){
-        let objectCustomer = await Customer.find({_id: machine?.transferredMachine?.customer}).select('clientCode name tradingName type').lean();
+        let objectCustomer = await Customer.findOne({_id: machine?.transferredMachine?.customer}).select('clientCode name tradingName type').lean();
         machine.transferredMachine.customer = objectCustomer;
       }
 
