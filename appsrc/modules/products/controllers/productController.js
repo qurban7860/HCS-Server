@@ -42,6 +42,7 @@ this.populate = [
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
       {path: 'financialCompany', select: '_id clientCode name'},
+      {path: 'transferredMachine', select: '_id serialNo name customer'},
       {path: 'createdBy', select: 'name'},
       {path: 'updatedBy', select: 'name'}
     ];
@@ -103,6 +104,11 @@ exports.getProduct = async (req, res, next) => {
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
         let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
         machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
+      }
+
+      if(machine?.transferredMachine?.customer && ObjectId.isValid(machine?.transferredMachine?.customer)){
+        let objectCustomer = await Customer.find({_id: machine?.transferredMachine?.customer}).select('clientCode name tradingName type').lean();
+        machine.transferredMachine.customer = objectCustomer;
       }
 
       res.json(machine);
