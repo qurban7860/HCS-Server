@@ -226,7 +226,8 @@ exports.getDocuments = async (req, res, next) => {
 };
 
 
-exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
+// TODO: Improve funtionality.
+exports.getImagesAgainstDocuments = async (req, res, next) => {
   let page = 0; // Specify the page number you want (e.g., from request query parameter)
   let pageSize = 1000; // Specify the number of documents per page (adjust as needed)
   let includeMachines = false;

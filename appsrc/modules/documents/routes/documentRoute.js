@@ -26,7 +26,7 @@ const baseRoute = `/document`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/document/documents/getAllDocumentsAgainstFilter/
-router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getAllDocumentsAgainstFilter);
+router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getImagesAgainstDocuments);
 
 // - /api/1.0.0/document/documents/patchDocumentFilesETag/
 router.put(`${baseRoute}/putDocumentFilesETag/`, controller.putDocumentFilesETag);
