@@ -507,17 +507,29 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
 
     const customerPromises = customers.map(async (customer) => {
     
+      // if(Array.isArray(customer.sites) && customer.sites.length>0) {
+      //   customer.sites = await CustomerSite.find({_id:{$in:customer.sites},isActive:true,isArchived:false});
+      //   customer.sitesName = customer.sites.map((s)=>s.name);
+      //   customer.sitesName = customer.sitesName.join('|')
+      // }
+
+      // if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
+      //   customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
+      //   customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
+      //   customer.contactsName = customer.contactsName.join('|')
+      // }
+
+      customer.sites = await CustomerSite.find({customer: customer._id,isActive:true,isArchived:false});
       if(Array.isArray(customer.sites) && customer.sites.length>0) {
-        customer.sites = await CustomerSite.find({_id:{$in:customer.sites},isActive:true,isArchived:false});
         customer.sitesName = customer.sites.map((s)=>s.name);
         customer.sitesName = customer.sitesName.join('|')
-      }
-
+      } else {customer.sitesName = "";}
+      customer.contacts = await CustomerContact.find({customer: customer._id,isActive:true,isArchived:false});
       if(Array.isArray(customer.contacts) && customer.contacts.length>0) {
-        customer.contacts = await CustomerContact.find({_id:{$in:customer.contacts},isActive:true,isArchived:false});
         customer.contactsName = customer.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
         customer.contactsName = customer.contactsName.join('|')
-      }
+      } else {customer.contactsName = "";}
+
 
       if(EXPORT_UUID) {
         finalDataObj = {
@@ -528,8 +540,8 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
           "Type": '' + customer.type + '',
           "MainSite": customer.mainSite ? '' + customer.mainSite.name.replace(/"/g,"'") + '' : '',
           "MainSiteID": customer.mainSite ? customer.mainSite._id : '',
-          "Sites": customer.sitesName ? '' + customer.sitesName.replace(/"/g,"'") + '' : '',
-          "Contacts": customer.contactsName ? '' + customer.contactsName.replace(/"/g,"'") + '' : '',
+          "Sites": customer.sitesName ? '' + customer.sitesName.replace(/"/g,"'") + '' : '', //
+          "Contacts": customer.contactsName ? '' + customer.contactsName.replace(/"/g,"'") + '' : '', //
           "BillingContact": customer.primaryBillingContact ? getContactName(customer.primaryBillingContact) : '',
           "BillingContactID": customer.primaryBillingContact ? customer.primaryBillingContact._id : '',
           "TechnicalContact": customer.primaryTechnicalContact ? getContactName(customer.primaryTechnicalContact) : '',
