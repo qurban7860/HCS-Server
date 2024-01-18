@@ -371,7 +371,8 @@ const processAWSFile = async (data) => {
               return;
           } else {
               console.log("outputBuffer", outputBuffer);
-              return outputBuffer.toString('base64');
+              const outputBuffer__ = outputBuffer.toString('base64');
+              return outputBuffer__;
           }
       });
 };
