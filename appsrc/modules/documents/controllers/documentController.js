@@ -442,21 +442,21 @@ exports.putDocumentFilesETag = async (req, res, next) => {
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
         try {
-          // const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
-          // console.log("fileData", fileData);
-          // if (fileData.ETag) {
-            const ETagGenerated = await awsService.generateEtag(fileObj.path);
+          const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
+          console.log("fileData", fileData);
+          if (fileData.ETag) {
+            const ETagGenerated = await awsService.generateEtag(fileData.Body);
             console.log("** ETagGenerated", ETagGenerated);
-            // console.log("** fileData.ETag", fileData.ETag);
+            console.log("** fileData.ETag", fileData.ETag);
             
             await DocumentFile.updateOne(
               { _id: fileObj._id },
-              { $set: { awsETag: ETagGenerated.replace(/"/g, ''), eTag: ETagGenerated.replace(/"/g, '') } }
+              { $set: { awsETag: fileData.ETag.replace(/"/g, ''), eTag: ETagGenerated.replace(/"/g, '') } }
             );
             console.log(`ETag updated for file with _id: ${fileObj._id}`);
-          // } else {
-          //   console.log(`ETag not found for file with _id: ${fileObj._id}`);
-          // }
+          } else {
+            console.log(`ETag not found for file with _id: ${fileObj._id}`);
+          }
         } catch (error) {
           console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
         }
