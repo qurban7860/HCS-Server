@@ -357,7 +357,7 @@ const processAWSFile = async (data) => {
   const imageBuffer = Buffer.from(base64Data, 'base64');
   const ImageResolution = await getImageResolution(imageBuffer);
   console.log("ImageResolution", ImageResolution);
-  const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
+  const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
   console.log("desiredQuality", desiredQuality);
   sharp(imageBuffer)
       .jpeg({
