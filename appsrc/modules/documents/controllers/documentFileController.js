@@ -455,6 +455,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
                   const isImage = file?.fileType && file.fileType.startsWith('image');
                   const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
                   console.log("data", data);
+                  const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
+                  console.log("fileSizeInMegabytes", fileSizeInMegabytes);
                   if (isImage && configObject) {
                     console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
                     const fileBase64 = await awsService.processAWSFile(data);
