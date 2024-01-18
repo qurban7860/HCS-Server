@@ -461,6 +461,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
                   if (isImage && configObject) {
                     console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
                     const fileBase64 = await awsService.processAWSFile(data);
+                    console.log("fileBase64", fileBase64);
                     return res.status(StatusCodes.ACCEPTED).send(fileBase64);
                   } else {
                     return res.status(StatusCodes.ACCEPTED).send(data.Body);                    
