@@ -19,6 +19,7 @@ const dbservice = new documentDBService();
 const { Document, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Machine } = require('../../products/models');
+const { Config } = require('../../config/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -453,8 +454,9 @@ exports.downloadDocumentFile = async (req, res, next) => {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
                   const isImage = file?.fileType && file.fileType.startsWith('image');
         
+                  console.log("@1");
                   const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-        
+                  console.log("@2");
                   console.log(data);
                   if (isImage && configObject) {
                     console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
