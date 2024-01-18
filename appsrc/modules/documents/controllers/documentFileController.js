@@ -445,6 +445,7 @@ exports.downloadDocumentFile = async (req, res, next) => {
       console.log(errors)
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+      console.log("downloadDocumentFile");
       try {
           const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
           if (file) {

@@ -152,12 +152,8 @@ exports.postLogMulti = async (req, res, next) => {
 
           const fakeReq = { body: logObj};
           let queryString__ = {machine: logObj.machine, date: fakeReq.body.date};
-          console.log(queryString__);
           let objectERP = await ErpLog.findOne(queryString__).select('_id').sort({_id: -1}).lean();
           let response = null;
-          console.log("1*****", objectERP);          
-          console.log("2*****", objectERP);
-          console.log(objectERP == null , !skipExistingRecords);
           if(objectERP == null || !skipExistingRecords || updateExistingRecords)
           if(objectERP && updateExistingRecords){
             const result = await this.dbservice.patchObject(ErpLog, objectERP._id, getDocumentFromReq(fakeReq));
