@@ -351,6 +351,7 @@ const processImageFile = async (docx) => {
     docx.buffer = base64String;
   }
 };
+
 const processAWSFile = async (data) => {
   const dataReceived = data.Body.toString('utf-8');
   const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
@@ -359,22 +360,24 @@ const processAWSFile = async (data) => {
   console.log("ImageResolution", ImageResolution);
   const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
   console.log("desiredQuality", desiredQuality);
-  console.log("imageBuffer", imageBuffer);
-  sharp(imageBuffer)
+
+  return new Promise((resolve, reject) => {
+    sharp(imageBuffer)
       .jpeg({
-          quality: desiredQuality,
-          mozjpeg: true
+        quality: desiredQuality,
+        mozjpeg: true
       })
       .toBuffer((resizeErr, outputBuffer) => {
-          if (resizeErr) {
-              console.error('Error resizing image:', resizeErr);
-              return;
-          } else {
-              console.log("outputBuffer", outputBuffer);
-              const outputBuffer__ = outputBuffer.toString('base64');
-              return outputBuffer__;
-          }
+        if (resizeErr) {
+          console.error('Error resizing image:', resizeErr);
+          reject(resizeErr);
+        } else {
+          console.log("outputBuffer", outputBuffer);
+          const outputBuffer__ = outputBuffer.toString('base64');
+          resolve(outputBuffer__);
+        }
       });
+  });
 };
 
 module.exports = {
