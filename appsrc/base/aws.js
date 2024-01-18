@@ -369,8 +369,7 @@ const processAWSFile = async (data) => {
               console.error('Error resizing image:', resizeErr);
               return;
           } else {
-              const base64String = outputBuffer.toString('base64');
-              return res.status(StatusCodes.ACCEPTED).send(base64String);
+              return outputBuffer.toString('base64');
           }
       });
 };
