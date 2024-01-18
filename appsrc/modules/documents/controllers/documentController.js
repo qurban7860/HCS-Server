@@ -445,7 +445,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
           // const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
           // console.log("fileData", fileData);
           // if (fileData.ETag) {
-            const ETagGenerated = await awsService.generateEtag(fileData.Body);
+            const ETagGenerated = await awsService.generateEtag(fileObj.path);
             console.log("** ETagGenerated", ETagGenerated);
             // console.log("** fileData.ETag", fileData.ETag);
             
