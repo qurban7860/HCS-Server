@@ -10,7 +10,6 @@ const awsService = require('../../../../appsrc/base/aws');
 
 const _ = require('lodash');
 
-const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
@@ -19,9 +18,8 @@ const dbservice = new documentDBService();
 
 const { Document, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
 const { Customer } = require('../../crm/models');
-const { Machine, ProductDrawing } = require('../../products/models');
-
-const sizeOf = require('image-size');
+const { Machine } = require('../../products/models');
+const { Config } = require('../../config/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -448,12 +446,23 @@ exports.downloadDocumentFile = async (req, res, next) => {
       console.log(errors)
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+      console.log("Download_Document_File");
       try {
           const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-                  return res.status(StatusCodes.ACCEPTED).send(data.Body);
+                  const isImage = file?.fileType && file.fileType.startsWith('image');
+                  const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+                  const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
+                  console.log("fileSizeInMegabytes", fileSizeInMegabytes);
+                  if (isImage && configObject && fileSizeInMegabytes > 2) {
+                    console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
+                    const fileBase64 = await awsService.processAWSFile(data);
+                    return res.status(StatusCodes.ACCEPTED).send(fileBase64);
+                  } else {
+                    return res.status(StatusCodes.ACCEPTED).send(data.Body);                    
+                  }
               } else {
                   res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
               }
@@ -468,68 +477,6 @@ exports.downloadDocumentFile = async (req, res, next) => {
       }
   }
 };
-
-async function getImageResolution(imageBuffer) {
-  try {
-    const metadata = await sharp(imageBuffer).metadata();
-    const width = metadata.width;
-    const height = metadata.height;
-    
-    console.log(`Image Resolution: ${width} x ${height}`);
-    
-    // You can return the resolution or perform other actions as needed
-    return { width, height };
-  } catch (err) {
-    console.error('Error reading image metadata:', err);
-    throw err; // Propagate the error or handle it as per your application's requirements
-  }
-}
-
-function calculateDesiredQuality(imageBuffer, imageResolution) {
-  let desiredQuality = 100;
-
-  // Set thresholds based on image size
-  const sizeThresholds = {
-    small: 2 * 1024 * 1024, // 2MB
-    medium: 5 * 1024 * 1024, // 5MB
-    large: 10 * 1024 * 1024, // 10MB
-    extraLarge: 20 * 1024 * 1024, // 20MB
-  };
-
-  // Set resolution thresholds
-  const resolutionThresholds = {
-    low: 800,  // Low resolution threshold (e.g., 800 pixels)
-    medium: 1200, // Medium resolution threshold (e.g., 1200 pixels)
-    high: 2000, // High resolution threshold (e.g., 2000 pixels)
-    extraHigh: 3000, // Extra high resolution threshold (e.g., 3000 pixels)
-  };
-
-  const imageSize = imageBuffer.length;
-  const imageWidth = imageResolution.width;
-
-  // Adjust quality based on image size
-  if (imageSize > sizeThresholds.extraLarge) {
-    desiredQuality = 10; // Aggressive reduction for extra-large images
-  } else if (imageSize > sizeThresholds.large) {
-    desiredQuality = 20; // Moderate reduction for large images
-  } else if (imageSize > sizeThresholds.medium) {
-    desiredQuality = 30; // Moderate reduction for medium-sized images
-  } else {
-    desiredQuality = 50; // Default quality for smaller images
-  }
-
-  // Adjust quality based on image resolution
-  if (imageWidth < resolutionThresholds.low) {
-    desiredQuality += 10; // Increase quality for low-resolution images
-  } else if (imageWidth > resolutionThresholds.extraHigh) {
-    desiredQuality -= 10; // Decrease quality for extra high-resolution images
-  }
-
-  // Ensure the desired quality stays within a reasonable range
-  desiredQuality = Math.max(10, Math.min(100, desiredQuality));
-  return desiredQuality;
-}
-
 
 
 async function readFileAsBase64(filePath) {

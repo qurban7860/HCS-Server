@@ -44,7 +44,7 @@ router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-      const regex = new RegExp("^OPTIMIZE_IMAGE$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
       if(req.files && req.files['images']) {
         const documents_ = req.files['images'];
         await Promise.all(documents_.map(async (docx, index) => {
@@ -69,7 +69,7 @@ router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
       console.log(err);
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      const regex = new RegExp("^OPTIMIZE_IMAGE$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
       if(req.files && req.files['images']) {
         const documents_ = req.files['images'];
         await Promise.all(documents_.map(async (docx, index) => {

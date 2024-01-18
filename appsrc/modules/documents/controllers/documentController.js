@@ -443,7 +443,6 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       filteredFiles.map(async (fileObj) => {
         try {
           const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
-          console.log("fileData", fileData);
           if (fileData.ETag) {
             const ETagGenerated = await awsService.generateEtag(fileData.Body);
             console.log("** ETagGenerated", ETagGenerated);
