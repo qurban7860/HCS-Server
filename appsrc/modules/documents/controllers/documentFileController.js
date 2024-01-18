@@ -446,22 +446,18 @@ exports.downloadDocumentFile = async (req, res, next) => {
       console.log(errors)
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-      console.log("downloadDocumentFile");
+      console.log("Download_Document_File");
       try {
           const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
                   const isImage = file?.fileType && file.fileType.startsWith('image');
-        
-                  console.log("@1");
                   const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-                  console.log("@2");
-                  console.log(data);
+                  console.log("data", data);
                   if (isImage && configObject) {
                     console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
                     const fileBase64 = await awsService.processAWSFile(data);
-                    console.log("fileBase64", fileBase64);
                     return res.status(StatusCodes.ACCEPTED).send(fileBase64);
                   } else {
                     return res.status(StatusCodes.ACCEPTED).send(data.Body);                    
