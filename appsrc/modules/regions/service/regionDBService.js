@@ -37,9 +37,9 @@ class RegionService {
     }
   }
 
-  async getObjectList(model, fields, query, orderBy, populate) {
+  async getObjectList(req, model, fields, query, orderBy, populate) {
     try {
-      const response = await this.db.getObjectList(model, fields, query, orderBy, populate);
+      const response = await this.db.getObjectList(req, model, fields, query, orderBy, populate);
       return response;
     } catch (error) {
       return error;

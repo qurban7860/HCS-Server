@@ -91,19 +91,15 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
-
-
   let isVersionNeeded = true;
   let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    console.log("req.query", req.query);  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
 
-    console.log("this.query.isVersionNeeded", this.query.isVersionNeeded);
     if(this.query && (this.query.isVersionNeeded==false || this.query.isVersionNeeded=='false')) {
       isVersionNeeded = false;
       delete this.query.isVersionNeeded;
@@ -177,8 +173,7 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }
     ];
-    console.log("this.query", this.query);
-    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
 
@@ -231,13 +226,30 @@ exports.getDocuments = async (req, res, next) => {
 };
 
 
-exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
+// TODO: Improve funtionality.
+exports.getImagesAgainstDocuments = async (req, res, next) => {
+  let page = 0; // Specify the page number you want (e.g., from request query parameter)
+  let pageSize = 1000; // Specify the number of documents per page (adjust as needed)
   let includeMachines = false;
   let includeDrawings = false;
+
+
+
+  if(req.body?.page) {
+    page = parseInt(req.body.page);
+    if(req.body?.pageSize)
+      pageSize = parseInt(req.body.pageSize);
+    delete req.body.page;
+    delete req.body.pageSize;
+  }
+  page ++;
+
+  console.log("page", page);
+  console.log("pageSize", pageSize);
+
   
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    console.log("basic Query", req.query);  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
@@ -332,7 +344,6 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
       let machineDrawings = await ProductDrawing.find({machine : {'$in':customerMachines_}, isActive: true, isArchived: false}).select('document').lean();  
       if(Array.isArray(machineDrawings) && machineDrawings.length>0) {
         let drawingIds = machineDrawings.map((dc)=>dc.document.toString());
-        console.log("drawingIds", drawingIds);
         queryString__.push({_id : {'$in':drawingIds}});
       }
     }
@@ -342,8 +353,10 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
     
     this.query.$or = queryString__;
 
+
+
     let listOfFiles = [];
-    let documents = await dbservice.getObjectList(Document, this.fields, this.query, this.orderBy, this.populate);
+    let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
       let documentIndex = 0;
@@ -362,15 +375,13 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
                 let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                 documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
+                
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
+                
           
                 if (documentFiles && documentFiles.length > 0) {
                   for (let file of documentFiles) {
                     file = file.toObject();
-                    // if(file.path){
-                    //   const fileContent = await downloadFileContent(file.path);
-                    //   file.content = fileContent;
-                    // }
                     file.versionNo = documentVersion.versionNo;
                     file.version_id = documentVersion._id;
                     file.document_id = document_._id;
@@ -395,8 +406,20 @@ exports.getAllDocumentsAgainstFilter = async (req, res, next) => {
         documentIndex++;
       }
     }
-    // console.log("listOfFiles", listOfFiles);
-    res.json(listOfFiles);    
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const slicedFiles = listOfFiles.slice(startIndex, endIndex);
+    
+    const documentsLists = {
+      data: slicedFiles,
+      totalPages: Math.ceil(listOfFiles.length / pageSize),
+      currentPage: page,
+      pageSize: pageSize,
+      totalCount: listOfFiles.length,
+    };
+
+
+    res.json(documentsLists);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -408,63 +431,96 @@ const downloadFileContent = async (filePath) => {
   return fileContent;
 };
 
+exports.putDocumentFilesETag = async (req, res, next) => {
+  try {
+    const filteredFiles = await DocumentFile.find({
+      isActive: true,
+      isArchived: false,
+      eTag: { $exists: false },
+    }).sort({_id: -1}).limit(1);
+
+    await Promise.all(
+      filteredFiles.map(async (fileObj) => {
+        try {
+          const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
+          console.log("fileData", fileData);
+          if (fileData.ETag) {
+            const ETagGenerated = await awsService.generateEtag(fileData.Body);
+            console.log("** ETagGenerated", ETagGenerated);
+            console.log("** fileData.ETag", fileData.ETag);
+            
+            await DocumentFile.updateOne(
+              { _id: fileObj._id },
+              { $set: { awsETag: fileData.ETag.replace(/"/g, ''), eTag: ETagGenerated.replace(/"/g, '') } }
+            );
+            console.log(`ETag updated for file with _id: ${fileObj._id}`);
+          } else {
+            console.log(`ETag not found for file with _id: ${fileObj._id}`);
+          }
+        } catch (error) {
+          console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
+        }
+      })
+    );
+    res.status(200).json({ message: 'ETags patched successfully' });
+  } catch (error) {
+    console.error('Error patching ETags:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+
 exports.getdublicateDrawings = async (req, res, next) => {
-  let documentCategoryDrawings = await DocumentCategory.find({drawing:true, isActive: true, isArchived: false}).select('');
-  let categoryDrawingIds = documentCategoryDrawings.map((c)=>c._id);
-  let listProductDrawing = await ProductDrawing.find({isActive: true, isArchived: false}).select('document machine').populate([{path: 'machine',select: 'serialNo'}]).lean();
-  let listDrawingsIds = listProductDrawing.map((c)=>c.document);
-
-  let aggregateQuery__ = [
-    {
-      $match: {
-          isArchived: false,
+  try {
+    const filteredFiles = await DocumentFile.aggregate([
+      {
+        $match: {
           isActive: true,
-          docCategory: {$in: categoryDrawingIds},
-          _id: {$in: listDrawingsIds}
+          isArchived: false
+        }
+      },
+      {
+        $group: {
+          _id: { eTag: "$eTag" },
+          count: { $sum: 1 },
+          duplicates: { $push: "$_id" }
+        }
+      },
+      {
+        $match: {
+          count: { $gt: 1 }
+        }
+      },
+      {
+        $sort: {
+          count: -1
+        }
       }
-    },
-    {
-      $group: {
-        _id: { docCategory: "$docCategory", docType: "$docType" , name: "$name" },
-        count: { $sum: 1 },
-        ids: { $push: "$_id" }
-      }
-    },
-    {
-      $match: {
-        count: { $gt: 1 }
-      }
-    } ,{
-      $sort: {
-        "_id.name": 1
-      }
-    }
-  ];
-  let dublicateDrawingList = await Document.aggregate(aggregateQuery__);
-  const modifiedList = [];
-  const promises = dublicateDrawingList.map(async (doc) => {
-    const listIds = [];
-    const promisesids = doc.ids.map(async (docId) => {
-      const foundProductDrawing = listProductDrawing.find(drwng => {
-        const matchCondition = _.isEqual(drwng.document, docId);
-        return matchCondition;
-      });
+    ]);
 
-      let idsValues = {
-        docId,
-        machine: foundProductDrawing.machine._id,
-        serialNo: foundProductDrawing.machine.serialNo
-      }
-      listIds.push(idsValues);
-    });
+    const fileObjWithDocVersions = await Promise.all(
+      filteredFiles.map(async (fileObj) => {
+        try {
+          if (fileObj.duplicates.length > 0) {
+            const docVersions = await Promise.all(fileObj.duplicates.map(async (record) => {
+              let docVersion = await DocumentVersion.findOne({ files: record }).populate([{ path: "document" }]);
+              return { record, docVersion };
+            }));
 
-    await Promise.all(promisesids);
-    doc.ids = listIds;
-    modifiedList.push(doc);
-    return doc;
-  });
-  await Promise.all(promises);
-  res.json(modifiedList);
+            return { fileObj, docVersions };
+          }
+        } catch (error) {
+          console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
+        }
+      })
+    );
+
+    // Now you have an array of objects with fileObj and associated docVersions
+    res.status(200).json(fileObjWithDocVersions);
+  } catch (error) {
+    console.error('Error patching ETags:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };
 
 exports.deleteDocument = async (req, res, next) => {
@@ -493,7 +549,6 @@ exports.deleteDocument = async (req, res, next) => {
 };
 
 exports.postDocument = async (req, res, next) => {
-
   try{
 
     const errors = validationResult(req);
@@ -504,6 +559,10 @@ exports.postDocument = async (req, res, next) => {
 
       if(!req.body.loginUser){
         req.body.loginUser = await getToken(req);
+      }
+
+      if(req.body.drawingMachine) {
+        req.body.machine = req.body.drawingMachine;
       }
 
       let files = [];
@@ -608,10 +667,14 @@ exports.postDocument = async (req, res, next) => {
           for(let file of files) {
             
             if(file && file.originalname) {
+              
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
+              req.body.awsETag = processedFile.awsETag;
+              req.body.eTag = processedFile.eTag;
+              
               
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
@@ -748,6 +811,8 @@ async function saveDocumentFile(document_,file) {
     displayName:file.name,
     description:file.description,
     path:file.path,
+    eTag:file.eTag,
+    awsETag:file.awsETag,
     fileType:file.type,
     extension:file.extension,
     thumbnail:file.content,
@@ -893,7 +958,9 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              
+              req.body.awsETag = processedFile.awsETag;
+              req.body.eTag = processedFile.eTag;
+
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
               
@@ -968,7 +1035,9 @@ exports.patchDocument = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-              
+              req.body.awsETag = processedFile.awsETag;
+              req.body.eTag = processedFile.eTag;
+
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
               
@@ -1147,7 +1216,11 @@ async function processFile(file, userId) {
   let thumbnailPath;
   let base64thumbNailData;
 
-  const base64fileData = await readFileAsBase64(file.path);
+  let base64fileData = null;
+  if(file.buffer)
+    base64fileData = file.buffer;
+  else 
+    base64fileData = await readFileAsBase64(file.path);
 
   if(file.mimetype.includes('image')){
 
@@ -1158,31 +1231,29 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
-
-
-  return {
-    fileName,
-    name,
-    fileExt,
-    s3FilePath,
-    type: file.mimetype,
-    physicalPath: file.path,
-    base64thumbNailData
-  };
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
 
-
-
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
-
+    return {
+      fileName,
+      name,
+      fileExt,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
+      type: file.mimetype,
+      physicalPath: file.path,
+      base64thumbNailData
+    };
   }
 }
 

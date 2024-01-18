@@ -34,7 +34,7 @@ exports.getProductCategory = async (req, res, next) => {
     response = JSON.parse(JSON.stringify(response))
     let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
     let fieldsModels = { name:1 }
-    const models = await this.dbservice.getObjectList(ProductModel, fieldsModels, docModelQuery, {}, []);
+    const models = await this.dbservice.getObjectList(req, ProductModel, fieldsModels, docModelQuery, {}, []);
     response.models = models;
     res.json(response);
   } else {
@@ -48,7 +48,7 @@ exports.getProductCategories = async (req, res, next) => {
   if(this.query && this.query.name) {
     this.query.name = { $regex: this.query.name, $options: 'i' };
   }
-  this.dbservice.getObjectList(ProductCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductCategory, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -108,7 +108,7 @@ exports.patchProductCategory = async (req, res, next) => {
       let productModels_ = await ProductModel.find({category: req.params.id, isActive: true, isArchived: false}).select('name')
       const modelNames = productModels_.map(obj => obj.name).join(', ');
       if(productModels_ && productModels_.length > 0) 
-        return res.status(StatusCodes.CONFLICT).send(`This Machine Category is attached with Models. So it can't be deleted. Attached with Models Names: ${modelNames}`);
+        return res.status(StatusCodes.CONFLICT).send(`This cateogry is attached with models: ${modelNames}`);
     }
 
     if(req.body.isDefault === 'true' || req.body.isDefault === true) {

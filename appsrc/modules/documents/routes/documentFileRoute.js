@@ -23,6 +23,11 @@ const baseRoute = `/document`;
 
 router.use(checkAuth, checkCustomer);
 
+
+
+router.get(`/checkFileExistenceByETag/`, controller.checkFileExistenceByETag);
+
+
 // - /api/1.0.0/documents/documentFile/:id
 router.get(`/files/:id/download/`, controller.downloadDocumentFile);
 

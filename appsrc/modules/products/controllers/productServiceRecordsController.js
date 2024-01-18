@@ -238,7 +238,7 @@ exports.getProductServiceRecords = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
   this.query.machine = req.params.machineId;
-  this.dbservice.getObjectList(ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       console.log("error", error);

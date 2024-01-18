@@ -66,7 +66,7 @@ exports.getDocumentTypes = async (req, res, next) => {
       if(documentCategoryObject) this.query.docCategory = {$in: documentCategoryObject}
     }
 
-    const response = await this.dbservice.getObjectList(DocumentType, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, DocumentType, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -81,7 +81,7 @@ exports.getDocumentTypeFiles = async (req, res, next) => {
   } else {
     try {
       const queryString = { documentType: req.params.id };
-      const response = await this.dbservice.getObjectList(Document, this.fields, { documentType : req.params.id }, this.orderBy, this.populate);
+      const response = await this.dbservice.getObjectList(req, Document, this.fields, { documentType : req.params.id }, this.orderBy, this.populate);
       res.json(response);
     } catch (error) {
       logger.error(new Error(error));
@@ -127,7 +127,6 @@ exports.postDocumentType = async (req, res, next) => {
           if (updateDefaultString.length > 0) {
             queryString__.$or = updateDefaultString;
           }
-          console.log("queryString__", queryString__);
           let docxCategories = await DocumentCategory.find(queryString__).select('_id').lean();
           
           await DocumentType.updateMany({docCategory: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
@@ -166,7 +165,6 @@ exports.patchDocumentType = async (req, res, next) => {
           if (updateDefaultString.length > 0) {
             queryString__.$or = updateDefaultString;
           }
-          console.log("queryString__", queryString__);
           let docxCategories = await DocumentCategory.find(queryString__).select('_id').lean();
           
           await DocumentType.updateMany({docCategory: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {

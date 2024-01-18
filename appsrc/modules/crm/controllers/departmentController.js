@@ -45,7 +45,7 @@ exports.getDepartments = async (req, res, next) => {
     delete this.query.orderBy;
   }
 
-  this.dbservice.getObjectList(Department, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, Department, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   function callbackFunc(error, response) {
     if (error) {
@@ -60,7 +60,7 @@ exports.getDepartments = async (req, res, next) => {
 exports.searchDepartments = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   
-  this.dbservice.getObjectList(Department, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, Department, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   function callbackFunc(error, response) {
     if (error) {

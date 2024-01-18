@@ -9,6 +9,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const awsService = require('../../../../appsrc/base/aws');
 
 const _ = require('lodash');
+
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -16,10 +17,11 @@ let rtnMsg = require('../../config/static/static')
 let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
-const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
-const { Customer, CustomerSite } = require('../../crm/models');
-const { Machine } = require('../../products/models');
+const { Document, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
+const { Customer } = require('../../crm/models');
+const { Machine, ProductDrawing } = require('../../products/models');
 
+const sizeOf = require('image-size');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -52,7 +54,7 @@ exports.getDocumentFiles = async (req, res, next) => {
     
     this.query = req.query != "undefined" ? req.query : {};  
     
-    let documentFiles = await dbservice.getObjectList(DocumentFile, this.fields, this.query, this.orderBy, this.populate);
+    let documentFiles = await dbservice.getObjectList(req, DocumentFile, this.fields, this.query, this.orderBy, this.populate);
     
     res.json(documentFiles);
   
@@ -61,6 +63,154 @@ exports.getDocumentFiles = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
+
+// exports.checkFileExistenceByETag = async (req, res, next) => {
+//   try {
+//     if (req.files?.images && req.files?.images.length > 0 && req.files?.images[0]?.path) {
+//       console.log("req.files?", req.files.images);
+      
+//       let etag = await awsService.generateEtag(req.files.images[0].path);
+      
+      
+//       const documentCategoryIds = await DocumentCategory.find({drawing: true, isActive: true, isArchived: false}).select('_id');
+
+//       let documentIds = await Document.find({docCategory: {$in: documentCategoryIds}, isActive: true, isArchived: false}).select('_id');
+//       console.log("documentIds", documentIds);
+      
+//       let latestVersions = await DocumentVersion.aggregate([
+//         {
+//           $match: {
+//             document: { $in: documentIds }
+//           }
+//         },
+//         {
+//           $sort: { versionNo: -1 }
+//         },
+//         {
+//           $group: {
+//             _id: '$document',
+//             latestVersion: { $first: '$$ROOT' }
+//           }
+//         },
+//         {
+//           $replaceRoot: { newRoot: '$latestVersion' }
+//         }
+//       ]);
+
+//       let filesList = latestVersions.flatMap(version => version.files);
+
+//       console.log("filesList", filesList);
+
+
+//       const queryString = { _id: { $in: filesList } , 
+//       $or: [
+//           { eTag: etag },
+//           { awsETag: etag }
+//           // Add more conditions as needed
+//         ]
+//       };
+
+//       console.log("queryString", queryString);
+      
+//       const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version'}]);
+
+//       if (documentFiles && documentFiles.length > 0) {
+//         res.status(409).send({
+//           message: `File already exists against.`,
+//           documentFiles
+//         });
+//       } else {
+//         res.status(200).send(`No file found against.`);
+//       }
+//     } else {
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//     }
+//   } catch (error) {
+//     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error generating ETag: ${error.message}`);
+//   }
+// };
+
+
+exports.checkFileExistenceByETag = async (req, res, next) => {
+  console.log("eTags", req.query.eTags);
+  try {
+      if(req?.query?.eTags && req?.query?.eTags.length > 0) {
+        const filesResponse = [];
+
+        const documentCategoryIds = await DocumentCategory.find({ drawing: true, isActive: true, isArchived: false }).select('_id');
+        let documentLists = await Document.find({ docCategory: { $in: documentCategoryIds }, isActive: true, isArchived: false }).select('_id');
+        let documentIds = documentLists.map(dc => dc._id);
+        let latestVersions = await DocumentVersion.aggregate([
+          {
+            $match: {
+              document: { $in: documentIds }
+            }
+          },
+          {
+            $sort: { versionNo: -1 }
+          },
+          {
+            $group: {
+              _id: '$document',
+              latestVersion: { $first: '$$ROOT' }
+            }
+          },
+          {
+            $replaceRoot: { newRoot: '$latestVersion' }
+          }
+        ]);
+        let filesList = latestVersions.flatMap(version => version.files);
+
+        for (const etag of req.query.eTags) {
+          if (etag) {
+            const queryString = {
+              _id: { $in: filesList },
+              $or: [
+                { eTag: etag },
+                { awsETag: etag }
+              ]
+            };
+            // const documentFiles = await DocumentFile.find(queryString).populate([{ path: 'version' }]);
+            const documentFiles = await DocumentFile.find(queryString).populate({
+              path: 'version',
+              populate: {
+                path: 'document',
+                model: 'Document',
+                select: 'name displayName'
+              },
+            }).select('-thumbnail');
+
+            if (documentFiles && documentFiles.length > 0) {
+              filesResponse.push({
+                etag,
+                status: 409,
+                message: `File already exists against.`,
+                documentFiles
+              });
+            } else {
+              filesResponse.push({
+                etag,
+                status: 200,
+                message: `No file found against.`
+              });
+            }
+          } else {
+            filesResponse.push({
+              file: 'Unknown',
+              status: StatusCodes.INTERNAL_SERVER_ERROR,
+              message: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+            });
+          }
+        }
+        res.status(200).send(filesResponse);
+      } else {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`No eTag Received`);
+      }
+  } catch (error) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(`Error generating ETag: ${error.message}`);
+  }
+};
+
 
 exports.deleteDocumentFile = async (req, res, next) => {
   try {
@@ -154,7 +304,9 @@ exports.postDocumentFile = async (req, res, next) => {
         req.body.path = processedFile.s3FilePath;
         req.body.fileType =req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
-        
+        req.body.awsETag = processedFile.awsETag;
+        req.body.eTag = processedFile.eTag;
+
         if(processedFile.base64thumbNailData)
           req.body.content = processedFile.base64thumbNailData;
         req.body.originalname = processedFile.name;
@@ -293,38 +445,91 @@ exports.patchDocumentFile = async (req, res, next) => {
 exports.downloadDocumentFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log(errors)
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      console.log(errors)
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    try {
-      const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
-
-      console.log("file", file);
-      console.log("req.params.id", req.params.id);
-      if(file){
-        if (file.path && file.path !== '') {
-          const fileContent = await awsService.downloadFileS3(file.path);
-          let documentAuditLogObj = {
-            documentFile : file.id,
-            activityType : "Download",
-            activitySummary : "Download DocumentFile",
-            activityDetail : "Download DocumentFile",
+      try {
+          const file = await dbservice.getObjectById(DocumentFile, this.fields, req.params.id, this.populate);
+          if (file) {
+              if (file.path && file.path !== '') {
+                  const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+                  return res.status(StatusCodes.ACCEPTED).send(data.Body);
+              } else {
+                  res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
+              }
+          } else {
+              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
           }
-
-          await createAuditLog(documentAuditLogObj,req);
-          return res.status(StatusCodes.ACCEPTED).send(fileContent);
-        }else{
-          res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
-        }
-      }else{
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
+      } catch (err) {
+          if (data.Body)
+              return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          else
+              return err;
       }
-    }
-    catch(err){
-      return err;
-    }
   }
 };
+
+async function getImageResolution(imageBuffer) {
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    const width = metadata.width;
+    const height = metadata.height;
+    
+    console.log(`Image Resolution: ${width} x ${height}`);
+    
+    // You can return the resolution or perform other actions as needed
+    return { width, height };
+  } catch (err) {
+    console.error('Error reading image metadata:', err);
+    throw err; // Propagate the error or handle it as per your application's requirements
+  }
+}
+
+function calculateDesiredQuality(imageBuffer, imageResolution) {
+  let desiredQuality = 100;
+
+  // Set thresholds based on image size
+  const sizeThresholds = {
+    small: 2 * 1024 * 1024, // 2MB
+    medium: 5 * 1024 * 1024, // 5MB
+    large: 10 * 1024 * 1024, // 10MB
+    extraLarge: 20 * 1024 * 1024, // 20MB
+  };
+
+  // Set resolution thresholds
+  const resolutionThresholds = {
+    low: 800,  // Low resolution threshold (e.g., 800 pixels)
+    medium: 1200, // Medium resolution threshold (e.g., 1200 pixels)
+    high: 2000, // High resolution threshold (e.g., 2000 pixels)
+    extraHigh: 3000, // Extra high resolution threshold (e.g., 3000 pixels)
+  };
+
+  const imageSize = imageBuffer.length;
+  const imageWidth = imageResolution.width;
+
+  // Adjust quality based on image size
+  if (imageSize > sizeThresholds.extraLarge) {
+    desiredQuality = 10; // Aggressive reduction for extra-large images
+  } else if (imageSize > sizeThresholds.large) {
+    desiredQuality = 20; // Moderate reduction for large images
+  } else if (imageSize > sizeThresholds.medium) {
+    desiredQuality = 30; // Moderate reduction for medium-sized images
+  } else {
+    desiredQuality = 50; // Default quality for smaller images
+  }
+
+  // Adjust quality based on image resolution
+  if (imageWidth < resolutionThresholds.low) {
+    desiredQuality += 10; // Increase quality for low-resolution images
+  } else if (imageWidth > resolutionThresholds.extraHigh) {
+    desiredQuality -= 10; // Decrease quality for extra high-resolution images
+  }
+
+  // Ensure the desired quality stays within a reasonable range
+  desiredQuality = Math.max(10, Math.min(100, desiredQuality));
+  return desiredQuality;
+}
+
 
 
 async function readFileAsBase64(filePath) {
@@ -364,7 +569,11 @@ async function processFile(file, userId) {
   let thumbnailPath;
   let base64thumbNailData;
 
-  const base64fileData = await readFileAsBase64(file.path);
+  let base64fileData = null;
+  if(file.buffer)
+    base64fileData = file.buffer;
+  else 
+    base64fileData = await readFileAsBase64(file.path);
 
   if(file.mimetype.includes('image')){
     thumbnailPath = await generateThumbnail(file.path);
@@ -373,14 +582,15 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
   
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
@@ -388,7 +598,9 @@ async function processFile(file, userId) {
       fileName,
       name,
       fileExt,
-      s3FilePath,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData
@@ -410,7 +622,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType) {
   const { customer, isActive, isArchived, loginUser, documentVersion , description,
-  name, displayName, user, site, contact, machine, fileType } = req.body;
+  name, displayName, user, site, contact, machine, fileType, awsETag, eTag } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -425,6 +637,14 @@ function getDocumentFromReq(req, reqType) {
 
   if ("fileType" in req.body) {
     doc.fileType = fileType;
+  }
+
+  if ("awsETag" in req.body) {
+    doc.awsETag = awsETag;
+  }
+
+  if ("eTag" in req.body) {
+    doc.eTag = eTag;
   }
 
   if ("description" in req.body) {

@@ -4,15 +4,15 @@ const checkAuth = require('../../../middleware/check-auth');
 const { Config } = require('../models');
 const checkCustomer = require('../../../middleware/check-customer');
 const controllers = require('../controllers');
-const controller = controllers.metaSchemaController;
+const controller = controllers.serviceSettingController;
 const verifyDelete = require('../../../middleware/verifyDelete');
 
 const router = express.Router();
 
 //  - base route for module
-// - /api/1.0.0/config/metaSchemas
+// - /api/1.0.0/config/serviceSettings
 
-const baseRouteForObject = `/metaSchemas`; 
+const baseRouteForObject = `/serviceSettings`; 
 
 router.use(checkAuth, checkCustomer);
 

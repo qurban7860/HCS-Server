@@ -26,7 +26,7 @@ router.use(checkAuth, checkCustomer);
 router.get(`${baseRoute}/search`, controller.searchCustomerContacts);
 
 // - /api/1.0.0/crm/contacts/export
-router.get(`${baseRoute}/export`, controller.exportContacts);
+router.get(`${baseRoute}/export`, controller.exportContactsJSONForCSV);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/:id
 router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerContact);

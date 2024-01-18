@@ -39,23 +39,75 @@ class dbService {
     }
   }
 
-  async getObjectList(model, fields, query, orderBy, populate, callback) {
+  // async getObjectList(req, model, fields, query, orderBy, populate, callback) {
+  //   console.log("without pagination");
+  //   const collationOptions = {
+  //     locale: 'en',
+  //     strength: 2
+  //   };
+
+  //   if(callback) {
+  //     model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
+  //       if (err) {
+  //         callback(err, []);
+  //       } else {
+  //         callback(null, documents != null ? documents : []);
+  //       }
+  //     });
+  //   }
+  //   else {
+  //     return await model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy);
+  //   }
+  // }
+
+
+  // TODO: Verify it on mongoose lattest version before updating.
+  async getObjectList(req, model, fields, query, orderBy, populate, callback) {
     const collationOptions = {
       locale: 'en',
       strength: 2
     };
+  
+    let query_ = model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy);
+  
+    let countDocuments;
+    let pageSize;
+    let page;
+    
+    
+    if (req.body.page) {
+      page = parseInt(req.body.page) || 0; // Current page number
+      pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
+      countDocuments = await model.find(query).countDocuments();
+      query_ = query_.skip((page) * pageSize).limit(pageSize);
+    }  
 
-    if(callback) {
-      model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy).exec((err, documents) => {
-        if (err) {
-          callback(err, []);
-        } else {
-          callback(null, documents != null ? documents : []);
+    try {
+      let documents = await query_.exec();
+      if(req.body.page || req.body.page === 0) {
+        let listDocuments = {
+          data:documents,
+          ...(req.body.page && {
+            totalPages: Math.ceil(countDocuments / pageSize),
+            currentPage: page,
+            pageSize: pageSize,
+            totalCount: countDocuments
+          })
         }
-      });
-    }
-    else {
-      return await model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy);
+        documents = listDocuments;
+      }
+  
+      if (callback) {
+        callback(null, documents || []);
+      } else {
+        return documents || [];
+      }
+    } catch (err) {
+      if (callback) {
+        callback(err, []);
+      } else {
+        throw err;
+      }
     }
   }
 
@@ -87,7 +139,6 @@ class dbService {
       let existingRecord = await model.findById(id);
      
       if(existingRecord == null) {
-        console.log("----------------------------------------------------------------");
         const error = new Error("Invalid record");
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;

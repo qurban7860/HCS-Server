@@ -9,7 +9,8 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
-
+const { Config } = require('../../config/models');
+const awsService = require('../../../../appsrc/base/aws');
 
 
 const controllers = require('../controllers');
@@ -25,7 +26,10 @@ const baseRoute = `/document`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/document/documents/getAllDocumentsAgainstFilter/
-router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getAllDocumentsAgainstFilter);
+router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getImagesAgainstDocuments);
+
+// - /api/1.0.0/document/documents/patchDocumentFilesETag/
+router.put(`${baseRoute}/putDocumentFilesETag/`, controller.putDocumentFilesETag);
 
 // - /api/1.0.0/document/documents/dublicateDrawings/
 router.get(`${baseRoute}/dublicateDrawings/`, controller.getdublicateDrawings);
@@ -38,7 +42,7 @@ router.get(`${baseRoute}/`, controller.getDocuments);
 
 // - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -47,6 +51,18 @@ router.post(`${baseRoute}/`, (req, res, next) => {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
+        console.log("@1");
+        const regex = new RegExp("^OPTIMIZE_IMAGE$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+        if(req.files && req.files['images']) {
+          const documents_ = req.files['images'];
+          await Promise.all(documents_.map(async (docx, index) => {
+            console.log("@2", configObject, docx);
+            if(configObject){
+              await awsService.processImageFile(docx);
+              docx.eTag = await awsService.generateEtag(docx.path);
+            }
+          }));
+        }
         next();
       }
     });
@@ -57,7 +73,7 @@ router.patch(`${baseRoute}/updatedVersion/:id`, controller.patchDocumentVersion)
 
 // - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -66,10 +82,62 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
+        const regex = new RegExp("^OPTIMIZE_IMAGE$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+        if(req.files && req.files['images']) {
+          const documents_ = req.files['images'];
+          await Promise.all(documents_.map(async (docx, index) => {
+            if(configObject){
+              await awsService.processImageFile(docx);
+              docx.eTag = await awsService.generateEtag(docx.path);
+            }
+          }));
+        }
         next();
       }
     });
   }, controller.patchDocument);
+
+
+  // router.patch(`${baseRoute}/:id`, (req, res, next) => {
+  //   // Resize images before uploading
+  //   resizeImages(req, res, () => {
+  //     // Now, call the multer middleware
+  //     fileUpload.fields([{ name: 'images', maxCount: 20 }])(req, res, (err) => {
+  //       if (err instanceof multer.MulterError) {
+  //         console.log(err);
+  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+  //       } else if (err) {
+  //         console.log(err);
+  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  //       } else {
+  //         next();
+  //       }
+  //     });
+  //   });
+  // }, controller.patchDocument);
+
+  // Define a middleware to resize images
+  function resizeImages(req, res, next) {
+    const images = req.files['images'];
+    // Check if 'images' field exists and contains files
+    if (images && images.length > 0) {
+      // Loop through each image and resize
+      images.forEach((image) => {
+        sharp(image.path)
+          .resize({ width: 500, height: 500 })
+          .toFile(`path/to/resize/${image.filename}`, (err) => {
+            if (err) {
+              console.error('Error resizing image:', err);
+            }
+          });
+      });
+      next();
+    } else {
+      next();
+    }
+  }
+
+
 
 // - /api/1.0.0/documents/files/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocument);

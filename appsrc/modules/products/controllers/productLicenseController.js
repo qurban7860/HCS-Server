@@ -41,7 +41,7 @@ exports.getProductLicenses = async (req, res, next) => {
   this.machineId = req.params.machineId;
   this.query = req.query != "undefined" ? req.query : {};  
   this.query.machine = this.machineId;
-  this.dbservice.getObjectList(ProductLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -53,7 +53,7 @@ exports.getProductLicenses = async (req, res, next) => {
 };
 
 exports.searchProductLicenses = async (req, res, next) => {
-  this.dbservice.getObjectList(ProductLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));

@@ -22,9 +22,11 @@ exports.getMachineByCountries = async (req, res, next) => {
 
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
+  
+  let allRecords = req.query?.allRecords == 'true' || req.query?.allRecords === true ? true : false;
+  if(allRecords) delete req.query.allRecords;  
 
   // let queryString__ =  {receivers:req.body.loginUser.userId,readBy:{$ne:req.body.loginUser.userId}};
-  // console.log("queryString__", queryString__);
   // let notifications = await SecurityNotification.find(queryString__).populate('sender');
   // sendEventData = { eventName:'notificationsSent', data : notifications };
   // emitEvent(wss,sendEventData)
@@ -91,17 +93,20 @@ exports.getMachineByCountries = async (req, res, next) => {
   // console.log(matchQuery);
 
 
+  let aggregationPipeline = [
+    { $match: matchQuery }, 
+    { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
+    { $unwind: "$instalationSite" },
+    { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
+    { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
+    // { '$addFields': { count: { $toString: '$count' } } },
+    { $sort: { count: -1 } }
+  ]
+  if (!allRecords) {
+    aggregationPipeline.push({ $limit: 20 });
+  }
 
-  let countryWiseMachineCount = await Product.aggregate([
-      { $match: matchQuery }, 
-      { $lookup: { from: "CustomerSites", localField: "instalationSite", foreignField: "_id", as: "instalationSite" } },
-      { $unwind: "$instalationSite" },
-      { $match: { "instalationSite.address.country": { $nin: ["", null] } } },
-      { $group: { _id: "$instalationSite.address.country", count: { $sum: 1 } } },
-      // { '$addFields': { count: { $toString: '$count' } } },
-      { $sort: { count: -1 } },
-      { $limit: 20 }
-    ]);
+  let countryWiseMachineCount = await Product.aggregate(aggregationPipeline);
   return res.json({ 
     countryWiseMachineCount,
   });
@@ -112,10 +117,9 @@ exports.getMachineByCountries = async (req, res, next) => {
 exports.getMachineByModels = async (req, res, next) => {
   let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
   let customerIds = listCustomers.map((c)=>c._id); 
-
-
+  let allRecords = req.query?.allRecords == 'true' || req.query?.allRecords === true ? true : false;
+  if(allRecords) delete req.query.allRecords;  
   
-  // console.log(req.query)
   let machineModels = await ProductModel.aggregate([
     { $lookup: { from: "MachineCategories", localField: "category", foreignField: "_id", as: "machineCategory" } },
     // { $match: { "machineCategory.connections": {$ne:true}} },
@@ -172,18 +176,31 @@ exports.getMachineByModels = async (req, res, next) => {
     matchQuery.installationDate = { $gte:fromDate, $lte:toDate}
   }
 
-  // console.log(matchQuery);
-
-  let modelWiseMachineCount = await Product.aggregate([
-    { $match: matchQuery }, 
+  let aggregationPipeline = [
+    { $match: matchQuery },
     { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
     { $unwind: "$machineModel" },
     { $match: { "machineModel": { $nin: ["", null] } } },
     { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
-    // { '$addFields': { count: { $toString: '$count' } } },
     { $sort: { count: -1 } },
-    { $limit: 20 }
-  ]);
+  ];
+  
+  if (!allRecords) {
+    aggregationPipeline.push({ $limit: 20 });
+  }
+  
+  let modelWiseMachineCount = await Product.aggregate(aggregationPipeline);
+
+  // let modelWiseMachineCount = await Product.aggregate([
+  //   { $match: matchQuery }, 
+  //   { $lookup: { from: "MachineModels", localField: "machineModel", foreignField: "_id", as: "machineModel" } },
+  //   { $unwind: "$machineModel" },
+  //   { $match: { "machineModel": { $nin: ["", null] } } },
+  //   { $group: { _id: '$machineModel.name', count: { $sum: 1 } } },
+  //   // { '$addFields': { count: { $toString: '$count' } } },
+  //   { $sort: { count: -1 } },
+  //   { $limit: 20 }
+  // ]);
 
   return res.json({ 
     modelWiseMachineCount,

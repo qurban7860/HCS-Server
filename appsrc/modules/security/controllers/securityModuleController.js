@@ -36,7 +36,7 @@ exports.getSecurityModule = async (req, res, next) => {
 exports.getSecurityModules = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   // if(this.query){
-    this.dbservice.getObjectList(SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    this.dbservice.getObjectList(req, SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   // } else {
   //   var aggregate = [
   //     {
@@ -71,7 +71,7 @@ exports.getSecurityModules = async (req, res, next) => {
 exports.searchSecurityModules = async (req, res, next) => {
   // this.query = req.query != "undefined" ? req.query : {};
   // if(this.query){
-    this.dbservice.getObjectList(SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    this.dbservice.getObjectList(req, SecurityModule, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   // } else {
   //   var aggregate = [
   //     {
@@ -109,7 +109,6 @@ exports.deleteSecurityModule = async (req, res, next) => {
     try {
       const result = await this.dbservice.deleteObject(SecurityModule, req.params.id, res);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-      console.log("@3");
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));

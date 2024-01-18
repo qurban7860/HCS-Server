@@ -19,7 +19,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };
+this.orderBy = { country_name: 1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
@@ -42,8 +42,7 @@ exports.getCountry = async (req, res, next) => {
 exports.getCountries = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-
-    const response = await this.dbservice.getObjectList(Country, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, Country, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));

@@ -38,13 +38,13 @@ class DocumentService {
     }
   }
 
-  async getObjectList(model, fields, query, orderBy, populate, callback) {
+  async getObjectList(req, model, fields, query, orderBy, populate, callback) {
     try {
       if(callback) {
-        return this.db.getObjectList(model, fields, query, orderBy, populate, callback);
+        return this.db.getObjectList(req, model, fields, query, orderBy, populate, callback);
       }
       else {
-        return await this.db.getObjectList(model, fields, query, orderBy, populate);
+        return await this.db.getObjectList(req, model, fields, query, orderBy, populate);
       }
     } catch (error) {
       return error;
