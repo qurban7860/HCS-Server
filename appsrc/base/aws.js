@@ -351,6 +351,29 @@ const processImageFile = async (docx) => {
     docx.buffer = base64String;
   }
 };
+const processAWSFile = async (data) => {
+  const dataReceived = data.Body.toString('utf-8');
+  const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
+  const imageBuffer = Buffer.from(base64Data, 'base64');
+  const ImageResolution = await getImageResolution(imageBuffer);
+  console.log("ImageResolution", ImageResolution);
+  const desiredQuality = calculateDesiredQuality(imageBuffer, ImageResolution);
+  console.log("desiredQuality", desiredQuality);
+  sharp(imageBuffer)
+      .jpeg({
+          quality: desiredQuality,
+          mozjpeg: true
+      })
+      .toBuffer((resizeErr, outputBuffer) => {
+          if (resizeErr) {
+              console.error('Error resizing image:', resizeErr);
+              return;
+          } else {
+              const base64String = outputBuffer.toString('base64');
+              return res.status(StatusCodes.ACCEPTED).send(base64String);
+          }
+      });
+};
 
 module.exports = {
   sendEmail,
@@ -363,5 +386,6 @@ module.exports = {
   fetchAWSFileInfo,
   generateEtag,
   processImageFile,
+  processAWSFile,
   s3
 };
