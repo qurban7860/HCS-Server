@@ -359,6 +359,7 @@ const processAWSFile = async (data) => {
   console.log("ImageResolution", ImageResolution);
   const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
   console.log("desiredQuality", desiredQuality);
+  console.log("imageBuffer", imageBuffer);
   sharp(imageBuffer)
       .jpeg({
           quality: desiredQuality,
@@ -369,6 +370,7 @@ const processAWSFile = async (data) => {
               console.error('Error resizing image:', resizeErr);
               return;
           } else {
+              console.log("outputBuffer", outputBuffer);
               return outputBuffer.toString('base64');
           }
       });
