@@ -1,3 +1,4 @@
 module.exports = {
-    erpLogController: require('./erpLogController')
+    erpLogController: require('./erpLogController'),
+    logFormatController: require('./logFormatController')
 }
