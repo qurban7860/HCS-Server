@@ -156,13 +156,17 @@ exports.postLogMulti = async (req, res, next) => {
           let response = null;
           if(objectERP == null || !skipExistingRecords || updateExistingRecords)
           if(objectERP && updateExistingRecords){
+            console.log("Update ....!");
             const result = await this.dbservice.patchObject(ErpLog, objectERP._id, getDocumentFromReq(fakeReq));
             if(fakeReq.body?.loginUser)
               delete fakeReq.body.loginUser;
 
             response = fakeReq.body;
           }else {
+            console.log("Add ....!");
             response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
+          } else {
+            console.log("Skipped ....!");
           }
           respArr.push(response);
         } 
