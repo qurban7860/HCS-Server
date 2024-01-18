@@ -43,7 +43,7 @@ exports.getEmails = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
 
-    let response = await this.dbservice.getObjectList(Email, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, Email, this.fields, this.query, this.orderBy, this.populate);
     
     if(Array.isArray(response) && response.length>0) { 
       response = JSON.parse(JSON.stringify(response));

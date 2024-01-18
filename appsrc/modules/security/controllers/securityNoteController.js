@@ -45,7 +45,7 @@ exports.getSecurityNotes = async (req, res, next) => {
     delete this.query.orderBy;
   }
   this.query.user = this.userId;
-  this.dbservice.getObjectList(SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -58,7 +58,7 @@ exports.getSecurityNotes = async (req, res, next) => {
 
 exports.searchSecurityNotes = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  this.dbservice.getObjectList(SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityNotes, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -96,15 +96,11 @@ exports.deleteSecurityNote = async (req, res, next) => {
 // };
 
 exports.postSecurityNote = async (req, res, next) => {
-  // console.log("1")
   const errors = validationResult(req);
-  // console.log("2")
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    // console.log("3")
   } else {
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    // console.log("4")
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));

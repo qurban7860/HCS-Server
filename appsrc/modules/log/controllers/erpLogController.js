@@ -43,8 +43,21 @@ exports.getLog = async (req, res, next) => {
 exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
+    if(this.query?.fromDate && this.query?.fromDate) {
+      this.query.date =  {
+        $gte: new Date(this.query.fromDate),
+        $lte: new Date(this.query.toDate)
+      };
+      this.query.date = {
+        $gte: new Date(this.query.date.$gte.toISOString()),
+        $lte: new Date(this.query.date.$lte.toISOString())
+      };
+    }
+    
+    delete this.query?.fromDate;
+    delete this.query?.toDate;
 
-    let response = await this.dbservice.getObjectList(ErpLog, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, ErpLog, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
   } catch (error) {
@@ -126,11 +139,35 @@ exports.postLogMulti = async (req, res, next) => {
       
       const respArr = []
       if(Array.isArray(req.body.csvData) && req.body.csvData.length>0 ) {
+        const skipExistingRecords = req.body?.skip && (req.body?.skip == 'true' || req.body?.skip == true) ? true : false;
+        let updateExistingRecords = req.body?.update && (req.body?.update == 'true' || req.body?.update == true) ? true : false;
+        if(skipExistingRecords) updateExistingRecords = false;
+
+        console.log("skipExistingRecords", skipExistingRecords);
+        
         for(const logObj of req.body.csvData) {
           logObj.machine = req.body.machine;
           logObj.customer = req.body.customer;
+          logObj.loginUser = req.body.loginUser;
+
           const fakeReq = { body: logObj};
-          const response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
+          let queryString__ = {machine: logObj.machine, date: fakeReq.body.date};
+          let objectERP = await ErpLog.findOne(queryString__).select('_id').sort({_id: -1}).lean();
+          let response = null;
+          if(objectERP == null || !skipExistingRecords || updateExistingRecords)
+          if(objectERP && updateExistingRecords){
+            console.log("Update ....!");
+            const result = await this.dbservice.patchObject(ErpLog, objectERP._id, getDocumentFromReq(fakeReq));
+            if(fakeReq.body?.loginUser)
+              delete fakeReq.body.loginUser;
+
+            response = fakeReq.body;
+          }else {
+            console.log("Add ....!");
+            response = await this.dbservice.postObject(getDocumentFromReq(fakeReq, 'new'));
+          } else {
+            console.log("Skipped ....!");
+          }
           respArr.push(response);
         } 
         res.status(StatusCodes.CREATED).json({ Logs: respArr });

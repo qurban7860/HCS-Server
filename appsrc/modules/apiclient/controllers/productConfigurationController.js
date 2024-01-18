@@ -50,7 +50,7 @@ exports.getProductConfiguration = async (req, res, next) => {
 exports.getProductConfigurations = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { createdAt: -1 };
-  this.dbservice.getObjectList(ProductConfiguration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductConfiguration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -86,8 +86,6 @@ exports.postProductConfiguration = async (req, res, next) => {
   // ).populate({path: 'roles' , select: 'name roleType isArchived isActive'});
   // userObject.roles = userObject.roles.filter(role => (role.roleType === 'APIAccess' && role.isActive == true && role.isArchived == false));
   // const roleAPIFound = userObject.roles && userObject.roles.length > 0 ? true : false;
-
-  console.log("req.body.loginUser.roleTypes", req.body.loginUser);
 
   req.body.response = "APPROVED";
   const roleAPIFound = true;

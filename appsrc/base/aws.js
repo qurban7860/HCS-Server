@@ -1,5 +1,7 @@
 const { promisify } = require('util');
 const AWS = require('aws-sdk');
+const fs = require('fs');
+const sharp = require('sharp');
 
 // ############################ START: S3 ############################
 
@@ -25,7 +27,7 @@ const AWS = require('aws-sdk');
  *
  */
 
-// const credentials = new AWS.Credentials('AKIA5NXIO6FUAC7JW55U', 'LmKqh3ynZT/HdWlID9N4nynevgt527P/a07gfnvA');
+// const credentials = new AWS.Credentials('xxxx', 'xxxxxx');
 const s3 = new AWS.S3({
   region: process.env.AWS_REGION,
   params: { Bucket: process.env.AWS_S3_BUCKET },
@@ -79,6 +81,7 @@ async function copyFile(user) {
 
 async function uploadFileS3(filename, folder, content, ext = 'txt') {
   let bucketName = process.env.AWS_S3_BUCKET;
+  let data = null;
 
   const uploadFileParams = {
     Bucket: bucketName,
@@ -87,13 +90,10 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     // ACL:'public-read'
   };
 
-  let url = '';
-
   try {
-    const data = await s3UploadAsync(uploadFileParams);
-
-    if ('Key' in data) {
-      url = data.Key;
+    data = await s3UploadAsync(uploadFileParams);
+    if ('Key' in data && 'ETag' in data) {
+      data.awsETag = data.ETag.replace(/"/g, '');
     } else {
       console.log('Location not found, inside services/aws.js');
       console.log(data);
@@ -103,8 +103,10 @@ async function uploadFileS3(filename, folder, content, ext = 'txt') {
     console.log(ex.message);
   }
 
-  return url;
+  return data;
 }
+
+
 
 const secretManager = new AWS.SecretsManager({
   region: process.env.AWS_REGION
@@ -200,7 +202,6 @@ async function sendEmailWithRawData(params, file) {
     if (err) {
       console.error(`Error sending raw email: ${err}`);
     }
-    console.log("message",message);
     let SES = new AWS.SES({region: process.env.AWS_REGION})
     let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
     console.log(response);
@@ -216,13 +217,168 @@ async function downloadFileS3(filePath) {
 
   try {
     const data = await s3.getObject(params).promise();
-    console.log('data------------>', data);
     return data.Body;
   } catch (err) {
     console.log(err.message);
     return err;
   }
 }
+
+async function fetchAWSFileInfo(fileid, filePath) {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: filePath
+  };
+
+  try {
+    return data = await s3.getObject(params).promise();
+  } catch (err) {
+    console.log("file fetch error", err.message);
+    return err;
+  }
+}
+
+async function generateEtag(data) {
+  const crypto = require('crypto');
+  const md5sum = crypto.createHash('md5');
+
+  let stream;
+  if (typeof data === 'string') {
+    // If data is a string, assume it's a file path
+    stream = fs.createReadStream(data);
+  } else if (Buffer.isBuffer(data)) {
+    // If data is a buffer, create a readable stream from the buffer
+    stream = require('stream').Readable.from(data);
+  } else {
+    // If the input is neither a string nor a buffer, reject with an error
+    return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
+  }
+
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk) => {
+      md5sum.update(chunk);
+    });
+
+    stream.on('end', () => {
+      let etag = `"${md5sum.digest('hex')}"`;
+      etag = etag.replace(/ /g, "").replace(/"/g, "");
+      resolve(etag);
+    });
+
+    stream.on('error', (error) => {
+      reject(error);
+    });
+  });
+}
+
+async function getImageResolution(imageBuffer) {
+  try {
+    const metadata = await sharp(imageBuffer).metadata();
+    const width = metadata.width;
+    const height = metadata.height;
+    
+    console.log(`Image Resolution: ${width} x ${height}`);
+    
+    // You can return the resolution or perform other actions as needed
+    return { width, height };
+  } catch (err) {
+    console.error('Error reading image metadata:', err);
+    throw err; // Propagate the error or handle it as per your application's requirements
+  }
+}
+
+async function calculateDesiredQuality(imageBuffer, imageResolution) {
+  let desiredQuality = 100;
+
+  // Set thresholds based on image size
+  const sizeThresholds = {
+    small: 2 * 1024 * 1024, // 2MB
+    medium: 5 * 1024 * 1024, // 5MB
+    large: 10 * 1024 * 1024, // 10MB
+    extraLarge: 20 * 1024 * 1024, // 20MB
+  };
+
+  // Set resolution thresholds
+  const resolutionThresholds = {
+    low: 800,  // Low resolution threshold (e.g., 800 pixels)
+    medium: 1200, // Medium resolution threshold (e.g., 1200 pixels)
+    high: 2000, // High resolution threshold (e.g., 2000 pixels)
+    extraHigh: 3000, // Extra high resolution threshold (e.g., 3000 pixels)
+  };
+
+  const imageSize = imageBuffer.length;
+  const imageWidth = imageResolution.width;
+
+  // Adjust quality based on image size
+  if (imageSize > sizeThresholds.extraLarge) {
+    desiredQuality = 5; // Aggressive reduction for extra-large images
+  } else if (imageSize > sizeThresholds.large) {
+    desiredQuality = 10; // Moderate reduction for large images
+  } else if (imageSize > sizeThresholds.medium) {
+    desiredQuality = 20; // Moderate reduction for medium-sized images
+  } else {
+    desiredQuality = 30; // Default quality for smaller images
+  }
+
+  // Adjust quality based on image resolution
+  if (imageWidth < resolutionThresholds.low) {
+    desiredQuality += 10; // Increase quality for low-resolution images
+  } else if (imageWidth > resolutionThresholds.extraHigh) {
+    desiredQuality -= 10; // Decrease quality for extra high-resolution images
+  }
+
+  // Ensure the desired quality stays within a reasonable range
+  desiredQuality = Math.max(10, Math.min(100, desiredQuality));
+  return desiredQuality;
+}
+
+const processImageFile = async (docx) => {
+  if (docx.mimetype.includes('image')) {
+    let imageResolution = await getImageResolution(docx.path);
+    let desiredQuality = await calculateDesiredQuality(docx.path, imageResolution);
+    const buffer = await sharp(docx.path)
+      .jpeg({
+        quality: desiredQuality,
+        mozjpeg: true
+      })
+      .toBuffer();
+    const fileSizeInBytes = Buffer.byteLength(buffer);
+    const fileSizeInKilobytes = fileSizeInBytes / 1024;
+    const fileSizeInMegabytes = fileSizeInKilobytes / 1024;
+    console.log(`File Size After : ${fileSizeInMegabytes.toFixed(2)} MB`);
+    console.log(`File Size: ${fileSizeInKilobytes.toFixed(2)} KB`);
+    const base64String = buffer.toString('base64');
+    docx.buffer = base64String;
+  }
+};
+
+const processAWSFile = async (data) => {
+  const dataReceived = data.Body.toString('utf-8');
+  const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
+  const imageBuffer = Buffer.from(base64Data, 'base64');
+  const ImageResolution = await getImageResolution(imageBuffer);
+  console.log("ImageResolution", ImageResolution);
+  const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
+  console.log("desiredQuality", desiredQuality);
+
+  return new Promise((resolve, reject) => {
+    sharp(imageBuffer)
+      .jpeg({
+        quality: desiredQuality,
+        mozjpeg: true
+      })
+      .toBuffer((resizeErr, outputBuffer) => {
+        if (resizeErr) {
+          console.error('Error resizing image:', resizeErr);
+          reject(resizeErr);
+        } else {
+          console.log("outputBuffer", outputBuffer);
+          const outputBuffer__ = outputBuffer.toString('base64');
+          resolve(outputBuffer__);
+        }
+      });
+  });
+};
 
 module.exports = {
   sendEmail,
@@ -231,5 +387,10 @@ module.exports = {
   checkFileHeader,
   copyFile,
   listBuckets,
-  downloadFileS3
+  downloadFileS3,
+  fetchAWSFileInfo,
+  generateEtag,
+  processImageFile,
+  processAWSFile,
+  s3
 };

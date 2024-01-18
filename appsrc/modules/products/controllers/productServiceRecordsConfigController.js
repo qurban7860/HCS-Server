@@ -141,7 +141,7 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
     }
   }
 
-  let serviceRecordConfigs = await this.dbservice.getObjectList(ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
+  let serviceRecordConfigs = await this.dbservice.getObjectList(req, ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
 
   try{
     serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));

@@ -30,7 +30,7 @@ router.use(checkAuth, checkCustomer);
 router.get(`${baseRouteForObject}/search`, controller.searchCustomerSites);
 
 // - /api/1.0.0/crm/sites/export
-router.get(`${baseRouteForObject}/export`, controller.exportSites);
+router.get(`${baseRouteForObject}/export`, controller.exportSitesJSONForCSV);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.get(`${baseRouteForObject}/:id`, checkCustomerID, controller.getCustomerSite);

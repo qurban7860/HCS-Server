@@ -63,7 +63,7 @@ exports.getDocumentVersions = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     this.query.document = req.params.documentid;
-    let documentVersions = await dbservice.getObjectList(DocumentVersion, this.fields, this.query, this.orderBy, this.populate);
+    let documentVersions = await dbservice.getObjectList(req, DocumentVersion, this.fields, this.query, this.orderBy, this.populate);
     
     if(documentVersions && Array.isArray(documentVersions) && documentVersions.length>0) {
       documentVersions = JSON.parse(JSON.stringify(documentVersions));
@@ -230,7 +230,9 @@ exports.postDocumentVersion = async (req, res, next) => {
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
-  
+              req.body.awsETag = processedFile.awsETag;
+              req.body.eTag = processedFile.eTag;
+
               if(processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
   
@@ -316,6 +318,8 @@ async function saveDocumentFile(document_,file) {
     description:file.description,
     path:file.path,
     fileType:file.type,
+    eTag:file.eTag,
+    awsETag:file.awsETag,
     extension:file.extension,
     thumbnail:file.content,
     customer:file.customer,
@@ -426,7 +430,9 @@ exports.patchDocumentVersion = async (req, res, next) => {
             req.body.path = processedFile.s3FilePath;
             req.body.type = processedFile.type
             req.body.extension = processedFile.fileExt;
-  
+            req.body.awsETag = processedFile.awsETag;
+            req.body.eTag = file.eTag;
+
             if(processedFile.base64thumbNailData)
               req.body.content = processedFile.base64thumbNailData;
   
@@ -524,7 +530,12 @@ async function processFile(file, userId) {
   let thumbnailPath;
   let base64thumbNailData;
 
-  const base64fileData = await readFileAsBase64(file.path);
+  let base64fileData = null;
+  if(file.buffer)
+    base64fileData = file.buffer;
+  else 
+    base64fileData = await readFileAsBase64(file.path);
+
 
   if(file.mimetype.includes('image')){
     thumbnailPath = await generateThumbnail(file.path);
@@ -533,14 +544,15 @@ async function processFile(file, userId) {
   }
   
   const fileName = userId+"-"+new Date().getTime();
-  const s3FilePath = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  // s3Data.eTag = await awsService.generateEtag(file.path);
 
   fs.unlinkSync(file.path);
   if(thumbnailPath){
     fs.unlinkSync(thumbnailPath);
   }
   
-  if (!s3FilePath || s3FilePath === '') {
+  if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
   else{
@@ -548,7 +560,9 @@ async function processFile(file, userId) {
       fileName,
       name,
       fileExt,
-      s3FilePath,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
       type: file.mimetype,
       physicalPath: file.path,
       base64thumbNailData

@@ -9,29 +9,26 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let regionDBService = require('../service/regionDBService')
-this.dbservice = new regionDBService();
+let logDBService = require('../service/logDBService')
+this.dbservice = new logDBService();
 
-const { Country } = require('../../config/models');
-
+const { LogFormat } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
 this.query = {};
-this.orderBy = { country_name: 1 };
+this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
-  { path: 'customer', select: 'name' },
-  { path: 'updatedBy', select: 'name' },
-  { path: 'countries', select: ''}
+  { path: 'updatedBy', select: 'name' }
 ];
 
 
 
-exports.getCountry = async (req, res, next) => {
+exports.getLog = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Country, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(LogFormat, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -39,21 +36,20 @@ exports.getCountry = async (req, res, next) => {
   }
 };
 
-exports.getCountries = async (req, res, next) => {
+exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await this.dbservice.getObjectList(req, Country, this.fields, this.query, this.orderBy, this.populate);
-    res.json(response);
+    let response = await this.dbservice.getObjectList(req, LogFormat, this.fields, this.query, this.orderBy, this.populate);
+    return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
-
-exports.deleteCountry = async (req, res, next) => {
+exports.deleteLog = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Country, req.params.id);
+    const result = await this.dbservice.deleteObject(LogFormat, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -61,14 +57,14 @@ exports.deleteCountry = async (req, res, next) => {
   }
 };
 
-exports.postCountry = async (req, res, next) => {
+exports.postLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ Country: response });
+      res.status(StatusCodes.CREATED).json({ Log: response });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -76,13 +72,13 @@ exports.postCountry = async (req, res, next) => {
   }
 };
 
-exports.patchCountry = async (req, res, next) => {
+exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Country, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(LogFormat, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -93,20 +89,38 @@ exports.patchCountry = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { country_code, country_name, isActive, isArchived, loginUser } = req.body;
+  const { logType, logVersion, logFormat, isActive, isArchived, loginUser} = req.body;
+
 
   let doc = {};
-  
-  if ("country_code" in req.body) {
-    doc.country_code = country_code;
+  if (reqType && reqType == "new") {
+    doc = new LogFormat({});
   }
-  if ("country_name" in req.body) {
-    doc.country_name = country_name;
+
+  if ("logType" in req.body) {
+    doc.logType = logType;
+  }
+
+  if ("logVersion" in req.body) {
+    doc.logVersion = logVersion;
+  }
+
+  if ("logFormat" in req.body) {
+    doc.logFormat = logFormat;
+  }
+
+  if ("isActive" in req.body) {
+    doc.isActive = isActive;
   }
 
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
+
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
+  }
+
   if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
@@ -122,7 +136,6 @@ function getDocumentFromReq(req, reqType) {
   }
 
   return doc;
-
 }
 
 

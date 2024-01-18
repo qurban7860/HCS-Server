@@ -79,7 +79,7 @@ exports.getSecurityUsers = async (req, res, next) => {
     delete req.query.roleType;
   }
 
-  this.dbservice.getObjectList(SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, users) {
     if (error) {
       logger.error(new Error(error));
@@ -137,8 +137,6 @@ exports.postSecurityUser = async (req, res, next) => {
   } 
   else {
     // check if email exists
-    console.log("req.body.email", req.body.email);
-    console.log("req.body.login", req.body.login);
     
     if(!req.body.email) req.body.email = req.body.login;
     if(!req.body.login) req.body.login = req.body.email;

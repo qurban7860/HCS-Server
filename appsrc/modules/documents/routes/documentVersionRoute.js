@@ -6,9 +6,13 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
+
+const { Config } = require('../../config/models');
+
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const multer = require("multer");
+const awsService = require('../../../../appsrc/base/aws');
 
 
 const controllers = require('../controllers');
@@ -31,7 +35,7 @@ router.get(`${baseRoute}/:documentid/versions/`, controller.getDocumentVersions)
 
 // - /api/1.0.0/documents/documentVersion/
 router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
+    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -40,26 +44,52 @@ router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
         console.log(err);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        next();
+      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+      if(req.files && req.files['images']) {
+        const documents_ = req.files['images'];
+        await Promise.all(documents_.map(async (docx, index) => {
+          if(configObject){
+            await awsService.processImageFile(docx);
+            docx.eTag = await awsService.generateEtag(docx.path);
+          }
+        }));
+      }
+      next();
       }
     });
   }, controller.postDocumentVersion);
 
 // - /api/1.0.0/documents/documentVersion/:id
-router.patch(`${baseRoute}/:documentid/versions/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, (err) => {
-
-      if (err instanceof multer.MulterError) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
-      } else if (err) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-        next();
+router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
+  fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+    } else if (err) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+      if(req.files && req.files['images']) {
+        const documents_ = req.files['images'];
+        await Promise.all(documents_.map(async (docx, index) => {
+          if(configObject){
+            await awsService.processImageFile(docx);
+            docx.eTag = await awsService.generateEtag(docx.path);
+          }
+        }));
       }
-    });
-  }, controller.patchDocumentVersion);
+      next();
+    }
+  });
+}, controller.patchDocumentVersion);
+
+
+
+
+
+
+  
 
 // - /api/1.0.0/documents/documentVersion/:id
 router.delete(`${baseRoute}/:documentid/versions/:id`, controller.deleteDocumentVersion);

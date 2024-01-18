@@ -13,6 +13,8 @@ this.dbservice = new productDBService();
 
 const { ProductCategory, ProductModel, ProductDrawing } = require('../models');
 
+const { Document } = require('../../documents/models');
+
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
@@ -38,7 +40,7 @@ exports.getProductDrawing = async (req, res, next) => {
 exports.getProductDrawings = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   
-  this.dbservice.getObjectList(ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -67,9 +69,25 @@ exports.postProductDrawing = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let documentId = req.body.documentId;
+    
     let documentCategory = req.body.documentCategory;
     let documentType = req.body.documentType;
     let machine = req.body.machine
+    if(documentId) {
+      const documentObject = await Document.findOne({_id: documentId}).select('docCategory docType').lean();
+      if(documentObject) {
+        if(!req.body.documentCategory) {
+          documentCategory = documentObject.docCategory;
+          req.body.documentCategory = documentObject.docCategory;
+        }
+
+        if(!req.body.documentType) {
+          documentType = documentObject.docType;
+          req.body.documentType = documentObject.docType;
+        }
+      }
+    };
+
 
     let alreadyExists = await ProductDrawing.findOne( { machine, document:documentId, documentCategory, documentType } );
     if(!alreadyExists) {

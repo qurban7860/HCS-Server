@@ -36,7 +36,7 @@ exports.getDocumentCategory = async (req, res, next) => {
       response = JSON.parse(JSON.stringify(response))
       let docTypeQuery = { docCategory : req.params.id, isArchived:false, isActive:true };
       let docTypeFields = { name:1, description:1, customerAccess:1 }
-      const documentTypes = await this.dbservice.getObjectList(DocumentType, docTypeFields, docTypeQuery, {}, []);
+      const documentTypes = await this.dbservice.getObjectList(req, DocumentType, docTypeFields, docTypeQuery, {}, []);
       response.documentTypes = documentTypes;
       res.json(response);
     } else {
@@ -51,7 +51,7 @@ exports.getDocumentCategory = async (req, res, next) => {
 exports.getDocumentCategories = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const response = await this.dbservice.getObjectList(DocumentCategory, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, DocumentCategory, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));

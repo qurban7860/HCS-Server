@@ -42,6 +42,7 @@ this.populate = [
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
       {path: 'financialCompany', select: '_id clientCode name'},
+      {path: 'transferredMachine', select: '_id serialNo name customer'},
       {path: 'createdBy', select: 'name'},
       {path: 'updatedBy', select: 'name'}
     ];
@@ -63,7 +64,7 @@ exports.getProduct = async (req, res, next) => {
         machine = JSON.parse(JSON.stringify(machine));
 
 
-        let machineConnections = await dbservice.getObjectList(ProductConnection,this.fields, query_, {}, populate);
+        let machineConnections = await dbservice.getObjectList(req, ProductConnection,this.fields, query_, {}, populate);
         if(Array.isArray(machineConnections) && machineConnections.length>0) {
           machineConnections = JSON.parse(JSON.stringify(machineConnections));
           let index = 0;
@@ -103,6 +104,11 @@ exports.getProduct = async (req, res, next) => {
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
         let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
         machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
+      }
+
+      if(machine?.transferredMachine?.customer && ObjectId.isValid(machine?.transferredMachine?.customer)){
+        let objectCustomer = await Customer.findOne({_id: machine?.transferredMachine?.customer}).select('clientCode name tradingName type').lean();
+        machine.transferredMachine.customer = objectCustomer;
       }
 
       res.json(machine);
@@ -197,7 +203,7 @@ exports.getProducts = async (req, res, next) => {
   }
 
 
-  dbservice.getObjectList(Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  dbservice.getObjectList(req, Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
       logger.error(new Error(error));
@@ -400,15 +406,12 @@ exports.patchProduct = async (req, res, next) => {
     else{ 
       if(machine && Array.isArray(machine.machineConnections) && 
         Array.isArray(req.body.machineConnections)) {
-
-          console.log("req.body.machineConnections", req.body.machineConnections, machine.machineConnections);
         
         let oldMachineConnections = machine.machineConnections;
         let newMachineConnections = req.body.machineConnections;
 
         let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
 
-        console.log("isSame", isSame);
         if(!isSame) {
 
           let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
@@ -419,7 +422,6 @@ exports.patchProduct = async (req, res, next) => {
 
           let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
           
-          console.log("toBeConnected", toBeConnected);
           if(toBeConnected.length>0) 
             machine = await connectMachines(machine.id, toBeConnected);
           
@@ -519,6 +521,10 @@ exports.transferOwnership = async (req, res, next) => {
 
               let listSettings = await ProductTechParamValue.find(query___);
               let listProfiles = await ProductProfile.find(query___);
+
+              // let listDocuments = await Document.find(query___);
+              // let listDrawings = await ProductDrawing.find(query___);
+
               
               let newMachineId = transferredMachine._id;
               for (const setting of listSettings) {
@@ -536,6 +542,8 @@ exports.transferOwnership = async (req, res, next) => {
                 profileClone.machine = newMachineId;
                 const profileClone_ = await ProductProfile.create(profileClone);
               }
+
+
 
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
