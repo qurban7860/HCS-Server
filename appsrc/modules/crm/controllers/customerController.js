@@ -178,6 +178,8 @@ exports.getCustomers = async (req, res, next) => {
     delete this.query.unfiltered;
   }
 
+  //TODO: to remove this in feature.
+  req.body.pageSize = 2000;
   this.dbservice.getObjectList(req, Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
