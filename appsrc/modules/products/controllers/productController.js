@@ -197,6 +197,8 @@ exports.getProducts = async (req, res, next) => {
   }
 
   if(!this.query.customer) {
+    //TODO: should be removed in feature.
+    req.body.pageSize = 3000;
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     let customerIds = listCustomers.map((c)=>c._id); 
     this.query.customer = { $in: customerIds };
