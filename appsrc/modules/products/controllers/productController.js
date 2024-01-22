@@ -103,7 +103,7 @@ exports.getProduct = async (req, res, next) => {
 
 
       if(machine && machine.parentMachineID) {
-        machine.transferredFrom = await Product.find({_id: machine.parentMachineID}).select('customer').populate({path: 'customer', select: 'name'});
+        machine.transferredFrom = await Product.findOne({_id: machine.parentMachineID}).select('customer').populate({path: 'customer', select: 'name'});
       }
 
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
