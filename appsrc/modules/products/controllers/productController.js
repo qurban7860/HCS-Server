@@ -101,6 +101,11 @@ exports.getProduct = async (req, res, next) => {
       let machineProfileQuery = {type:"MANUFACTURE", machine: machine._id, isActive:true, isArchived:false};
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
 
+
+      if(machine && machine.parentMachineID) {
+        machine.transferredFrom = await Product.find({_id: machine.parentMachineID}).select('customer').populate({path: 'customer', select: 'name'});
+      }
+
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
         let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
         machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
