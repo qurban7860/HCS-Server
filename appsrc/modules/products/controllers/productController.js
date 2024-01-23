@@ -122,12 +122,12 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
-  this.populate = [
+  const listPopulate = [
     {path: 'machineModel', select: '_id name category'},
     {path: 'status', select: '_id name slug'},
     {path: 'customer', select: '_id clientCode name'}
   ];
-  this.fields = 'serialNo name model customer installationDate shippingDate status isActive';
+  const listFields = 'serialNo name model customer installationDate shippingDate status isActive';
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
@@ -215,7 +215,7 @@ exports.getProducts = async (req, res, next) => {
   }
 
 
-  dbservice.getObjectList(req, Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
       logger.error(new Error(error));
