@@ -122,12 +122,12 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
-  this.populate = [
-    {path: 'machineModel', select: '_id name category'},
-    {path: 'status', select: '_id name slug'},
-    {path: 'customer', select: '_id clientCode name'}
-  ];
-  this.fields = 'serialNo name model customer installationDate shippingDate status isActive';
+  // this.populate = [
+  //   {path: 'machineModel', select: '_id name category'},
+  //   {path: 'status', select: '_id name slug'},
+  //   {path: 'customer', select: '_id clientCode name'}
+  // ];
+  // this.fields = 'serialNo name model customer installationDate shippingDate status isActive';
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
