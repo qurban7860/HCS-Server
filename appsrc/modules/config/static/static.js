@@ -66,12 +66,7 @@ module.exports = {
     },
     recordInvalidParamsMessage(code) {
         if (code == 400) {
-            const response = {
-                isError: "true", 
-                MessageCode: code,
-                Message: `Invalid params received!`
-            };
-
+            const response = `Invalid params received!`;
             return response;
         } else {
             return getReasonPhrase(code);
@@ -79,11 +74,7 @@ module.exports = {
     },
     recordDuplicateRecordMessage(code) {
         if (code == 400) {
-            const response = {
-                isError: "true", 
-                MessageCode: code,
-                Message: `Duplicate entry found!`
-            };
+            const response = `Duplicate entry found!`;
 
             return response;
         } else {
