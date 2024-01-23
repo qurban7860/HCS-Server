@@ -127,7 +127,7 @@ exports.getProducts = async (req, res, next) => {
     {path: 'status', select: '_id name slug'},
     {path: 'customer', select: '_id clientCode name'}
   ];
-  const listFields = 'serialNo name model customer installationDate shippingDate status isActive';
+  const listFields = 'serialNo name model customer installationDate shippingDate status isActive createdAt';
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
