@@ -122,6 +122,11 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
+  this.populate = [
+    {path: 'machineModel', select: '_id name category'},
+    {path: 'status', select: '_id name slug'},
+    {path: 'customer', select: '_id clientCode name'}
+  ];
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
   
@@ -202,8 +207,6 @@ exports.getProducts = async (req, res, next) => {
   }
 
   if(!this.query.customer) {
-    //TODO: should be removed in feature.
-    req.body.pageSize = 3000;
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     let customerIds = listCustomers.map((c)=>c._id); 
     this.query.customer = { $in: customerIds };
@@ -220,17 +223,13 @@ exports.getProducts = async (req, res, next) => {
         let index = 0;
         let filteredProducts = [];
         for(let product of products) {
-
           if(product && product.machineModel && product.machineModel.category && 
-            product.machineModel.category.connections) {
-            // product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURE",machine:product.id});        
+            product.machineModel.category.connections) {   
             filteredProducts.push(product);
-          
           }
 
         }
         res.json(filteredProducts);
-
       }
       else {
         res.json(products);
@@ -504,7 +503,13 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
           
-          
+          // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
+          const parentMachineConnections = parentMachine.machineConnections;
+          const requestBodyConnections = req.body.machineConnections;
+          const filteredConnections = parentMachineConnections.filter(connection => !requestBodyConnections.includes(connection));
+          parentMachine.machineConnections = filteredConnections;
+
+
           if(parentMachine.machineConnections.length > 0){
             let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
           }
@@ -571,7 +576,7 @@ exports.transferOwnership = async (req, res, next) => {
               // Step 4 List of existing connected machines to choose to move with new machine id. 
               if(req.body.machineConnections && req.body.machineConnections.length > 0) {
                 console.log("req.body.machineConnections", req.body.machineConnections);
-                const responseMachineConnection = await MachineConnection.updateMany({machine: {$in: req.body.machineConnections}}, setClause);
+                const responseMachineConnection = await ProductConnection.updateMany({machine: {$in: req.body.machineConnections}}, setClause);
                 console.log("responseMachineConnection", responseMachineConnection);
               }
 
