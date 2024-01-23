@@ -508,8 +508,10 @@ exports.transferOwnership = async (req, res, next) => {
           // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
           const parentMachineConnections = parentMachine.machineConnections;
           const requestBodyConnections = req.body.machineConnections;
-          const filteredConnections = parentMachineConnections.filter(connection => !requestBodyConnections.includes(connection));
-          parentMachine.machineConnections = filteredConnections;
+          if(requestBodyConnections && requestBodyConnections.length > 0) {
+            const filteredConnections = parentMachineConnections.filter(connection => !requestBodyConnections.includes(connection));
+            parentMachine.machineConnections = filteredConnections;
+          }
 
 
           if(parentMachine.machineConnections.length > 0){
