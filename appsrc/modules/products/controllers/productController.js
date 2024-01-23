@@ -497,8 +497,7 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
 
-        if (parentMachine) {
-          
+        if (parentMachine) {         
           req.body.serialNo = parentMachine.serialNo;
           req.body.machineModel = parentMachine.machineModel;
           req.body.parentMachine = parentMachine.parentMachine;
@@ -510,11 +509,13 @@ exports.transferOwnership = async (req, res, next) => {
             let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
           }
             
-          // update status of the new(transferred) machine
-          let queryString = { slug: 'intransfer'}
-          let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
-          if(machineStatus && !req.body.status){
-            req.body.status = machineStatus._id;
+          if(!req.body.status) {
+            // update status of the new(transferred) machine
+            let queryString = { slug: 'intransfer'}
+            let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
+            if(machineStatus){
+              req.body.status = machineStatus._id;
+            }
           }
           
           queryString = { slug: 'transferred'}
@@ -524,31 +525,72 @@ exports.transferOwnership = async (req, res, next) => {
           } else {
             const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
             if (transferredMachine) {
-              let query___ = {machine: req.body.machine, isArchived: false, isActive: true};
-
-              let listSettings = await ProductTechParamValue.find(query___);
-              let listProfiles = await ProductProfile.find(query___);
-
-              // let listDocuments = await Document.find(query___);
-              // let listDrawings = await ProductDrawing.find(query___);
-
+              const whereClause = {machine: req.body.machine, isArchived: false, isActive: true};
+              const setClause = {machine: transferredMachine._id};
               
-              let newMachineId = transferredMachine._id;
-              for (const setting of listSettings) {
-                let settingClone = JSON.parse(JSON.stringify(setting))
-                delete settingClone._id;
-                delete settingClone.id;
-                settingClone.machine = newMachineId;
-                const settingClone_ = await ProductTechParamValue.create(settingClone);
+              // Step 2 
+              if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
+                console.log("req.body.isAllSettings", req.body.isAllSettings);
+                const responseProductTechParamValue = await ProductTechParamValue.updateMany(whereClause, setClause);
+                console.log("responseProductTechParamValue", responseProductTechParamValue);
               }
 
-              for (const profile of listProfiles) {
-                let profileClone = JSON.parse(JSON.stringify(profile))
-                delete profileClone._id;
-                delete profileClone.id;
-                profileClone.machine = newMachineId;
-                const profileClone_ = await ProductProfile.create(profileClone);
+              if(req.body.isAllTools && (req.body.isAllTools == 'true' || req.body.isAllTools == true)){              
+                console.log("req.body.isAllTools", req.body.isAllTools);
+                const responseProductToolInstalled = await ProductToolInstalled.updateMany(whereClause, setClause);
+                console.log("responseProductToolInstalled", responseProductToolInstalled);
               }
+
+              if(req.body.isAllDrawings && (req.body.isAllDrawings == 'true' || req.body.isAllDrawings == true)){              
+                console.log("req.body.isAllDrawings", req.body.isAllDrawings);
+                const responseProductDrawing = await ProductDrawing.updateMany(whereClause, setClause);
+                console.log("responseProductDrawing", responseProductDrawing);
+              }
+
+              if(req.body.isAllProfiles && (req.body.isAllProfiles == 'true' || req.body.isAllProfiles == true)){              
+                console.log("req.body.isAllProfiles", req.body.isAllProfiles);
+                const responseProductProfile = await ProductProfile.updateMany(whereClause, setClause);
+                console.log("responseProductProfile", responseProductProfile);
+              }
+
+              if(req.body.isAllINIs && (req.body.isAllINIs == 'true' || req.body.isAllINIs == true)){              
+                console.log("req.body.isAllINIs", req.body.isAllINIs);
+                const responseProductConfiguration = await ProductConfiguration.updateMany(whereClause, setClause);
+                console.log("responseProductConfiguration", responseProductConfiguration);
+              }
+
+              console.log("2nd Step completed ****************************");
+
+              // Step 3 List document for selection to transfer to new machine id
+              if(req.body.machineDocuments && req.body.machineDocuments.length > 0) {
+                console.log("req.body.machineDocuments", req.body.machineDocuments);
+                const responseDocument = await Document.updateMany({_id: {$in: req.body.machineDocuments}}, setClause);
+                console.log("responseDocument", responseDocument);
+              }
+
+              // Step 4 List of existing connected machines to choose to move with new machine id. 
+              if(req.body.machineConnections && req.body.machineConnections.length > 0) {
+                console.log("req.body.machineConnections", req.body.machineConnections);
+                const responseMachineConnection = await MachineConnection.updateMany({machine: {$in: req.body.machineConnections}}, setClause);
+                console.log("responseMachineConnection", responseMachineConnection);
+              }
+
+
+              // for (const setting of listSettings) {
+              //   let settingClone = JSON.parse(JSON.stringify(setting))
+              //   delete settingClone._id;
+              //   delete settingClone.id;
+              //   settingClone.machine = newMachineId;
+              //   const settingClone_ = await ProductTechParamValue.create(settingClone);
+              // }
+
+              // for (const profile of listProfiles) {
+              //   let profileClone = JSON.parse(JSON.stringify(profile))
+              //   delete profileClone._id;
+              //   delete profileClone.id;
+              //   profileClone.machine = newMachineId;
+              //   const profileClone_ = await ProductProfile.create(profileClone);
+              // }
 
 
 
@@ -559,6 +601,7 @@ exports.transferOwnership = async (req, res, next) => {
                 isActive: false,
                 status: parentMachineStatus._id
               });
+              
               if(parentMachineUpdated){
                 let machineAuditLog = createMachineAuditLogRequest(parentMachine, 'Transfer', req.body.loginUser.userId);
                 await postProductAuditLog(machineAuditLog);
