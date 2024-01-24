@@ -514,7 +514,7 @@ exports.transferOwnership = async (req, res, next) => {
           }
 
 
-          if(parentMachine.machineConnections.length > 0){
+          if(parentMachine.machineConnections && parentMachine.machineConnections.length > 0){
             let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
           }
             
