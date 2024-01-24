@@ -564,9 +564,9 @@ exports.postDocument = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
-      if(req.body.drawingMachine) {
-        req.body.machine = req.body.drawingMachine;
-      }
+      // if(req.body.drawingMachine) {
+      //   req.body.machine = req.body.drawingMachine;
+      // }
 
       let files = [];
         
