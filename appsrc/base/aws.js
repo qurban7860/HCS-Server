@@ -361,11 +361,13 @@ const processAWSFile = async (data) => {
   const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
   console.log("desiredQuality", desiredQuality);
 
-  const logoPath = 'logo.svg';
-  const logoBuffer = fs.readFileSync(logoPath);
-  
+  // const logoPath = 'logo.svg';
+  // const logoBuffer = fs.readFileSync(logoPath);
+  // console.log("logoBuffer", logoBuffer);
+  // .composite([{ input: logoBuffer, gravity: 'southeast' }])
+
   return new Promise((resolve, reject) => {
-    sharp(imageBuffer).composite([{ input: logoBuffer, gravity: 'southeast' }])
+    sharp(imageBuffer)
       .jpeg({
         quality: desiredQuality,
         mozjpeg: true

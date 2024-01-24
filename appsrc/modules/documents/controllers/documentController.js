@@ -437,16 +437,19 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       isActive: true,
       isArchived: false,
       eTag: { $exists: false },
-    }).sort({_id: -1}).limit(1);
+    }).sort({_id: -1}).limit(100);
 
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
         try {
           const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
           if (fileData.ETag) {
-            const ETagGenerated = await awsService.generateEtag(fileData.Body);
-            console.log("** ETagGenerated", ETagGenerated);
-            console.log("** fileData.ETag", fileData.ETag);
+            const dataReceived = fileData.Body.toString('utf-8');
+            const base64Data = dataReceived.replace(/^data:[\w/]+;base64,/, '');
+            const imageBuffer = Buffer.from(base64Data, 'base64');
+            const ETagGenerated = await awsService.generateEtag(imageBuffer);
+            console.log("** ETagGenerated @", ETagGenerated);
+            console.log("** fileData.ETag @", fileData.ETag);
             
             await DocumentFile.updateOne(
               { _id: fileObj._id },
