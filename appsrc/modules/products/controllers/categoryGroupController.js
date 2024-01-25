@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { CategoryGroup, ProductModel } = require('../models');
+const { CategoryGroup } = require('../models');
 
 
 
@@ -23,22 +23,21 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };    
 this.populate = [
+  {path: 'category', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
 
 
 exports.getCategoryGroup = async (req, res, next) => {
-  let response = await this.dbservice.getObjectById(CategoryGroup, this.fields, req.params.id, this.populate);
-  if (response) {
-    response = JSON.parse(JSON.stringify(response))
-    let docModelQuery = { category : req.params.id, isArchived:false, isActive:true };
-    let fieldsModels = { name:1 }
-    const models = await this.dbservice.getObjectList(req, ProductModel, fieldsModels, docModelQuery, {}, []);
-    response.models = models;
-    res.json(response);
-  } else {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  this.dbservice.getObjectById(CategoryGroup, this.fields, req.params.id, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
   }
 };
 
@@ -105,7 +104,7 @@ exports.patchCategoryGroup = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if(req.body.isArchived && (req.body.isArchived == true || req.body.isArchived == 'true')) {
-      let productModels_ = await ProductModel.find({category: req.params.id, isActive: true, isArchived: false}).select('name')
+      let productModels_ = await CategoryGroup.find({category: req.params.id, isActive: true, isArchived: false}).select('name')
       const modelNames = productModels_.map(obj => obj.name).join(', ');
       if(productModels_ && productModels_.length > 0) 
         return res.status(StatusCodes.CONFLICT).send(`This cateogry is attached with models: ${modelNames}`);
