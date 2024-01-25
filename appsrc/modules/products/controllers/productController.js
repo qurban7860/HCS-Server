@@ -37,7 +37,6 @@ this.populate = [
       {path: 'status', select: '_id name slug'},
       {path: 'customer', select: '_id clientCode name'},
       {path: 'billingSite', select: ''},
-      {path: 'instalationSite', select: ''},
       {path: 'accountManager', select: '_id firstName lastName'},
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
@@ -127,6 +126,11 @@ exports.getProducts = async (req, res, next) => {
     {path: 'status', select: '_id name slug'},
     {path: 'customer', select: '_id clientCode name'}
   ];
+
+  if(req.query.customer) {
+    listPopulate.push({path: 'instalationSite', select: ''});
+  }
+
   const listFields = 'serialNo name model customer installationDate shippingDate verifications status isActive createdAt';
 
   this.query = req.query != "undefined" ? req.query : {};  
