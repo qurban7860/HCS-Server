@@ -621,7 +621,6 @@ const disconnectConnections = async (req, newMachine) => {
   const requestBodyConnections = req.body.machineConnections;
   if(newMachine && ObjectId.isValid(newMachine)){
     try {
-      console.log("*** disconnectConnections");
       const queryString___ = {
         connectedMachine: { $in: requestBodyConnections },
         disconnectionDate: { $exists: false },
@@ -659,8 +658,18 @@ const disconnectConnections = async (req, newMachine) => {
             await dbservice.patchObject(Product, productObject._id, patchProductObjQuery);
           }
         }
+        await Product.updateMany({_id: {$in: requestBodyConnections}}, {$set: {customer: req.body.customer}});
       }
-  
+
+      // // update previous machine.
+      // await ProductConnection.find();
+      // let previousProductMachine = await Product.find({_id: req.body.machine});
+      // previousProductMachine.machineConnections = previousProductMachine.machineConnections
+      // .filter(item => item.toString() !== connection._id.toString());
+
+      // await Product.updateMany({_id: req.body.machine}, {$set: {customer: req.body.customer}});
+
+
       const queryS = {machine: { '$eq': req.body.machine }, connectedMachine: {'$in': requestBodyConnections}, isActive: true};
       const productConnections = await ProductConnection.find(queryS).select('_id');
       console.log("productConnections", queryS, productConnections);
