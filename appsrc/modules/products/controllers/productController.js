@@ -661,13 +661,6 @@ const disconnectConnections = async (req, newMachine) => {
         await Product.updateMany({_id: {$in: requestBodyConnections}}, {$set: {customer: req.body.customer}});
       }
 
-      // // update previous machine.
-      // await ProductConnection.find();
-      // let previousProductMachine = await Product.find({_id: req.body.machine});
-      // previousProductMachine.machineConnections = previousProductMachine.machineConnections
-      // .filter(item => item.toString() !== connection._id.toString());
-
-      // await Product.updateMany({_id: req.body.machine}, {$set: {customer: req.body.customer}});
 
 
       const queryS = {machine: { '$eq': req.body.machine }, connectedMachine: {'$in': requestBodyConnections}, isActive: true};
@@ -678,6 +671,10 @@ const disconnectConnections = async (req, newMachine) => {
       await ProductConnection.updateMany(queryS, { $set: { machine: newMachine } });
       await dbservice.patchObject(Product, newMachine, { machineConnections: productConn__ });
   
+      // // update previous machine.
+      const listPreviousMacConn = await ProductConnection.find({machine: req.body.machine}).select('_id');
+      await Product.updateMany({_id: req.body.machine}, {$set: {machineConnections: listPreviousMacConn}});
+      
     } catch (error) {
       console.error("Error in disconnectConnections:", error.message);
     }
