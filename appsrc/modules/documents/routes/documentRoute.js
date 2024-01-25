@@ -55,9 +55,9 @@ router.post(`${baseRoute}/`, (req, res, next) => {
         if(req.files && req.files['images']) {
           const documents_ = req.files['images'];
           await Promise.all(documents_.map(async (docx, index) => {
+            docx.eTag = await awsService.generateEtag(docx.path);
             if(configObject){
               await awsService.processImageFile(docx);
-              docx.eTag = await awsService.generateEtag(docx.path);
             }
           }));
         }
@@ -84,9 +84,9 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
         if(req.files && req.files['images']) {
           const documents_ = req.files['images'];
           await Promise.all(documents_.map(async (docx, index) => {
+            docx.eTag = await awsService.generateEtag(docx.path);
             if(configObject){
               await awsService.processImageFile(docx);
-              docx.eTag = await awsService.generateEtag(docx.path);
             }
           }));
         }
