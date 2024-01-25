@@ -659,21 +659,22 @@ const disconnectConnections = async (req, newMachine) => {
           }
         }
         await Product.updateMany({_id: {$in: requestBodyConnections}}, {$set: {customer: req.body.customer}});
+
+
+
+        const queryS = {machine: { '$eq': req.body.machine }, connectedMachine: {'$in': requestBodyConnections}, isActive: true};
+        const productConnections = await ProductConnection.find(queryS).select('_id');
+        const productConn__ = await ProductConnection.find(queryS).select('_id');
+        await ProductConnection.updateMany(queryS, { $set: { machine: newMachine } });
+        await dbservice.patchObject(Product, newMachine, { machineConnections: productConn__ });
+    
+        // // update previous machine.
+        const listPreviousMacConn = await ProductConnection.find({machine: req.body.machine}).select('_id');
+        await Product.updateMany({_id: req.body.machine}, {$set: {machineConnections: listPreviousMacConn}});
       }
 
 
 
-      const queryS = {machine: { '$eq': req.body.machine }, connectedMachine: {'$in': requestBodyConnections}, isActive: true};
-      const productConnections = await ProductConnection.find(queryS).select('_id');
-      console.log("productConnections", queryS, productConnections);
-      const productConn__ = await ProductConnection.find(queryS).select('_id');
-      console.log("productConn__", productConn__, newMachine);
-      await ProductConnection.updateMany(queryS, { $set: { machine: newMachine } });
-      await dbservice.patchObject(Product, newMachine, { machineConnections: productConn__ });
-  
-      // // update previous machine.
-      const listPreviousMacConn = await ProductConnection.find({machine: req.body.machine}).select('_id');
-      await Product.updateMany({_id: req.body.machine}, {$set: {machineConnections: listPreviousMacConn}});
       
     } catch (error) {
       console.error("Error in disconnectConnections:", error.message);
