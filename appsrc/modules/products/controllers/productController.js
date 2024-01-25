@@ -37,7 +37,6 @@ this.populate = [
       {path: 'status', select: '_id name slug'},
       {path: 'customer', select: '_id clientCode name'},
       {path: 'billingSite', select: ''},
-      {path: 'instalationSite', select: ''},
       {path: 'accountManager', select: '_id firstName lastName'},
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
@@ -122,6 +121,18 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
+  const listPopulate = [
+    {path: 'machineModel', select: '_id name category'},
+    {path: 'status', select: '_id name slug'},
+    {path: 'customer', select: '_id clientCode name'}
+  ];
+
+  if(req.query.customer) {
+    listPopulate.push({path: 'instalationSite', select: ''});
+  }
+
+  const listFields = 'serialNo name model customer installationDate shippingDate verifications status isActive createdAt';
+
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
   
@@ -202,15 +213,13 @@ exports.getProducts = async (req, res, next) => {
   }
 
   if(!this.query.customer) {
-    //TODO: should be removed in feature.
-    req.body.pageSize = 3000;
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     let customerIds = listCustomers.map((c)=>c._id); 
     this.query.customer = { $in: customerIds };
   }
 
 
-  dbservice.getObjectList(req, Product, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
       logger.error(new Error(error));
@@ -220,17 +229,13 @@ exports.getProducts = async (req, res, next) => {
         let index = 0;
         let filteredProducts = [];
         for(let product of products) {
-
           if(product && product.machineModel && product.machineModel.category && 
-            product.machineModel.category.connections) {
-            // product.machineProfile = await ProductProfile.findOne({type:"MANUFACTURE",machine:product.id});        
+            product.machineModel.category.connections) {   
             filteredProducts.push(product);
-          
           }
 
         }
         res.json(filteredProducts);
-
       }
       else {
         res.json(products);
@@ -497,24 +502,33 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
 
-        if (parentMachine) {
-          
+        if (parentMachine) {       
           req.body.serialNo = parentMachine.serialNo;
           req.body.machineModel = parentMachine.machineModel;
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
-          
-          
-          if(parentMachine.machineConnections.length > 0){
+
+          // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
+          const parentMachineConnections = parentMachine.machineConnections;
+          const requestBodyConnections = req.body.machineConnections;
+          if(parentMachineConnections && parentMachineConnections.length > 0 && requestBodyConnections && requestBodyConnections.length > 0) {
+            const filteredConnections = parentMachineConnections.filter(connection => !requestBodyConnections.includes(connection));
+            parentMachine.machineConnections = filteredConnections;
+          }
+
+          if(parentMachine.machineConnections && parentMachine.machineConnections.length > 0){
             let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
           }
-            
-          // update status of the new(transferred) machine
-          let queryString = { slug: 'intransfer'}
-          let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
-          if(machineStatus && !req.body.status){
-            req.body.status = machineStatus._id;
+          
+          
+          if(!req.body.status) {
+            // update status of the new(transferred) machine
+            let queryString = { slug: 'intransfer'}
+            let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
+            if(machineStatus){
+              req.body.status = machineStatus._id;
+            }
           }
           
           queryString = { slug: 'transferred'}
@@ -524,33 +538,54 @@ exports.transferOwnership = async (req, res, next) => {
           } else {
             const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
             if (transferredMachine) {
-              let query___ = {machine: req.body.machine, isArchived: false, isActive: true};
-
-              let listSettings = await ProductTechParamValue.find(query___);
-              let listProfiles = await ProductProfile.find(query___);
-
-              // let listDocuments = await Document.find(query___);
-              // let listDrawings = await ProductDrawing.find(query___);
-
+              const whereClause = {machine: req.body.machine, isArchived: false, isActive: true};
+              const setClause = {machine: transferredMachine._id};
+              // await disconnectConnections(req, transferredMachine._id);
               
-              let newMachineId = transferredMachine._id;
-              for (const setting of listSettings) {
-                let settingClone = JSON.parse(JSON.stringify(setting))
-                delete settingClone._id;
-                delete settingClone.id;
-                settingClone.machine = newMachineId;
-                const settingClone_ = await ProductTechParamValue.create(settingClone);
+              // Step 2 
+              if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
+                console.log("req.body.isAllSettings", req.body.isAllSettings);
+                const responseProductTechParamValue = await ProductTechParamValue.updateMany(whereClause, setClause);
+                console.log("responseProductTechParamValue", responseProductTechParamValue);
               }
 
-              for (const profile of listProfiles) {
-                let profileClone = JSON.parse(JSON.stringify(profile))
-                delete profileClone._id;
-                delete profileClone.id;
-                profileClone.machine = newMachineId;
-                const profileClone_ = await ProductProfile.create(profileClone);
+              if(req.body.isAllTools && (req.body.isAllTools == 'true' || req.body.isAllTools == true)){              
+                console.log("req.body.isAllTools", req.body.isAllTools);
+                const responseProductToolInstalled = await ProductToolInstalled.updateMany(whereClause, setClause);
+                console.log("responseProductToolInstalled", responseProductToolInstalled);
               }
 
+              if(req.body.isAllDrawings && (req.body.isAllDrawings == 'true' || req.body.isAllDrawings == true)){              
+                console.log("req.body.isAllDrawings", req.body.isAllDrawings);
+                const responseProductDrawing = await ProductDrawing.updateMany(whereClause, setClause);
+                console.log("responseProductDrawing", responseProductDrawing);
+              }
 
+              if(req.body.isAllProfiles && (req.body.isAllProfiles == 'true' || req.body.isAllProfiles == true)){              
+                console.log("req.body.isAllProfiles", req.body.isAllProfiles);
+                const responseProductProfile = await ProductProfile.updateMany(whereClause, setClause);
+                console.log("responseProductProfile", responseProductProfile);
+              }
+
+              if(req.body.isAllINIs && (req.body.isAllINIs == 'true' || req.body.isAllINIs == true)){              
+                console.log("req.body.isAllINIs", req.body.isAllINIs);
+                const responseProductConfiguration = await ProductConfiguration.updateMany(whereClause, setClause);
+                console.log("responseProductConfiguration", responseProductConfiguration);
+              }
+
+              // Step 3 List document for selection to transfer to new machine id
+              if(req.body.machineDocuments && req.body.machineDocuments.length > 0) {
+                console.log("req.body.machineDocuments", req.body.machineDocuments);
+                const responseDocument = await Document.updateMany({_id: {$in: req.body.machineDocuments}}, setClause);
+                console.log("responseDocument", responseDocument);
+              }
+
+              // Step 4 List of existing connected machines to choose to move with new machine id. 
+              if(req.body.machineConnections && req.body.machineConnections.length > 0) {
+                console.log("req.body.machineConnections", req.body.machineConnections);
+                const responseMachineConnection = await ProductConnection.updateMany({machine: {$in: req.body.machineConnections}}, setClause);
+                console.log("responseMachineConnection", responseMachineConnection);
+              }
 
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
@@ -559,6 +594,7 @@ exports.transferOwnership = async (req, res, next) => {
                 isActive: false,
                 status: parentMachineStatus._id
               });
+              
               if(parentMachineUpdated){
                 let machineAuditLog = createMachineAuditLogRequest(parentMachine, 'Transfer', req.body.loginUser.userId);
                 await postProductAuditLog(machineAuditLog);
@@ -576,6 +612,66 @@ exports.transferOwnership = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
     }
   }
+};
+
+const disconnectConnections = async (req, newMachine) => {
+  const requestBodyConnections = req.body.machineConnections;
+  if(newMachine && ObjectId.isValid(newMachine)){
+    try {
+      console.log("*** disconnectConnections");
+      const queryString___ = {
+        connectedMachine: { $in: requestBodyConnections },
+        disconnectionDate: { $exists: false },
+        isActive: true,
+        // machine: { '$ne': req.body.machine }
+      };
+      console.log("queryString___", queryString___);
+      const machineWithConnections = await ProductConnection
+        .find(queryString___)
+        .select('machine connectedMachine serialNo')
+        .populate([
+          { path: 'machine', select: 'serialNo' },
+          { path: 'connectedMachine', select: 'serialNo' }
+        ]);
+  
+      if (machineWithConnections.length > 0) {
+        for (const connection of machineWithConnections) {
+          console.log("Serial No:", connection.machine.serialNo);
+          console.log("Connections:", connection.connectedMachine.serialNo);
+  
+          const productObject = await Product
+            .findOne({ machineConnections: connection._id })
+            .select('_id machineConnections');
+  
+          if (productObject && productObject.machineConnections.length > 0) {
+            connection.machineConnections = productObject.machineConnections
+              .filter(item => item.toString() !== connection._id.toString());
+  
+            const updateValue = { disconnectionDate: new Date(), isActive: false };
+            console.log("updating.... ProductConnection", connection._id, updateValue);
+            console.log("updating.... Product", productObject._id, {machineConnections: connection.machineConnections});
+  
+            await dbservice.patchObject(ProductConnection, connection._id, updateValue);
+            await dbservice.patchObject(Product, productObject._id, { machineConnections: connection.machineConnections });
+          }
+        }
+      }
+  
+      const queryS = {machine: { '$eq': req.body.machine }, connectedMachine: {'$in': requestBodyConnections}, isActive: true};
+      const productConnections = await ProductConnection.find(queryS).select('_id');
+      console.log("productConnections", queryS, productConnections);
+      const productConn__ = await ProductConnection.find(queryS).select('_id');
+      console.log("productConn__", productConn__);
+      await ProductConnection.updateMany(queryS, { $set: { machine: req.body.newMachine } });
+      await dbservice.patchObject(Product, req.body.newMachine, { machineConnections: productConn__ });
+  
+    } catch (error) {
+      console.error("Error in disconnectConnections:", error.message);
+    }
+  } else {
+    console.log("** invalid new machine id");
+  }
+
 };
 
 function isNonTransferrableMachine(status) {

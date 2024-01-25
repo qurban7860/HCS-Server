@@ -180,13 +180,13 @@ exports.getCustomers = async (req, res, next) => {
 
   //TODO: to remove this in feature.
   req.body.pageSize = 2000;
+  console.log("this.query", this.query);
   this.dbservice.getObjectList(req, Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      // console.log('respomse-------------------->', response);
       res.json(response);
     }
   }
