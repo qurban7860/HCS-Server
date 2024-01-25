@@ -508,6 +508,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
+          if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
 
           // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
           const parentMachineConnections = parentMachine.machineConnections;
@@ -540,7 +541,8 @@ exports.transferOwnership = async (req, res, next) => {
             if (transferredMachine) {
               const whereClause = {machine: req.body.machine, isArchived: false, isActive: true};
               const setClause = {machine: transferredMachine._id};
-              // await disconnectConnections(req, transferredMachine._id);
+              
+              //await disconnectConnections(req, transferredMachine._id);
               
               // Step 2 
               if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
@@ -649,10 +651,11 @@ const disconnectConnections = async (req, newMachine) => {
   
             const updateValue = { disconnectionDate: new Date(), isActive: false };
             console.log("updating.... ProductConnection", connection._id, updateValue);
-            console.log("updating.... Product", productObject._id, {machineConnections: connection.machineConnections});
-  
             await dbservice.patchObject(ProductConnection, connection._id, updateValue);
-            await dbservice.patchObject(Product, productObject._id, { machineConnections: connection.machineConnections });
+
+            const patchProductObjQuery = { machineConnections: connection.machineConnections, customer: req.body.customer };
+            console.log("updating.... Product", productObject._id, patchProductObjQuery);
+            await dbservice.patchObject(Product, productObject._id, patchProductObjQuery);
           }
         }
       }
