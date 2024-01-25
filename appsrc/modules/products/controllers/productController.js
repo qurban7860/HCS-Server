@@ -128,7 +128,7 @@ exports.getProducts = async (req, res, next) => {
   ];
 
   if(req.query.customer) {
-    listPopulate.add({path: 'instalationSite', select: ''});
+    listPopulate.push({path: 'instalationSite', select: ''});
   }
 
   const listFields = 'serialNo name model customer installationDate shippingDate verifications status isActive createdAt';
