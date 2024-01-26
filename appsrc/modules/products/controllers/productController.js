@@ -416,9 +416,6 @@ const postConnectedProductAsync = async (req, childMachine, listMachineCategorie
         newConnectedMachines: null
       }
     };
-
-    console.log("childReq", childReq.body);
-
     return exports.postConnectedProduct(childReq);
   } 
 };
