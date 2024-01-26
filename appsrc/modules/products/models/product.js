@@ -88,6 +88,9 @@ const docSchema = new Schema({
 
     supportExpireDate: { type: Date },
     // supportExpireDate date
+    
+    manufactureDate: { type: Date },
+    // manufactureDate date
 
     shippingDate: { type: Date },
     // shipping date
