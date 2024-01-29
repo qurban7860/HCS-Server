@@ -581,6 +581,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
+          req.body.manufactureDate = parentMachine.manufactureDate;
           if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
 
           // // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
