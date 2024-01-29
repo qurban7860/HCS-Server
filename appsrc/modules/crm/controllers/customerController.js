@@ -44,7 +44,10 @@ this.populate = [
 
 
 this.populateList = [
-  {path: 'mainSite', select: 'address name phone email'}
+  {path: 'mainSite', select: 'address name phone email'},
+  {path: 'accountManager', select: 'firstName lastName phone'},
+  {path: 'supportManager', select: 'firstName lastName phone'},
+  {path: 'projectManager', select: 'firstName lastName phone'}
 ];
 
 

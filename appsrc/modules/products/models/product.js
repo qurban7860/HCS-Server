@@ -10,7 +10,6 @@ const docSchema = new Schema({
     
     serialNo: { type: String , required: true },
     // Serial No of machine
-  //
 
     parentMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // parent machine id
