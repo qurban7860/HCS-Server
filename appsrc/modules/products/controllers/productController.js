@@ -56,6 +56,25 @@ exports.getProduct = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
+      if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin")){
+        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+        if(user && ((user.regions && user.regions.length > 0)) ) {
+          if(Array.isArray(user.regions) && user.regions.length>0 ) {
+            let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+            let countries_ = [].concat(...countries.map(obj => obj.countries));
+            let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+            const countryCodesArray = country_names.map(node => node.country_name);
+            if(countryCodesArray && countryCodesArray.length > 0) {
+              let customerObj = await Customer.findOne({_id: machine?.customer}).select('mainSite').populate({path:'mainSite', select: 'address'}).lean();
+              if(!countryCodesArray.includes(customerObj.mainSite?.address?.country) || !customerObj.mainSite?.address?.country) {
+                return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+              }
+            }
+          }
+        }
+      }
+      
+
       machine = JSON.parse(JSON.stringify(machine));
       
       if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
