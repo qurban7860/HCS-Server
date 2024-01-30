@@ -333,29 +333,6 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin")){
-      if(!req.body.mainSite?.address?.country) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
-      }
-      let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers').lean();
-      if(user && ((user.regions && user.regions.length > 0)) ) {
-        if(Array.isArray(user.regions) && user.regions.length>0 ) {
-          let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-          let countries_ = [].concat(...countries.map(obj => obj.countries));
-          let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
-          const countryCodesArray = country_names.map(node => node.country_name);
-          if(countryCodesArray && countryCodesArray.length > 0 && req.body.mainSite?.address?.country) {
-            console.log("countryCodesArray", countryCodesArray, req.body.mainSite?.address?.country);
-            if(!countryCodesArray.includes(req.body.mainSite?.address?.country)) {
-              return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
-            }
-          }
-        }
-
-
-      }
-    }
-
     let CustomerObj;
     if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
       let clientCode = "^"+req.body.clientCode.trim()+"$";
