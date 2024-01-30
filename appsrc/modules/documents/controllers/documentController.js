@@ -148,12 +148,13 @@ exports.getDocuments = async (req, res, next) => {
         // this.query.machine = { $exists : false }; 
 
         if(!listCustomers || listCustomers.length == 0) {
+          if(!this.query.$or) {
+            this.query.$or = [];
+          }
           this.query.$or = [
             {customer: { '$exists': true }}, 
             {machine:{ '$exists': true }}
           ];
-        } else {
-          this.query.$or = [];
         }
       }
       
