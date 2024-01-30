@@ -18,6 +18,10 @@ module.exports = (req, res, next) => {
         if (!loggedInUser) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.loggedInUserCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer not found!', true));
         } else { 
+          if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && (req.body.isArchived === true || req.body.isArchived === 'true')){ 
+            return res.status(StatusCodes.BAD_REQUEST).send("Only administration can archive a record!");
+          }
+          
           const isSuperAdmin = loggedInUser?.roles?.some(role => role.roleType === 'SuperAdmin');
           const disableDelete = loggedInUser?.roles?.some(role => role?.disableDelete === true);
           if(disableDelete){
