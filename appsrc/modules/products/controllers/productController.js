@@ -353,6 +353,34 @@ exports.postProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let listNewConnection = [];
+    if (req.body.newConnectedMachines && req.body.newConnectedMachines.length > 0) {
+      let listMachineCategories = await ProductCategory.find({connections: true, isActive: true, isArchived: false}).select('_id').lean();
+      listMachineCategories = listMachineCategories.map(item => item._id.toString());
+      let listMachineModels = null;
+      if(listMachineCategories?.length > 0) {
+        listMachineModels = await ProductModel.find({category: {$in: listMachineCategories}}).select('_id').lean();
+        listMachineModels = listMachineModels.map(item => item._id.toString());
+      }
+      if(listMachineModels?.length > 0){
+        await Promise.all(req.body.newConnectedMachines.map(childMachine =>
+          postConnectedProductAsync(req, childMachine, listMachineCategories, listMachineModels) 
+        ))
+          .then((results) => {
+            listNewConnection.push(...results);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+          const filteredIds = await listNewConnection.map(item => item?._id);
+      
+          if(req.body.machineConnections === undefined) {
+            req.body.machineConnections = [];
+          }
+          req.body.machineConnections.push(...filteredIds);
+      }
+    }
+
     let machineConnections = req.body.machineConnections;
     req.body.machineConnections = [];
     dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -361,7 +389,6 @@ exports.postProduct = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
         let machineAuditLog = createMachineAuditLogRequest(machine, 'Create', req.body.loginUser.userId)
@@ -372,6 +399,51 @@ exports.postProduct = async (req, res, next) => {
         
         res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
+    }
+  }
+};
+
+const postConnectedProductAsync = async (req, childMachine, listMachineCategories, listMachineModels) => {
+  if(listMachineCategories.includes(childMachine.category?.toString()) && listMachineModels.includes(childMachine.model?.toString())) {
+    const childReq = {
+      ...req,
+      body: {
+        ...req.body,
+        ...childMachine,
+        loginUser: req.body.loginUser,
+        customer: req.body.customer,
+        machineConnections: childMachine.machineConnections,
+        newConnectedMachines: null
+      }
+    };
+    return exports.postConnectedProduct(childReq);
+  } 
+};
+
+exports.postConnectedProduct = async (req) => {
+  const errors = validationResult(req);
+  let ProductObj = {};
+
+  if (!errors.isEmpty()) {
+    console.log("errors machine patch request", errors);
+    return ProductObj;
+  } else {
+    let machineConnections = req.body.machineConnections;
+    req.body.machineConnections = [];
+
+    try {
+      ProductObj = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+      let machineAuditLog = createMachineAuditLogRequest(ProductObj, 'Create', req.body.loginUser.userId);
+      await postProductAuditLog(machineAuditLog);
+
+      if (ProductObj && Array.isArray(machineConnections) && machineConnections.length > 0) {
+        ProductObj = await connectMachines(ProductObj.id, machineConnections);
+      }
+
+      return ProductObj;
+    } catch (error) {
+      console.error("Error in postConnectedProduct:", error);
+      return ProductObj;
     }
   }
 };
@@ -509,6 +581,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
+          req.body.manufactureDate = parentMachine.manufactureDate;
           if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
 
           // // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
@@ -1043,7 +1116,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
  
   
@@ -1094,6 +1167,10 @@ function getDocumentFromReq(req, reqType){
   if ("billingSite" in req.body){
     doc.billingSite = billingSite;
   }
+  if ("manufactureDate" in req.body){
+    doc.manufactureDate = manufactureDate;
+  }
+  
   if ("installationDate" in req.body){
     doc.installationDate = installationDate;
   }
