@@ -147,11 +147,8 @@ exports.getDocuments = async (req, res, next) => {
         // this.query.customer = { $exists : false }; 
         // this.query.machine = { $exists : false }; 
 
+        console.log("here");
         if(!listCustomers || listCustomers.length == 0) {
-          if(!this.query.$or || !this.query.$or.length == 0) {
-            console.log("length 0");
-            this.query.$or = [];
-          }
           this.query.$or = [
             {customer: { '$exists': true }}, 
             {machine:{ '$exists': true }}
@@ -214,6 +211,9 @@ exports.getDocuments = async (req, res, next) => {
       andString.push({ machine: {$in: listProducts} });
     }
     if(andString && andString.length > 0) {
+      if(!this.query.$or || !this.query.$or.length == 0) {
+        this.query.$or = [];
+      }
       this.query.$or.push(...andString);
     }
 
