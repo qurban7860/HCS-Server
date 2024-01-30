@@ -287,12 +287,6 @@ exports.postCustomer = async (req, res, next) => {
           }
         }
       }
-
-      if(user.customers && user.customers.length > 0) {
-        if(!user.customers.includes(req.body.customer)) {
-          return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your customer based on the assigned customer.");
-        }
-      }
     }
 
     if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
@@ -358,11 +352,7 @@ exports.patchCustomer = async (req, res, next) => {
           }
         }
 
-        if(user.customers && user.customers.length > 0) {
-          if(!user.customers.includes(req.body.customer)) {
-            return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your customer based on the assigned customer.");
-          }
-        }
+
       }
     }
 
