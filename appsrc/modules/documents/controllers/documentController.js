@@ -208,8 +208,10 @@ exports.getDocuments = async (req, res, next) => {
       andString.push({ machine: {$in: listProducts} });
     }
     if(andString && andString.length > 0) {
-      this.query.$AND = andString;
+      this.query.$or.push(...andString);
     }
+
+    console.log("listProducts", listProducts, JSON.stringify(this.query));
 
 
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
