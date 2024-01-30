@@ -21,6 +21,9 @@ const {  } = require('../../products/models');
 
 const { Customer, CustomerSite } = require('../../crm/models');
 const { Product, MachineModel, ProductDrawing } = require('../../products/models');
+const { SecurityUser } = require('../../security/models');
+const { Region } = require('../../regions/models');
+const { Country, Config } = require('../../config/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -91,6 +94,28 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
+  let listCustomers;
+  let listProducts;
+  
+  if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin")){
+    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+    if(user && ((user.regions && user.regions.length > 0)) ) {
+      if(Array.isArray(user.regions) && user.regions.length>0 ) {
+        let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+        let countries_ = [].concat(...countries.map(obj => obj.countries));
+        let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+        const countryCodesArray = country_names.map(node => node.country_name);
+        if(countryCodesArray && countryCodesArray.length > 0) {
+          const mainSitesList = await CustomerSite.find({"address.country": {$in: countryCodesArray}, isActive: true, isArchived: false}).select('_id').lean(); 
+          listCustomers = await Customer.find({mainSite: {$in: mainSitesList}, isActive: true, isArchived: false}).select('_id');
+          listProducts = await Product.find({customer: {$in: listCustomers}, isActive: true, isArchived: false}).select('_id');
+        }
+      }
+    }
+  }
+
+
+
   let isVersionNeeded = true;
   let isDrawing = false;
   try {
@@ -173,6 +198,20 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }
     ];
+
+    let andString = [];
+    if(listCustomers && listCustomers.length > 0) {
+      andString.push({ customer: {$in: listCustomers} });
+    }
+
+    if(listProducts && listProducts.length > 0) {
+      andString.push({ machine: {$in: listProducts} });
+    }
+    if(andString && andString.length > 0) {
+      this.query.$AND = andString;
+    }
+
+
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
