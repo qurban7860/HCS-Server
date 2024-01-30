@@ -352,7 +352,7 @@ exports.patchCustomer = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && (req.body.isArchived === true || req.body.isArchived === 'true')){ 
-      return res.status(StatusCodes.FORBIDDEN).send("Only administration can archive a record!");
+      return res.status(StatusCodes.BAD_REQUEST).send("Only administration can archive a record!");
     }
     let CustomerObj;
     if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
@@ -372,7 +372,7 @@ exports.patchCustomer = async (req, res, next) => {
         let customer = await Customer.findById(req.params.id);
         if (customer.type === 'SP') {
           const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, message, true));
         }
       }
 
