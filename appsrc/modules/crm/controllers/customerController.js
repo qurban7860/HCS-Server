@@ -73,6 +73,28 @@ exports.getCustomer = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      
+      console.log("abcd");
+      console.log("req.body.loginUser?.roleTypes", req.body.loginUser?.roleTypes);
+    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin")){
+      console.log("abc");
+      let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+      if(user && ((user.regions && user.regions.length > 0)) ) {
+        if(Array.isArray(user.regions) && user.regions.length>0 ) {
+          let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+          let countries_ = [].concat(...countries.map(obj => obj.countries));
+          let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+          const countryCodesArray = country_names.map(node => node.country_name);
+          if(countryCodesArray && countryCodesArray.length > 0) {
+            if(!countryCodesArray.includes(response.mainSite?.address?.country) || !response.mainSite?.address?.country) {
+              return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+            }
+          }
+        }
+      }
+    }
+
+
       const customer = JSON.parse(JSON.stringify(response));    
       if(validFlag == 'extended'){  
         if(!(_.isEmpty(customer))) {
