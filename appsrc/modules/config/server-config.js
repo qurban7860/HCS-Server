@@ -85,6 +85,7 @@ class App {
     
     this.app.use(cors({
         origin: function (origin, callback) {
+          console.log("origin", origin);
           if (!allowedOrigins || allowedOrigins.includes(origin)) {
               callback(null, true);
           } else {
