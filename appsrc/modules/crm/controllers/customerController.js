@@ -351,6 +351,9 @@ exports.patchCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && (req.body.isArchived === true || req.body.isArchived === 'true')){ 
+      return res.status(StatusCodes.FORBIDDEN).send("Only administration can archive a record!");
+    }
     let CustomerObj;
     if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
       let clientCode = "^"+req.body.clientCode.trim()+"$";
