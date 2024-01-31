@@ -74,8 +74,9 @@ exports.getCustomer = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
+      //region restriction
       if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
-        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers').lean();
+        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
         if(user && ((user.regions && user.regions.length > 0)) ) {
           if(Array.isArray(user.regions) && user.regions.length>0 ) {
             let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
@@ -90,10 +91,27 @@ exports.getCustomer = async (req, res, next) => {
           }
         }
 
+        //customer restriction
+        let customerRestricted = true, implementRestrictionMachine = true;
         if(user && ((user.customers && user.customers.length > 0)) ) {
-           if(!user.customers.includes(response._id)) {
-            return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+          if(user.customers.toString().includes(response._id.toString())) {
+            // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+            customerRestricted = false;
            }
+        }
+
+        //machine restriction
+        if(user && ((user.machines && user.machines.length > 0)) ) {
+          let listProducts = await Product.find({_id: {$in: user.machines}}).select('customer').lean();
+          const listCustomers = listProducts.map(item => item.customer.toString());
+
+          if(listCustomers.includes(response._id.toString())) {
+            implementRestrictionMachine = false;
+          }
+        }
+
+        if(customerRestricted && implementRestrictionMachine) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
         }
       }
 
@@ -156,7 +174,7 @@ exports.getCustomers = async (req, res, next) => {
 
   if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
       
-    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers').lean();
+    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
     if(user) {
       let finalQuery = {
         $or: []
@@ -195,6 +213,14 @@ exports.getCustomers = async (req, res, next) => {
 
       if(Array.isArray(user.customers) && user.customers.length>0) {
         let idQuery = {$in:user.customers}
+        finalQuery.$or.push({ _id: idQuery});
+      }
+
+      if(Array.isArray(user.machines) && user.machines.length>0) {
+        let listProducts = await Product.find({_id: {$in: user.machines}}).select('customer').lean();
+        const listCustomers = listProducts.map(item => item.customer);
+        let idQuery = {$in: listCustomers}
+        console.log("idQuery", idQuery);
         finalQuery.$or.push({ _id: idQuery});
       }
 

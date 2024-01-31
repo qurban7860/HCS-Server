@@ -56,7 +56,7 @@ exports.getProduct = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-            if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){
+      if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
         let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
         if(user && ((user.regions && user.regions.length > 0)) ) {
           if(Array.isArray(user.regions) && user.regions.length>0 ) {
@@ -67,11 +67,12 @@ exports.getProduct = async (req, res, next) => {
             if(countryCodesArray && countryCodesArray.length > 0) {
               let customerObj = await Customer.findOne({_id: machine?.customer}).select('mainSite').populate({path:'mainSite', select: 'address'}).lean();
               if(!countryCodesArray.includes(customerObj.mainSite?.address?.country) || !customerObj.mainSite?.address?.country) {
-                return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+                return res.status(StatusCodes.BAD_REQUEST).send("The machine is not authorized according to your assigned region.");
               }
             }
           }
         }
+        
       }
       
 
