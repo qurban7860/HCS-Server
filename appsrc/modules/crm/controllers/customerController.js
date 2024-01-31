@@ -286,7 +286,7 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin")){
+          if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){
       if(!req.body.mainSite?.address?.country) {
         return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
       }
