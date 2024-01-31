@@ -5,6 +5,8 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 
 const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const roleCheck = require('../../../middleware/role-check');
+
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
@@ -23,7 +25,7 @@ const router = express.Router();
 const baseRoute = `/document`;
 
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth, roleCheck, checkCustomer);
 
 // - /api/1.0.0/document/documents/getAllDocumentsAgainstFilter/
 router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getImagesAgainstDocuments);
