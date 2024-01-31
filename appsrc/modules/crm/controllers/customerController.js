@@ -73,8 +73,9 @@ exports.getCustomer = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){ 
-        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+
+      if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers').lean();
         if(user && ((user.regions && user.regions.length > 0)) ) {
           if(Array.isArray(user.regions) && user.regions.length>0 ) {
             let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
@@ -87,6 +88,12 @@ exports.getCustomer = async (req, res, next) => {
               }
             }
           }
+        }
+
+        if(user && ((user.customers && user.customers.length > 0)) ) {
+           if(!user.customers.includes(response._id)) {
+            return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+           }
         }
       }
 
@@ -147,8 +154,9 @@ exports.getCustomers = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  if(!this.query.unfiltered && this.query.type !== 'SP'){
-    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+  if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+      
+    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers').lean();
     if(user) {
       let finalQuery = {
         $or: []
@@ -170,6 +178,8 @@ exports.getCustomers = async (req, res, next) => {
           if(Array.isArray(countriesDB) && countriesDB.length>0)
             countryNames = countriesDB.map((c)=>c.country_name);
         }
+
+        console.log("***countryNames", countryNames);
         
         if(Array.isArray(countryNames) && countryNames.length>0) {
           customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
@@ -286,26 +296,26 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-          if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){
-      if(!req.body.mainSite?.address?.country) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
-      }
-      let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
-      if(user && ((user.regions && user.regions.length > 0)) ) {
-        if(Array.isArray(user.regions) && user.regions.length>0 ) {
-          let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-          let countries_ = [].concat(...countries.map(obj => obj.countries));
-          let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
-          const countryCodesArray = country_names.map(node => node.country_name);
-          if(countryCodesArray && countryCodesArray.length > 0 && req.body.mainSite?.address?.country) {
-            console.log("countryCodesArray", countryCodesArray, req.body.mainSite?.address?.country);
-            if(!countryCodesArray.includes(req.body.mainSite?.address?.country)) {
-              return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
-            }
-          }
-        }
-      }
-    }
+    //       if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){
+    //   if(!req.body.mainSite?.address?.country) {
+    //     return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+    //   }
+    //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+    //   if(user && ((user.regions && user.regions.length > 0)) ) {
+    //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
+    //       let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+    //       let countries_ = [].concat(...countries.map(obj => obj.countries));
+    //       let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+    //       const countryCodesArray = country_names.map(node => node.country_name);
+    //       if(countryCodesArray && countryCodesArray.length > 0 && req.body.mainSite?.address?.country) {
+    //         console.log("countryCodesArray", countryCodesArray, req.body.mainSite?.address?.country);
+    //         if(!countryCodesArray.includes(req.body.mainSite?.address?.country)) {
+    //           return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
 
     if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
       let clientCode = "^"+req.body.clientCode.trim()+"$";
