@@ -122,28 +122,6 @@ exports.patchCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const Customer_mainSite = await Customer.findOne({_id: req.params.customerId}).select('mainSite').lean();
-    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req.params.id == Customer_mainSite.mainSite){
-      console.log("req.params.id", req.params.id);
-      if(!req.body.address?.country) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
-      }
-      let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers').lean();
-      if(user && ((user.regions && user.regions.length > 0)) ) {
-        if(Array.isArray(user.regions) && user.regions.length>0 ) {
-          let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-          let countries_ = [].concat(...countries.map(obj => obj.countries));
-          let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
-          const countryCodesArray = country_names.map(node => node.country_name);
-          if(countryCodesArray && countryCodesArray.length > 0 && req.body.address?.country) {
-            if(!countryCodesArray.includes(req.body.address?.country)) {
-              return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
-            }
-          }
-        }
-      }
-    }
-
     if("isArchived" in req.body){
       // check if site exiists in customer schema
       let queryString  = { _id: req.params.customerId, mainSite: req.params.id };
