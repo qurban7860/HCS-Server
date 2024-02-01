@@ -103,12 +103,12 @@ exports.patchSecurityRole = async (req, res, next) => {
       let existingRole = await this.dbservice.getObjectById(SecurityRole, this.fields, req.params.id, this.populate); 
       if(!(_.isEmpty(existingRole))) {
         if(existingRole.disableDelete){
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Selected role cannot be deleted!", true));
+          return res.status(StatusCodes.BAD_REQUEST).send("Selected role cannot be deleted!");
         } else{
           let queryString = { roles: req.params.id };
           let existingRoleInUse = await this.dbservice.getObject(SecurityUser, queryString, this.populate);
           if(existingRoleInUse){
-            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Roles assigned to user(s) cannot be deleted!", true));
+            return res.status(StatusCodes.BAD_REQUEST).send("Roles assigned to user(s) cannot be deleted!");
           }
         }
       } else {
