@@ -254,6 +254,7 @@ async function applyUserFilter(req) {
       }
     }
   } else {
+    delete req.query.unfiltered;
     return null;
   }
 }
@@ -270,13 +271,15 @@ exports.getCustomers = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-    const finalQuery = await applyUserFilter(req);
-    if(finalQuery){
-      this.query = {
-        ...this.query,
-        ...finalQuery
-      }
+  const finalQuery = await applyUserFilter(req);
+  if(finalQuery){
+    this.query = {
+      ...this.query,
+      ...finalQuery
     }
+  }
+
+  delete req.query.unfiltered;
 
 
   // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
