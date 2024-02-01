@@ -7,9 +7,9 @@ module.exports = async (req, res, next) => {
     !req.body.loginUser?.roleTypes?.includes("developer")
   ) {
     if (req.method === 'PATCH' && (req.body.isArchived == true || req.body.isArchived == 'true')) {
-      return res.status(400).send("Unauthorized to execute archived functionality.");
+      return res.status(401).send("Unauthorized to execute archived functionality.");
     } else if(req.method === 'DELETE') {
-      return res.status(400).send("Unauthorized to execute delete functionality.");
+      return res.status(401).send("Unauthorized to execute delete functionality.");
     }
   }
 
