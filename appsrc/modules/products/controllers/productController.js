@@ -56,6 +56,43 @@ exports.getProduct = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
+      if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+        if(user && ((user.regions && user.regions.length > 0)) ) {
+          if(Array.isArray(user.regions) && user.regions.length>0 ) {
+            let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+            let countries_ = [].concat(...countries.map(obj => obj.countries));
+            let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+            const countryCodesArray = country_names.map(node => node.country_name);
+            if(countryCodesArray && countryCodesArray.length > 0) {
+              let customerObj = await Customer.findOne({_id: machine?.customer}).select('mainSite').populate({path:'mainSite', select: 'address'}).lean();
+              if(!countryCodesArray.includes(customerObj.mainSite?.address?.country) || !customerObj.mainSite?.address?.country) {
+                return res.status(StatusCodes.BAD_REQUEST).send("The machine is not authorized according to your assigned region.");
+              }
+            }
+          }
+        }
+
+        //customer restriction
+        let customerRestricted = true, implementRestrictionMachine = true;
+        if(user && ((user.customers && user.customers.length > 0)) ) {
+          let listProducts = await Product.find({customer: {$in: user.customers}}).select('').lean();
+          let listProductsIds = listProducts.map(node => node._id);
+          if(listProductsIds.toString().includes(response._id.toString())) {
+            // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+            customerRestricted = false;
+           }
+        }
+
+        //machine restriction
+        if(user && ((user.machines && user.machines.length > 0)) ) {
+          if(user.machines.includes(response._id.toString())) {
+            implementRestrictionMachine = false;
+          }
+        }
+      }
+      
+
       machine = JSON.parse(JSON.stringify(machine));
       
       if(machine && Array.isArray(machine.machineConnections) && machine.machineConnections.length>0) {
@@ -148,7 +185,7 @@ exports.getProducts = async (req, res, next) => {
     delete this.query.customerArr;
   }
 
-  if(!this.query.unfiltered){
+  if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
     let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
     if(user) {
       let finalQuery = {
@@ -172,16 +209,20 @@ exports.getProducts = async (req, res, next) => {
         
         }
         
+        let listCustomers__ = [];
         if(Array.isArray(countryNames) && countryNames.length>0) {
           customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
           
+          
+          
           if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
             customerSites = customerSitesDB.map((site)=>site._id);
-        
+          
+          listCustomers__ = await Customer.find({mainSite: {$in: customerSites}}).select('_id').lean();
         }
 
-        let installationSiteQuery = {$in:customerSites};
-        finalQuery.$or.push({ instalationSite: installationSiteQuery});
+        let customerQuery = {$in:listCustomers__};
+        finalQuery.$or.push({ customer: customerQuery});
       
         if(Array.isArray(customerSites) && customerSites.length>0){
           let customers = await Customer.find({"mainSite": {$in: customerSites}}).lean();
@@ -201,6 +242,9 @@ exports.getProducts = async (req, res, next) => {
         let customerQuery = {$in:user.customers}
         finalQuery.$or.push({ customer: customerQuery});
       }
+
+      console.log("JSON.stringify(finalQuery)", JSON.stringify(finalQuery));
+
 
       if(finalQuery.$or.length > 0){
         this.query = {

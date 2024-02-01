@@ -30,7 +30,7 @@ router.get(`${baseRouteForObject}/`, checkProductID, controller.getProductTechPa
 
 router.post(`${baseRouteForObject}/`, checkProductID,  controller.postProductTechParamValue);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID,  controller.patchProductTechParamValue);
+router.patch(`${baseRouteForObject}/:id`, checkProductID,  verifyDelete, controller.patchProductTechParamValue);
 
 router.delete(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.deleteProductTechParamValue);
 

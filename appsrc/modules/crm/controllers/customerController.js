@@ -73,6 +73,50 @@ exports.getCustomer = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+
+      //region restriction
+      if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+        let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+        if(user && ((user.regions && user.regions.length > 0)) ) {
+          if(Array.isArray(user.regions) && user.regions.length>0 ) {
+            let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+            let countries_ = [].concat(...countries.map(obj => obj.countries));
+            let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+            const countryCodesArray = country_names.map(node => node.country_name);
+            if(countryCodesArray && countryCodesArray.length > 0) {
+              console.log("countryCodesArray", countryCodesArray, "response.mainSite?.address?.country", "(", response.mainSite?.address?.country?.trim(), ")");
+              if(!countryCodesArray.includes(response.mainSite?.address?.country?.trim()) || !response.mainSite?.address?.country?.trim()) {
+                return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+              }
+            }
+          }
+        }
+
+        //customer restriction
+        let customerRestricted = true, implementRestrictionMachine = true;
+        if(user && ((user.customers && user.customers.length > 0)) ) {
+          if(user.customers.toString().includes(response._id.toString())) {
+            // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+            customerRestricted = false;
+           }
+        }
+
+        //machine restriction
+        if(user && ((user.machines && user.machines.length > 0)) ) {
+          let listProducts = await Product.find({_id: {$in: user.machines}}).select('customer').lean();
+          const listCustomers = listProducts.map(item => item.customer.toString());
+
+          if(listCustomers.includes(response._id.toString())) {
+            implementRestrictionMachine = false;
+          }
+        }
+
+        if(customerRestricted && implementRestrictionMachine) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+        }
+      }
+
+
       const customer = JSON.parse(JSON.stringify(response));    
       if(validFlag == 'extended'){  
         if(!(_.isEmpty(customer))) {
@@ -129,7 +173,8 @@ exports.getCustomers = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  if(!this.query.unfiltered && this.query.type !== 'SP'){
+  if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+      
     let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
     if(user) {
       let finalQuery = {
@@ -152,6 +197,8 @@ exports.getCustomers = async (req, res, next) => {
           if(Array.isArray(countriesDB) && countriesDB.length>0)
             countryNames = countriesDB.map((c)=>c.country_name);
         }
+
+        console.log("***countryNames", countryNames);
         
         if(Array.isArray(countryNames) && countryNames.length>0) {
           customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
@@ -167,6 +214,14 @@ exports.getCustomers = async (req, res, next) => {
 
       if(Array.isArray(user.customers) && user.customers.length>0) {
         let idQuery = {$in:user.customers}
+        finalQuery.$or.push({ _id: idQuery});
+      }
+
+      if(Array.isArray(user.machines) && user.machines.length>0) {
+        let listProducts = await Product.find({_id: {$in: user.machines}}).select('customer').lean();
+        const listCustomers = listProducts.map(item => item.customer);
+        let idQuery = {$in: listCustomers}
+        console.log("idQuery", idQuery);
         finalQuery.$or.push({ _id: idQuery});
       }
 
@@ -268,6 +323,27 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    //       if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){
+    //   if(!req.body.mainSite?.address?.country) {
+    //     return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+    //   }
+    //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+    //   if(user && ((user.regions && user.regions.length > 0)) ) {
+    //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
+    //       let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+    //       let countries_ = [].concat(...countries.map(obj => obj.countries));
+    //       let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+    //       const countryCodesArray = country_names.map(node => node.country_name);
+    //       if(countryCodesArray && countryCodesArray.length > 0 && req.body.mainSite?.address?.country) {
+    //         console.log("countryCodesArray", countryCodesArray, req.body.mainSite?.address?.country);
+    //         if(!countryCodesArray.includes(req.body.mainSite?.address?.country)) {
+    //           return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
+    //         }
+    //       }
+    //     }
+    //   }
+    // }
+
     if(req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
       let clientCode = "^"+req.body.clientCode.trim()+"$";
       let queryCustomer = {
@@ -330,7 +406,7 @@ exports.patchCustomer = async (req, res, next) => {
         let customer = await Customer.findById(req.params.id);
         if (customer.type === 'SP') {
           const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
-          return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, message, true));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, message, true));
         }
       }
 
