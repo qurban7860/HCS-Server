@@ -73,21 +73,27 @@ exports.getProduct = async (req, res, next) => {
           }
         }
 
-        //customer restriction
-        let customerRestricted = true, implementRestrictionMachine = true;
-        if(user && ((user.customers && user.customers.length > 0)) ) {
-          let listProducts = await Product.find({customer: {$in: user.customers}}).select('').lean();
-          let listProductsIds = listProducts.map(node => node._id);
-          if(listProductsIds.toString().includes(response._id.toString())) {
-            // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
-            customerRestricted = false;
-           }
-        }
-
-        //machine restriction
-        if(user && ((user.machines && user.machines.length > 0)) ) {
-          if(user.machines.includes(response._id.toString())) {
-            implementRestrictionMachine = false;
+        if(!countryCodesArray.includes(customerObj.mainSite?.address?.country) || !customerObj.mainSite?.address?.country) {
+          //customer restriction
+          let customerRestricted = true, implementRestrictionMachine = true;
+          if(user && ((user.customers && user.customers.length > 0)) ) {
+            let listProducts = await Product.find({customer: {$in: user.customers}}).select('').lean();
+            let listProductsIds = listProducts.map(node => node._id);
+            if(listProductsIds.toString().includes(response._id.toString())) {
+              // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+              customerRestricted = false;
+             }
+          }
+  
+          //machine restriction
+          if(user && ((user.machines && user.machines.length > 0)) ) {
+            if(user.machines.includes(response._id.toString())) {
+              implementRestrictionMachine = false;
+            }
+          }
+  
+          if(customerRestricted && implementRestrictionMachine) {
+            return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
           }
         }
       }
