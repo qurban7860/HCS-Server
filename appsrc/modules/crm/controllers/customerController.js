@@ -84,8 +84,8 @@ exports.getCustomer = async (req, res, next) => {
             let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
             const countryCodesArray = country_names.map(node => node.country_name);
             if(countryCodesArray && countryCodesArray.length > 0) {
-              console.log("countryCodesArray", countryCodesArray, "response.mainSite?.address?.country", response.mainSite?.address?.country);
-              if(!countryCodesArray.includes(response.mainSite?.address?.country) || !response.mainSite?.address?.country) {
+              console.log("countryCodesArray", countryCodesArray, "response.mainSite?.address?.country", "(", response.mainSite?.address?.country?.trim(), ")");
+              if(!countryCodesArray.includes(response.mainSite?.address?.country?.trim()) || !response.mainSite?.address?.country?.trim()) {
                 return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
               }
             }
