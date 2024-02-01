@@ -131,6 +131,8 @@ this.populate = [
         html: true
       };
 
+      let userName = user.name;
+
       let hostName = 'portal.howickltd.com';
 
       if(process.env.CLIENT_HOST_NAME)
@@ -142,7 +144,7 @@ this.populate = [
         hostUrl = process.env.CLIENT_APP_URL;
 
       fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-        let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
+        let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, userName })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
         res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
