@@ -56,7 +56,7 @@ exports.getProduct = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-      if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+      if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
         let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
         if(user && ((user.regions && user.regions.length > 0)) ) {
           if(Array.isArray(user.regions) && user.regions.length>0 ) {

@@ -92,27 +92,29 @@ exports.getCustomer = async (req, res, next) => {
           }
         }
 
-        //customer restriction
-        let customerRestricted = true, implementRestrictionMachine = true;
-        if(user && ((user.customers && user.customers.length > 0)) ) {
-          if(user.customers.toString().includes(response._id.toString())) {
-            // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
-            customerRestricted = false;
-           }
-        }
-
-        //machine restriction
-        if(user && ((user.machines && user.machines.length > 0)) ) {
-          let listProducts = await Product.find({_id: {$in: user.machines}}).select('customer').lean();
-          const listCustomers = listProducts.map(item => item.customer.toString());
-
-          if(listCustomers.includes(response._id.toString())) {
-            implementRestrictionMachine = false;
+        if(!countryCodesArray.includes(response.mainSite?.address?.country?.trim())) {
+          //customer restriction
+          let customerRestricted = true, implementRestrictionMachine = true;
+          if(user && ((user.customers && user.customers.length > 0)) ) {
+            if(user.customers.toString().includes(response._id.toString())) {
+              // return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+              customerRestricted = false;
+            }
           }
-        }
 
-        if(customerRestricted && implementRestrictionMachine) {
-          return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+          //machine restriction
+          if(user && ((user.machines && user.machines.length > 0)) ) {
+            let listProducts = await Product.find({_id: {$in: user.machines}}).select('customer').lean();
+            const listCustomers = listProducts.map(item => item.customer.toString());
+
+            if(listCustomers.includes(response._id.toString())) {
+              implementRestrictionMachine = false;
+            }
+          }
+          
+          if(customerRestricted && implementRestrictionMachine) {
+            return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
+          }
         }
       }
 
