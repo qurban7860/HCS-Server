@@ -23,7 +23,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };    
 this.populate = [
-  {path: 'category', select: 'name'},
+  {path: 'categories', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -133,7 +133,7 @@ exports.patchCategoryGroup = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, category, isDefault, isActive, isArchived, loginUser } = req.body;
+  const { name, categories, isDefault, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -143,8 +143,8 @@ function getDocumentFromReq(req, reqType){
   if ("name" in req.body){
     doc.name = name;
   }
-  if ("category" in req.body){
-    doc.category = category;
+  if ("categories" in req.body){
+    doc.categories = categories;
   }
   if ("isDefault" in req.body){
     doc.isDefault = isDefault;
