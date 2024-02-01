@@ -77,12 +77,13 @@ exports.getCustomer = async (req, res, next) => {
       //region restriction
       if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
         let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+        let countryCodesArray;
         if(user && ((user.regions && user.regions.length > 0)) ) {
           if(Array.isArray(user.regions) && user.regions.length>0 ) {
             let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
             let countries_ = [].concat(...countries.map(obj => obj.countries));
             let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
-            const countryCodesArray = country_names.map(node => node.country_name);
+            countryCodesArray = country_names.map(node => node.country_name);
             if(countryCodesArray && countryCodesArray.length > 0) {
               console.log("countryCodesArray", countryCodesArray, "response.mainSite?.address?.country", "(", response.mainSite?.address?.country?.trim(), ")");
               if(!countryCodesArray.includes(response.mainSite?.address?.country?.trim()) || !response.mainSite?.address?.country?.trim()) {
