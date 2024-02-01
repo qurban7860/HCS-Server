@@ -10,6 +10,7 @@ const logger = require('../../config/logger');
 const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
+const { Config } = require('../models');
 this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
@@ -113,8 +114,11 @@ this.populate = [
       userInvite.invitationStatus = 'PENDING';
       await userInvite.save();
     
-      let emailSubject = "User Invite - HOWICK";
-    
+      let emailSubject = "User Invite - HOWICK Portal";
+      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "USER-INVITE-SUBJECT", isArchived: false, isActive: true}).select('value');
+      if(configObject && configObject?.value)
+        emailSubject = configObject.value;
+
       let emailContent = `Dear ${user.name},<br><br>Howick has invited you to join howick cloud. Please click on below link and enter password for joining.<br><br>`;
     
       // emailContent+=`${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${userInvite.inviteExpireTime}`;

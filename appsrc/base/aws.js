@@ -154,7 +154,7 @@ async function sendEmail(params) {
         Data: params.subject
        }
       },
-    Source: process.env.AWS_SES_FROM_EMAIL, /* required */
+    Source: "Howick Limited",
     ReplyToAddresses: [
       process.env.AWS_SES_FROM_EMAIL,
     ],
