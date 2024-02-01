@@ -86,7 +86,7 @@ exports.getCustomer = async (req, res, next) => {
     } else {
 
       // //region restriction
-      // if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+      // if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager") && !req.body.loginUser?.roleTypes?.includes("Developer")){ 
       //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
       //   let countryCodesArray;
       //   if(user && ((user.regions && user.regions.length > 0)) ) {
@@ -180,8 +180,8 @@ async function applyUserFilter(req) {
   if(!req.query.unfiltered){
     if (
       !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-      !req.body.loginUser?.roleTypes?.includes("globalManager") &&
-      !req.body.loginUser?.roleTypes?.includes("developer")
+      !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
+      !req.body.loginUser?.roleTypes?.includes("Developer")
     ) {
       let user = await SecurityUser.findById(req.body.loginUser.userId).select(
         'regions customers machines'
@@ -282,7 +282,7 @@ exports.getCustomers = async (req, res, next) => {
   delete req.query.unfiltered;
 
 
-  // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+  // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager") && !req.body.loginUser?.roleTypes?.includes("Developer")){ 
       
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
   //   if(user) {
@@ -432,7 +432,7 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    //       if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager")){
+    //       if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager")){
     //   if(!req.body.mainSite?.address?.country) {
     //     return res.status(StatusCodes.BAD_REQUEST).send("Kindly choose your country based on the assigned region.");
     //   }

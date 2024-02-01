@@ -3,8 +3,8 @@ const { SecurityUser } = require('../modules/security/models');
 module.exports = async (req, res, next) => {
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    !req.body.loginUser?.roleTypes?.includes("globalManager") && 
-    !req.body.loginUser?.roleTypes?.includes("developer")
+    !req.body.loginUser?.roleTypes?.includes("GlobalManager") && 
+    !req.body.loginUser?.roleTypes?.includes("Developer")
   ) {
     if (req.method === 'PATCH' && (req.body.isArchived == true || req.body.isArchived == 'true')) {
       return res.status(401).send("Unauthorized to execute archived functionality.");
@@ -15,8 +15,8 @@ module.exports = async (req, res, next) => {
 
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    !req.body.loginUser?.roleTypes?.includes("globalManager") &&
-    !req.body.loginUser?.roleTypes?.includes("developer") &&
+    !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
+    !req.body.loginUser?.roleTypes?.includes("Developer") &&
      (
       req.url.includes('/customers') || req.url.includes('/products')
     )

@@ -51,8 +51,8 @@ async function processUserRoles(req) {
   if(!req.query.unfiltered){
     if (
       !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-      !req.body.loginUser?.roleTypes?.includes("globalManager") &&
-      !req.body.loginUser?.roleTypes?.includes("developer")
+      !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
+      !req.body.loginUser?.roleTypes?.includes("Developer")
     ) {
       let user = await SecurityUser.findById(req.body.loginUser.userId).select(
         "regions customers machines"
@@ -270,7 +270,7 @@ exports.getProducts = async (req, res, next) => {
   
   delete req.query.unfiltered;
 
-  // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
+  // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager") && !req.body.loginUser?.roleTypes?.includes("Developer")){ 
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
   //   if(user) {
   //     let finalQuery = {
