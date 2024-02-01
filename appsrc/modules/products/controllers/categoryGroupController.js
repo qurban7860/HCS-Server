@@ -84,8 +84,6 @@ exports.postCategoryGroup = async (req, res, next) => {
       });
     }
 
-    console.log(req.body);
-    console.log("getDocumentFromReq(req, 'new')", getDocumentFromReq(req, 'new'));
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -94,7 +92,7 @@ exports.postCategoryGroup = async (req, res, next) => {
           error._message
           );
       } else {
-        res.status(StatusCodes.CREATED).json({ MachineCategory: response });
+        res.status(StatusCodes.CREATED).json({ CategoryGroup: response });
       }
     }
   }
