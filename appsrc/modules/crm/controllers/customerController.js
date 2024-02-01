@@ -66,6 +66,7 @@ exports.getCustomer = async (req, res, next) => {
   let populatedNotes;
   let populatedVerfications;
 
+  
   const queryString = await applyUserFilter(req);
   if (queryString) {
     const query_ = { ...queryString, _id: req.params.id };
@@ -176,80 +177,84 @@ exports.getCustomer = async (req, res, next) => {
 };
 
 async function applyUserFilter(req) {
-  if (
-    !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    !req.body.loginUser?.roleTypes?.includes("globalManager") &&
-    !req.body.loginUser?.roleTypes?.includes("developer")
-  ) {
-    let user = await SecurityUser.findById(req.body.loginUser.userId).select(
-      'regions customers machines'
-    ).lean();
-
-    if (user) {
-      let finalQuery = {
-        $or: []
-      };
-
-      if (Array.isArray(user.regions) && user.regions.length > 0) {
-        let regions = await Region.find({_id: {$in: user.regions}}).select(
-          'countries'
-        ).lean();
-        let countries = [];
-        let countryNames = [];
-        let customerSites = [];
-
-        for (let region of regions) {
-          if (Array.isArray(region.countries) && region.countries.length > 0)
-            countries = [...region.countries];
-        }
-
-        if (Array.isArray(countries) && countries.length > 0) {
-          let countriesDB = await Country.find({_id: {$in: countries}}).select(
-            'country_name'
+  if(!req.query.unfiltered){
+    if (
+      !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
+      !req.body.loginUser?.roleTypes?.includes("globalManager") &&
+      !req.body.loginUser?.roleTypes?.includes("developer")
+    ) {
+      let user = await SecurityUser.findById(req.body.loginUser.userId).select(
+        'regions customers machines'
+      ).lean();
+  
+      if (user) {
+        let finalQuery = {
+          $or: []
+        };
+  
+        if (Array.isArray(user.regions) && user.regions.length > 0) {
+          let regions = await Region.find({_id: {$in: user.regions}}).select(
+            'countries'
           ).lean();
-
-          if (Array.isArray(countriesDB) && countriesDB.length > 0)
-            countryNames = countriesDB.map((c) => c.country_name);
+          let countries = [];
+          let countryNames = [];
+          let customerSites = [];
+  
+          for (let region of regions) {
+            if (Array.isArray(region.countries) && region.countries.length > 0)
+              countries = [...region.countries];
+          }
+  
+          if (Array.isArray(countries) && countries.length > 0) {
+            let countriesDB = await Country.find({_id: {$in: countries}}).select(
+              'country_name'
+            ).lean();
+  
+            if (Array.isArray(countriesDB) && countriesDB.length > 0)
+              countryNames = countriesDB.map((c) => c.country_name);
+          }
+  
+          console.log("***countryNames", countryNames);
+  
+          if (Array.isArray(countryNames) && countryNames.length > 0) {
+            customerSitesDB = await CustomerSite.find(
+              {"address.country": {$in: countryNames}}
+            ).select('_id').lean();
+  
+            if (Array.isArray(customerSitesDB) && customerSitesDB.length > 0)
+              customerSites = customerSitesDB.map((site) => site._id);
+          }
+  
+          let mainSiteQuery = {$in: customerSites};
+          finalQuery.$or.push({mainSite: mainSiteQuery});
         }
-
-        console.log("***countryNames", countryNames);
-
-        if (Array.isArray(countryNames) && countryNames.length > 0) {
-          customerSitesDB = await CustomerSite.find(
-            {"address.country": {$in: countryNames}}
-          ).select('_id').lean();
-
-          if (Array.isArray(customerSitesDB) && customerSitesDB.length > 0)
-            customerSites = customerSitesDB.map((site) => site._id);
+  
+        if (Array.isArray(user.customers) && user.customers.length > 0) {
+          let idQuery = {$in: user.customers};
+          finalQuery.$or.push({_id: idQuery});
         }
-
-        let mainSiteQuery = {$in: customerSites};
-        finalQuery.$or.push({mainSite: mainSiteQuery});
-      }
-
-      if (Array.isArray(user.customers) && user.customers.length > 0) {
-        let idQuery = {$in: user.customers};
-        finalQuery.$or.push({_id: idQuery});
-      }
-
-      if (Array.isArray(user.machines) && user.machines.length > 0) {
-        let listProducts = await Product.find({_id: {$in: user.machines}}).select(
-          'customer'
-        ).lean();
-        const listCustomers = listProducts.map((item) => item.customer);
-        let idQuery = {$in: listCustomers};
-        console.log("idQuery", idQuery);
-        finalQuery.$or.push({_id: idQuery});
-      }
-
-      if (finalQuery && finalQuery.$or.length > 0) {
-        return finalQuery;
+  
+        if (Array.isArray(user.machines) && user.machines.length > 0) {
+          let listProducts = await Product.find({_id: {$in: user.machines}}).select(
+            'customer'
+          ).lean();
+          const listCustomers = listProducts.map((item) => item.customer);
+          let idQuery = {$in: listCustomers};
+          console.log("idQuery", idQuery);
+          finalQuery.$or.push({_id: idQuery});
+        }
+  
+        if (finalQuery && finalQuery.$or.length > 0) {
+          return finalQuery;
+        } else {
+          return null;
+        }
       } else {
-        return null;
+      return null;
       }
-    } else {
-    return null;
     }
+  } else {
+    return null;
   }
 }
 
