@@ -154,7 +154,8 @@ async function sendEmail(params) {
         Data: params.subject
        }
       },
-    Source: process.env.AWS_SES_FROM_EMAIL, /* required */
+    // Source: process.env.AWS_SES_FROM_EMAIL, /* required */
+    Source: `"Your Company Name" <${process.env.AWS_SES_FROM_EMAIL}>`, /* Include company name in the "From" field */
     ReplyToAddresses: [
       process.env.AWS_SES_FROM_EMAIL,
     ],
