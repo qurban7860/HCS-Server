@@ -84,6 +84,8 @@ exports.postCategoryGroup = async (req, res, next) => {
       });
     }
 
+    console.log(req.body);
+    console.log("getDocumentFromReq(req, 'new')", getDocumentFromReq(req, 'new'));
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
