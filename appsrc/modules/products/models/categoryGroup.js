@@ -8,7 +8,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
         name: { type: String, required: true, unique: true },
-        categories: { type: Schema.Types.ObjectId , ref: 'MachineCategory' },
+        categories: [{ type: Schema.Types.ObjectId, ref: 'MachineCategory' }],
         isDefault: { type: Boolean, default:false }
     },
     {
