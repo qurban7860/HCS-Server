@@ -115,7 +115,7 @@ this.populate = [
       await userInvite.save();
     
       let emailSubject = "User Invite - HOWICK Portal";
-      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "USER-INVITE-SUBJECT", isArchived: false, isActive: true}).select('value');
+      const regex = new RegExp("^USER-INVITE-SUBJECT$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
       if(configObject && configObject?.value)
         emailSubject = configObject.value;
 
