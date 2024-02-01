@@ -2,7 +2,7 @@ const { promisify } = require('util');
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const sharp = require('sharp');
-const { Config } = require('../../config/models');
+const { Config } = require('../modules/config/models');
 
 // ############################ START: S3 ############################
 
