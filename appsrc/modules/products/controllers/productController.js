@@ -150,6 +150,8 @@ exports.getProduct = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the machine is not permitted by the administrator.");
     }
   }
+
+  delete req.query.unfiltered;
   
 
   dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
