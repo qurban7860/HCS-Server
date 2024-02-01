@@ -267,6 +267,8 @@ exports.getProducts = async (req, res, next) => {
       }
     }
   }
+  
+  delete req.query.unfiltered;
 
   // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("globalManager") && !req.body.loginUser?.roleTypes?.includes("developer")){ 
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
