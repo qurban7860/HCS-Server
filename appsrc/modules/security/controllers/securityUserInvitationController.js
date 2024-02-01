@@ -10,7 +10,7 @@ const logger = require('../../config/logger');
 const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
-const { Config } = require('../models');
+const { Config } = require('../../config/models');
 this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
