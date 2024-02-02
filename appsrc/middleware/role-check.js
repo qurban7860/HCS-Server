@@ -1,7 +1,6 @@
 const { SecurityUser } = require('../modules/security/models');
 
 module.exports = async (req, res, next) => {
-  console.log("role check.... *****");
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
     !req.body.loginUser?.roleTypes?.includes("GlobalManager") && 
@@ -14,7 +13,6 @@ module.exports = async (req, res, next) => {
     }
   }
 
-  console.log("req.url", req.url);
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
     !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
