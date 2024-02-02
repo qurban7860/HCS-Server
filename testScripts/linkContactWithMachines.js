@@ -27,55 +27,110 @@ async function main() {
     		console.log("machine.AccountManager",machine.AccountManager);
 
       	if(machine.AccountManager && machine.AccountManager.length>2) {
-	      	let accountContactData = {
-	      		firstName:machine.AccountManager,
+	      	
+	      	let accountContact = await CustomerContact.findOne({
 	      		customer:howickCustomer._id,
-	      		isActive:true,
-	      		isArchived:false
+	      		firstName:machine.AccountManager
+	      	});
+
+	      	if(!accountContact) {
+
+		      	let accountContactData = {
+		      		firstName:machine.AccountManager,
+		      		customer:howickCustomer._id,
+		      		isActive:true,
+		      		isArchived:false
+		      	}
+
+		      	accountContact = await CustomerContact.create(accountContactData);
 	      	}
 
-	      	const accountContact = await CustomerContact.create(accountContactData);
     			console.log("machine.AccountManager",machine.AccountManager);
 	  		
 	      	if(!Array.isArray(machineDB.accountManager)) {
 	      		machineDB.accountManager = [];
 	      	}
-      		machineDB.accountManager.push(accountContact._id);
+
+	      	if(machineDB.accountManager.indexOf(accountContact._id)==-1) {
+      			machineDB.accountManager.push(accountContact._id);
+	      	}
 
       	}
 
       	if(machine.ProjectManager && machine.ProjectManager.length>2) {
-	      	let projectContactData = {
-	      		firstName:machine.ProjectManager,
-	      		customer:howickCustomer._id,
-	      		isActive:true,
-	      		isArchived:false
-	      	}
 
-	      	const projectContact = await CustomerContact.create(projectContactData);
-	  
+      		let projectContact = await CustomerContact.findOne({
+	      		customer:howickCustomer._id,
+	      		firstName:machine.ProjectManager
+	      	});
+
+	      	if(!projectContact) {
+
+		      	let projectContactData = {
+		      		firstName:machine.ProjectManager,
+		      		customer:howickCustomer._id,
+		      		isActive:true,
+		      		isArchived:false
+		      	}
+
+		      	projectContact = await CustomerContact.create(projectContactData);
+	  			}
+
 	      	if(!Array.isArray(machineDB.projectManager)) {
 	      		machineDB.projectManager = [];
 	      	}
-      		machineDB.projectManager.push(projectContact._id);
+
+	      	if(machineDB.projectManager.indexOf(projectContact._id)==-1) {
+      			machineDB.projectManager.push(projectContact._id);
+	      	}
 
       	}
 
       	if(machine.SupportManager && machine.SupportManager.length>2) {
-	      	let supportContactData = {
-	      		firstName:machine.SupportManager,
-	      		customer:howickCustomer._id,
-	      		isActive:true,
-	      		isArchived:false
-	      	}
 
-	      	const supportContact = await CustomerContact.create(supportContactData);
+      		let supportContact = await CustomerContact.findOne({
+	      		customer:howickCustomer._id,
+	      		firstName:machine.SupportManager
+	      	});
+
+	      	if(!supportContact) {
+
+		      	let supportContactData = {
+		      		firstName:machine.SupportManager,
+		      		customer:howickCustomer._id,
+		      		isActive:true,
+		      		isArchived:false
+		      	}
+
+		      	supportContact = await CustomerContact.create(supportContactData);
+	      	}
 	  
 	      	if(!Array.isArray(machineDB.supportManager)) {
 	      		machineDB.supportManager = [];
 	      	}
-      		machineDB.supportManager.push(supportContact._id);
 
+	      	if(machineDB.supportManager.indexOf(supportContact._id)==-1) {
+      			machineDB.supportManager.push(supportContact._id);
+	      	}
+
+      	}
+
+      	if(!Array.isArray(machineDB.accountManager)) {
+      		if(mongoose.Types.ObjectId.isValid(machineDB.accountManager)) {
+      			machineDB.accountManager = [machineDB.accountManager];
+      		}
+      	}
+
+      	if(!Array.isArray(machineDB.projectManager)) {
+      		if(mongoose.Types.ObjectId.isValid(machineDB.projectManager)) {
+      			machineDB.projectManager = [machineDB.projectManager];
+      		}
+      	}
+
+      	if(!Array.isArray(machineDB.supportManager)) {
+      		if(mongoose.Types.ObjectId.isValid(machineDB.supportManager)) {
+      			machineDB.supportManager = [machineDB.supportManager];
+      		}
       	}
       	await machineDB.save();
 
