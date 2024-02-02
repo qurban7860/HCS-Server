@@ -196,10 +196,10 @@ async function sendEmailWithRawData(params, file) {
   const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
   if(configObject && configObject?.value)
     sourceEmail = configObject.value;
-  
+
   const mail = mailcomposer({
     Source: sourceEmail,
-    from: process.env.AWS_SES_FROM_EMAIL,
+    from: sourceEmail,
     to: params.to,
     subject: params.subject,
     html : params.htmlData,
