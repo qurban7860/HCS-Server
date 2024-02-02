@@ -3,8 +3,8 @@ const xlsx = require("xlsx");
 const { Customer, CustomerSite, CustomerContact } = require('../appsrc/modules/crm/models');
 const { Product, ProductModel } = require('../appsrc/modules/products/models');
 const { SecurityUser } = require('../appsrc/modules/security/models');
-const mongoose = require('../appsrc/modules/db/dbConnection');
-
+const mongoose__ = require('../appsrc/modules/db/dbConnection');
+const mongoose = require('mongoose');
 const filePath = path.resolve(__dirname, "123.xlsx");
 // console.log(filePath)
 const workbook = xlsx.readFile(filePath);
