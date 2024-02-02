@@ -346,7 +346,7 @@ exports.getProducts = async (req, res, next) => {
   }
 
 
-  console.log(JSON.stringify(this.query));
+  // console.log(JSON.stringify(this.query));
   dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
