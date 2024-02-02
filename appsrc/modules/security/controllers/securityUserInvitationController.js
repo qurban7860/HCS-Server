@@ -143,12 +143,18 @@ this.populate = [
       if(process.env.CLIENT_APP_URL)
         hostUrl = process.env.CLIENT_APP_URL;
 
-      fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-        let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
-        params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params);
-        res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
-      })
+        fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
+          let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
+
+          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
+            params.htmlData = htmlData;
+            let response = await awsService.sendEmail(params);
+            res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
+          })
+        })
+
+
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
