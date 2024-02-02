@@ -192,7 +192,13 @@ async function sendEmail(params) {
 const mailcomposer = require('mailcomposer');
 
 async function sendEmailWithRawData(params, file) {
+  let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
+  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  if(configObject && configObject?.value)
+    sourceEmail = configObject.value;
+  
   const mail = mailcomposer({
+    Source: sourceEmail,
     from: process.env.AWS_SES_FROM_EMAIL,
     to: params.to,
     subject: params.subject,
