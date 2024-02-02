@@ -18,7 +18,7 @@ module.exports = async (req, res, next) => {
     !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
     !req.body.loginUser?.roleTypes?.includes("Developer") &&
      (
-      req.url.includes('/customers') || req.url.includes('/products')
+      req.url.includes('/customers') || req.url.includes('/machines')
     )
   ) {
     try {

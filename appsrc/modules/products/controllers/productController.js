@@ -209,7 +209,7 @@ exports.getProduct = async (req, res, next) => {
       }
 
       let machineProfileQuery = {type:"MANUFACTURE", machine: machine._id, isActive:true, isArchived:false};
-      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
+      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
 
 
       if(machine && machine.parentMachineID) {
@@ -346,6 +346,7 @@ exports.getProducts = async (req, res, next) => {
   }
 
 
+  // console.log(JSON.stringify(this.query));
   dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
