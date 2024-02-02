@@ -147,7 +147,7 @@ this.populate = [
           let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
 
           fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
+            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
             params.htmlData = htmlData;
             let response = await awsService.sendEmail(params);
             res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
