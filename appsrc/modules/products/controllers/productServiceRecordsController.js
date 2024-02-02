@@ -399,11 +399,11 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       const day = dateObject.getDate();
       createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
       
+      let link = "";
       fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
         let footerContent = render(data,{ hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy })
 
         fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
-          let link = "";
           let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy, footerContent })
           params.htmlData = htmlData;
           const awsService = require('../../../../appsrc/base/aws');
