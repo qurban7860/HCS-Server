@@ -168,10 +168,14 @@ exports.login = async (req, res, next) => {
                     if(process.env.CLIENT_APP_URL)
                       hostUrl = process.env.CLIENT_APP_URL;
                     
-                    fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                      let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
-                      params.htmlData = htmlData;
-                      let response = await awsService.sendEmail(params);
+                    fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
+                      let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
+        
+                      fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+                        let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl, footerContent})
+                        params.htmlData = htmlData;
+                        let response = await awsService.sendEmail(params);
+                      })
                     })
                     const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
                     _this.dbservice.postObject(emailResponse, callbackFunc);
@@ -605,12 +609,17 @@ exports.forgetPassword = async (req, res, next) => {
           if(process.env.CLIENT_APP_URL)
             hostUrl = process.env.CLIENT_APP_URL;
           
-          fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
 
-            let htmlData = render(data,{ hostName, hostUrl, username, link })
-            params.htmlData = htmlData;
-            let response = await awsService.sendEmail(params);
-          })
+          fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
+            let footerContent = render(data,{ hostName, hostUrl, username, link })
+            
+            fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
+  
+              let htmlData = render(data,{ hostName, hostUrl, username, link, footerContent })
+              params.htmlData = htmlData;
+              let response = await awsService.sendEmail(params);
+            })
+          });
 
           // let response = await awsService.sendEmail(params);
           
@@ -675,12 +684,14 @@ exports.verifyForgottenPassword = async (req, res, next) => {
                 hostUrl = process.env.CLIENT_APP_URL;
 
               let username = existingUser.name;
-
-              fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-
-                let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
-                params.htmlData = htmlData;
-                let response = await awsService.sendEmail(params);
+              fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
+                let footerContent = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
+      
+                fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+                  let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
+                  params.htmlData = htmlData;
+                  let response = await awsService.sendEmail(params);
+                })
               })
 
 

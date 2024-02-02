@@ -47,14 +47,124 @@ this.populate = [
       {path: 'updatedBy', select: 'name'}
     ];
 
-
+async function processUserRoles(req) {
+  if(!req.query.unfiltered){
+    if (
+      !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
+      !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
+      !req.body.loginUser?.roleTypes?.includes("Developer")
+    ) {
+      let user = await SecurityUser.findById(req.body.loginUser.userId).select(
+        "regions customers machines"
+      ).lean();
+  
+      if (user) {
+        let finalQuery = {
+          $or: [],
+        };
+  
+        if (Array.isArray(user.regions) && user.regions.length > 0) {
+          let regions = await Region.find({ _id: { $in: user.regions } })
+            .select("countries")
+            .lean();
+  
+          let countries = [];
+          let countryNames = [];
+          let customerSites = [];
+  
+          for (let region of regions) {
+            if (
+              Array.isArray(region.countries) &&
+              region.countries.length > 0
+            ) {
+              countries = [...region.countries];
+            }
+          }
+  
+          if (Array.isArray(countries) && countries.length > 0) {
+            let countriesDB = await Country.find({
+              _id: { $in: countries },
+            }).select("country_name").lean();
+  
+            if (Array.isArray(countriesDB) && countriesDB.length > 0)
+              countryNames = countriesDB.map((c) => c.country_name);
+          }
+  
+          let listCustomers__ = [];
+          if (Array.isArray(countryNames) && countryNames.length > 0) {
+            customerSitesDB = await CustomerSite.find({
+              "address.country": { $in: countryNames },
+            }).select("_id").lean();
+  
+            if (Array.isArray(customerSitesDB) && customerSitesDB.length > 0)
+              customerSites = customerSitesDB.map((site) => site._id);
+  
+            listCustomers__ = await Customer.find({
+              mainSite: { $in: customerSites },
+            }).select("_id").lean();
+          }
+  
+          let customerQuery = { $in: listCustomers__ };
+          finalQuery.$or.push({ customer: customerQuery });
+  
+          if (Array.isArray(customerSites) && customerSites.length > 0) {
+            let customers = await Customer.find({
+              mainSite: { $in: customerSites },
+            }).lean();
+            if (Array.isArray(customers) && customers.length > 0) {
+              let customerIDs = customers.map((customer) => customer._id);
+              finalQuery.$or.push({ customer: customerIDs });
+            }
+          }
+        }
+  
+        if (Array.isArray(user.machines) && user.machines.length > 0) {
+          let idQuery = { $in: user.machines };
+          finalQuery.$or.push({ _id: idQuery });
+        }
+  
+        if (Array.isArray(user.customers) && user.customers.length > 0) {
+          let customerQuery = { $in: user.customers };
+          finalQuery.$or.push({ customer: customerQuery });
+        }
+  
+        if (finalQuery.$or.length > 0) {
+          return finalQuery;
+        } else {
+          return null;
+        }
+      } else {
+        return null;
+      }
+    } else {
+      delete req.query.unfiltered;
+      return null
+    }
+  }else {
+    return false;
+  }
+}
+    
 exports.getProduct = async (req, res, next) => {
+  const queryString = await processUserRoles(req);
+  if (queryString) {
+    const query_ = { ...queryString, _id: req.params.id };
+    const proObj = await Product.findOne(query_).select('_id').lean();
+  
+    if (!proObj) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the machine is not permitted by the administrator.");
+    }
+  }
+
+  delete req.query.unfiltered;
+  
+
   dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, machine) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
+    } else {      
 
       machine = JSON.parse(JSON.stringify(machine));
       
@@ -99,7 +209,7 @@ exports.getProduct = async (req, res, next) => {
       }
 
       let machineProfileQuery = {type:"MANUFACTURE", machine: machine._id, isActive:true, isArchived:false};
-      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange');
+      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
 
 
       if(machine && machine.parentMachineID) {
@@ -148,70 +258,86 @@ exports.getProducts = async (req, res, next) => {
     delete this.query.customerArr;
   }
 
-  if(!this.query.unfiltered){
-    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
-    if(user) {
-      let finalQuery = {
-        $or: []
-      };
-      if(Array.isArray(user.regions) && user.regions.length>0 ) {
-        let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-        let countries = [];
-        let countryNames = [];
-        let customerSites = [];
-        for(let region of regions) {
-          if(Array.isArray(region.countries) && region.countries.length>0)
-            countries = [...region.countries];
-        }
-        
-        if(Array.isArray(countries) && countries.length>0) {
-          let countriesDB = await Country.find({_id:{$in:countries}}).select('country_name').lean();
-          
-          if(Array.isArray(countriesDB) && countriesDB.length>0)
-            countryNames = countriesDB.map((c)=>c.country_name);
-        
-        }
-        
-        if(Array.isArray(countryNames) && countryNames.length>0) {
-          customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
-          
-          if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
-            customerSites = customerSitesDB.map((site)=>site._id);
-        
-        }
-
-        let installationSiteQuery = {$in:customerSites};
-        finalQuery.$or.push({ instalationSite: installationSiteQuery});
-      
-        if(Array.isArray(customerSites) && customerSites.length>0){
-          let customers = await Customer.find({"mainSite": {$in: customerSites}}).lean();
-          if(Array.isArray(customers) && customers.length>0){
-            let customerIDs = customers.map((customer) => customer._id);
-            finalQuery.$or.push({ customer: customerIDs});
-          }
-        }
-      }
-
-      if(Array.isArray(user.machines) && user.machines.length>0) {
-        let idQuery = {$in:user.machines}
-        finalQuery.$or.push({ _id: idQuery});
-      }
-
-      if(Array.isArray(user.customers) && user.customers.length>0) {
-        let customerQuery = {$in:user.customers}
-        finalQuery.$or.push({ customer: customerQuery});
-      }
-
-      if(finalQuery.$or.length > 0){
-        this.query = {
-          ...this.query,
-          ...finalQuery
-        }
+  const queryString = await processUserRoles(req);
+  if (queryString) {
+    if(queryString.$or.length > 0){
+      this.query = {
+        ...this.query,
+        ...queryString
       }
     }
-  }else{
-    delete this.query.unfiltered;
   }
+  
+  delete req.query.unfiltered;
+
+  // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager") && !req.body.loginUser?.roleTypes?.includes("Developer")){ 
+  //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+  //   if(user) {
+  //     let finalQuery = {
+  //       $or: []
+  //     };
+  //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
+  //       let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+  //       let countries = [];
+  //       let countryNames = [];
+  //       let customerSites = [];
+  //       for(let region of regions) {
+  //         if(Array.isArray(region.countries) && region.countries.length>0)
+  //           countries = [...region.countries];
+  //       }
+        
+  //       if(Array.isArray(countries) && countries.length>0) {
+  //         let countriesDB = await Country.find({_id:{$in:countries}}).select('country_name').lean();
+          
+  //         if(Array.isArray(countriesDB) && countriesDB.length>0)
+  //           countryNames = countriesDB.map((c)=>c.country_name);
+        
+  //       }
+        
+  //       let listCustomers__ = [];
+  //       if(Array.isArray(countryNames) && countryNames.length>0) {
+  //         customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
+          
+          
+          
+  //         if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
+  //           customerSites = customerSitesDB.map((site)=>site._id);
+          
+  //         listCustomers__ = await Customer.find({mainSite: {$in: customerSites}}).select('_id').lean();
+  //       }
+
+  //       let customerQuery = {$in:listCustomers__};
+  //       finalQuery.$or.push({ customer: customerQuery});
+      
+  //       if(Array.isArray(customerSites) && customerSites.length>0){
+  //         let customers = await Customer.find({"mainSite": {$in: customerSites}}).lean();
+  //         if(Array.isArray(customers) && customers.length>0){
+  //           let customerIDs = customers.map((customer) => customer._id);
+  //           finalQuery.$or.push({ customer: customerIDs});
+  //         }
+  //       }
+  //     }
+
+  //     if(Array.isArray(user.machines) && user.machines.length>0) {
+  //       let idQuery = {$in:user.machines}
+  //       finalQuery.$or.push({ _id: idQuery});
+  //     }
+
+  //     if(Array.isArray(user.customers) && user.customers.length>0) {
+  //       let customerQuery = {$in:user.customers}
+  //       finalQuery.$or.push({ customer: customerQuery});
+  //     }
+
+  //     if(finalQuery.$or.length > 0){
+  //       this.query = {
+  //         ...this.query,
+  //         ...finalQuery
+  //       }
+  //     }
+  //   }
+  // }else{
+  //   delete this.query.unfiltered;
+  // }
 
   if(!this.query.customer) {
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
@@ -220,6 +346,7 @@ exports.getProducts = async (req, res, next) => {
   }
 
 
+  // console.log(JSON.stringify(this.query));
   dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {
@@ -353,6 +480,34 @@ exports.postProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    let listNewConnection = [];
+    if (req.body.newConnectedMachines && req.body.newConnectedMachines.length > 0) {
+      let listMachineCategories = await ProductCategory.find({connections: true, isActive: true, isArchived: false}).select('_id').lean();
+      listMachineCategories = listMachineCategories.map(item => item._id.toString());
+      let listMachineModels = null;
+      if(listMachineCategories?.length > 0) {
+        listMachineModels = await ProductModel.find({category: {$in: listMachineCategories}}).select('_id').lean();
+        listMachineModels = listMachineModels.map(item => item._id.toString());
+      }
+      if(listMachineModels?.length > 0){
+        await Promise.all(req.body.newConnectedMachines.map(childMachine =>
+          postConnectedProductAsync(req, childMachine, listMachineCategories, listMachineModels) 
+        ))
+          .then((results) => {
+            listNewConnection.push(...results);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+          const filteredIds = await listNewConnection.map(item => item?._id);
+      
+          if(req.body.machineConnections === undefined) {
+            req.body.machineConnections = [];
+          }
+          req.body.machineConnections.push(...filteredIds);
+      }
+    }
+
     let machineConnections = req.body.machineConnections;
     req.body.machineConnections = [];
     dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -361,7 +516,6 @@ exports.postProduct = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
         let machineAuditLog = createMachineAuditLogRequest(machine, 'Create', req.body.loginUser.userId)
@@ -372,6 +526,51 @@ exports.postProduct = async (req, res, next) => {
         
         res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
+    }
+  }
+};
+
+const postConnectedProductAsync = async (req, childMachine, listMachineCategories, listMachineModels) => {
+  if(listMachineCategories.includes(childMachine.category?.toString()) && listMachineModels.includes(childMachine.model?.toString())) {
+    const childReq = {
+      ...req,
+      body: {
+        ...req.body,
+        ...childMachine,
+        loginUser: req.body.loginUser,
+        customer: req.body.customer,
+        machineConnections: childMachine.machineConnections,
+        newConnectedMachines: null
+      }
+    };
+    return exports.postConnectedProduct(childReq);
+  } 
+};
+
+exports.postConnectedProduct = async (req) => {
+  const errors = validationResult(req);
+  let ProductObj = {};
+
+  if (!errors.isEmpty()) {
+    console.log("errors machine patch request", errors);
+    return ProductObj;
+  } else {
+    let machineConnections = req.body.machineConnections;
+    req.body.machineConnections = [];
+
+    try {
+      ProductObj = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+      let machineAuditLog = createMachineAuditLogRequest(ProductObj, 'Create', req.body.loginUser.userId);
+      await postProductAuditLog(machineAuditLog);
+
+      if (ProductObj && Array.isArray(machineConnections) && machineConnections.length > 0) {
+        ProductObj = await connectMachines(ProductObj.id, machineConnections);
+      }
+
+      return ProductObj;
+    } catch (error) {
+      console.error("Error in postConnectedProduct:", error);
+      return ProductObj;
     }
   }
 };
@@ -509,6 +708,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
+          req.body.manufactureDate = parentMachine.manufactureDate;
           if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
 
           // // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
@@ -1043,7 +1243,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
  
   
@@ -1094,6 +1294,10 @@ function getDocumentFromReq(req, reqType){
   if ("billingSite" in req.body){
     doc.billingSite = billingSite;
   }
+  if ("manufactureDate" in req.body){
+    doc.manufactureDate = manufactureDate;
+  }
+  
   if ("installationDate" in req.body){
     doc.installationDate = installationDate;
   }

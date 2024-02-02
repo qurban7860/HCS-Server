@@ -70,18 +70,47 @@ class App {
     this.app.use('/uploads/images', express.static(path.join('uploads', 'images')));
     this.app.use(setHeaders);
     
-    console.log('constructor called ----------------------------')
     this.app.use('/api/1.0.0/security/getToken/',session({
       secret: process.env.SESSION_SECRETKEY,
       resave: true,
       store: store
     }));
+    
+    
+    
+    let allowedOrigins;
+    if(process.env.CORS_CONFIG) {
+      allowedOrigins = process.env.CORS_CONFIG.split(",");
+    }
+    
+    this.app.use(cors({
+        origin: function (origin, callback) {
+          if (!allowedOrigins || allowedOrigins.includes(origin)) {
+              callback(null, true);
+          } else {
+            // let sac = require('../security/controllers/securityAuthenticationController');
+            // sac.addAccessLog();
+            // let securityDBService = require('../security/service/securityDBService');
+            // const dbService = this.dbservice = new securityDBService();
+            // const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+            // const securityLogs = addAccessLog('CORS_ERROR', req.body.email, null, clientIP);
+            // dbService.postObject(securityLogs, callbackFunc);
+            // async function callbackFunc(error, response) {
+            //   if (error) {
+            //     logger.error(new Error(error));
+            //   } else {
+            //     res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
+            //   }
+            // }
+              callback(new Error('Not allowed by CORS'));
+          }
+        }
+    }));
 
     this.registerRoutes();
-    this.app.use(cors({
-        origin: '*'
-      }
-    ));
+    
+    // Check if this line is being reached
+    
     // this.app.options('*', cors());
     this.app.use(
       '/api-docs',

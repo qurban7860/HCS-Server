@@ -1,8 +1,8 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const roleCheck = require('../../../middleware/role-check');
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
 
@@ -20,7 +20,7 @@ const baseRouteForObject = `/machines`;
 // localhost://api/1.0.0/products/machines/ 
 //localhost://api/1.0.0/products/search/
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth, roleCheck, checkCustomer);
 
 router.get(`${baseRouteForObject}/export`, controller.exportProductsJSONforCSV);
 

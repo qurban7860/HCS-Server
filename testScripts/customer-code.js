@@ -18,7 +18,6 @@ async function main() {
 
   for(let customer of customers) {
 
-    console.log(customer.ID,customer.Code)
     if(customer.Code) {
       let customer__ = await Customer.findById(customer.ID);
       if(customer__) {
@@ -30,7 +29,6 @@ async function main() {
   }
   
 
-  console.log('done')
 }
 
 main();

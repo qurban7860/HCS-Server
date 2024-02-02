@@ -2,6 +2,7 @@ const { promisify } = require('util');
 const AWS = require('aws-sdk');
 const fs = require('fs');
 const sharp = require('sharp');
+const { Config } = require('../modules/config/models');
 
 // ############################ START: S3 ############################
 
@@ -135,6 +136,11 @@ async function getSecretValue(secretName) {
 
 async function sendEmail(params) {
   // Create sendEmail params 
+  let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
+  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  if(configObject && configObject?.value)
+    sourceEmail = configObject.value;
+
   let emailParams = {
     Destination: { /* required */
       ToAddresses: [
@@ -154,7 +160,8 @@ async function sendEmail(params) {
         Data: params.subject
        }
       },
-    Source: process.env.AWS_SES_FROM_EMAIL, /* required */
+    // Source: process.env.AWS_SES_FROM_EMAIL, /* required */
+    Source: sourceEmail,
     ReplyToAddresses: [
       process.env.AWS_SES_FROM_EMAIL,
     ],
@@ -185,8 +192,14 @@ async function sendEmail(params) {
 const mailcomposer = require('mailcomposer');
 
 async function sendEmailWithRawData(params, file) {
+  let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
+  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  if(configObject && configObject?.value)
+    sourceEmail = configObject.value;
+
   const mail = mailcomposer({
-    from: process.env.AWS_SES_FROM_EMAIL,
+    Source: sourceEmail,
+    from: sourceEmail,
     to: params.to,
     subject: params.subject,
     html : params.htmlData,

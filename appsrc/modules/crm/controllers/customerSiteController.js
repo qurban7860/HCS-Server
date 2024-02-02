@@ -13,8 +13,13 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, Customer } = require('../models');
-const { Config } = require('../../config/models');
+const { Config, Country } = require('../../config/models');
 const { Product } = require('../../products/models');
+const { SecurityUser } = require('../../security/models');
+const { Region } = require('../../regions/models');
+
+
+
 
 const fs = require('fs');
 const path = require('path');

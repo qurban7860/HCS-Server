@@ -1,8 +1,8 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
+const roleCheck = require('../../../middleware/role-check');
 const checkCustomer = require('../../../middleware/check-customer');
 const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
@@ -20,7 +20,7 @@ const router = express.Router();
 // - /api/1.0.0/crm/customers/:customerId/contacts
 const baseRoute = `/customers/:customerId/contacts`;
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth, roleCheck, checkCustomer);
 
 // - /api/1.0.0/crm/contacts/search
 router.get(`${baseRoute}/search`, controller.searchCustomerContacts);

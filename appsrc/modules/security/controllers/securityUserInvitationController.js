@@ -10,6 +10,7 @@ const logger = require('../../config/logger');
 const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
+const { Config } = require('../../config/models');
 this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
@@ -113,8 +114,11 @@ this.populate = [
       userInvite.invitationStatus = 'PENDING';
       await userInvite.save();
     
-      let emailSubject = "User Invite - HOWICK";
-    
+      let emailSubject = "User Invite - HOWICK Portal";
+      const regex = new RegExp("^USER-INVITE-SUBJECT$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+      if(configObject && configObject?.value)
+        emailSubject = configObject.value;
+
       let emailContent = `Dear ${user.name},<br><br>Howick has invited you to join howick cloud. Please click on below link and enter password for joining.<br><br>`;
     
       // emailContent+=`${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${userInvite.inviteExpireTime}`;
@@ -127,6 +131,8 @@ this.populate = [
         html: true
       };
 
+      let username = user.name;
+
       let hostName = 'portal.howickltd.com';
 
       if(process.env.CLIENT_HOST_NAME)
@@ -137,12 +143,18 @@ this.populate = [
       if(process.env.CLIENT_APP_URL)
         hostUrl = process.env.CLIENT_APP_URL;
 
-      fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-        let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl })
-        params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params);
-        res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
-      })
+        fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
+          let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
+
+          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
+            params.htmlData = htmlData;
+            let response = await awsService.sendEmail(params);
+            res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
+          })
+        })
+
+
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }

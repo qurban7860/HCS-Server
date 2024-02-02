@@ -67,13 +67,11 @@ exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
   if(req.query.roleType) {
-
-    let filteredRoles = await SecurityRole.find({roleType:req.query.roleType});
+    let filteredRoles = await SecurityRole.find({roleType:{$in: req.query.roleType}});
 
     if(Array.isArray(filteredRoles) && filteredRoles.length>0) {
       let filteredRolesIds = filteredRoles.map((r)=>r._id);
       this.query.roles = { $in : filteredRolesIds };
-      
     }
     delete this.query.roleType;
     delete req.query.roleType;
