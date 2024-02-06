@@ -132,10 +132,18 @@ async function main() {
       			machineDB.supportManager = [machineDB.supportManager];
       		}
       	}
-      	await machineDB.save();
 
       	console.log(machineDB);
       	console.log(index);
+				
+				await Product.updateOne({_id:machineDB._id},{ 
+						accountManager:machineDB.accountManager,
+						projectManager:machineDB.projectManager,
+						supportManager:machineDB.supportManager,
+					} 
+				)    	
+      	// await machineDB.save();
+
 
       	index++;
       	// break;
