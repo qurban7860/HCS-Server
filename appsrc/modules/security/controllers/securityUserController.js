@@ -180,7 +180,12 @@ exports.patchSecurityUser = async (req, res, next) => {
   } else {
     if (ObjectId.isValid(req.params.id)) {
       let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
-      const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+      // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+      let hasSuperAdminRole = false;
+      if(req.body.loginUser?.roleTypes?.includes("SuperAdmin") || 
+         req.body.loginUser?.roleTypes?.includes("Developer")) {
+          hasSuperAdminRole = true;
+      }
 
       if (req.url.includes("updatePassword")) {
         // if admin is updating password
@@ -189,7 +194,7 @@ exports.patchSecurityUser = async (req, res, next) => {
             // let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
             // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
             if(!hasSuperAdminRole){
-              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Only superadmins are allowed to access this feature ", true));
+              return res.status("Only superadmins are allowed to access this feature");
             }
           }else{
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
