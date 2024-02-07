@@ -1,11 +1,11 @@
 const { SecurityUser } = require('../modules/security/models');
 
 module.exports = async (req, res, next) => {
-  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines dataAccessibilityLevel').lean();
   req.body.userInfo = user;
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    user?.dataAccessibilityLevel !== 'GLOBAL' && 
+    user?.dataAccessibilityLevel !== 'GLOBEL' && 
     !req.body.loginUser?.roleTypes?.includes("Developer")
   ) {
     if (req.method === 'PATCH' && (req.body.isArchived == true || req.body.isArchived == 'true')) {
@@ -17,7 +17,7 @@ module.exports = async (req, res, next) => {
 
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    user?.dataAccessibilityLevel !== 'GLOBAL' &&
+    user?.dataAccessibilityLevel !== 'GLOBEL' &&
     !req.body.loginUser?.roleTypes?.includes("Developer") &&
      (
       req.url.includes('/customers') || req.url.includes('/machines')
