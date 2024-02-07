@@ -1,9 +1,11 @@
 const { SecurityUser } = require('../modules/security/models');
 
 module.exports = async (req, res, next) => {
+  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
+  req.body.userInfo = user;
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    !req.body.loginUser?.roleTypes?.includes("GlobalManager") && 
+    user?.dataAccessibilityLevel !== 'GLOBEL' && 
     !req.body.loginUser?.roleTypes?.includes("Developer")
   ) {
     if (req.method === 'PATCH' && (req.body.isArchived == true || req.body.isArchived == 'true')) {
@@ -15,7 +17,7 @@ module.exports = async (req, res, next) => {
 
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
+    user?.dataAccessibilityLevel !== 'GLOBEL' &&
     !req.body.loginUser?.roleTypes?.includes("Developer") &&
      (
       req.url.includes('/customers') || req.url.includes('/machines')
@@ -23,8 +25,6 @@ module.exports = async (req, res, next) => {
   ) {
     try {
       console.log("is not superadmin and global manager");
-      let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
-      req.body.userRegionInfo = user;
 
       if ((!user?.regions || user?.regions?.length === 0) && (!user.customers || user?.customers?.length === 0) && (!user.machines || user?.machines?.length === 0)) {
         console.log("*** The user must be assigned to specific regions, customers, or machines");

@@ -51,7 +51,7 @@ async function processUserRoles(req) {
   if(!req.query.unfiltered){
     if (
       !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-      !req.body.loginUser?.roleTypes?.includes("GlobalManager") &&
+      req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBEL' &&
       !req.body.loginUser?.roleTypes?.includes("Developer")
     ) {
       let user = await SecurityUser.findById(req.body.loginUser.userId).select(
@@ -269,75 +269,6 @@ exports.getProducts = async (req, res, next) => {
   }
   
   delete req.query.unfiltered;
-
-  // if(!this.query.unfiltered && !req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager") && !req.body.loginUser?.roleTypes?.includes("Developer")){ 
-  //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines').lean();
-  //   if(user) {
-  //     let finalQuery = {
-  //       $or: []
-  //     };
-  //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
-  //       let regions = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-  //       let countries = [];
-  //       let countryNames = [];
-  //       let customerSites = [];
-  //       for(let region of regions) {
-  //         if(Array.isArray(region.countries) && region.countries.length>0)
-  //           countries = [...region.countries];
-  //       }
-        
-  //       if(Array.isArray(countries) && countries.length>0) {
-  //         let countriesDB = await Country.find({_id:{$in:countries}}).select('country_name').lean();
-          
-  //         if(Array.isArray(countriesDB) && countriesDB.length>0)
-  //           countryNames = countriesDB.map((c)=>c.country_name);
-        
-  //       }
-        
-  //       let listCustomers__ = [];
-  //       if(Array.isArray(countryNames) && countryNames.length>0) {
-  //         customerSitesDB = await CustomerSite.find({"address.country":{$in:countryNames}}).select('_id').lean();
-          
-          
-          
-  //         if(Array.isArray(customerSitesDB) && customerSitesDB.length>0) 
-  //           customerSites = customerSitesDB.map((site)=>site._id);
-          
-  //         listCustomers__ = await Customer.find({mainSite: {$in: customerSites}}).select('_id').lean();
-  //       }
-
-  //       let customerQuery = {$in:listCustomers__};
-  //       finalQuery.$or.push({ customer: customerQuery});
-      
-  //       if(Array.isArray(customerSites) && customerSites.length>0){
-  //         let customers = await Customer.find({"mainSite": {$in: customerSites}}).lean();
-  //         if(Array.isArray(customers) && customers.length>0){
-  //           let customerIDs = customers.map((customer) => customer._id);
-  //           finalQuery.$or.push({ customer: customerIDs});
-  //         }
-  //       }
-  //     }
-
-  //     if(Array.isArray(user.machines) && user.machines.length>0) {
-  //       let idQuery = {$in:user.machines}
-  //       finalQuery.$or.push({ _id: idQuery});
-  //     }
-
-  //     if(Array.isArray(user.customers) && user.customers.length>0) {
-  //       let customerQuery = {$in:user.customers}
-  //       finalQuery.$or.push({ customer: customerQuery});
-  //     }
-
-  //     if(finalQuery.$or.length > 0){
-  //       this.query = {
-  //         ...this.query,
-  //         ...finalQuery
-  //       }
-  //     }
-  //   }
-  // }else{
-  //   delete this.query.unfiltered;
-  // }
 
   if(!this.query.customer) {
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
