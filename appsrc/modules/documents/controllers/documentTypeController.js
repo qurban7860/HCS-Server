@@ -41,7 +41,7 @@ exports.getDocumentType = async (req, res, next) => {
 
 exports.getDocumentTypes = async (req, res, next) => {
   try {
-
+    console.log(req.body.loginUser);
     this.query = req.query != "undefined" ? req.query : {};
 
     let machine =  req.query.machine === 'true' || req.query.machine === true ? true : false;
