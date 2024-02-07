@@ -51,7 +51,7 @@ async function processUserRoles(req) {
   if(!req.query.unfiltered){
     if (
       !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-      req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBEL' &&
+      req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL' &&
       !req.body.loginUser?.roleTypes?.includes("Developer")
     ) {
       let user = await SecurityUser.findById(req.body.loginUser.userId).select(

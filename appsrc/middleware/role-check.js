@@ -5,7 +5,7 @@ module.exports = async (req, res, next) => {
   req.body.userInfo = user;
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    user?.dataAccessibilityLevel !== 'GLOBEL' && 
+    user?.dataAccessibilityLevel !== 'GLOBAL' && 
     !req.body.loginUser?.roleTypes?.includes("Developer")
   ) {
     if (req.method === 'PATCH' && (req.body.isArchived == true || req.body.isArchived == 'true')) {
@@ -17,7 +17,7 @@ module.exports = async (req, res, next) => {
 
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-    user?.dataAccessibilityLevel !== 'GLOBEL' &&
+    user?.dataAccessibilityLevel !== 'GLOBAL' &&
     !req.body.loginUser?.roleTypes?.includes("Developer") &&
      (
       req.url.includes('/customers') || req.url.includes('/machines')
