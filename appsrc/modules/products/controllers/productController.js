@@ -843,12 +843,16 @@ function createMachineAuditLogRequest(machine, activityType, loggedInUser) {
 exports.getProductsSiteCoordinates = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   
+  let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
+  let customerIds = listCustomers.map((c)=>c._id); 
+
   var installationSiteAggregate = ([
     {
       $match: {
         instalationSite: { $ne: null },
         isActive: true,
         isArchived: false,
+        customer: { $in: customerIds },
       }
     },
     {
