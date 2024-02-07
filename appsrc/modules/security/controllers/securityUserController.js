@@ -66,6 +66,7 @@ exports.getSecurityUser = async (req, res, next) => {
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
+  console.log("req.query.roleType", req.query.roleType);
   if(req.query.roleType) {
     let filteredRoles = await SecurityRole.find({roleType:{$in: req.query.roleType}, isActive: true, isArchived: false});
 
