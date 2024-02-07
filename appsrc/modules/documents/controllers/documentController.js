@@ -284,13 +284,12 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
   let fileType = "image";
   let documentId_ = null;
 
-  console.log("req.query?.fileType ....", req.query?.fileType, req.query?.fileType === undefined ? "okkkk":"");
-  if(req.query?.fileType != "undefined") {
+  if(req.query?.fileType !== undefined) {
     fileType = req.query.fileType;
     delete req.query.fileType;
   }
 
-  if(req.query?.documentId != "undefined") {
+  if(req.query?.documentId !== undefined) {
     if(mongoose.Types.ObjectId.isValid(req.query.documentId))
       documentId_ = req.query.documentId;
     delete req.query.documentId;
@@ -445,7 +444,7 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
                 console.log('fileType -->', fileType);
                 
 
-                documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
+                documentFileQuery.fileType = { $regex: `'${fileType}'`, $options: 'i' };
                 
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 
