@@ -308,10 +308,6 @@ exports.patchSecurityUser = async (req, res, next) => {
   }
 };
 
-
-
-
-
 exports.changeLockedStatus = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
@@ -386,7 +382,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 
 async function getDocumentFromReq(req, reqType){
-  const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, regions, machines,
+  const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, dataAccessibilityLevel, regions, machines,
      password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
 
 
@@ -455,6 +451,10 @@ async function getDocumentFromReq(req, reqType){
 
   if ("roles" in req.body){
     doc.roles = roles;
+  }
+
+  if ("dataAccessibilityLevel" in req.body){
+    doc.dataAccessibilityLevel = dataAccessibilityLevel;
   }
 
   if ("regions" in req.body){
