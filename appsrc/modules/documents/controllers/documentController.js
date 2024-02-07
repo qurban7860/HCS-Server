@@ -444,7 +444,7 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
                 console.log('fileType -->', fileType);
                 
 
-                documentFileQuery.fileType = { $regex: `'${fileType}'`, $options: 'i' };
+                documentFileQuery.fileType = { $regex: fileType, $options: 'i' };
                 
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 
