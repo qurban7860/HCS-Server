@@ -283,6 +283,8 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
   // doc Id and fileType
   let fileType = "image";
   let documentId_ = null;
+
+  console.log("req.query?.fileType ....", req.query?.fileType, req.query?.fileType === undefined ? "okkkk":"");
   if(req.query?.fileType != "undefined") {
     fileType = req.query.fileType;
     delete req.query.fileType;
