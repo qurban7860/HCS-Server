@@ -5,7 +5,7 @@ const { Product, ProductModel } = require('../appsrc/modules/products/models');
 const { SecurityUser } = require('../appsrc/modules/security/models');
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
 const mongoose = require('mongoose');
-const filePath = path.resolve(__dirname, "123.xlsx");
+const filePath = path.resolve(__dirname, "MachinesCSV_20240130112913.xlsx");
 // console.log(filePath)
 const workbook = xlsx.readFile(filePath);
 const sheetNames = workbook.SheetNames;
@@ -19,24 +19,39 @@ async function main() {
 	let index = 0;
   for(let machine of machines) {
 
-    console.log(machine)
+    // console.log(machine)
     if(machine.SerialNo) {
       let machineDB = await Product.findOne({serialNo:machine.SerialNo});
       if(machineDB && machineDB._id) {
-      	
-    		console.log("machine.AccountManager",machine.AccountManager);
 
-      	if(machine.AccountManager && machine.AccountManager.length>2) {
-	      	
-	      	let accountContact = await CustomerContact.findOne({
-	      		customer:howickCustomer._id,
-	      		firstName:machine.AccountManager
-	      	});
+		let nameValue_ = machine.AccountManager ? machine.AccountManager.trim() : "";
+      	if(nameValue_ && nameValue_.length>2) {
+			let accountContactQuery_ = {
+			  customer:howickCustomer._id,
+			  isActive: true,
+			  isArchived: false,
+			  $or: [{firstName:nameValue_}]
+			}			
+
+			if(nameValue_ && nameValue_.split(" ").length == 2) {
+				let acctManger = nameValue_.split(" ");
+				accountContactQuery_.$or.push(
+					{$and: [{ firstName: acctManger[0] }, { lastName: acctManger[1] }]}
+				);
+			}
+
+	      	let accountContact = await CustomerContact.findOne(accountContactQuery_).sort({_id: 1});
+
+			if(accountContact) {
+				console.log("accountContact --->", accountContact.firstName, accountContact.lastName);
+			} else {
+				console.log("************************accountContact NOT FOUND*****************************************");
+			}
 
 	      	if(!accountContact) {
 
 		      	let accountContactData = {
-		      		firstName:machine.AccountManager,
+		      		firstName:nameValue_,
 		      		customer:howickCustomer._id,
 		      		isActive:true,
 		      		isArchived:false
@@ -45,24 +60,41 @@ async function main() {
 		      	accountContact = await CustomerContact.create(accountContactData);
 	      	}
 
-    			console.log("machine.AccountManager",machine.AccountManager);
+    			console.log("nameValue_",nameValue_);
 	  		
 	      	if(!Array.isArray(machineDB.accountManager)) {
 	      		machineDB.accountManager = [];
 	      	}
 
 	      	if(machineDB.accountManager.indexOf(accountContact._id)==-1) {
-      			machineDB.accountManager.push(accountContact._id);
+      			machineDB.accountManager = [accountContact._id];
 	      	}
-
       	}
 
       	if(machine.ProjectManager && machine.ProjectManager.length>2) {
 
-      		let projectContact = await CustomerContact.findOne({
-	      		customer:howickCustomer._id,
-	      		firstName:machine.ProjectManager
-	      	});
+			let nameValue_ = machine.ProjectManager.trim();
+			let queryString = {
+				customer:howickCustomer._id,
+				isActive: true,
+				isArchived: false,
+				$or: [{firstName:nameValue_}]
+			}			
+  
+			if(nameValue_ && nameValue_.split(" ").length == 2) {
+				let managerValue = nameValue_.split(" ");
+				queryString.$or.push(
+					{$and: [{ firstName: managerValue[0] }, { lastName: managerValue[1] }]}
+				);
+			}
+			
+      		let projectContact = await CustomerContact.findOne(queryString);
+
+			if(projectContact) {
+				console.log("projectContact --->", projectContact.firstName, projectContact.lastName);
+			} else {
+				console.log("************************projectContact NOT FOUND*****************************************");
+			}
 
 	      	if(!projectContact) {
 
@@ -81,17 +113,35 @@ async function main() {
 	      	}
 
 	      	if(machineDB.projectManager.indexOf(projectContact._id)==-1) {
-      			machineDB.projectManager.push(projectContact._id);
-	      	}
+      			// machineDB.projectManager.push(projectContact._id);
+				machineDB.projectManager = [projectContact._id]
+			}
 
       	}
 
       	if(machine.SupportManager && machine.SupportManager.length>2) {
+			let nameValue_ = machine.SupportManager.trim();
+			let queryString = {
+				customer:howickCustomer._id,
+				isActive: true,
+				isArchived: false,
+				$or: [{firstName:nameValue_}]
+			}			
+  
+			if(nameValue_ && nameValue_.split(" ").length == 2) {
+				let managerValue = nameValue_.split(" ");
+				queryString.$or.push(
+					{$and: [{ firstName: managerValue[0] }, { lastName: managerValue[1] }]}
+				);
+			}
 
-      		let supportContact = await CustomerContact.findOne({
-	      		customer:howickCustomer._id,
-	      		firstName:machine.SupportManager
-	      	});
+      		let supportContact = await CustomerContact.findOne(queryString);
+
+			if(supportContact) {
+				console.log("supportContact --->", supportContact.firstName, supportContact.lastName);
+			} else {
+				console.log("************************supportContact NOT FOUND*****************************************");
+			}
 
 	      	if(!supportContact) {
 
@@ -110,9 +160,9 @@ async function main() {
 	      	}
 
 	      	if(machineDB.supportManager.indexOf(supportContact._id)==-1) {
-      			machineDB.supportManager.push(supportContact._id);
-	      	}
-
+      			// machineDB.supportManager.push(supportContact._id);
+				machineDB.supportManager = [supportContact._id]
+			}
       	}
 
       	if(!Array.isArray(machineDB.accountManager)) {
@@ -134,12 +184,14 @@ async function main() {
       	}
       	await machineDB.save();
 
-      	console.log(machineDB);
-      	console.log(index);
+      	// console.log(machineDB);
+      	// console.log(index);
 
       	index++;
       	// break;
-      }
+      } else {
+		console.log("***MACHINE NOT FOUND***");
+	  }
     }
   }
   

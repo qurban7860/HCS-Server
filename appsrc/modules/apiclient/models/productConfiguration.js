@@ -23,6 +23,11 @@ const docSchema = new Schema({
 
     configuration: { type: Schema.Types.Mixed },
     // configuration Object Received.
+
+    isManufacture: { type: Boolean, default: false },
+
+    backupDate: { type: Date, default: false },
+
 },
 {
     collection: 'MachineConfigurations'

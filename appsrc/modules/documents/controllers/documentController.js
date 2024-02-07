@@ -97,7 +97,7 @@ exports.getDocuments = async (req, res, next) => {
   let listCustomers;
   let listProducts;
   
-        if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && !req.body.loginUser?.roleTypes?.includes("GlobalManager")){
+    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
     let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
     if(user && ((user.regions && user.regions.length > 0)) ) {
       if(Array.isArray(user.regions) && user.regions.length>0 ) {
@@ -273,14 +273,28 @@ exports.getDocuments = async (req, res, next) => {
 };
 
 
-// TODO: Improve funtionality.
+// TODO: Improve funtionality and restructure.
 exports.getImagesAgainstDocuments = async (req, res, next) => {
   let page = 0; // Specify the page number you want (e.g., from request query parameter)
   let pageSize = 1000; // Specify the number of documents per page (adjust as needed)
   let includeMachines = false;
   let includeDrawings = false;
 
+  // doc Id and fileType
+  let fileType = "image";
+  let documentId_ = null;
 
+  if(req.query?.fileType !== undefined) {
+    fileType = req.query.fileType;
+    delete req.query.fileType;
+  }
+
+  if(req.query?.documentId !== undefined) {
+    if(mongoose.Types.ObjectId.isValid(req.query.documentId))
+      documentId_ = req.query.documentId;
+    delete req.query.documentId;
+  }
+   
 
   if(req.body?.page) {
     page = parseInt(req.body.page);
@@ -400,6 +414,11 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
     
     this.query.$or = queryString__;
 
+    if(documentId_) {
+      this.query._id = documentId_;
+    }
+
+    console.log("this.query._id", this.query._id);
 
 
     let listOfFiles = [];
@@ -421,7 +440,11 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
             for (let documentVersion of documentVersions) {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
                 let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
-                documentFileQuery.fileType = { $regex: 'image', $options: 'i' };
+
+                console.log('fileType -->', fileType);
+                
+
+                documentFileQuery.fileType = { $regex: fileType, $options: 'i' };
                 
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 
