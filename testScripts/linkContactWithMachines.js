@@ -189,7 +189,9 @@ async function main() {
 
       	index++;
       	// break;
-      }
+      } else {
+		console.log("***MACHINE NOT FOUND***");
+	  }
     }
   }
   
