@@ -66,9 +66,12 @@ exports.getSecurityUser = async (req, res, next) => {
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
 
+  console.log("req.query.roleType", req.query.roleType);
   if(req.query.roleType) {
-    let filteredRoles = await SecurityRole.find({roleType:{$in: req.query.roleType}});
+    let filteredRoles = await SecurityRole.find({roleType:{$in: req.query.roleType}, isActive: true, isArchived: false});
 
+    console.log("filteredRoles", filteredRoles);
+    
     if(Array.isArray(filteredRoles) && filteredRoles.length>0) {
       let filteredRolesIds = filteredRoles.map((r)=>r._id);
       this.query.roles = { $in : filteredRolesIds };
@@ -180,7 +183,12 @@ exports.patchSecurityUser = async (req, res, next) => {
   } else {
     if (ObjectId.isValid(req.params.id)) {
       let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
-      const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+      // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
+      let hasSuperAdminRole = false;
+      if(req.body.loginUser?.roleTypes?.includes("SuperAdmin") || 
+         req.body.loginUser?.roleTypes?.includes("Developer")) {
+          hasSuperAdminRole = true;
+      }
 
       if (req.url.includes("updatePassword")) {
         // if admin is updating password
@@ -189,7 +197,7 @@ exports.patchSecurityUser = async (req, res, next) => {
             // let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
             // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
             if(!hasSuperAdminRole){
-              return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "Only superadmins are allowed to access this feature ", true));
+              return res.status("Only superadmins are allowed to access this feature");
             }
           }else{
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -303,10 +311,6 @@ exports.patchSecurityUser = async (req, res, next) => {
   }
 };
 
-
-
-
-
 exports.changeLockedStatus = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
@@ -381,7 +385,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 
 async function getDocumentFromReq(req, reqType){
-  const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, regions, machines,
+  const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, dataAccessibilityLevel, regions, machines,
      password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
 
 
@@ -450,6 +454,10 @@ async function getDocumentFromReq(req, reqType){
 
   if ("roles" in req.body){
     doc.roles = roles;
+  }
+
+  if ("dataAccessibilityLevel" in req.body){
+    doc.dataAccessibilityLevel = dataAccessibilityLevel;
   }
 
   if ("regions" in req.body){

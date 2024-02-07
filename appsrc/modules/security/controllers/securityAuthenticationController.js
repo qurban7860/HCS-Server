@@ -290,7 +290,7 @@ exports.login = async (req, res, next) => {
 };
 
 async function validateAndLoginUser(req, res, existingUser) {
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles );
+  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
   //console.log('accessToken: ', accessToken)
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -344,7 +344,8 @@ async function validateAndLoginUser(req, res, existingUser) {
               login: existingUser.login,
               email: existingUser.email,
               displayName: existingUser.name,
-              roles: existingUser.roles
+              roles: existingUser.roles,
+              dataAccessibilityLevel: existingUser.dataAccessibilityLevel
             }
           });
           
@@ -439,7 +440,7 @@ exports.refreshToken = async (req, res, next) => {
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
     if(existingUser){
-    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID);
+    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.dataAccessibilityLevel);
     if (accessToken) {
       updatedToken = updateUserToken(accessToken);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -764,13 +765,13 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail, sessionID, roles) {
+async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
   const filteredRoles = roles
   .filter(role => role.isActive && !role.isArchived)
   .map(role => role.roleType);
 
   let token;
-  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, roleTypes: filteredRoles };
+  let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
   
   
   

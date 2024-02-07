@@ -151,7 +151,7 @@ exports.patchProductConfiguration = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isActive, isArchived, loginUser} = req.body;
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, isActive, isArchived, loginUser} = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductConfiguration({});
@@ -183,6 +183,14 @@ function getDocumentFromReq(req, reqType){
     doc.configuration = configuration;
   }
   
+  if ("isManufacture" in req.body){
+    doc.isManufacture = isManufacture;
+  }
+  
+  if ("backupDate" in req.body){
+    doc.backupDate = backupDate;
+  }
+
   if ("isActive" in req.body){
     doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
   }

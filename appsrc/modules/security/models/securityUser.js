@@ -42,7 +42,9 @@ const docSchema = new Schema({
         currentEmployee: { type: Boolean, default: false },
         
         invitationStatus: { type: Boolean, default: false },
-        
+
+        dataAccessibilityLevel: {type: String, enum: ['FILTER','GLOBAL'], default: 'FILTER'},
+
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
         ],
