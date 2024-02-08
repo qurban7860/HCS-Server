@@ -227,7 +227,7 @@ async function applyUserFilter(req) {
   
         if (finalQuery && finalQuery.$or.length > 0) {
           console.log("finalQuery-->", finalQuery);
-          console.log("finalQuery-->", JSON.Stringify(finalQuery));
+          console.log("finalQuery-->", JSON.Strinigify(finalQuery));
           return finalQuery;
         } else {
           return null;
