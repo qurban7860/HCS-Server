@@ -212,6 +212,8 @@ async function applyUserFilter(req) {
           };
           let customerAllowed = await Customer.find(query___).select('_id').lean();
 
+          console.log("customerAllowed", customerAllowed);
+
           if(customerAllowed && customerAllowed > 0)
             finalQuery.$or.push({_id: {$in: customerAllowed}});
 
