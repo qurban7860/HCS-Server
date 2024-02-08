@@ -214,7 +214,7 @@ async function applyUserFilter(req) {
 
           console.log("customerAllowed", query___, customerAllowed);
 
-          if(customerAllowed && customerAllowed > 0) {
+          if(customerAllowed && customerAllowed.length > 0) {
             console.log("------------------------------------------------------");
             finalQuery.$or.push({_id: {$in: customerAllowed}});
           } else {
