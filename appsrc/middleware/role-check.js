@@ -1,7 +1,7 @@
 const { SecurityUser } = require('../modules/security/models');
 
 module.exports = async (req, res, next) => {
-  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines dataAccessibilityLevel').lean();
+  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines dataAccessibilityLevel contact').lean();
   req.body.userInfo = user;
   console.log("user?.dataAccessibilityLevel", user?.dataAccessibilityLevel);
   console.log(user?.dataAccessibilityLevel !== 'GLOBAL');
