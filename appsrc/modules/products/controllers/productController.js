@@ -142,7 +142,7 @@ async function processUserRoles(req) {
           // Allowed by customer
           let customerAllowed = await Customer.find(query___).select('_id').lean();
           const customerIds = customerAllowed.map(customer => customer._id);
-          if(customerIds && customerIds > 0)
+          if(customerIds && customerIds.length > 0)
             finalQuery.$or.push({customer: {$in: customerIds}});
 
           // Allowed Machines

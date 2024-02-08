@@ -1,4 +1,6 @@
 const { SecurityUser } = require('../modules/security/models');
+const { Customer } = require('../modules/crm/models');
+const { Product } = require('../modules/products/models');
 
 module.exports = async (req, res, next) => {
   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines dataAccessibilityLevel contact').lean();
@@ -27,13 +29,29 @@ module.exports = async (req, res, next) => {
   ) {
     try {
       console.log("is not superadmin and global manager");
+      
+      const query___ = {
+        $or: [
+          { accountManager: req?.body?.userInfo?.contact },
+          { projectManager: req?.body?.userInfo?.contact },
+          { supportManager: req?.body?.userInfo?.contact }
+        ]
+      };
+      let assignedCustomers = await Customer.findOne(query___).select('_id').lean();
+      let assignedMachines = await Product.findOne(query___).select('_id').lean();
 
-      if ((!user?.regions || user?.regions?.length === 0) && (!user.customers || user?.customers?.length === 0) && (!user.machines || user?.machines?.length === 0)) {
+      if (
+           (!user?.regions || user?.regions?.length === 0) 
+        && (!user.customers || user?.customers?.length === 0) 
+        && (!user.machines || user?.machines?.length === 0)
+        && (assignedCustomers === undefined || assignedCustomers === null)
+        && (assignedMachines === undefined || assignedMachines === null)
+        ) {
         console.log("*** The user must be assigned to specific regions, customers, or machines");
         return res.status(400).send("The user must be assigned to specific regions, customers, or machines");
       } else {
         next();
-        console.log("is not superadmin and global manager and region is assigned.");
+        console.log("is not superadmin and global manager and assignment find.");
       }
     } catch (error) {
       console.error(error);

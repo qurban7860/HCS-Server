@@ -212,13 +212,8 @@ async function applyUserFilter(req) {
           };
           let customerAllowed = await Customer.find(query___).select('_id').lean();
 
-          console.log("customerAllowed", query___, customerAllowed);
-
           if(customerAllowed && customerAllowed.length > 0) {
-            console.log("------------------------------------------------------");
             finalQuery.$or.push({_id: {$in: customerAllowed}});
-          } else {
-            console.log("------------------------------------------------------ ELSE...");
           }
 
           // Allowed customer from machines.
@@ -230,9 +225,6 @@ async function applyUserFilter(req) {
         }
   
         if (finalQuery && finalQuery.$or.length > 0) {
-          console.log("finalQuery-->", finalQuery);
-          console.log("finalQuery-->", JSON.stringify(finalQuery));
-
           return finalQuery;
         } else {
           return null;
