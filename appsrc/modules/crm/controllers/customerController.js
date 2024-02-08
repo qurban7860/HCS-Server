@@ -147,6 +147,7 @@ async function applyUserFilter(req) {
           $or: []
         };
   
+        // region
         if (Array.isArray(user.regions) && user.regions.length > 0) {
           let regions = await Region.find({_id: {$in: user.regions}}).select(
             'countries'
@@ -184,19 +185,43 @@ async function applyUserFilter(req) {
           finalQuery.$or.push({mainSite: mainSiteQuery});
         }
   
+        // customer
         if (Array.isArray(user.customers) && user.customers.length > 0) {
           let idQuery = {$in: user.customers};
           finalQuery.$or.push({_id: idQuery});
         }
   
+        //machine
         if (Array.isArray(user.machines) && user.machines.length > 0) {
           let listProducts = await Product.find({_id: {$in: user.machines}}).select(
             'customer'
           ).lean();
           const listCustomers = listProducts.map((item) => item.customer);
           let idQuery = {$in: listCustomers};
-          console.log("idQuery", idQuery);
           finalQuery.$or.push({_id: idQuery});
+        }
+
+        // project, support and account manager query.
+        if(req?.body?.userInfo?.contact) {
+          const query___ = {
+            $or: [
+              { accountManager: req?.body?.userInfo?.contact },
+              { projectManager: req?.body?.userInfo?.contact },
+              { supportManager: req?.body?.userInfo?.contact }
+            ]
+          };
+          let customerAllowed = await Customer.find(query___).select('_id').lean();
+
+          if(customerAllowed && customerAllowed.length > 0) {
+            finalQuery.$or.push({_id: {$in: customerAllowed}});
+          }
+
+          // Allowed customer from machines.
+          const productCustomers = await Product.find(query___).select('-_id customer').lean();
+          const customerIds = productCustomers.map(customer => customer.customer);
+          if(customerIds && customerIds.length > 0) {
+            finalQuery.$or.push({_id: {$in: customerIds}});
+          }
         }
   
         if (finalQuery && finalQuery.$or.length > 0) {

@@ -55,7 +55,7 @@ async function processUserRoles(req) {
       !req.body.loginUser?.roleTypes?.includes("Developer")
     ) {
       let user = await SecurityUser.findById(req.body.loginUser.userId).select(
-        "regions customers machines"
+        "regions customers machines contact"
       ).lean();
   
       if (user) {
@@ -126,6 +126,30 @@ async function processUserRoles(req) {
         if (Array.isArray(user.customers) && user.customers.length > 0) {
           let customerQuery = { $in: user.customers };
           finalQuery.$or.push({ customer: customerQuery });
+        }
+
+        // project, support and account manager query.
+        if(req?.body?.userInfo?.contact) {
+          // Allowed customer from machines.
+          const query___ = {
+            $or: [
+              { accountManager: req?.body?.userInfo?.contact },
+              { projectManager: req?.body?.userInfo?.contact },
+              { supportManager: req?.body?.userInfo?.contact }
+            ]
+          };
+
+          // Allowed by customer
+          let customerAllowed = await Customer.find(query___).select('_id').lean();
+          const customerIds = customerAllowed.map(customer => customer._id);
+          if(customerIds && customerIds.length > 0)
+            finalQuery.$or.push({customer: {$in: customerIds}});
+
+          // Allowed Machines
+          const productCustomers = await Product.find(query___).select('_id').lean();
+          if(productCustomers && productCustomers.length > 0) {
+            finalQuery.$or.push({_id: {$in: productCustomers}});
+          }
         }
   
         if (finalQuery.$or.length > 0) {
