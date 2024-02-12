@@ -44,7 +44,7 @@ router.get(`${baseRoute}/`, controller.getDocuments);
 
 // - /api/1.0.0/documents/
 router.post(`${baseRoute}/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
+    fileUpload.fields([{name:'images', maxCount:200}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -73,7 +73,7 @@ router.patch(`${baseRoute}/updatedVersion/:id`, controller.patchDocumentVersion)
 
 // - /api/1.0.0/documents/:id
 router.patch(`${baseRoute}/:id`,(req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
+    fileUpload.fields([{name:'images', maxCount:200}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -102,7 +102,7 @@ router.patch(`${baseRoute}/:id`,(req, res, next) => {
   //   // Resize images before uploading
   //   resizeImages(req, res, () => {
   //     // Now, call the multer middleware
-  //     fileUpload.fields([{ name: 'images', maxCount: 20 }])(req, res, (err) => {
+  //     fileUpload.fields([{ name: 'images', maxCount: 200 }])(req, res, (err) => {
   //       if (err instanceof multer.MulterError) {
   //         console.log(err);
   //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);

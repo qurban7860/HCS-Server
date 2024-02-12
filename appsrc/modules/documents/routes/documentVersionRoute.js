@@ -35,7 +35,7 @@ router.get(`${baseRoute}/:documentid/versions/`, controller.getDocumentVersions)
 
 // - /api/1.0.0/documents/documentVersion/
 router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
+    fileUpload.fields([{name:'images', maxCount:200}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -61,7 +61,7 @@ router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
 
 // - /api/1.0.0/documents/documentVersion/:id
 router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
-  fileUpload.fields([{name:'images', maxCount:20}])(req, res, async (err) => {
+  fileUpload.fields([{name:'images', maxCount:200}])(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       console.log(err);
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
