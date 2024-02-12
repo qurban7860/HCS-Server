@@ -97,22 +97,22 @@ exports.getDocuments = async (req, res, next) => {
   let listCustomers;
   let listProducts;
   
-    if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
-    let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
-    if(user && ((user.regions && user.regions.length > 0)) ) {
-      if(Array.isArray(user.regions) && user.regions.length>0 ) {
-        let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
-        let countries_ = [].concat(...countries.map(obj => obj.countries));
-        let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
-        const countryCodesArray = country_names.map(node => node.country_name);
-        if(countryCodesArray && countryCodesArray.length > 0) {
-          const mainSitesList = await CustomerSite.find({"address.country": {$in: countryCodesArray}, isActive: true, isArchived: false}).select('_id').lean(); 
-          listCustomers = await Customer.find({mainSite: {$in: mainSitesList}, isActive: true, isArchived: false}).select('_id');
-          listProducts = await Product.find({customer: {$in: listCustomers}, isActive: true, isArchived: false}).select('_id');
-        }
-      }
-    }
-  }
+  //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
+  //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
+  //   if(user && ((user.regions && user.regions.length > 0)) ) {
+  //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
+  //       let countries = await Region.find({_id:{$in:user.regions}}).select('countries').lean();
+  //       let countries_ = [].concat(...countries.map(obj => obj.countries));
+  //       let country_names = await Country.find({_id:{$in:countries_}}).select('country_name').lean();
+  //       const countryCodesArray = country_names.map(node => node.country_name);
+  //       if(countryCodesArray && countryCodesArray.length > 0) {
+  //         const mainSitesList = await CustomerSite.find({"address.country": {$in: countryCodesArray}, isActive: true, isArchived: false}).select('_id').lean(); 
+  //         listCustomers = await Customer.find({mainSite: {$in: mainSitesList}, isActive: true, isArchived: false}).select('_id');
+  //         listProducts = await Product.find({customer: {$in: listCustomers}, isActive: true, isArchived: false}).select('_id');
+  //       }
+  //     }
+  //   }
+  // }
 
 
 
@@ -147,7 +147,6 @@ exports.getDocuments = async (req, res, next) => {
         // this.query.customer = { $exists : false }; 
         // this.query.machine = { $exists : false }; 
 
-        console.log("here");
         if(!listCustomers || listCustomers.length == 0) {
           this.query.$or = [
             {customer: { '$exists': true }}, 
