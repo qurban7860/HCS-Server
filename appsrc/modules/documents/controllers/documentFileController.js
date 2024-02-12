@@ -452,7 +452,19 @@ exports.downloadDocumentFile = async (req, res, next) => {
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-                  const isImage = file?.fileType && file.fileType.startsWith('image');
+                  
+                  const allowedMimeTypes = [
+                    'image/jpeg',
+                    'image/jpg',
+                    'image/png',
+                    'image/webp',
+                    'image/tiff',
+                    'image/gif',
+                    'image/svg'
+                  ];
+                
+                  console.log("file.fileType", file.fileType);
+                  const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
                   const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
                   const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
                   console.log("fileSizeInMegabytes", fileSizeInMegabytes);
