@@ -346,7 +346,17 @@ async function calculateDesiredQuality(imageBuffer, imageResolution) {
 }
 
 const processImageFile = async (docx) => {
-  if (docx.mimetype.includes('image')) {
+  const allowedMimeTypes = [
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/webp',
+    'image/tiff',
+    'image/gif',
+    'image/svg'
+  ];
+
+  if (allowedMimeTypes.includes(docx.mimetype)) {
     let imageResolution = await getImageResolution(docx.path);
     let desiredQuality = await calculateDesiredQuality(docx.path, imageResolution);
     const buffer = await sharp(docx.path)
