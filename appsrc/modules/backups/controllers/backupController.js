@@ -42,11 +42,11 @@ exports.getBackup = async (req, res, next) => {
     if (response.countries.length > 0) {
       const updatedCountries = response.countries.map((country) => ({
         ...country.toObject(),
-        name: country.country_name, 
+        name: country.country_name,
       }));
       updatedResponse = { ...response.toObject(), countries: updatedCountries };
     }
-      
+
     res.json(updatedResponse);
 
   } catch (error) {
@@ -57,12 +57,12 @@ exports.getBackup = async (req, res, next) => {
 
 exports.getBackups = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
-    if(this.query.orderBy) {
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    
+
     const response = await this.dbservice.getObjectList(req, Backup, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
@@ -88,21 +88,21 @@ exports.postBackup = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
-        await Backup.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
-          if (err) console.error(err);  
+      if (req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await Backup.updateMany({}, { $set: { isDefault: false } }, function (err, result) {
+          if (err) console.error(err);
           else console.log(result);
         });
       }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      if(res) {
+      if (res) {
         res.status(StatusCodes.CREATED).json({ Backup: response });
       } else {
         console.log({ Backup: response });
       }
     } catch (error) {
       logger.error(new Error(error));
-      if(res)
+      if (res)
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       else {
         console.log(error._message);
@@ -117,9 +117,9 @@ exports.patchBackup = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.body.isDefault === 'true' || req.body.isDefault === true) {
-        await Backup.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
-          if (err) console.error(err);  
+      if (req.body.isDefault === 'true' || req.body.isDefault === true) {
+        await Backup.updateMany({}, { $set: { isDefault: false } }, function (err, result) {
+          if (err) console.error(err);
           else console.log(result);
         });
       }
@@ -134,22 +134,21 @@ exports.patchBackup = async (req, res, next) => {
 };
 
 
-cron.schedule('*/15 * * * * *', () => {
-  try {
-    console.log('Cron job is running every 30 seconds...');
-    exports.backupMongoDB();
-  } catch (error) {
-    console.error('Error occurred while running backupMongoDB:', error);
-  }
-});
+// cron.schedule('*/15 * * * * *', () => {
+//   try {
+//     console.log('Cron job is running every 30 seconds...');
+//     exports.backupMongoDB();
+//   } catch (error) {
+//     console.error('Error occurred while running backupMongoDB:', error);
+//   }
+// });
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
   const emailToSend = 'harisahmaad@hotmail.com'
-  var _this = this;
-    let emailSubject = "MONGO DB BACKUP";
+  let emailSubject = "MONGO DB BACKUP";
 
-    const {
+  const {
     name,
     backupDuration,
     backupMethod,
@@ -159,35 +158,35 @@ exports.sendEmailforBackup = async (req, res, next) => {
     databaseName,
     backupType,
     backupSize,
-  }  = req.body;
-    
-    let params = {
-      to: emailToSend,
-      subject: emailSubject,
-      html: true
-    };
+  } = req.body;
 
-    let username = 'HARIS AHMAD';
-    let hostName = 'portal.howickltd.com';
+  let params = {
+    to: emailToSend,
+    subject: emailSubject,
+    html: true
+  };
 
-    if(process.env.CLIENT_HOST_NAME)
-      hostName = process.env.CLIENT_HOST_NAME;
-    
-    let hostUrl = "https://portal.howickltd.com";
+  let username = 'HARIS AHMAD';
+  let hostName = 'portal.howickltd.com';
 
-    if(process.env.CLIENT_APP_URL)
-      hostUrl = process.env.CLIENT_APP_URL;
+  if (process.env.CLIENT_HOST_NAME)
+    hostName = process.env.CLIENT_HOST_NAME;
 
-    fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-      let footerContent = render(data,{ hostName, hostUrl, username })
-      
-      fs.readFile(__dirname+'/../../email/templates/data-base-backup.html','utf8', async function(err,data) {
+  let hostUrl = "https://portal.howickltd.com";
 
-        let htmlData = render(data,{ hostName, hostUrl, username, footerContent, name, databaseName, backupSize, backupLocation })
-        params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params);
-      })
-    });
+  if (process.env.CLIENT_APP_URL)
+    hostUrl = process.env.CLIENT_APP_URL;
+
+  fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
+    let footerContent = render(data, { hostName, hostUrl, username })
+
+    fs.readFile(__dirname + '/../../email/templates/data-base-backup.html', 'utf8', async function (err, data) {
+
+      let htmlData = render(data, { hostName, hostUrl, username, footerContent, name, databaseName, backupSize, backupLocation })
+      params.htmlData = htmlData;
+      let response = await awsService.sendEmail(params);
+    })
+  });
 };
 
 exports.backupMongoDB = async (req, res, next) => {
@@ -195,68 +194,67 @@ exports.backupMongoDB = async (req, res, next) => {
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const outputFolder = "db-backups";
   const cmdToExecute = `mongodump --out ${outputFolder} --collection Configs --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
-  console.log("cmdToExecute", cmdToExecute);
   exec(cmdToExecute,
-      (error, stdout, stderr) => {
-          if (error) {
-              console.error(`mongodump error: ${error.message}`);
-              return false;
-          }
-          if (stderr) {
-              console.error(`mongodump stderr: ${stderr}`);
-          }
+    (error, stdout, stderr) => {
+      if (error) {
+        console.error(`mongodump error: ${error.message}`);
+        return false;
+      }
+      if (stderr) {
+        console.error(`mongodump stderr: ${stderr}`);
+      }
 
-    const fileNameZip = `db-${timestamp}.zip`;
-    const pathToZip = `./${fileNameZip}`;
-    const output = fs.createWriteStream(pathToZip);
-    const archive = archiver('zip');
+      const fileNameZip = `db-${timestamp}.zip`;
+      const pathToZip = `./${fileNameZip}`;
+      const output = fs.createWriteStream(pathToZip);
+      const archive = archiver('zip');
 
-    archive.on('error', (err) => {
-      console.error(`Error zipping backup folder: ${err.message}`);
-    });
-    let zipSize = 0;
-    archive.on('data', (data) => {
-      zipSize = data.length / 1024;
-    });
-    
-    archive.pipe(output);
-    archive.directory(`${outputFolder}/`, false);
-    archive.finalize();
-    
-    output.on('close', () => {
+      archive.on('error', (err) => {
+        console.error(`Error zipping backup folder: ${err.message}`);
+      });
+      let zipSize = 0;
+      archive.on('data', (data) => {
+        zipSize = data.length / 1024;
+      });
+
+      archive.pipe(output);
+      archive.directory(`${outputFolder}/`, false);
+      archive.finalize();
+
+      output.on('close', () => {
         console.log('Backup folder has been zipped successfully');
         const S3Path = 'FRAMA-DB';
         uploadToS3(pathToZip, fileNameZip, S3Path)
-        .then(() => {
+          .then(() => {
 
-          fs.rm(outputFolder, { recursive: true }, (err) => {
-            if (err) {
+            fs.rm(outputFolder, { recursive: true }, (err) => {
+              if (err) {
                 console.error('Error removing directory:', err);
                 return;
-            } else {
-              console.log('Directory removed successfully.');
-            }
-        });
-  
-        fs.rm(pathToZip, { recursive: true }, (err) => {
-          if (err) {
-              console.error('Error removing directory:', err);
-              return;
-          } else {
-            console.log('Directory removed successfully.');
-          }
-      });
+              } else {
+                console.log('Directory removed successfully.');
+              }
+            });
+
+            fs.rm(pathToZip, { recursive: true }, (err) => {
+              if (err) {
+                console.error('Error removing directory:', err);
+                return;
+              } else {
+                console.log('Directory removed successfully.');
+              }
+            });
 
 
             console.log('Upload completed.');
-        })
-        .catch((err) => {
+          })
+          .catch((err) => {
             console.error('Upload failed:', err);
-        });
+          });
         const endTime = performance.now();
         const durationSeconds = (endTime - startTime) / 1000;
         let req = {};
-        req.body =  {};
+        req.body = {};
         req.body = {
           name: fileNameZip,
           backupDuration: durationSeconds,
@@ -272,32 +270,32 @@ exports.backupMongoDB = async (req, res, next) => {
 
         exports.postBackup(req, res, next);
 
-    });
-      }
+      });
+    }
   );
 }
 
 
 async function uploadToS3(filePath, key, folderName) {
-    const fileContent = fs.readFileSync(filePath);
-    const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
-        Key: `${folderName}/${key}`,
-        Body: fileContent
-    };
-    try {
-        const data = await s3.upload(params).promise();
-        console.log(`File uploaded successfully. Location: ${data.Location}`);
-        return data;
-    } catch (err) {
-        console.error('Error uploading file to S3:', err);
-        throw err;
-    }
+  const fileContent = fs.readFileSync(filePath);
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: `${folderName}/${key}`,
+    Body: fileContent
+  };
+  try {
+    const data = await s3.upload(params).promise();
+    console.log(`File uploaded successfully. Location: ${data.Location}`);
+    return data;
+  } catch (err) {
+    console.error('Error uploading file to S3:', err);
+    throw err;
+  }
 }
 
 
 function getDocumentFromReq(req, reqType) {
-  const { 
+  const {
     name,
     backupSize,
     backupType,
