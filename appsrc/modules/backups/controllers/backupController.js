@@ -149,6 +149,18 @@ exports.sendEmailforBackup = async (req, res, next) => {
   var _this = this;
     let emailSubject = "MONGO DB BACKUP";
 
+    const {
+    name,
+    backupDuration,
+    backupMethod,
+    backupLocation,
+    backupStatus,
+    databaseVersion,
+    databaseName,
+    backupType,
+    backupSize,
+  }  = req.body;
+    
     let params = {
       to: emailToSend,
       subject: emailSubject,
@@ -169,9 +181,9 @@ exports.sendEmailforBackup = async (req, res, next) => {
     fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
       let footerContent = render(data,{ hostName, hostUrl, username })
       
-      fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
+      fs.readFile(__dirname+'/../../email/templates/data-base-backup.html','utf8', async function(err,data) {
 
-        let htmlData = render(data,{ hostName, hostUrl, username, footerContent })
+        let htmlData = render(data,{ hostName, hostUrl, username, footerContent, name, databaseName, backupSize, backupLocation })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
       })
@@ -217,25 +229,25 @@ exports.backupMongoDB = async (req, res, next) => {
         uploadToS3(pathToZip, fileNameZip, S3Path)
         .then(() => {
 
-      //     fs.rm(outputFolder, { recursive: true }, (err) => {
-      //       if (err) {
-      //           console.error('Error removing directory:', err);
-      //           return;
-      //       } else {
-      //         console.log('Directory removed successfully.');
-      //       }
-      //   });
+          fs.rm(outputFolder, { recursive: true }, (err) => {
+            if (err) {
+                console.error('Error removing directory:', err);
+                return;
+            } else {
+              console.log('Directory removed successfully.');
+            }
+        });
   
-      //   fs.rm(pathToZip, { recursive: true }, (err) => {
-      //     if (err) {
-      //         console.error('Error removing directory:', err);
-      //         return;
-      //     } else {
-      //       console.log('Directory removed successfully.');
-      //     }
-      // });
+        fs.rm(pathToZip, { recursive: true }, (err) => {
+          if (err) {
+              console.error('Error removing directory:', err);
+              return;
+          } else {
+            console.log('Directory removed successfully.');
+          }
+      });
 
-      // exports.sendEmailforBackup();
+
             console.log('Upload completed.');
         })
         .catch((err) => {
@@ -256,6 +268,8 @@ exports.backupMongoDB = async (req, res, next) => {
           backupType: 'SYSTEM',
           backupSize: zipSize
         };
+        exports.sendEmailforBackup(req);
+
         exports.postBackup(req, res, next);
 
     });
