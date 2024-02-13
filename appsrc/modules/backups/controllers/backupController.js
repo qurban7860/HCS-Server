@@ -267,7 +267,7 @@ exports.backupMongoDB = async (req, res, next) => {
 async function uploadToS3(filePath, key, folderName) {
     const fileContent = fs.readFileSync(filePath);
     const params = {
-        Bucket: process.env.WS_S3_BUCKET,
+        Bucket: process.env.AWS_S3_BUCKET,
         Key: `${folderName}/${key}`,
         Body: fileContent
     };
