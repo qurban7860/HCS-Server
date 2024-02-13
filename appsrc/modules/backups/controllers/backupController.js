@@ -215,23 +215,23 @@ exports.backupMongoDB = async (req, res, next) => {
         uploadToS3(pathToZip, fileNameZip, S3Path)
         .then(() => {
 
-          fs.rm(outputFolder, { recursive: true }, (err) => {
-            if (err) {
-                console.error('Error removing directory:', err);
-                return;
-            } else {
-              console.log('Directory removed successfully.');
-            }
-        });
+      //     fs.rm(outputFolder, { recursive: true }, (err) => {
+      //       if (err) {
+      //           console.error('Error removing directory:', err);
+      //           return;
+      //       } else {
+      //         console.log('Directory removed successfully.');
+      //       }
+      //   });
   
-        fs.rm(pathToZip, { recursive: true }, (err) => {
-          if (err) {
-              console.error('Error removing directory:', err);
-              return;
-          } else {
-            console.log('Directory removed successfully.');
-          }
-      });
+      //   fs.rm(pathToZip, { recursive: true }, (err) => {
+      //     if (err) {
+      //         console.error('Error removing directory:', err);
+      //         return;
+      //     } else {
+      //       console.log('Directory removed successfully.');
+      //     }
+      // });
 
       // exports.sendEmailforBackup();
             console.log('Upload completed.');
