@@ -233,7 +233,7 @@ exports.backupMongoDB = async (req, res, next) => {
           }
       });
 
-      exports.sendEmailforBackup();
+      // exports.sendEmailforBackup();
             console.log('Upload completed.');
         })
         .catch((err) => {
