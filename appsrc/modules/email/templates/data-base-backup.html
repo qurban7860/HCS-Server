@@ -8,24 +8,14 @@
     <meta content="telephone=no" name="format-detection">
     <title>Howick Database Backup Wizard</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk&display=swap" rel="stylesheet">
-    <!--
-								<![endif]-->
-    <!--[if !mso]>
-								<!-- -->
     <link href="https://fonts.googleapis.com/css?family=Lato:400,400i,700,700i" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Merriweather:400,400i,700,700i" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Merriweather+Sans:400,400i,700,700i" rel="stylesheet">
-    <!--
-											<![endif]-->
     <style type="text/css">
       #outlook a {
         padding: 0;
       }
 
-      td, th, h1, h2, h3, h4, p{
-        color: #1F1F1F !important;
-      }
-      
       .es-button {
         mso-style-priority: 100 !important;
         text-decoration: none !important;
@@ -476,13 +466,28 @@
                               <table style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;background-position:left top" width="100%" cellspacing="0" cellpadding="0" bgcolor="transparent" role="presentation">
                                 <tr>
                                   <td align="left" style="padding:0;Margin:0">
-                                    <h2 style="Margin:0;line-height:43px;mso-line-height-rule:exactly;font-family:'Space Grotesk', sans-serif;font-size:24px;font-style:normal;font-weight:normal;color:#051923">Hi, <strong>{{username}}!</strong></h2>
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">You've been sent this email to confirm that the database backup was successful.</p>
+                                    <h2 style="Margin:0;line-height:43px;mso-line-height-rule:exactly;font-family:'Space Grotesk', sans-serif;font-size:24px;font-style:normal;font-weight:normal;color:#051923">Hi, <strong>{{username}}</strong></h2>
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">The database wizard has finished. Below is the database backup information.
+                                      <br><br>
+                                      <strong>File Name:</strong> {{ name }}<br>
+                                      <strong>Database Name:</strong> {{ databaseName }}<br>
+                                      <strong>Backup Size:</strong> {{ backupSize }}<br>
+                                      <strong>S3 Location:</strong> {{ backupLocation }}<br>
+                                    </p>
                                   </td>
                                 </tr>
                                 <tr>
-                                  <!-- <td align="left" style="padding:0;Margin:0"> -->
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Backup Information: file name: {{name}}, database name: {{databaseName}}, backup Size: {{backupSize}}, s3 location: {{backupLocation}}</p>
+                                  <td align="center" class="es-m-txt-c" style="padding:0;Margin:0;padding-top:15px;padding-bottom:15px">
+                                    <span class="msohide es-button-border" style="border-style:solid;border-color:#0940b2;background:#0940b2;border-width:0px;display:inline-block;border-radius:8px;width:auto;mso-hide:all">
+                                      <!-- <a href="{{ link }}" onmouseover="this.style.background='#ffa500'" onmouseleave="this.style.background='#0940b2'" class="es-button es-button-1693292759129 msohide" target="_blank" style="mso-style-priority:100 !important;text-decoration:none;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;color:#FFFFFF;font-size:16px;padding:10px 25px 10px 25px;display:inline-block;background:#0940b2;border-radius:5px;font-family:'Space Grotesk', sans-serif;font-weight:normal;font-style:normal;line-height:19px;width:auto;text-align:center;mso-padding-alt:0;mso-border-alt:10px solid #00A6FB;mso-hide:all;padding-top:10px;padding-bottom:10px">CLICK TO DOWNLOAD SERVICE RECORD</a> -->
+                                    </span>
+                                    <!--
+																														<![endif]-->
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td align="left" style="padding:0;Margin:0">
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px;font-weight: bolder;">Please log in via the admin portal to access all information or download it.</p>
                                     <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
                                       <br>
                                     </p>
@@ -497,7 +502,64 @@
                         </table>
                       </td>
                     </tr>
+                    <!-- <tr>
+                      <td style="padding-top:25px; padding-bottom:55px; Margin:0;background-image:url({{ hostUrl }}/logo/email/footer.png);background-color:#273e8b;background-position:left center;background-repeat:no-repeat" bgcolor="#273e8b" align="left" background="{{ hostUrl }}/logo/email/footer.png">
+                        <table width="100%" cellspacing="0" cellpadding="0" role="none" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                          <tr>
+                            <td valign="top" align="center" style="padding:0;Margin:0;width:520px">
+                              <table style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;background-position:left top" width="100%" cellspacing="0" cellpadding="0" bgcolor="transparent" role="presentation">
+                                <tr>
+                                  <td align="center" style="padding:0;Margin:0;padding-bottom:5px;padding-left:20px;padding-right:20px">
+                                    <h1 style="margin:0;line-height:34px;mso-line-height-rule:exactly;font-family:'merriweather sans', 'helvetica neue', helvetica, arial, sans-serif;font-size:34px;font-style:normal;font-weight:normal;color:#ffffff">
+                                      <strong>Get in touch</strong>
+                                    </h1>
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
+                                      <a target="_blank" href="{{ hostUrl }}" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#fcfdfe;font-size:16px">{{ hostName }}/get-in-touch</a>
+                                    </p>
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td align="center" style="padding:0;Margin:0;font-size:0">
+                                    <table cellpadding="0" cellspacing="0" class="es-table-not-adapt es-social" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+                                      <tr>
+                                        <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px">
+                                          <a target="_blank" href="https://www.facebook.com/Howickltd/" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#00A6FB;font-size:16px">
+                                            <img src="{{ hostUrl }}/logo/email/fb.png" alt="Fb" title="Facebook" width="32" height="32" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic">
+                                          </a>
+                                        </td>
+                                        <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px">
+                                          <a target="_blank" href="https://www.youtube.com/@HowickLimited" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#00A6FB;font-size:16px">
+                                            <img src="{{ hostUrl }}/logo/email/youtube.png" alt="Yt" title="Youtube" width="32" height="32" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic">
+                                          </a>
+                                        </td>
+                                        <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px">
+                                          <a target="_blank" href="https://www.linkedin.com/company/howick-ltd/" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#00A6FB;font-size:16px">
+                                            <img src="{{ hostUrl }}/logo/email/linkedin.png" alt="In" title="Linkedin" width="32" height="32" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic">
+                                          </a>
+                                        </td>
+                                        <td align="center" valign="top" style="padding:0;Margin:0;padding-right:10px">
+                                          <a target="_blank" href="https://twitter.com/HowickLTD" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#00A6FB;font-size:16px">
+                                            <img src="{{ hostUrl }}/logo/email/twitter.png" alt="X" title="X.com" width="32" height="32" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic">
+                                          </a>
+                                        </td>
+                                        <td align="center" valign="top" style="padding:0;Margin:0">
+                                          <a target="_blank" href="https://www.instagram.com/howickltd/" style="-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;text-decoration:underline;color:#00A6FB;font-size:16px">
+                                            <img src="{{ hostUrl }}/logo/email/insta.png" alt="Ig" title="Instagram" width="32" height="32" style="display:block;border:0;outline:none;text-decoration:none;-ms-interpolation-mode:bicubic">
+                                          </a>
+                                        </td>
+                                      </tr>
+                                    </table>
+                                  </td>
+                                </tr>
+                              </table>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr> -->
+
                     {{ footerContent }}
+                    
                   </table>
                 </td>
               </tr>
