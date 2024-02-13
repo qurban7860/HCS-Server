@@ -183,10 +183,12 @@ exports.backupMongoDB = async (req, res, next) => {
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const outputFolder = "db-backups";
   const cmdToExecute = `mongodump --out ${outputFolder} --collection Configs --uri="mongodb+srv://${process.env.AMONGODB_USERNAME}:${process.env.AMONGODB_PASSWD}@${process.env.AMONGODB_HOST}/${process.env.AMONGODB_NAME}"`;
+  console.log("cmdToExecute", cmdToExecute);
   exec(cmdToExecute,
       (error, stdout, stderr) => {
           if (error) {
               console.error(`mongodump error: ${error.message}`);
+              return false;
           }
           if (stderr) {
               console.error(`mongodump stderr: ${stderr}`);
