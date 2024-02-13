@@ -16,7 +16,7 @@ const { Backup } = require('../models');
 const { render } = require('template-file');
 const awsService = require('../../../../appsrc/base/aws');
 const AWS = require('aws-sdk');
-AWS.config.update({ region: process.env.AWS_REGION });
+AWS.config.update({ region: process.env.WS_REGION });
 const s3 = new AWS.S3();
 const cron = require('node-cron');
 const { exec } = require('child_process');
@@ -182,7 +182,7 @@ exports.backupMongoDB = async (req, res, next) => {
   const startTime = performance.now();
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const outputFolder = "db-backups";
-  const cmdToExecute = `mongodump --out ${outputFolder} --collection Configs --uri="mongodb+srv://${process.env.AMONGODB_USERNAME}:${process.env.AMONGODB_PASSWD}@${process.env.AMONGODB_HOST}/${process.env.AMONGODB_NAME}"`;
+  const cmdToExecute = `mongodump --out ${outputFolder} --collection Configs --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
   console.log("cmdToExecute", cmdToExecute);
   exec(cmdToExecute,
       (error, stdout, stderr) => {
@@ -252,7 +252,7 @@ exports.backupMongoDB = async (req, res, next) => {
           backupLocation: `${S3Path}/${fileNameZip}`,
           backupStatus: '201',
           databaseVersion: '1',
-          databaseName: process.env.AMONGODB_USERNAME,
+          databaseName: process.env.MONGODB_USERNAME,
           backupType: 'SYSTEM',
           backupSize: zipSize
         };
@@ -267,7 +267,7 @@ exports.backupMongoDB = async (req, res, next) => {
 async function uploadToS3(filePath, key, folderName) {
     const fileContent = fs.readFileSync(filePath);
     const params = {
-        Bucket: process.env.AWS_S3_BUCKET,
+        Bucket: process.env.WS_S3_BUCKET,
         Key: `${folderName}/${key}`,
         Body: fileContent
     };
