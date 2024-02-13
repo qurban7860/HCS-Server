@@ -38,7 +38,7 @@ const apiclientRoute  = require ('../apiclient/routes');
 
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
-
+const backupRoute  = require ('../backups/routes');
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -132,6 +132,7 @@ class App {
     apiclientRoute.registerapiClientRoutes(this.app, apiPath); 
     configRoute.registerConfigRoutes(this.app, apiPath);
     logRoute.registerlogRoutes(this.app, apiPath);
+    backupRoute.registerBackupRoutes(this.app, apiPath);
   }
 
 
