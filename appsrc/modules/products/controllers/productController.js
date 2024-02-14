@@ -665,8 +665,6 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachineID = parentMachine._id;
           req.body.manufactureDate = parentMachine.manufactureDate;
 
-          console.log("req.body", req.body);
-
           req.body.name = parentMachine.name;
           req.body.alias = parentMachine.alias;
           req.body.description = parentMachine.description;

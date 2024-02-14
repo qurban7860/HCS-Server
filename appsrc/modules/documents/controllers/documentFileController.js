@@ -130,7 +130,6 @@ exports.getDocumentFiles = async (req, res, next) => {
 
 
 exports.checkFileExistenceByETag = async (req, res, next) => {
-  console.log("eTags", req.query.eTags);
   try {
       if(req?.query?.eTags && req?.query?.eTags.length > 0) {
         const filesResponse = [];
