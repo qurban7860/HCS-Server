@@ -46,7 +46,6 @@ exports.getConfig = async (req, res, next) => {
 
 
 exports.getConfigs = async (req, res, next) => {
-  console.log("here...");
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     const response = await this.dbservice.getObjectList(req, ServiceSetting, this.fields, this.query, this.orderBy, this.populate);
