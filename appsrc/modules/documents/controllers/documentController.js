@@ -216,8 +216,6 @@ exports.getDocuments = async (req, res, next) => {
       this.query.$or.push(...andString);
     }
 
-    console.log("listProducts", listProducts, JSON.stringify(this.query));
-
 
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
