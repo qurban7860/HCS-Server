@@ -26,7 +26,7 @@ const docSchema = new Schema({
 
     isManufacture: { type: Boolean, default: false },
 
-    backupDate: { type: Date, default: false },
+    backupDate: { type: Date },
 
 },
 {

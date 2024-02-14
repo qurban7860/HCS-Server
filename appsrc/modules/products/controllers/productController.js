@@ -664,6 +664,23 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
           req.body.manufactureDate = parentMachine.manufactureDate;
+
+          req.body.name = parentMachine.name;
+          req.body.alias = parentMachine.alias;
+          req.body.description = parentMachine.description;
+          req.body.supplier = parentMachine.supplier;
+          req.body.workOrderRef = parentMachine.workOrderRef;
+          req.body.operators = parentMachine.operators;
+          req.body.accountManager = parentMachine.accountManager;
+          req.body.projectManager = parentMachine.projectManager;
+          req.body.supportManager = parentMachine.supportManager;
+          req.body.internalTags = parentMachine.internalTags;
+          req.body.supportExpireDate = parentMachine.supportExpireDate;
+          req.body.customerTags = parentMachine.customerTags;
+          req.body.siteMilestone = parentMachine.siteMilestone;
+          
+
+
           if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
 
           // // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
@@ -707,7 +724,8 @@ exports.transferOwnership = async (req, res, next) => {
                 console.log("responseProductTechParamValue", responseProductTechParamValue);
               }
 
-              if(req.body.isAllTools && (req.body.isAllTools == 'true' || req.body.isAllTools == true)){              
+              if(req.body.isAllTools && (req.body.isAllTools == 'true' || req.body.isAllTools == true)){
+                req.body.tools = parentMachine.tools;              
                 console.log("req.body.isAllTools", req.body.isAllTools);
                 const responseProductToolInstalled = await ProductToolInstalled.updateMany(whereClause, setClause);
                 console.log("responseProductToolInstalled", responseProductToolInstalled);
@@ -782,7 +800,6 @@ const disconnectConnections = async (req, newMachine) => {
         isActive: true,
         machine: { '$ne': req.body.machine }
       };
-      console.log("queryString___", queryString___);
       const machineWithConnections = await ProductConnection
         .find(queryString___)
         .select('machine connectedMachine serialNo')
@@ -793,8 +810,6 @@ const disconnectConnections = async (req, newMachine) => {
   
       if (machineWithConnections.length > 0) {
         for (const connection of machineWithConnections) {
-          // console.log("Serial No:", connection.machine.serialNo);
-          // console.log("Connections:", connection.connectedMachine.serialNo);
   
           const productObject = await Product
             .findOne({ machineConnections: connection._id })
