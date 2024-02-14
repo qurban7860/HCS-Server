@@ -47,7 +47,7 @@ router.post(`${baseRoute}/`, async (req, res, next) => {
     const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
     const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
     const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
-    
+    console.log("maxCount", maxCount);
     fileUpload.fields([{name:'images', maxCount:maxCount}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
@@ -80,7 +80,7 @@ router.patch(`${baseRoute}/:id`,async (req, res, next) => {
     const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
     const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
     const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
-
+    console.log("maxCount", maxCount);
     fileUpload.fields([{name:'images', maxCount:maxCount}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
