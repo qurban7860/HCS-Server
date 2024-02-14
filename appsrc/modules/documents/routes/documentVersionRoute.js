@@ -34,8 +34,12 @@ router.get(`${baseRoute}/:documentid/versions/:id`,controller.getDocumentVersion
 router.get(`${baseRoute}/:documentid/versions/`, controller.getDocumentVersions);
 
 // - /api/1.0.0/documents/documentVersion/
-router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
-    fileUpload.fields([{name:'images', maxCount:200}])(req, res, async (err) => {
+router.post(`${baseRoute}/:documentid/versions/`, async (req, res, next) => {
+    const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
+    const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+    const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
+  
+    fileUpload.fields([{name:'images', maxCount:maxCount}])(req, res, async (err) => {
 
       if (err instanceof multer.MulterError) {
         console.log(err);
@@ -60,8 +64,12 @@ router.post(`${baseRoute}/:documentid/versions/`, (req, res, next) => {
   }, controller.postDocumentVersion);
 
 // - /api/1.0.0/documents/documentVersion/:id
-router.patch(`${baseRoute}/:documentid/versions/:id`, (req, res, next) => {
-  fileUpload.fields([{name:'images', maxCount:200}])(req, res, async (err) => {
+router.patch(`${baseRoute}/:documentid/versions/:id`, async (req, res, next) => {
+  const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
+  const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
+
+  fileUpload.fields([{name:'images', maxCount : maxCount}])(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       console.log(err);
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
