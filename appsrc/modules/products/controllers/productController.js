@@ -266,7 +266,7 @@ exports.getProducts = async (req, res, next) => {
     listPopulate.push({path: 'instalationSite', select: ''});
   }
 
-  const listFields = 'serialNo name model customer installationDate shippingDate verifications status isActive createdAt';
+  const listFields = 'serialNo name model customer installationDate shippingDate supportManager projectManager accountManager verifications status isActive  createdAt';
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
