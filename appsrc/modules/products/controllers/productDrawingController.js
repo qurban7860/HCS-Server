@@ -47,6 +47,7 @@ exports.getProductDrawings = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      console.log(response.length);
       res.json(response);
     }
   }
