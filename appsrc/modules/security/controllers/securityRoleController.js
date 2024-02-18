@@ -40,6 +40,11 @@ exports.getSecurityRole = async (req, res, next) => {
 
 exports.getSecurityRoles = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
+  this.orderBy = { name: 1 };  
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, SecurityRole, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

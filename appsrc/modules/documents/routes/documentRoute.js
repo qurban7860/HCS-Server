@@ -71,6 +71,38 @@ router.post(`${baseRoute}/`, async (req, res, next) => {
       }
     });
   }, controller.postDocument);
+
+
+// - /api/1.0.0/documents/
+router.post(`${baseRoute}multi/`, async (req, res, next) => {
+  const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
+  const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
+  console.log("maxCount", maxCount, req.images);
+  fileUpload.fields([{name:'images', maxCount:maxCount}])(req, res, async (err) => {
+    
+    // console.log(req);
+    if (err instanceof multer.MulterError) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
+    } else if (err) {
+      console.log(err);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+      if(req.files && req.files['images']) {
+        const documents_ = req.files['images'];
+        await Promise.all(documents_.map(async (docx, index) => {
+          docx.eTag = await awsService.generateEtag(docx.path);
+          if(configObject){
+            await awsService.processImageFile(docx);
+          }
+        }));
+      }
+      next();
+    }
+  });
+}, controller.postMultiDocument);
   
 // - /api/1.0.0/documents/updatedVersion/:id
 router.patch(`${baseRoute}/updatedVersion/:id`, controller.patchDocumentVersion);
