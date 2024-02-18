@@ -787,6 +787,7 @@ exports.postDocument = async (req, res, next) => {
             activityDetail : "Document created successfully",
           }
 
+
           if(docCategory.drawing && req.body.drawingMachine) {
             req.body.documentId = document_._id;
             req.body.machine = req.body.drawingMachine;
@@ -822,6 +823,9 @@ exports.postDocument = async (req, res, next) => {
 };
 
 exports.postMultiDocument = async (req, res, next) => {
+  if(req.body.documentCategory && !Array.isArray(req.body.documentCategory)) {
+    return res.status(StatusCodes.BAD_REQUEST).send("upload multiple drawings.");
+  }
   try{
     const req_ = _.cloneDeep(req);
     const errors = validationResult(req);
@@ -849,14 +853,9 @@ exports.postMultiDocument = async (req, res, next) => {
         req.body.versionNo = req_.body.versionNo && req_.body.versionNo[i] ? req_.body.versionNo[i] : null;
         req.body.displayName = req_.body.displayName && req_.body.displayName[i] ? req_.body.displayName[i] : null;
         req.body.docType = req_.body.docType && req_.body.docType[i] ? req_.body.docType[i] : null;
-        req.body.drawingMachine = req_.body.drawingMachine && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : null;
         req.body.stockNumber = req_.body.stockNumber && req_.body.stockNumber[i] ? req_.body.stockNumber[i] : null;
         req.body.description = req_.body.description && req_.body.description[i] ? req_.body.description[i] : null;
         req.body.drawingMachine = req_.body.drawingMachine && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : null;
-
-        
-
-        
 
         if(req_.files?.images && req_.files?.images[i])
           req.files.images = req_.files?.images[i];
@@ -864,11 +863,8 @@ exports.postMultiDocument = async (req, res, next) => {
         let files = [];
           
         if(req?.files?.images){
-          console.log("here.....");
           files[0] = req.files.images;
         }
-
-        console.log("files", files.length);
 
         let name = req.body.name;
         let customer = req.body.customer;
@@ -944,7 +940,6 @@ exports.postMultiDocument = async (req, res, next) => {
 
           if(!docCat) {
             console.error("Category Not Found");
-
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
           if(Array.isArray(files) && files.length>0) {
