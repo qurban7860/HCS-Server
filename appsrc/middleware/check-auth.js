@@ -4,7 +4,6 @@ const HttpError = require('../modules/config/models/http-error');
 const { SecuritySession } = require('../modules/security/models');
 
 module.exports = async (req, res, next) => {
-
   if (req.method === 'OPTIONS' || 
   req.url.toLowerCase() === '/gettoken' || 
   req.url.toLowerCase() === '/forgetpassword' || 
