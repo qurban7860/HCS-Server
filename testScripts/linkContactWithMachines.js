@@ -182,6 +182,24 @@ async function main() {
       			machineDB.supportManager = [machineDB.supportManager];
       		}
       	}
+
+		let jsonObjectToUpdate = {};
+		if(machineDB.accountManager && Array.isArray(machineDB.accountManager) && mongoose.Types.ObjectId.isValid(machineDB.accountManager[0])) {
+			jsonObjectToUpdate.accountManager = [machineDB.accountManager];
+		}
+		if(machineDB.projectManager && Array.isArray(machineDB.projectManager) && mongoose.Types.ObjectId.isValid(machineDB.projectManager[0])) {
+			jsonObjectToUpdate.projectManager = [machineDB.projectManager];
+		}
+		if(machineDB.supportManager && Array.isArray(machineDB.supportManager) && mongoose.Types.ObjectId.isValid(machineDB.supportManager[0])) {
+			jsonObjectToUpdate.supportManager = [machineDB.supportManager];
+		}
+
+		console.log("customer: ", machineDB.customer, machineDB.serialNo, "jsonObjectToUpdate", machineDB.accountManager, jsonObjectToUpdate);
+
+		if(machineDB.customer && mongoose.Types.ObjectId.isValid(machineDB.customer)){
+			await Customer.updateOne({ _id: machineDB.customer }, { $set: jsonObjectToUpdate });
+		}
+		
       	await machineDB.save();
 
       	// console.log(machineDB);
