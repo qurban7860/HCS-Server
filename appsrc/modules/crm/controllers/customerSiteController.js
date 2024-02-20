@@ -373,7 +373,7 @@ function getContactName(contact) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { name, phone, email, fax, website, address, lat, long, 
+  const { name, phone, email, phoneNumbers, fax, website, address, lat, long, 
     primaryBillingContact, primaryTechnicalContact, contacts,
     isActive, isArchived, loginUser } = req.body;
   
@@ -395,6 +395,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("email" in req.body){
     doc.email = email;
+  }
+  if ("phoneNumbers" in req.body){
+    doc.phoneNumbers = phoneNumbers;
   }
   if ("fax" in req.body){
     doc.fax = fax;

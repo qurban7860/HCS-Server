@@ -19,7 +19,7 @@ async function main() {
 				let phoneNumber = {
 					site_id: site._id,
 					phone: site.phone,
-					type: "OTHERS",
+					type: "PHONE",
 					countryCode:parsedNumber.countryCallingCode,
 					number:parsedNumber.nationalNumber,
 					country: parsedNumber.country
