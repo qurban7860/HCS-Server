@@ -288,7 +288,12 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
 
-    let sites = await CustomerSite.find({ customer: req.params.customerId, isActive: true, isArchived: false })
+    let queryString_ = { isActive: true, isArchived: false };
+    if(ObjectId.isValid(req?.params?.customerId)) {
+      queryString_.customer = req.params.customerId;
+    }
+
+    let sites = await CustomerSite.find(queryString_)
       .populate('customer')
       .populate('primaryBillingContact')
       .populate('primaryTechnicalContact');
