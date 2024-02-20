@@ -625,7 +625,7 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
           "TradingName": customer.tradingName ? '' + customer.tradingName.join('-').replace(/"/g,"'") + '' : '',
           "Type": '' + customer.type + '',
           "MainSite": customer.mainSite ? '' + customer.mainSite.name.replace(/"/g,"'") + '' : '',
-          "MainSiteCountry": customer.mainSite ? '' + customer?.mainSite?.address?.country?.replace(/"/g,"'") + '' : '',
+          "MainSiteCountry": customer.mainSite && customer?.mainSite?.address?.country ? '' + customer?.mainSite?.address?.country?.replace(/"/g,"'") + '' : '',
           "MainSiteID": customer.mainSite ? customer.mainSite._id : '',
           "Sites": customer.sitesName ? '' + customer.sitesName.replace(/"/g,"'") + '' : '', //
           "Contacts": customer.contactsName ? '' + customer.contactsName.replace(/"/g,"'") + '' : '', //
