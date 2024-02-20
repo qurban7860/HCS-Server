@@ -452,7 +452,8 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
     let queryString_ = { isActive: true, isArchived: false };
-    if(ObjectId.isValid(req?.params?.customerId)) {
+    const fetchAllSites = req.query.fetchAllSites === true || req.query.fetchAllSites === 'true' ? true : false;
+    if(ObjectId.isValid(req?.params?.customerId) && !fetchAllSites) {
       queryString_.customer = req.params.customerId;
     }
     let contacts = await CustomerContact.find(queryString_)
