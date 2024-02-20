@@ -289,7 +289,8 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
 
     let queryString_ = { isActive: true, isArchived: false };
-    if(ObjectId.isValid(req?.params?.customerId)) {
+    const fetchAllSites = req.body.fetchAllSites === true || req.body.fetchAllSites === 'true' ? true : false;
+    if(ObjectId.isValid(req?.params?.customerId) && !fetchAllSites) {
       queryString_.customer = req.params.customerId;
     }
 
