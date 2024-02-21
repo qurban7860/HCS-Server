@@ -635,6 +635,7 @@ exports.transferOwnership = async (req, res, next) => {
       if (ObjectId.isValid(req.body.machine)) {
         // validate if machine is already in-transfer or not
         let parentMachine = await dbservice.getObjectById(Product, this.fields, req.body.machine, {path: 'status', select: ''});
+        const transpherID = parentMachine?.transpherID && ObjectId.isValid(parentMachine.transpherID) ? parentMachine.transpherID : req.body.machine;
         if (!parentMachine) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, 'Product'));
         }
@@ -664,6 +665,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.parentMachineID = parentMachine._id;
           req.body.manufactureDate = parentMachine.manufactureDate;
+          req.body.transpherID = transpherID;
           
           req.body.alias = parentMachine.alias;
           req.body.description = parentMachine.description;
@@ -767,7 +769,8 @@ exports.transferOwnership = async (req, res, next) => {
                 transferredMachine: transferredMachine._id,
                 transferredDate: new Date(),
                 isActive: false,
-                status: parentMachineStatus._id
+                status: parentMachineStatus._id,
+                transpherID: transpherID
               });
               
               if(parentMachineUpdated){
@@ -1332,7 +1335,7 @@ function fetchAddressCSV(address) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { serialNo, name, parentMachine, parentSerialNo, status, supplier, machineModel, 
+  const { serialNo, name, parentMachine, parentSerialNo, transpherID, status, supplier, machineModel, 
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags, manufactureDate, installationDate, shippingDate, supportExpireDate,
@@ -1359,6 +1362,11 @@ function getDocumentFromReq(req, reqType){
   if ("parentSerialNo" in req.body){
     doc.parentSerialNo =  parentSerialNo;
   }
+
+  if ("transpherID" in req.body){
+    doc.transpherID = transpherID;
+  }
+
   if ("status" in req.body){
     doc.status = status;
   }

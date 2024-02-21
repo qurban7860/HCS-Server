@@ -13,6 +13,9 @@ const docSchema = new Schema({
 
     parentMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // parent machine id
+
+    transpherID: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    // This field serves as an identifier that remains unchanged with every machine transfer. It is initially populated and maintains its consistency with each subsequent transfer.
   
     parentSerialNo: { type: String },
     // Serial No of parent machine
