@@ -269,7 +269,7 @@ exports.getProducts = async (req, res, next) => {
   const listFields = 'serialNo name model customer installationDate shippingDate supportManager projectManager accountManager verifications status isActive  createdAt';
 
   this.query = req.query != "undefined" ? req.query : {};  
-  this.orderBy = { serialNo: 1,  name: 1};
+  this.orderBy = { createdAt: -1};
   
 
   if(this.query.orderBy) {
