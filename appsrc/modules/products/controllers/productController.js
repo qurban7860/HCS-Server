@@ -1348,7 +1348,7 @@ async function checkSerialNumberExistence(req, res, machineid) {
         status: { $nin: listStatus }
       };
       if(machineid && ObjectId.isValid(machineid)){
-        queryString._id: { $ne: machineid },
+        queryString._id = { $ne: machineid };
       }
       const ProductFound = await Product.findOne(queryString).select('_id').lean();
       console.log("ProductFound", ProductFound);
