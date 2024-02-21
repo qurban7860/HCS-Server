@@ -12,7 +12,7 @@ const _ = require('lodash');
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerSite, Customer } = require('../models');
+const { CustomerSite, CustomerContact, Customer } = require('../models');
 const { Config, Country } = require('../../config/models');
 const { Product } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
@@ -110,11 +110,35 @@ exports.postCustomerSite = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
+        updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
+        updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);      
         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
       }
     }
   }
 };
+
+async function updateContactAddress(updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address) {
+  if (
+    primaryTechnicalContact &&
+    ObjectId.isValid(primaryTechnicalContact) &&
+    address &&
+    updateAddressPrimaryTechnicalContact &&
+    (updateAddressPrimaryTechnicalContact === true ||
+      updateAddressPrimaryTechnicalContact === 'true')
+  ) {
+    try { 
+      const setQuery = {$set: { address: address }};
+      console.log(primaryTechnicalContact, setQuery);
+      await CustomerContact.updateOne(
+        { _id: primaryTechnicalContact },
+        setQuery
+      );
+    } catch (error) {
+      console.error('Failed to update address:', error);
+    }
+  }
+}
 
 exports.patchCustomerSite = async (req, res, next) => {
   const errors = validationResult(req);
@@ -156,6 +180,8 @@ exports.patchCustomerSite = async (req, res, next) => {
                         );
                     } 
                     else {
+                      updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
+                      updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);   
                       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
                     }
                   }
@@ -181,6 +207,8 @@ exports.patchCustomerSite = async (req, res, next) => {
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
             );
         } else {
+          updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
+          updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);   
           res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
         }
       }
