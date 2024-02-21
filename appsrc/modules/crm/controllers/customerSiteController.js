@@ -129,7 +129,6 @@ async function updateContactAddress(updateAddressPrimaryTechnicalContact, primar
   ) {
     try { 
       const setQuery = {$set: { address: address }};
-      console.log(primaryTechnicalContact, setQuery);
       await CustomerContact.updateOne(
         { _id: primaryTechnicalContact },
         setQuery

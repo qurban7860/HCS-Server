@@ -665,7 +665,10 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentMachineID = parentMachine._id;
           req.body.manufactureDate = parentMachine.manufactureDate;
 
-          req.body.name = parentMachine.name;
+
+          if(!req.body.name || req.body.name === undefined)
+            req.body.name = parentMachine.name;
+          
           req.body.alias = parentMachine.alias;
           req.body.description = parentMachine.description;
           req.body.supplier = parentMachine.supplier;
@@ -675,7 +678,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.projectManager = parentMachine.projectManager;
           req.body.supportManager = parentMachine.supportManager;
           req.body.internalTags = parentMachine.internalTags;
-          req.body.supportExpireDate = parentMachine.supportExpireDate;
+          req.body.supportExpireDate = "";
           req.body.customerTags = parentMachine.customerTags;
           req.body.siteMilestone = parentMachine.siteMilestone;
           
