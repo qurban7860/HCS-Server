@@ -433,8 +433,10 @@ exports.postProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log("errors machine patch request",errors);
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    await checkSerialNumberExistence(req, res, null);
+
     let listNewConnection = [];
     if (req.body.newConnectedMachines && req.body.newConnectedMachines.length > 0) {
       let listMachineCategories = await ProductCategory.find({connections: true, isActive: true, isArchived: false}).select('_id').lean();
@@ -469,7 +471,7 @@ exports.postProduct = async (req, res, next) => {
     async function callbackFunc(error, machine) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error._message
         );
       } else {
@@ -478,8 +480,8 @@ exports.postProduct = async (req, res, next) => {
 
         if(machine && Array.isArray(machineConnections) && machineConnections.length>0) 
           machine = await connectMachines(machine.id, machineConnections);
-        
-        res.status(StatusCodes.CREATED).json({ Machine: machine });
+
+          return res.status(StatusCodes.CREATED).json({ Machine: machine });
       }
     }
   }
@@ -536,6 +538,7 @@ exports.patchProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    await checkSerialNumberExistence(req, res, req.params.id);
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
     if(machine.status?.slug && machine.status.slug === 'transferred'){
       if(!("isVerified" in req.body)){
@@ -1332,6 +1335,31 @@ function fetchAddressCSV(address) {
     .join(', ');
 
   return formattedAddressCSV;
+}
+
+async function checkSerialNumberExistence(req, res, machineid) {
+  try {
+      const regex = new RegExp('^' + req.body.serialNo.replace(/\s/g, ''), 'i');
+      const queryString_ = { slug: 'transferred'};
+      const listStatus = await ProductStatus.find(queryString_).select('_id').lean();
+      let queryString = {
+        serialNo: regex,
+        isArchived: { $ne: true },
+        status: { $nin: listStatus }
+      };
+      if(machineid && ObjectId.isValid(machineid)){
+        queryString._id: { $ne: machineid },
+      }
+      const ProductFound = await Product.findOne(queryString).select('_id').lean();
+      console.log("ProductFound", ProductFound);
+      if (ProductFound) {
+          return res.status(StatusCodes.BAD_REQUEST).json("The serial number is already linked to a machine.");
+      } else {
+        console.log("not found...");
+      }
+  } catch (error) {
+      console.error("Error checking serial number:", error);
+  }
 }
 
 function getDocumentFromReq(req, reqType){
