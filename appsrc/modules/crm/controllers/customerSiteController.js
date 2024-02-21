@@ -353,7 +353,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
           Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
-          Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
+          // Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           BillingContactID: site.primaryBillingContact ? site.primaryBillingContact._id : '',
           TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
@@ -371,7 +371,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
           Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
-          Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
+          // Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
         };
