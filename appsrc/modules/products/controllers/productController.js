@@ -435,7 +435,7 @@ exports.postProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    await checkSerialNumberExistence(req, res, null);
+    await checkDuplicateSerialNumber(req, res, null);
 
     let listNewConnection = [];
     if (req.body.newConnectedMachines && req.body.newConnectedMachines.length > 0) {
@@ -538,7 +538,7 @@ exports.patchProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    await checkSerialNumberExistence(req, res, req.params.id);
+    await checkDuplicateSerialNumber(req, res, req.params.id);
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
     if(machine.status?.slug && machine.status.slug === 'transferred'){
       if(!("isVerified" in req.body)){
@@ -842,6 +842,7 @@ const disconnectConnections = async (req, newMachine) => {
         updateProduct.shippingDate = req.body.shippingDate && req.body.shippingDate !== undefined ? req.body.shippingDate : ""; 
         updateProduct.installationDate = req.body.installationDate && req.body.installationDate !== undefined ? req.body.installationDate : ""; 
         updateProduct.status = req.body.status && req.body.status !== undefined ? req.body.status : ""; 
+        
         updateProduct.supplier = req.body.supplier && req.body.supplier !== undefined ? req.body.supplier : "";
         updateProduct.workOrderRef = req.body.workOrderRef && req.body.workOrderRef !== undefined ? req.body.workOrderRef : "";
         updateProduct.siteMilestone = req.body.siteMilestone && req.body.siteMilestone !== undefined ? req.body.siteMilestone : ""; 
@@ -1098,6 +1099,57 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
   res.status(StatusCodes.OK).json(convertedArray);
 };
 
+exports.fetchMachineTransferHistory = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
+  if(req.query?.transpherID && req.query?.transpherID !== undefined) {
+    const productLists = await Product.find({transpherID: req.query.transpherID})
+                .select('serialNo parentMachine parentSerialNo name transferredDate transferredMachine parentMachineID status machineModel financialCompany customer instalationSite accountManager projectManager supportManager shippingDate installationDate')
+                .populate(this.populate)
+                .lean().sort({_id: -1});
+    res.json(productLists);
+  } else {
+    return res.status(StatusCodes.BAD_REQUEST).send("transpherID not found");
+  }
+}
+
+exports.checkDuplicateSerialNumber = async (req, res, machineid) => {
+  this.query = req.query != "undefined" ? req.query : {};
+  let fromAPI = false;
+  if(req.query?.serialNo && req.query?.serialNo !== undefined) {
+    fromAPI = true;
+    req.body.serialNo = req.query.serialNo;
+  }
+
+  if(!req.body || !req.body?.serialNo || req.body?.serialNo.trim().length == 0)
+    return res.status(StatusCodes.BAD_REQUEST).json("No serialNo found")
+
+  try {
+      const regex = new RegExp('^' + req.body.serialNo.replace(/\s/g, ''), 'i');
+      const queryString_ = { slug: 'transferred'};
+      const listStatus = await ProductStatus.find(queryString_).select('_id').lean();
+      let queryString = {
+        serialNo: regex,
+        isArchived: { $ne: true },
+        status: { $nin: listStatus }
+      };
+      if(machineid && ObjectId.isValid(machineid)){
+        queryString._id = { $ne: machineid };
+      }
+      const ProductFound = await Product.findOne(queryString).select('_id').lean();
+      console.log("ProductFound", ProductFound);
+      if (ProductFound) {
+          return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
+      } else {
+        if(fromAPI){
+          return res.status(StatusCodes.ACCEPTED).json("No serialNo Found!");
+        }
+        console.log("not found...");
+      }
+  } catch (error) {
+      console.error("Error checking serialNo:", error);
+  }
+}
+
 exports.moveMachine = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -1351,31 +1403,6 @@ function fetchAddressCSV(address) {
     .join(', ');
 
   return formattedAddressCSV;
-}
-
-async function checkSerialNumberExistence(req, res, machineid) {
-  try {
-      const regex = new RegExp('^' + req.body.serialNo.replace(/\s/g, ''), 'i');
-      const queryString_ = { slug: 'transferred'};
-      const listStatus = await ProductStatus.find(queryString_).select('_id').lean();
-      let queryString = {
-        serialNo: regex,
-        isArchived: { $ne: true },
-        status: { $nin: listStatus }
-      };
-      if(machineid && ObjectId.isValid(machineid)){
-        queryString._id = { $ne: machineid };
-      }
-      const ProductFound = await Product.findOne(queryString).select('_id').lean();
-      console.log("ProductFound", ProductFound);
-      if (ProductFound) {
-          return res.status(StatusCodes.BAD_REQUEST).json("The serial number is already linked to a machine.");
-      } else {
-        console.log("not found...");
-      }
-  } catch (error) {
-      console.error("Error checking serial number:", error);
-  }
 }
 
 function getDocumentFromReq(req, reqType){
