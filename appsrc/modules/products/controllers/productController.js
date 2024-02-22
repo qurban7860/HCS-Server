@@ -719,7 +719,7 @@ exports.transferOwnership = async (req, res, next) => {
               const whereClause = {machine: req.body.machine, isArchived: false, isActive: true};
               const setClause = {machine: transferredMachine._id};
               
-              await disconnectConnections(req, transferredMachine._id);
+              await disconnectConnections(req, transferredMachine._id, parentMachine);
               
               // Step 2 
               if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
@@ -795,7 +795,7 @@ exports.transferOwnership = async (req, res, next) => {
   }
 };
 
-const disconnectConnections = async (req, newMachine) => {
+const disconnectConnections = async (req, newMachine, parentMachine) => {
   const requestBodyConnections = req.body.machineConnections;
   if(newMachine && ObjectId.isValid(newMachine)){
     try {
@@ -833,9 +833,18 @@ const disconnectConnections = async (req, newMachine) => {
             await dbservice.patchObject(Product, productObject._id, patchProductObjQuery);
           }
         }
-        await Product.updateMany({_id: {$in: requestBodyConnections}}, {$set: {customer: req.body.customer}});
 
+        let updateProduct = {customer: req.body.customer};
+        if(parentMachine && parentMachine !== undefined) {
+          updateProduct.status = parentMachine.status; 
+          updateProduct.billingSite = parentMachine.billingSite; 
+          updateProduct.shippingDate = parentMachine.shippingDate; 
+          updateProduct.installationDate = parentMachine.installationDate; 
+          updateProduct.instalationSite = parentMachine.instalationSite; 
+          updateProduct.siteMilestone = parentMachine.siteMilestone; 
+        }
 
+        await Product.updateMany({_id: {$in: requestBodyConnections}}, {$set: updateProduct});
 
         const queryS = {machine: { '$eq': req.body.machine }, connectedMachine: {'$in': requestBodyConnections}, isActive: true};
         const productConnections = await ProductConnection.find(queryS).select('_id');
