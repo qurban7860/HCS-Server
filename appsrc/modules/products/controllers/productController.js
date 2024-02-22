@@ -435,7 +435,7 @@ exports.postProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    await checkDuplicateSerialNumber(req, res, null);
+    await exports.checkDuplicateSerialNumber(req, res, null);
 
     let listNewConnection = [];
     if (req.body.newConnectedMachines && req.body.newConnectedMachines.length > 0) {
@@ -538,7 +538,7 @@ exports.patchProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    await checkDuplicateSerialNumber(req, res, req.params.id);
+    await exports.checkDuplicateSerialNumber(req, res, req.params.id);
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
     if(machine.status?.slug && machine.status.slug === 'transferred'){
       if(!("isVerified" in req.body)){
