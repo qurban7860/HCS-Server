@@ -350,10 +350,10 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
 
       let finalDataObj;
       let createdDateLTZ = ""; 
-      if(contact.createdAt && contact.createdAt.length > 0) { const createdDate = new Date(contact.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
+      if(site.createdAt && site.createdAt.length > 0) { const createdDate = new Date(site.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
 
       let updatedDateLTZ = ""; 
-      if(contact.updatedAt && contact.updatedAt.length > 0) { const updatedAt = new Date(contact.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
+      if(site.updatedAt && site.updatedAt.length > 0) { const updatedAt = new Date(site.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
       if (EXPORT_UUID) {
         finalDataObj = {
           SiteID: site._id ? site._id : '',
