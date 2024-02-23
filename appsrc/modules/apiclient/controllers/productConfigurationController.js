@@ -146,10 +146,10 @@ function replaceDotsWithSlashes(obj) {
   for (let key in obj) {
       if (Object.prototype.hasOwnProperty.call(obj, key)) {
           if(key.includes(".")) {
-            const newKey = key.replace(/\./g, '-');
+            const newKey = key.replace(/\./g, '---');
             newObj[newKey] = replaceDotsWithSlashes(obj[key]);
           } else {
-            const newKey = key.replace(/\-/g, '.');
+            const newKey = key.replace(/\---/g, '.');
             newObj[newKey] = replaceDotsWithSlashes(obj[key]);  
           }
 
