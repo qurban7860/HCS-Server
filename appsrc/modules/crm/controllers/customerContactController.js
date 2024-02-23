@@ -496,16 +496,15 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
       
       if (EXPORT_UUID) {
         finalDataObj = {
-          ID: contact._id,
-          Name: contact ? getContactName(contact) : '',
-          Title: contact.title ? '' + contact.title.replace(/"/g, "'") + '' : '',
-          Types: contact.contactTypes ? '' + contact.contactTypes.join('|').replace(/"/g, "'") + '' : '',
+          ContactID: contact._id,
+          ContactName: contact ? getContactName(contact) : '',
           CustomerID: contact.customer ? contact.customer._id : '',
-          Customer: contact.customer ? '' + contact.customer.name.replace(/"/g, "'") + '' : '',
+          CustomerName: contact.customer ? '' + contact.customer.name.replace(/"/g, "'") + '' : '',
+          Title: contact.title ? '' + contact.title.replace(/"/g, "'") + '' : '',
+          ContactTypes: contact.contactTypes ? '' + contact.contactTypes.join('|').replace(/"/g, "'") + '' : '',
           Phone: contact.phone ? '' + contact.phone.replace(/"/g, "'") + '' : '',
           Email: contact.email ? '' + contact.email.replace(/"/g, "'") + '' : '',
-          Sites: contact.sitesName ? '' + contact.sitesName.replace(/"/g, "'") + '' : '',
-          ReportingTo: contact ? getContactName(contact?.reportingTo) : '',
+          ReportTo: contact ? getContactName(contact?.reportingTo) : '',
           Department: contact && contact?.department?.departmentName ? contact?.department?.departmentName : '',
           Street: contact.address ? (contact.address.street ? '' + contact.address.street.replace(/"/g, "'") + '' : '') : '',
           Suburb: contact.address ? (contact.address.suburb ? '' + contact.address.suburb.replace(/"/g, "'") + '' : '') : '',
@@ -513,21 +512,20 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           Region: contact.address ? (contact.address.region ? '' + contact.address.region.replace(/"/g, "'") + '' : '') : '',
           PostCode: contact.address ? (contact.address.postcode ? '' + contact.address.postcode.replace(/"/g, "'") + '' : '') : '',
           Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
-          createdDate : createdDateLTZ,
-          updatedDate : updatedDateLTZ,
+          CreationDate : createdDateLTZ,
+          ModificationDate : updatedDateLTZ,
           isActive : contact.isActive ? 'true' : 'false',
           isArchived : contact.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
-          Name: contact ? getContactName(contact) : '',
+          ContactName: contact ? getContactName(contact) : '',
+          CustomerName: contact.customer ? '' + contact.customer.name.replace(/"/g, "'") + '' : '',
           Title: contact.title ? '' + contact.title.replace(/"/g, "'") + '' : '',
-          Types: contact.contactTypes ? '' + contact.contactTypes.join('|').replace(/"/g, "'") + '' : '',
-          Customer: contact.customer ? '' + contact.customer.name.replace(/"/g, "'") + '' : '',
+          ContactTypes: contact.contactTypes ? '' + contact.contactTypes.join('|').replace(/"/g, "'") + '' : '',
           Phone: contact.phone ? '' + contact.phone.replace(/"/g, "'") + '' : '',
           Email: contact.email ? '' + contact.email.replace(/"/g, "'") + '' : '',
-          Sites: contact.sitesName ? '' + contact.sitesName.replace(/"/g, "'") + '' : '',
-          ReportingTo: contact ? getContactName(contact?.reportingTo) : '',
+          ReportTo: contact ? getContactName(contact?.reportingTo) : '',
           Department: contact && contact?.department?.departmentName ? contact?.department?.departmentName : '',
           Street: contact.address ? (contact.address.street ? '' + contact.address.street.replace(/"/g, "'") + '' : '') : '',
           Suburb: contact.address ? (contact.address.suburb ? '' + contact.address.suburb.replace(/"/g, "'") + '' : '') : '',
@@ -535,8 +533,8 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           Region: contact.address ? (contact.address.region ? '' + contact.address.region.replace(/"/g, "'") + '' : '') : '',
           PostCode: contact.address ? (contact.address.postcode ? '' + contact.address.postcode.replace(/"/g, "'") + '' : '') : '',
           Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
-          createdDate : createdDateLTZ,
-          updatedDate : updatedDateLTZ,
+          CreationDate : createdDateLTZ,
+          ModificationDate : updatedDateLTZ,
           isActive : contact.isActive ? 'true' : 'false',
           isArchived : contact.isArchived ? 'true' : 'false'
         };
