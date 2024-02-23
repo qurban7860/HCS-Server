@@ -376,8 +376,8 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Website: site.website ? site.website : '',
           CreationDate : createdDateLTZ,
           ModificationDate : updatedDateLTZ,
-          isActive : contact.isActive ? 'true' : 'false',
-          isArchived : contact.isArchived ? 'true' : 'false'
+          isActive : site.isActive ? 'true' : 'false',
+          isArchived : site.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
