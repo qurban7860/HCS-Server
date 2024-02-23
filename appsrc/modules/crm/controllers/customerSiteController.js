@@ -335,6 +335,8 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
 
     sites = JSON.parse(JSON.stringify(sites));
     let listJSON = [];
+
+    console.log("sites", sites);
     
     await Promise.all(sites.map(async (site) => {
       if (site && site.customer && (site.customer.isActive == false || site.customer.isArchived == true))
