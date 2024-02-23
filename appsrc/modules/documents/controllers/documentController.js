@@ -858,7 +858,7 @@ exports.postMultiDocument = async (req, res, next) => {
           req.body.displayName = req_.body.displayName && typeof req_.body.displayName !== "string" && req_.body.displayName[i] ? req_.body.displayName[i] : req_.body.displayName;
           req.body.docType = req_.body.docType && typeof req_.body.docType !== "string" && req_.body.docType[i] ? req_.body.docType[i] : req_.body.docType;
           req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] ? req_.body.stockNumber[i] : req_.body.stockNumber;
-          req.body.description = req_.body.description && typeof req_.body.description !== "string" && req_.body.description[i] ? req_.body.description[i] : req_.body.description;
+          delete req.body.description;
           req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
   
           if(req_.files?.images && req_.files?.images[i])
