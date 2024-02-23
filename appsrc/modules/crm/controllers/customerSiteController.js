@@ -327,6 +327,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       strength: 2
     };
 
+    console.log(queryString_);
     let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({name: 1})
       .populate('customer')
       .populate('primaryBillingContact')
