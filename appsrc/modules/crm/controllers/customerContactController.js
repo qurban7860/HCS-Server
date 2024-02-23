@@ -514,8 +514,8 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
           CreationDate : createdDateLTZ,
           ModificationDate : updatedDateLTZ,
-          isActive : contact.isActive ? 'true' : 'false',
-          isArchived : contact.isArchived ? 'true' : 'false'
+          Active : contact.isActive ? 'true' : 'false',
+          Archived : contact.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
@@ -535,8 +535,8 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
           CreationDate : createdDateLTZ,
           ModificationDate : updatedDateLTZ,
-          isActive : contact.isActive ? 'true' : 'false',
-          isArchived : contact.isArchived ? 'true' : 'false'
+          Active : contact.isActive ? 'true' : 'false',
+          Archived : contact.isArchived ? 'true' : 'false'
         };
       }
       

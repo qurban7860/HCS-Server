@@ -367,21 +367,21 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           PostCode: site.address ? (site.address.postcode ? '' + site.address.postcode.replace(/"/g, "'") + '' : '') : '',
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
-          Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
+          Longitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           BillingContactID: site.primaryBillingContact ? site.primaryBillingContact._id : '',
-          TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
           TechnicalContactID: site.primaryTechnicalContact ? site.primaryTechnicalContact._id : '',
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
           CreationDate : createdDateLTZ,
           ModificationDate : updatedDateLTZ,
-          isActive : site.isActive ? 'true' : 'false',
-          isArchived : site.isArchived ? 'true' : 'false'
+          Active : site.isActive ? 'true' : 'false',
+          Archived : site.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
-          Name: site ? '' + site.name.replace(/"/g, "'") + '' : '',
+          SiteName: site ? '' + site.name.replace(/"/g, "'") + '' : '',
           Customer: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
           Street: site.address ? (site.address.street ? '' + site.address.street.replace(/"/g, "'") + '' : '') : '',
           Suburb: site.address ? (site.address.suburb ? '' + site.address.suburb.replace(/"/g, "'") + '' : '') : '',
@@ -390,10 +390,15 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           PostCode: site.address ? (site.address.postcode ? '' + site.address.postcode.replace(/"/g, "'") + '' : '') : '',
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
-          Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
-          // Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
+          Longitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
-          TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Email: site.email ? site.email : '',
+          Website: site.website ? site.website : '',
+          CreationDate : createdDateLTZ,
+          ModificationDate : updatedDateLTZ,
+          Active : site.isActive ? 'true' : 'false',
+          Archived : site.isArchived ? 'true' : 'false'
         };
       }
 
