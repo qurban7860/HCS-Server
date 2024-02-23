@@ -337,7 +337,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     let listJSON = [];
 
     console.log("sites", sites);
-    
+    const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
     await Promise.all(sites.map(async (site) => {
       if (site && site.customer && (site.customer.isActive == false || site.customer.isArchived == true))
         return;
@@ -349,9 +349,15 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       }
 
       let finalDataObj;
+      let createdDateLTZ = ""; 
+      if(contact.createdAt && contact.createdAt.length > 0) { const createdDate = new Date(contact.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
+
+      let updatedDateLTZ = ""; 
+      if(contact.updatedAt && contact.updatedAt.length > 0) { const updatedAt = new Date(contact.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
       if (EXPORT_UUID) {
         finalDataObj = {
-          Name: site ? '' + site.name.replace(/"/g, "'") + '' : '',
+          SiteID: site._id ? site._id : '',
+          SiteName: site ? '' + site.name.replace(/"/g, "'") + '' : '',
           CustomerID: site.customer ? site.customer._id : '',
           Customer: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
           Street: site.address ? (site.address.street ? '' + site.address.street.replace(/"/g, "'") + '' : '') : '',
@@ -362,11 +368,16 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
           Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
-          // Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           BillingContactID: site.primaryBillingContact ? site.primaryBillingContact._id : '',
           TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
           TechnicalContactID: site.primaryTechnicalContact ? site.primaryTechnicalContact._id : '',
+          Email: site.email ? site.email : '',
+          Website: site.website ? site.website : '',
+          CreationDate : createdDateLTZ,
+          ModificationDate : updatedDateLTZ,
+          isActive : contact.isActive ? 'true' : 'false',
+          isArchived : contact.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
