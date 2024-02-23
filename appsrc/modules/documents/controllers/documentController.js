@@ -1014,6 +1014,8 @@ exports.postMultiDocument = async (req, res, next) => {
                 activityDetail : "Document created successfully",
               }
   
+              console.log("docCategory.drawing", docCategory.drawing);
+              console.log("docCategory.drawingMachine", docCategory.drawingMachine);
               if(docCategory.drawing && req.body.drawingMachine) {
                 req.body.documentId = document_._id;
                 req.body.machine = req.body.drawingMachine;
