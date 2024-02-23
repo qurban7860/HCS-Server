@@ -42,6 +42,7 @@ exports.getProductConfiguration = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      response.configuration = replaceDotsWithSlashes(response.configuration);
       res.json(response);
     }
   }
@@ -105,6 +106,9 @@ exports.postProductConfiguration = async (req, res, next) => {
     if(req.body.machine && roleAPIFound) {  
       //req.body.additionalContextualInformation = "";
       let productConfObjec = getDocumentFromReq(req, 'new');
+      console.log("productConfObjec", productConfObjec.configuration);
+      console.log("productConfObjec", );
+      productConfObjec.configuration = replaceDotsWithSlashes(productConfObjec.configuration);
       const date = productConfObjec._id.getTimestamp();
       productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
       
@@ -128,6 +132,31 @@ exports.postProductConfiguration = async (req, res, next) => {
     const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req, 'new'); apiLogObject.save();
   }
 };
+
+function replaceDotsWithSlashes(obj) {
+  if (typeof obj !== 'object' || obj === null) {
+      return obj;
+  }
+
+  if (Array.isArray(obj)) {
+      return obj.map(replaceDotsWithSlashes);
+  }
+
+  const newObj = {};
+  for (let key in obj) {
+      if (Object.prototype.hasOwnProperty.call(obj, key)) {
+          if(key.includes(".")) {
+            const newKey = key.replace(/\./g, '---');
+            newObj[newKey] = replaceDotsWithSlashes(obj[key]);
+          } else {
+            const newKey = key.replace(/\---/g, '.');
+            newObj[newKey] = replaceDotsWithSlashes(obj[key]);  
+          }
+
+      }
+  }
+  return newObj;
+}
 
 exports.patchProductConfiguration = async (req, res, next) => {
   const errors = validationResult(req);

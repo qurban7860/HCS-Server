@@ -32,6 +32,10 @@ router.get(`${baseRouteForObject}/machineCoordinates`, controller.getProductsSit
 
 router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getConnectionProducts); 
 
+router.get(`${baseRouteForObject}/checkDuplicateSerialNumber/`, controller.checkDuplicateSerialNumber);
+
+router.get(`${baseRouteForObject}/fetchMachineTransferHistory/`, controller.fetchMachineTransferHistory);
+
 router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
 router.post(`${baseRouteForObject}`, controller.postProduct);
@@ -43,6 +47,10 @@ router.delete(`${baseRouteForObject}/:id`, controller.deleteProduct);
 router.post(`${baseRouteForObject}/transferMachine/`, controller.transferOwnership);
 
 router.post(`${baseRouteForObject}/moveMachine/`, controller.moveMachine);
+
+
+
+
 
 
 module.exports = router;

@@ -12,12 +12,12 @@ const _ = require('lodash');
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerSite, Customer } = require('../models');
+const { CustomerSite, CustomerContact, Customer } = require('../models');
 const { Config, Country } = require('../../config/models');
 const { Product } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
-
+var ObjectId = require('mongoose').Types.ObjectId;
 
 
 
@@ -110,11 +110,35 @@ exports.postCustomerSite = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
       } else {
+        updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
+        updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);      
         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
       }
     }
   }
 };
+
+async function updateContactAddress(updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address) {
+  console.log("-->", updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address);
+  if (
+    primaryTechnicalContact &&
+    ObjectId.isValid(primaryTechnicalContact) &&
+    address &&
+    updateAddressPrimaryTechnicalContact &&
+    (updateAddressPrimaryTechnicalContact === true ||
+      updateAddressPrimaryTechnicalContact === 'true')
+  ) {
+    try { 
+      const setQuery = {$set: { address: address }};
+      await CustomerContact.updateOne(
+        { _id: primaryTechnicalContact },
+        setQuery
+      );
+    } catch (error) {
+      console.error('Failed to update address:', error);
+    }
+  }
+}
 
 exports.patchCustomerSite = async (req, res, next) => {
   const errors = validationResult(req);
@@ -156,6 +180,8 @@ exports.patchCustomerSite = async (req, res, next) => {
                         );
                     } 
                     else {
+                      updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
+                      updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);   
                       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
                     }
                   }
@@ -181,6 +207,8 @@ exports.patchCustomerSite = async (req, res, next) => {
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
             );
         } else {
+          updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
+          updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);   
           res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
         }
       }
@@ -288,14 +316,28 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
 
-    let sites = await CustomerSite.find({ customer: req.params.customerId, isActive: true, isArchived: false })
+    let queryString_ = { isActive: true, isArchived: false };
+    // const fetchAllSites = req.query.fetchAllSites === true || req.query.fetchAllSites === 'true' ? true : false;
+    if(ObjectId.isValid(req?.params?.customerId)) {
+      queryString_.customer = req.params.customerId;
+    }
+
+    const collationOptions = {
+      locale: 'en',
+      strength: 2
+    };
+
+    console.log(queryString_);
+    let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({name: 1})
       .populate('customer')
       .populate('primaryBillingContact')
       .populate('primaryTechnicalContact');
 
     sites = JSON.parse(JSON.stringify(sites));
     let listJSON = [];
-    
+
+    console.log("sites", sites);
+    const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
     await Promise.all(sites.map(async (site) => {
       if (site && site.customer && (site.customer.isActive == false || site.customer.isArchived == true))
         return;
@@ -307,11 +349,17 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       }
 
       let finalDataObj;
+      let createdDateLTZ = ""; 
+      if(site.createdAt && site.createdAt.length > 0) { const createdDate = new Date(site.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
+
+      let updatedDateLTZ = ""; 
+      if(site.updatedAt && site.updatedAt.length > 0) { const updatedAt = new Date(site.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
       if (EXPORT_UUID) {
         finalDataObj = {
-          Name: site ? '' + site.name.replace(/"/g, "'") + '' : '',
+          SiteID: site._id ? site._id : '',
+          SiteName: site ? '' + site.name.replace(/"/g, "'") + '' : '',
           CustomerID: site.customer ? site.customer._id : '',
-          Customer: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
+          CustomerName: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
           Street: site.address ? (site.address.street ? '' + site.address.street.replace(/"/g, "'") + '' : '') : '',
           Suburb: site.address ? (site.address.suburb ? '' + site.address.suburb.replace(/"/g, "'") + '' : '') : '',
           City: site.address ? (site.address.city ? '' + site.address.city.replace(/"/g, "'") + '' : '') : '',
@@ -319,17 +367,22 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           PostCode: site.address ? (site.address.postcode ? '' + site.address.postcode.replace(/"/g, "'") + '' : '') : '',
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
-          Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
-          Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
-          BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
+          Longitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
           BillingContactID: site.primaryBillingContact ? site.primaryBillingContact._id : '',
-          TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           TechnicalContactID: site.primaryTechnicalContact ? site.primaryTechnicalContact._id : '',
+          TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Email: site.email ? site.email : '',
+          Website: site.website ? site.website : '',
+          CreationDate : createdDateLTZ,
+          ModificationDate : updatedDateLTZ,
+          Active : site.isActive ? 'true' : 'false',
+          Archived : site.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
-          Name: site ? '' + site.name.replace(/"/g, "'") + '' : '',
-          Customer: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
+          SiteName: site ? '' + site.name.replace(/"/g, "'") + '' : '',
+          CustomerName: site.customer ? '' + site.customer.name.replace(/"/g, "'") + '' : '',
           Street: site.address ? (site.address.street ? '' + site.address.street.replace(/"/g, "'") + '' : '') : '',
           Suburb: site.address ? (site.address.suburb ? '' + site.address.suburb.replace(/"/g, "'") + '' : '') : '',
           City: site.address ? (site.address.city ? '' + site.address.city.replace(/"/g, "'") + '' : '') : '',
@@ -337,10 +390,15 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           PostCode: site.address ? (site.address.postcode ? '' + site.address.postcode.replace(/"/g, "'") + '' : '') : '',
           Country: site.address ? (site.address.country ? '' + site.address.country.replace(/"/g, "'") + '' : '') : '',
           Latitude: site.lat ? '' + site.lat.replace(/"/g, "'") + '' : '',
-          Latitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
-          Contacts: site.contactsName ? '' + site.contactsName.replace(/"/g, "'") + '' : '',
+          Longitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
-          TechnicalContact: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Email: site.email ? site.email : '',
+          Website: site.website ? site.website : '',
+          CreationDate : createdDateLTZ,
+          ModificationDate : updatedDateLTZ,
+          Active : site.isActive ? 'true' : 'false',
+          Archived : site.isArchived ? 'true' : 'false'
         };
       }
 
@@ -367,7 +425,7 @@ function getContactName(contact) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { name, phone, email, fax, website, address, lat, long, 
+  const { name, phone, email, phoneNumbers, fax, website, address, lat, long, 
     primaryBillingContact, primaryTechnicalContact, contacts,
     isActive, isArchived, loginUser } = req.body;
   
@@ -389,6 +447,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("email" in req.body){
     doc.email = email;
+  }
+  if ("phoneNumbers" in req.body){
+    doc.phoneNumbers = phoneNumbers;
   }
   if ("fax" in req.body){
     doc.fax = fax;
