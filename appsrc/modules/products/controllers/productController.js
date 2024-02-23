@@ -1259,7 +1259,6 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
       let SupportExpireDateLTZ = ""; 
       if(product?.SupportExpireDate && product?.SupportExpireDate.length > 0) { const SupportExpireDate = new Date(product.SupportExpireDate); SupportExpireDateLTZ = SupportExpireDate.toLocaleString('en-NZ', options); }
       
-      console.log(shippingDateLTZ, installationDateLTZ, SupportExpireDateLTZ);
 
       if (EXPORT_UUID) {
 

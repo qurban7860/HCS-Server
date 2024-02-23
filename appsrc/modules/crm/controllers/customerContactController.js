@@ -452,16 +452,30 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
     let queryString_ = { isActive: true, isArchived: false };
-    const fetchAllContacts = req.query.fetchAllContacts === true || req.query.fetchAllContacts === 'true' ? true : false;
-    if(ObjectId.isValid(req?.params?.customerId) && !fetchAllContacts) {
+    // const fetchAllContacts = req.query.fetchAllContacts === true || req.query.fetchAllContacts === 'true' ? true : false;
+    if(ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
     }
-    let contacts = await CustomerContact.find(queryString_)
-      .populate('customer');
+    const populateValues = [
+      {path: 'customer', select: 'name'},
+      {path: 'department', select: 'departmentName'},
+      {path: 'reportingTo', select: 'firstName lastName'},
+      {path: 'createdBy', select: 'name'},
+      {path: 'updatedBy', select: 'name'}
+    ];
+
+    const collationOptions = {
+      locale: 'en',
+      strength: 2
+    };
+    
+    let contacts = await CustomerContact.find(queryString_).collation(collationOptions)
+      .populate(populateValues).sort({name : 1});
 
     contacts = JSON.parse(JSON.stringify(contacts));
     let listJSON = [];
-
+    const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
+    
     await Promise.all(contacts.map(async (contact) => {
       if (contact && contact.customer && (contact.customer.isActive == false || contact.customer.isArchived == true))
         return;
@@ -473,6 +487,13 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
       }
 
       let finalDataObj;
+      let createdDateLTZ = ""; 
+      if(contact.createdAt && contact.createdAt.length > 0) { const createdDate = new Date(contact.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
+
+      let updatedDateLTZ = ""; 
+      if(contact.updatedAt && contact.updatedAt.length > 0) { const updatedAt = new Date(contact.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
+
+      
       if (EXPORT_UUID) {
         finalDataObj = {
           ID: contact._id,
@@ -484,6 +505,18 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           Phone: contact.phone ? '' + contact.phone.replace(/"/g, "'") + '' : '',
           Email: contact.email ? '' + contact.email.replace(/"/g, "'") + '' : '',
           Sites: contact.sitesName ? '' + contact.sitesName.replace(/"/g, "'") + '' : '',
+          ReportingTo: contact ? getContactName(contact?.reportingTo) : '',
+          Department: contact && contact?.department?.departmentName ? contact?.department?.departmentName : '',
+          Street: contact.address ? (contact.address.street ? '' + contact.address.street.replace(/"/g, "'") + '' : '') : '',
+          Suburb: contact.address ? (contact.address.suburb ? '' + contact.address.suburb.replace(/"/g, "'") + '' : '') : '',
+          City: contact.address ? (contact.address.city ? '' + contact.address.city.replace(/"/g, "'") + '' : '') : '',
+          Region: contact.address ? (contact.address.region ? '' + contact.address.region.replace(/"/g, "'") + '' : '') : '',
+          PostCode: contact.address ? (contact.address.postcode ? '' + contact.address.postcode.replace(/"/g, "'") + '' : '') : '',
+          Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
+          createdDate : createdDateLTZ,
+          updatedDate : updatedDateLTZ,
+          isActive : contact.isActive ? 'true' : 'false',
+          isArchived : contact.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
@@ -494,8 +527,22 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           Phone: contact.phone ? '' + contact.phone.replace(/"/g, "'") + '' : '',
           Email: contact.email ? '' + contact.email.replace(/"/g, "'") + '' : '',
           Sites: contact.sitesName ? '' + contact.sitesName.replace(/"/g, "'") + '' : '',
+          ReportingTo: contact ? getContactName(contact?.reportingTo) : '',
+          Department: contact && contact?.department?.departmentName ? contact?.department?.departmentName : '',
+          Street: contact.address ? (contact.address.street ? '' + contact.address.street.replace(/"/g, "'") + '' : '') : '',
+          Suburb: contact.address ? (contact.address.suburb ? '' + contact.address.suburb.replace(/"/g, "'") + '' : '') : '',
+          City: contact.address ? (contact.address.city ? '' + contact.address.city.replace(/"/g, "'") + '' : '') : '',
+          Region: contact.address ? (contact.address.region ? '' + contact.address.region.replace(/"/g, "'") + '' : '') : '',
+          PostCode: contact.address ? (contact.address.postcode ? '' + contact.address.postcode.replace(/"/g, "'") + '' : '') : '',
+          Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
+          createdDate : createdDateLTZ,
+          updatedDate : updatedDateLTZ,
+          isActive : contact.isActive ? 'true' : 'false',
+          isArchived : contact.isArchived ? 'true' : 'false'
         };
       }
+      
+
       listJSON.push(finalDataObj);
     }));
 
