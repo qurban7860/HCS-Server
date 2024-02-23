@@ -844,22 +844,22 @@ exports.postMultiDocument = async (req, res, next) => {
             req.body.loginUser = await getToken(req);
           }
  
-          req.body.name = req_.body?.name && typeof req.body?.name !== "string" && req_.body?.name[i] ? req_.body?.name[i] : req.body?.name;
-          req.body.customer = req_.body?.customer && typeof req.body?.customer !== "string" && req_.body?.customer[i] ? req_.body?.customer[i] : req.body?.customer;
-          req.body.machine = req_.body?.machine && typeof req.body?.machine !== "string" && req_.body?.machine[i] ? req_.body?.machine[i] : req.body?.machine;
-          req.body.documentType = req_.body?.documentType && typeof req.body?.documentType !== "string" && req_.body?.documentType[i] ? req_.body?.documentType[i] : req.body?.documentType;
-          req.body.site = req_.body.site && typeof req_.body.site !== "string" && req_.body.site[i] ? req_.body.site[i] : req_.body.site;
-          req.body.documentCategory = req_.body.documentCategory && typeof req_.body.documentCategory !== "string" && req_.body.documentCategory[i] ? req_.body.documentCategory[i] : req_.body.documentCategory;
-          req.body.machineModel = req_.body.machineModel && typeof req_.body.machineModel !== "string" && req_.body.machineModel[i] ? req_.body.machineModel[i] : req_.body.machineModel;
-          req.body.customerAccess = req_.body.customerAccess && typeof req_.body.customerAccess !== "string" && req_.body.customerAccess[i] ? req_.body.customerAccess[i] : req_.body.customerAccess;
-          req.body.isActive = req_.body.isActive && typeof req_.body.isActive !== "string" && req_.body.isActive[i] ? req_.body.isActive[i] : req_.body.isActive;
-          req.body.referenceNumber = req_.body.referenceNumber && typeof req_.body.referenceNumber !== "string" && req_.body.referenceNumber[i] ? req_.body.referenceNumber[i] : req_.body.referenceNumber;
-          req.body.versionNo = req_.body.versionNo && typeof req_.body.versionNo !== "string" && req_.body.versionNo[i] ? req_.body.versionNo[i] : req_.body.versionNo;
-          req.body.displayName = req_.body.displayName && typeof req_.body.displayName !== "string" && req_.body.displayName[i] ? req_.body.displayName[i] : req_.body.displayName;
-          req.body.docType = req_.body.docType && typeof req_.body.docType !== "string" && req_.body.docType[i] ? req_.body.docType[i] : req_.body.docType;
-          req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] ? req_.body.stockNumber[i] : req_.body.stockNumber;
-          req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
-          delete req.body.description;
+          req.body.name = req_.body?.name && typeof req.body?.name !== "string" && req_.body?.name[i] !== undefined ? req_.body?.name[i] : req.body?.name;
+          req.body.customer = req_.body?.customer && typeof req.body?.customer !== "string" && req_.body?.customer[i] !== undefined ? req_.body?.customer[i] : req.body?.customer;
+          req.body.machine = req_.body?.machine && typeof req.body?.machine !== "string" && req_.body?.machine[i] !== undefined ? req_.body?.machine[i] : req.body?.machine;
+          req.body.documentType = req_.body?.documentType && typeof req.body?.documentType !== "string" && req_.body?.documentType[i] !== undefined ? req_.body?.documentType[i] : req.body?.documentType;
+          req.body.site = req_.body.site && typeof req_.body.site !== "string" && req_.body.site[i] !== undefined ? req_.body.site[i] : req_.body.site;
+          req.body.documentCategory = req_.body.documentCategory && typeof req_.body.documentCategory !== "string" && req_.body.documentCategory[i] !== undefined ? req_.body.documentCategory[i] : req_.body.documentCategory;
+          req.body.machineModel = req_.body.machineModel && typeof req_.body.machineModel !== "string" && req_.body.machineModel[i] !== undefined ? req_.body.machineModel[i] : req_.body.machineModel;
+          req.body.customerAccess = req_.body.customerAccess && typeof req_.body.customerAccess !== "string" && req_.body.customerAccess[i] !== undefined ? req_.body.customerAccess[i] : req_.body.customerAccess;
+          req.body.isActive = req_.body.isActive && typeof req_.body.isActive !== "string" && req_.body.isActive[i] !== undefined ? req_.body.isActive[i] : req_.body.isActive;
+          req.body.referenceNumber = req_.body.referenceNumber && typeof req_.body.referenceNumber !== "string" && req_.body.referenceNumber[i] !== undefined ? req_.body.referenceNumber[i] : req_.body.referenceNumber;
+          req.body.versionNo = req_.body.versionNo && typeof req_.body.versionNo !== "string" && req_.body.versionNo[i] !== undefined ? req_.body.versionNo[i] : req_.body.versionNo;
+          req.body.displayName = req_.body.displayName && typeof req_.body.displayName !== "string" && req_.body.displayName[i] !== undefined ? req_.body.displayName[i] : req_.body.displayName;
+          req.body.docType = req_.body.docType && typeof req_.body.docType !== "string" && req_.body.docType[i] !== undefined ? req_.body.docType[i] : req_.body.docType;
+          req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] !== undefined ? req_.body.stockNumber[i] : req_.body.stockNumber;
+          req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] !== undefined ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
+          req.body.description = req_.body.description && typeof req_.body.description !== "string" && req_.body.description[i] !== undefined ? req_.body.description[i] : req_.body.description;
   
           if(req_.files?.images && req_.files?.images[i])
             req.files.images = req_.files?.images[i];
