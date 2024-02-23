@@ -823,9 +823,6 @@ exports.postDocument = async (req, res, next) => {
 };
 
 exports.postMultiDocument = async (req, res, next) => {
-  if(req.body.documentCategory && !Array.isArray(req.body.documentCategory)) {
-    return res.status(StatusCodes.BAD_REQUEST).send("upload multiple drawings.");
-  }
   try{
     const req_ = _.cloneDeep(req);
     const errors = validationResult(req);
@@ -833,207 +830,215 @@ exports.postMultiDocument = async (req, res, next) => {
       console.log(errors);
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-      const documentCategory_ = req.body.documentCategory;
+      let documentCategory_ = [];
+      if(typeof req.body.documentCategory === "string") {
+        documentCategory_.push(req.body.documentCategory);
+      } else {
+        documentCategory_ = req.body.documentCategory;
+      }
+
       let documentslist = [];
-      for (let i = 0; i < documentCategory_.length; i++) {
-        if(!req.body.loginUser){
-          req.body.loginUser = await getToken(req);
-        }
-
-        req.body.name = req_.body.name[i];
-        req.body.customer = req_.body?.customer && req_.body?.customer[i] ? req_.body?.customer[i] : null;
-        req.body.machine = req_.body?.machine && req_.body?.machine[i] ? req_.body?.machine[i] : null;
-        req.body.documentType = req_.body.documentType[i];
-        req.body.site = req_.body.site && req_.body.site[i] ? req_.body.site[i] : null;
-        req.body.documentCategory = req_.body.documentCategory[i];
-        req.body.machineModel = req_.body.machineModel && req_.body.machineModel[i] ? req_.body.machineModel[i] : null;
-        req.body.customerAccess = req_.body.customerAccess && req_.body.customerAccess[i] ? req_.body.customerAccess[i] : null;
-        req.body.isActive = req_.body.isActive && req_.body.isActive[i] ? req_.body.isActive[i] : null;
-        req.body.referenceNumber = req_.body.referenceNumber && req_.body.referenceNumber[i] ? req_.body.referenceNumber[i] : null;
-        req.body.versionNo = req_.body.versionNo && req_.body.versionNo[i] ? req_.body.versionNo[i] : null;
-        req.body.displayName = req_.body.displayName && req_.body.displayName[i] ? req_.body.displayName[i] : null;
-        req.body.docType = req_.body.docType && req_.body.docType[i] ? req_.body.docType[i] : null;
-        req.body.stockNumber = req_.body.stockNumber && req_.body.stockNumber[i] ? req_.body.stockNumber[i] : null;
-        req.body.description = req_.body.description && req_.body.description[i] ? req_.body.description[i] : null;
-        req.body.drawingMachine = req_.body.drawingMachine && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : null;
-
-        if(req_.files?.images && req_.files?.images[i])
-          req.files.images = req_.files?.images[i];
-
-        let files = [];
-          
-        if(req?.files?.images){
-          files[0] = req.files.images;
-        }
-
-        let name = req.body.name;
-        let customer = req.body.customer;
-        let machine = req.body.machine;
-        let documentType = req.body.documentType;
-        let site = req.body.site;
-        let documentCategory = req.body.documentCategory;
-        let machineModel = req.body.machineModel;
-        if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
-
-          let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
-                
-          if(!docType) {
-            console.error("Document Type Not Found");
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      if(documentCategory_ && documentCategory_.length > 0 && Array.isArray(documentCategory_)){
+        for (let i = 0; i < documentCategory_.length; i++) {
+          if(!req.body.loginUser){
+            req.body.loginUser = await getToken(req);
           }
-
-          let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-                
-          if(!docCategory) {
-            console.error("Document Category Not Found");
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+ 
+          req.body.name = req_.body?.name && typeof req.body?.name !== "string" && req_.body?.name[i] ? req_.body?.name[i] : req.body?.name;
+          req.body.customer = req_.body?.customer && typeof req.body?.customer !== "string" && req_.body?.customer[i] ? req_.body?.customer[i] : req.body?.customer;
+          req.body.machine = req_.body?.machine && typeof req.body?.machine !== "string" && req_.body?.machine[i] ? req_.body?.machine[i] : req.body?.machine;
+          req.body.documentType = req_.body?.documentType && typeof req.body?.documentType !== "string" && req_.body?.documentType[i] ? req_.body?.documentType[i] : req.body?.documentType;
+          req.body.site = req_.body.site && typeof req_.body.site !== "string" && req_.body.site[i] ? req_.body.site[i] : req_.body.site;
+          req.body.documentCategory = req_.body.documentCategory && typeof req_.body.documentCategory !== "string" && req_.body.documentCategory[i] ? req_.body.documentCategory[i] : req_.body.documentCategory;
+          req.body.machineModel = req_.body.machineModel && typeof req_.body.machineModel !== "string" && req_.body.machineModel[i] ? req_.body.machineModel[i] : req_.body.machineModel;
+          req.body.customerAccess = req_.body.customerAccess && typeof req_.body.customerAccess !== "string" && req_.body.customerAccess[i] ? req_.body.customerAccess[i] : req_.body.customerAccess;
+          req.body.isActive = req_.body.isActive && typeof req_.body.isActive !== "string" && req_.body.isActive[i] ? req_.body.isActive[i] : req_.body.isActive;
+          req.body.referenceNumber = req_.body.referenceNumber && typeof req_.body.referenceNumber !== "string" && req_.body.referenceNumber[i] ? req_.body.referenceNumber[i] : req_.body.referenceNumber;
+          req.body.versionNo = req_.body.versionNo && typeof req_.body.versionNo !== "string" && req_.body.versionNo[i] ? req_.body.versionNo[i] : req_.body.versionNo;
+          req.body.displayName = req_.body.displayName && typeof req_.body.displayName !== "string" && req_.body.displayName[i] ? req_.body.displayName[i] : req_.body.displayName;
+          req.body.docType = req_.body.docType && typeof req_.body.docType !== "string" && req_.body.docType[i] ? req_.body.docType[i] : req_.body.docType;
+          req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] ? req_.body.stockNumber[i] : req_.body.stockNumber;
+          req.body.description = req_.body.description && typeof req_.body.description !== "string" && req_.body.description[i] ? req_.body.description[i] : req_.body.description;
+          req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
+  
+          if(req_.files?.images && req_.files?.images[i])
+            req.files.images = req_.files?.images[i];
+  
+          let files = [];
+            
+          if(req?.files?.images){
+            files[0] = req.files.images;
           }
-
-          let cust = {}
-
-          if(mongoose.Types.ObjectId.isValid(customer)) {
-            cust = await dbservice.getObjectById(Customer,this.fields,customer);
-            if(!cust || cust.isActive==false || cust.isArchived==true) {
-              console.error("Customer Not Found");
-
+  
+          let name = req.body.name;
+          let customer = req.body.customer;
+          let machine = req.body.machine;
+          let documentType = req.body.documentType;
+          let site = req.body.site;
+          let documentCategory = req.body.documentCategory;
+          let machineModel = req.body.machineModel;
+          if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
+  
+            let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
+                  
+            if(!docType) {
+              console.error("Document Type Not Found");
               return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
             }
-          }
-
-          let site_ = {}
-
-          if(mongoose.Types.ObjectId.isValid(site)) {
-            site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
-            if(!site_) {
-              console.error("Site Not Found");
-
+  
+            let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+                  
+            if(!docCategory) {
+              console.error("Document Category Not Found");
               return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
             }
-          }
-
-          let mach = {};
-          if(mongoose.Types.ObjectId.isValid(machine)){
-
-            mach = await dbservice.getObjectById(Product,this.fields,machine);
-
-            if(!mach) {
-              console.error("Machine Not Found");
-
+  
+            let cust = {}
+  
+            if(mongoose.Types.ObjectId.isValid(customer)) {
+              cust = await dbservice.getObjectById(Customer,this.fields,customer);
+              if(!cust || cust.isActive==false || cust.isArchived==true) {
+                console.error("Customer Not Found");
+  
+                return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              }
+            }
+  
+            let site_ = {}
+  
+            if(mongoose.Types.ObjectId.isValid(site)) {
+              site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
+              if(!site_) {
+                console.error("Site Not Found");
+  
+                return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              }
+            }
+  
+            let mach = {};
+            if(mongoose.Types.ObjectId.isValid(machine)){
+  
+              mach = await dbservice.getObjectById(Product,this.fields,machine);
+  
+              if(!mach) {
+                console.error("Machine Not Found");
+  
+                return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              }
+            }
+  
+  
+            let mModel = {};
+            if(mongoose.Types.ObjectId.isValid(machineModel)){
+  
+              mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
+  
+              if(!mModel) {
+                console.error("Machine Model Not Found");
+  
+                return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              }
+            }
+  
+            let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+  
+            if(!docCat) {
+              console.error("Category Not Found");
               return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
             }
-          }
-
-
-          let mModel = {};
-          if(mongoose.Types.ObjectId.isValid(machineModel)){
-
-            mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
-
-            if(!mModel) {
-              console.error("Machine Model Not Found");
-
-              return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-            }
-          }
-
-          let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-
-          if(!docCat) {
-            console.error("Category Not Found");
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-          }
-          if(Array.isArray(files) && files.length>0) {
-            let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-
-            if(!document_) {
-              console.error("Document saved failed!");
-
-              return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
-            }
-    
-            let versionNo_ = parseFloat(req.body.versionNo);
-    
-            if(isNaN(versionNo_))
-              req.body.versionNo = 1;
-    
-            let documentVersion = createDocumentVersionObj(document_,req.body);
-            let documentFiles = [];
-            let dbFiles = []
-            for(let file of files) {
-              if(file && file.originalname) {
-                const processedFile = await processFile(file, req.body.loginUser.userId);
-                req.body.path = processedFile.s3FilePath;
-                req.body.type = processedFile.type
-                req.body.extension = processedFile.fileExt;
-                req.body.awsETag = processedFile.awsETag;
-                req.body.eTag = processedFile.eTag;
-                
-                
-                if(processedFile.base64thumbNailData)
-                  req.body.content = processedFile.base64thumbNailData;
-                
-                req.body.originalname = processedFile.name;
-
-                if(document_ && document_.id) {
-
-                  let documentFile = await saveDocumentFile(document_,req.body);
-
-                  if(documentVersion && documentFile && documentFile.id && 
-                    Array.isArray(documentVersion.files)) {
-
-                    documentVersion.files.push(documentFile.id);
-                    dbFiles.push(documentFile);
-                    documentVersion = await documentVersion.save();
-                    documentFile.version = documentVersion.id;
-                    documentFile = await documentFile.save();
+            if(Array.isArray(files) && files.length>0) {
+              let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+  
+              if(!document_) {
+                console.error("Document saved failed!");
+  
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
+              }
+      
+              let versionNo_ = parseFloat(req.body.versionNo);
+      
+              if(isNaN(versionNo_))
+                req.body.versionNo = 1;
+      
+              let documentVersion = createDocumentVersionObj(document_,req.body);
+              let documentFiles = [];
+              let dbFiles = []
+              for(let file of files) {
+                if(file && file.originalname) {
+                  const processedFile = await processFile(file, req.body.loginUser.userId);
+                  req.body.path = processedFile.s3FilePath;
+                  req.body.type = processedFile.type
+                  req.body.extension = processedFile.fileExt;
+                  req.body.awsETag = processedFile.awsETag;
+                  req.body.eTag = processedFile.eTag;
+                  
+                  
+                  if(processedFile.base64thumbNailData)
+                    req.body.content = processedFile.base64thumbNailData;
+                  
+                  req.body.originalname = processedFile.name;
+  
+                  if(document_ && document_.id) {
+  
+                    let documentFile = await saveDocumentFile(document_,req.body);
+  
+                    if(documentVersion && documentFile && documentFile.id && 
+                      Array.isArray(documentVersion.files)) {
+  
+                      documentVersion.files.push(documentFile.id);
+                      dbFiles.push(documentFile);
+                      documentVersion = await documentVersion.save();
+                      documentFile.version = documentVersion.id;
+                      documentFile = await documentFile.save();
+                    }
                   }
                 }
+                
               }
-              
+  
+              if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+                document_.documentVersions.push(documentVersion.id);
+                document_ = await document_.save();
+              }
+              documentVersion = JSON.parse(JSON.stringify(documentVersion));
+              documentVersion.files = dbFiles;
+              document_ = JSON.parse(JSON.stringify(document_));
+              document_.docType = docType;
+              document_.docCategory = docCategory;
+              document_.documentVersions = [documentVersion];
+              document_.customer = cust;
+              let documentAuditLogObj = {
+                document : document_._id,
+                activityType : "Create",
+                activitySummary : "Create Document",
+                activityDetail : "Document created successfully",
+              }
+  
+              if(docCategory.drawing && req.body.drawingMachine) {
+                req.body.documentId = document_._id;
+                req.body.machine = req.body.drawingMachine;
+                let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
+                productDrawingDocx.save();
+                delete req.body.machine;
+              }
+  
+              await createAuditLog(documentAuditLogObj,req);
+  
+              console.log("record added!", i);
+              documentslist.push(document_);
+  
+  
             }
-
-            if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
-              document_.documentVersions.push(documentVersion.id);
-              document_ = await document_.save();
+            else {
+              console.error("Files Not Found");
+  
+              return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
             }
-            documentVersion = JSON.parse(JSON.stringify(documentVersion));
-            documentVersion.files = dbFiles;
-            document_ = JSON.parse(JSON.stringify(document_));
-            document_.docType = docType;
-            document_.docCategory = docCategory;
-            document_.documentVersions = [documentVersion];
-            document_.customer = cust;
-            let documentAuditLogObj = {
-              document : document_._id,
-              activityType : "Create",
-              activitySummary : "Create Document",
-              activityDetail : "Document created successfully",
-            }
-
-            if(docCategory.drawing && req.body.drawingMachine) {
-              req.body.documentId = document_._id;
-              req.body.machine = req.body.drawingMachine;
-              let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
-              productDrawingDocx.save();
-              delete req.body.machine;
-            }
-
-            await createAuditLog(documentAuditLogObj,req);
-
-            console.log("record added!", i);
-            documentslist.push(document_);
-
-
           }
           else {
-            console.error("Files Not Found");
-
+            console.error("Invalid Data");
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
-        }
-        else {
-          console.error("Invalid Data");
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
       }
 
