@@ -843,11 +843,12 @@ exports.postMultiDocument = async (req, res, next) => {
           if(!req.body.loginUser){
             req.body.loginUser = await getToken(req);
           }
+
  
-          req.body.name = req_.body?.name && typeof req.body?.name !== "string" && req_.body?.name[i] !== undefined ? req_.body?.name[i] : req.body?.name;
-          req.body.customer = req_.body?.customer && typeof req.body?.customer !== "string" && req_.body?.customer[i] !== undefined ? req_.body?.customer[i] : req.body?.customer;
-          req.body.machine = req_.body?.machine && typeof req.body?.machine !== "string" && req_.body?.machine[i] !== undefined ? req_.body?.machine[i] : req.body?.machine;
-          req.body.documentType = req_.body?.documentType && typeof req.body?.documentType !== "string" && req_.body?.documentType[i] !== undefined ? req_.body?.documentType[i] : req.body?.documentType;
+          req.body.name = req_.body?.name && typeof req_.body?.name !== "string" && req_.body?.name[i] !== undefined ? req_.body?.name[i] : req.body?.name;
+          req.body.customer = req_.body?.customer && typeof req_.body?.customer !== "string" && req_.body?.customer[i] !== undefined ? req_.body?.customer[i] : req.body?.customer;
+          req.body.machine = req_.body?.machine && typeof req_.body?.machine !== "string" && req_.body?.machine[i] !== undefined ? req_.body?.machine[i] : req.body?.machine;
+          req.body.documentType = req_.body?.documentType && typeof req_.body?.documentType !== "string" && req_.body?.documentType[i] !== undefined ? req_.body?.documentType[i] : req.body?.documentType;
           req.body.site = req_.body.site && typeof req_.body.site !== "string" && req_.body.site[i] !== undefined ? req_.body.site[i] : req_.body.site;
           req.body.documentCategory = req_.body.documentCategory && typeof req_.body.documentCategory !== "string" && req_.body.documentCategory[i] !== undefined ? req_.body.documentCategory[i] : req_.body.documentCategory;
           req.body.machineModel = req_.body.machineModel && typeof req_.body.machineModel !== "string" && req_.body.machineModel[i] !== undefined ? req_.body.machineModel[i] : req_.body.machineModel;
@@ -860,7 +861,7 @@ exports.postMultiDocument = async (req, res, next) => {
           req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] !== undefined ? req_.body.stockNumber[i] : req_.body.stockNumber;
           req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] !== undefined ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
           req.body.description = req_.body.description && typeof req_.body.description !== "string" && req_.body.description[i] !== undefined ? req_.body.description[i] : req_.body.description;
-  
+          
           if(req_.files?.images && req_.files?.images[i])
             req.files.images = req_.files?.images[i];
   
@@ -947,9 +948,7 @@ exports.postMultiDocument = async (req, res, next) => {
               return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
             }
             if(Array.isArray(files) && files.length>0) {
-              console.log(req.body);
               let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-              console.log("document_", document_);
   
               if(!document_) {
                 console.error("Document saved failed!");
@@ -1016,8 +1015,6 @@ exports.postMultiDocument = async (req, res, next) => {
                 activityDetail : "Document created successfully",
               }
   
-              console.log("docCategory.drawing", docCategory.drawing);
-              console.log("docCategory.drawingMachine", docCategory.drawingMachine);
               if(docCategory.drawing && req.body.drawingMachine) {
                 req.body.documentId = document_._id;
                 req.body.machine = req.body.drawingMachine;
