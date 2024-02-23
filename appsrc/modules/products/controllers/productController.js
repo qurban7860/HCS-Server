@@ -833,14 +833,14 @@ const disconnectConnections = async (req, newMachine) => {
         updateProduct.installationDate = req.body.installationDate && req.body.installationDate !== undefined ? req.body.installationDate : ""; 
         updateProduct.status = req.body.status && req.body.status !== undefined ? req.body.status : ""; 
         
-        updateProduct.supplier = req.body.supplier && req.body.supplier !== undefined ? req.body.supplier : "";
+        // updateProduct.supplier = req.body.supplier && req.body.supplier !== undefined ? req.body.supplier : "";
         updateProduct.workOrderRef = req.body.workOrderRef && req.body.workOrderRef !== undefined ? req.body.workOrderRef : "";
         updateProduct.siteMilestone = req.body.siteMilestone && req.body.siteMilestone !== undefined ? req.body.siteMilestone : ""; 
         updateProduct.accountManager = req.body.accountManager && req.body.accountManager !== undefined ? req.body.accountManager : "";
         updateProduct.projectManager = req.body.projectManager && req.body.projectManager !== undefined ? req.body.projectManager : "";
         updateProduct.supportManager = req.body.supportManager && req.body.supportManager !== undefined ? req.body.supportManager : "";
         updateProduct.supportExpireDate = req.body.supportExpireDate && req.body.supportExpireDate !== undefined ? req.body.supportExpireDate : ""; 
-        updateProduct.description = req.body.description && req.body.description !== undefined ? req.body.description : ""; 
+        // updateProduct.description = req.body.description && req.body.description !== undefined ? req.body.description : ""; 
 
         await Product.updateMany({_id: {$in: requestBodyConnections}}, {$set: updateProduct});
 
