@@ -858,8 +858,8 @@ exports.postMultiDocument = async (req, res, next) => {
           req.body.displayName = req_.body.displayName && typeof req_.body.displayName !== "string" && req_.body.displayName[i] ? req_.body.displayName[i] : req_.body.displayName;
           req.body.docType = req_.body.docType && typeof req_.body.docType !== "string" && req_.body.docType[i] ? req_.body.docType[i] : req_.body.docType;
           req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] ? req_.body.stockNumber[i] : req_.body.stockNumber;
-          delete req.body.description;
           req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
+          delete req.body.description;
   
           if(req_.files?.images && req_.files?.images[i])
             req.files.images = req_.files?.images[i];
@@ -947,7 +947,9 @@ exports.postMultiDocument = async (req, res, next) => {
               return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
             }
             if(Array.isArray(files) && files.length>0) {
+              console.log(req.body);
               let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+              console.log("document_", document_);
   
               if(!document_) {
                 console.error("Document saved failed!");
