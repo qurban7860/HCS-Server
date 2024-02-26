@@ -119,7 +119,6 @@ exports.postCustomerSite = async (req, res, next) => {
 };
 
 async function updateContactAddress(updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address) {
-  console.log("-->", updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address);
   if (
     primaryTechnicalContact &&
     ObjectId.isValid(primaryTechnicalContact) &&

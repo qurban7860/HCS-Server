@@ -252,7 +252,6 @@ exports.getCustomers = async (req, res, next) => {
     req.body.loginUser = await getToken(req);
 
   const finalQuery = await applyUserFilter(req);
-  console.log("JSON.stringify(finalQuery)", JSON.stringify(finalQuery));
   if(finalQuery){
     this.query = {
       ...this.query,
