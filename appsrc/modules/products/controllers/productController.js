@@ -259,14 +259,19 @@ exports.getProducts = async (req, res, next) => {
   const listPopulate = [
     {path: 'machineModel', select: '_id name category'},
     {path: 'status', select: '_id name slug'},
-    {path: 'customer', select: '_id clientCode name'}
+    {path: 'customer', select: '_id clientCode name'},
+    {
+      path: 'transferredMachine',
+      select: '_id serialNo customer',
+      populate: { path: 'customer', select: '_id clientCode name' }
+    }
   ];
 
   if(req.query.customer) {
     listPopulate.push({path: 'instalationSite', select: ''});
   }
 
-  const listFields = 'serialNo name model customer installationDate shippingDate supportManager projectManager accountManager verifications status isActive  createdAt';
+  const listFields = 'serialNo name model customer installationDate shippingDate supportManager projectManager accountManager verifications status transferredDate transferredMachine isActive  createdAt';
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
@@ -788,8 +793,6 @@ exports.transferOwnership = async (req, res, next) => {
 
 const disconnectConnections = async (request, newMachineId) => {
   const connectionToMove = request.body.machineConnections;
-  console.log("Request Body Connections:", connectionToMove);
-  console.log("New Machine ID:", newMachineId);
 
   if (newMachineId && ObjectId.isValid(newMachineId) && connectionToMove && Array.isArray(connectionToMove) && connectionToMove.length > 0) {
 
@@ -834,10 +837,7 @@ const disconnectConnections = async (request, newMachineId) => {
       //Update connection Machine Data to new machine data.
       try{
         let updateProduct = updateConnectingMachine(request);
-        console.log("updateProduct", updateProduct);
-
         const queryS_ = { _id: { $in: listConnectedMachineIds }};
-        console.log("queryS_", queryS_, updateProduct);
         await Product.updateMany( queryS_, { $set: updateProduct });
       } catch (error){
         console.log("error", error);
