@@ -251,9 +251,28 @@ exports.getProduct = async (req, res, next) => {
       }
 
       if(machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)){
+        const populateArray_ = [
+          {path: 'machineModel', select: '_id name category', 
+            populate: { path:"category" , select:"name description connections" }
+          },
+          {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
+          {path: 'supplier', select: '_id name'},
+          {path: 'status', select: '_id name slug'},
+          {path: 'customer', select: '_id clientCode name'},
+          {path: 'billingSite', select: ''},
+          {path: 'instalationSite', select: ''},
+          {path: 'accountManager', select: '_id firstName lastName'},
+          {path: 'projectManager', select: '_id firstName lastName'},
+          {path: 'supportManager', select: '_id firstName lastName'},
+          {path: 'financialCompany', select: '_id clientCode name'},
+          {path: 'transferredMachine', select: '_id serialNo name customer'},
+          {path: 'createdBy', select: 'name'},
+          {path: 'updatedBy', select: 'name'}
+        ];
+
         const productLists = await Product.find({globelMachineID: machine?.globelMachineID})
         .select('serialNo parentMachine parentSerialNo transferredDate transferredMachine parentMachineID status financialCompany customer instalationSite accountManager projectManager supportManager shippingDate installationDate')
-        .populate(this.populate)
+        .populate(populateArray_)
         .lean().sort({_id: -1});
         machine.transferredHistory = productLists;
       }
@@ -686,7 +705,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.operators = parentMachine.operators;
           req.body.internalTags = parentMachine.internalTags;
           req.body.customerTags = parentMachine.customerTags;       
-          req.body.supportExpireDate = "";          
+          // req.body.supportExpireDate = "";          
 
 
           if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
