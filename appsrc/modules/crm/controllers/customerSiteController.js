@@ -326,7 +326,6 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       strength: 2
     };
 
-    console.log(queryString_);
     let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({name: 1})
       .populate('customer')
       .populate('primaryBillingContact')
@@ -335,7 +334,6 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     sites = JSON.parse(JSON.stringify(sites));
     let listJSON = [];
 
-    console.log("sites", sites);
     const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
     await Promise.all(sites.map(async (site) => {
       if (site && site.customer && (site.customer.isActive == false || site.customer.isArchived == true))
@@ -353,6 +351,10 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
 
       let updatedDateLTZ = ""; 
       if(site.updatedAt && site.updatedAt.length > 0) { const updatedAt = new Date(site.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
+      
+      const phoneNumber_ = formatPhoneNumber(site);
+
+
       if (EXPORT_UUID) {
         finalDataObj = {
           SiteID: site._id ? site._id : '',
@@ -371,6 +373,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           TechnicalContactID: site.primaryTechnicalContact ? site.primaryTechnicalContact._id : '',
           TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Phone: phoneNumber_,
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
           CreationDate : createdDateLTZ,
@@ -392,6 +395,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Longitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Phone: phoneNumber_,
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
           CreationDate : createdDateLTZ,
@@ -409,6 +413,17 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     console.error(error);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+}
+
+function formatPhoneNumber(site, type = "PHONE") {
+  let phoneNumber_ = "";
+  const phoneNo = site?.phoneNumbers?.find(item => item.type === type);
+  if (phoneNo) {
+      const countryCode = phoneNo.countryCode ? (phoneNo.countryCode.startsWith('+') ? phoneNo.countryCode : `+${phoneNo.countryCode}`) : "";
+      const number = phoneNo.number ? ` ${phoneNo.number}` : "";
+      phoneNumber_ = countryCode + number;
+  }
+  return phoneNumber_;
 }
 
 function getContactName(contact) {
