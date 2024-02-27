@@ -834,17 +834,9 @@ const disconnectConnections = async (request, newMachineId) => {
       //Update connection Machine Data to new machine data.
       try{
         let updateProduct = updateConnectingMachine(request);
-        if(typeof updateProduct.instalationSite === 'string')
-          delete updateProduct.instalationSite;
-        
-        if(typeof updateProduct.billingSite === 'string')
-          delete updateProduct.billingSite;
-      
-        if(typeof updateProduct.financialCompany === 'string')
-          delete updateProduct.financialCompany;
-      
         console.log("updateProduct", updateProduct);
-        const queryS_ = { _id: { $in: connectionToMove }};
+
+        const queryS_ = { _id: { $in: listConnectedMachineIds }};
         console.log("queryS_", queryS_, updateProduct);
         await Product.updateMany( queryS_, { $set: updateProduct });
       } catch (error){
@@ -877,15 +869,11 @@ const disconnectConnections = async (request, newMachineId) => {
 };
 
 function updateConnectingMachine(req) {
-  console.log("@");
-  console.log("updateProperty(req, ", updateProperty(req, "instalationSite"));
-  console.log("@2");
-  
-  return {
+  let data  = {
       customer: req.body.customer,
-      financialCompany: updateProperty(req, "financialCompany", undefined),
-      billingSite: updateProperty(req, "billingSite", undefined),
-      instalationSite: updateProperty(req, "instalationSite", undefined),
+      financialCompany: updateProperty(req, "financialCompany"),
+      billingSite: updateProperty(req, "billingSite"),
+      instalationSite: updateProperty(req, "instalationSite"),
       shippingDate: updateProperty(req, "shippingDate"),
       installationDate: updateProperty(req, "installationDate"),
       status: updateProperty(req, "status"),
@@ -896,13 +884,20 @@ function updateConnectingMachine(req) {
       supportManager: updateProperty(req, "supportManager"),
       supportExpireDate: ""
   };
+  for (const key in data) {
+    if (data[key] === '' || data[key] === undefined || data[key] === null) {
+      data[key] = null;
+    }
+  }
+
+  return data;
 }
 
 function updateProperty(req, property, defaultValue = "") {
   try{
     return req.body[property] && req.body[property] !== undefined ? req.body[property] : defaultValue;
   } catch (error) {
-    return req.body[property] = "";
+    return req.body[property] = undefined;
   }
 }
 
