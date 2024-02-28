@@ -81,6 +81,9 @@ const fileUpload = multer({
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadPath = process.env.UPLOAD_PATH;
+      if (!uploadPath) {
+        return cb(new Error('UPLOAD_PATH environment variable is not set'));
+      }
       // create the directory if it doesn't already exist
       fs.mkdirSync(uploadPath, { recursive: true });
       cb(null, uploadPath);

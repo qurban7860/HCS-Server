@@ -32,7 +32,7 @@ router.get(`${baseRoute}/export`, controller.exportContactsJSONForCSV);
 router.get(`${baseRoute}/:id`, checkCustomerID, controller.getCustomerContact);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/
-router.get(`${baseRoute}/`, checkCustomerID, controller.getCustomerContacts);
+router.get(`${baseRoute}/`, controller.getCustomerContacts);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/
 router.post(`${baseRoute}/`, checkCustomerID, controller.postCustomerContact);

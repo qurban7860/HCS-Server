@@ -269,7 +269,7 @@ exports.login = async (req, res, next) => {
               const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
               return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
             } else {
-              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, "Invalid User/User does not have the rights to access", true));
+              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, "Access denied", true));
             }
           }
           
@@ -810,7 +810,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
     const isValidRole = userInfo.roles.some(role => role.isActive === true && role.isArchived === false);
     existsButNotAuthCode = userInfo.customer.type != 'SP' ? "452":userInfo.customer.isActive == false ? "453":userInfo.customer.isArchived == true ? "454":
     userInfo.isActive == false ? "455":userInfo.isArchived == true ? "456":
-    userInfo.contact.isActive == false ? "457":userInfo.contact.isArchived == true ? "458":
+    userInfo?.contact?.isActive == false ? "457":userInfo?.contact?.isArchived == true ? "458":
     (_.isEmpty(userInfo.roles) || !isValidRole)  ? "459":
     !(typeof userInfo.lockUntil === "undefined" || userInfo.lockUntil == null || new Date() >= userInfo.lockUntil) ? "460":"405"; 
   }

@@ -36,7 +36,7 @@ router.get(`${baseRouteForObject}/export`, controller.exportSitesJSONForCSV);
 router.get(`${baseRouteForObject}/:id`, checkCustomerID, controller.getCustomerSite);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/
-router.get(`${baseRouteForObject}/`, checkCustomerID, controller.getCustomerSites);
+router.get(`${baseRouteForObject}/`, controller.getCustomerSites);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/
 router.post(`${baseRouteForObject}/`, checkCustomerID, controller.postCustomerSite);

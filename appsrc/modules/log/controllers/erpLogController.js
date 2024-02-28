@@ -142,9 +142,7 @@ exports.postLogMulti = async (req, res, next) => {
         const skipExistingRecords = req.body?.skip && (req.body?.skip == 'true' || req.body?.skip == true) ? true : false;
         let updateExistingRecords = req.body?.update && (req.body?.update == 'true' || req.body?.update == true) ? true : false;
         if(skipExistingRecords) updateExistingRecords = false;
-
-        console.log("skipExistingRecords", skipExistingRecords);
-        
+       
         for(const logObj of req.body.csvData) {
           logObj.machine = req.body.machine;
           logObj.customer = req.body.customer;
