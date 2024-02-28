@@ -269,7 +269,7 @@ exports.login = async (req, res, next) => {
               const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
               return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
             } else {
-              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, "Invalid User/User does not have the rights to access", true));
+              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, "Access denied", true));
             }
           }
           
