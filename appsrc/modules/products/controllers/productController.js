@@ -702,6 +702,7 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
 
+        const transferredDate = req.body.transferredDate;
         if (parentMachine) {       
           req.body.serialNo = parentMachine.serialNo;
           req.body.machineModel = parentMachine.machineModel;
@@ -713,7 +714,9 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.alias = parentMachine.alias;
           req.body.operators = parentMachine.operators;
           req.body.internalTags = parentMachine.internalTags;
-          req.body.customerTags = parentMachine.customerTags;       
+          req.body.customerTags = parentMachine.customerTags;
+          req.body.transferredDate = null;
+                 
           // req.body.supportExpireDate = "";          
 
 
@@ -789,7 +792,7 @@ exports.transferOwnership = async (req, res, next) => {
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
                 newMachineAfterTranspher: newMachineAfterTranspher._id,
-                transferredDate: req.body.transferredDate,
+                transferredDate: transferredDate,
                 isActive: false,
                 status: parentMachineStatus._id,
                 globelMachineID: globelMachineID
@@ -829,9 +832,6 @@ const disconnectConnections = async (request, newMachineId) => {
         isActive: true,
         machine: { '$ne': request.body.machine }
       };
-
-      console.log("query", query);
-      console.log("query", query);
 
       const connectionsWithOtherMachines = await ProductConnection
         .find(query)
