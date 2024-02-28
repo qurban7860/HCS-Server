@@ -374,78 +374,6 @@ exports.patchCustomerContact = async (req, res, next) => {
 };
 
 
-// exports.exportContacts = async (req, res, next) => {
-
-//   const regex = new RegExp("^EXPORT_UUID$", "i");
-//   let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-//   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
-
-//   let finalData = ['Name,Title,Type,Customer,Phone,Email,Sites'];
-
-//   if(EXPORT_UUID) {
-//     finalData = ['ID,Name,Title,Type,Customer ID,Customer,Phone,Email,Sites'];
-//   }
-
-//   let contacts = await CustomerContact.find({customer: req.params.customerId, isActive:true,isArchived:false})
-//               .populate('customer');
-
-//   const filePath = path.resolve(__dirname, "../../../../uploads/Contacts.csv");
-
-//   contacts = JSON.parse(JSON.stringify(contacts));
-//   for(let contact of contacts) {
-    
-//     if(contact && contact.customer && (contact.customer.isActive==false || contact.customer.isArchived==true)) 
-//       continue;
-
-//     if(Array.isArray(contact.sites) && contact.sites.length>0) {
-//       contact.sites = await CustomerSite.find({_id:{$in:contact.sites},isActive:true,isArchived:false});
-//       contact.sitesName = contact.sites.map((s)=>s.name);
-//       contact.sitesName = contact.sitesName.join('- ')
-//     }
-
-//     if(EXPORT_UUID) { 
-//       finalDataObj = {
-//         id:contact._id,
-//         name:contact?getContactName(contact):'',
-//         title:contact.title?''+contact.title.replace(/"/g,"'")+'':'',
-//         types:contact.contactTypes?''+contact.contactTypes.join('|').replace(/"/g,"'")+'':'',
-//         customerID:contact.customer?contact.customer._id:'',
-//         customer:contact.customer?''+contact.customer.name.replace(/"/g,"'")+'':'',
-//         phone:contact.phone?''+contact.phone.replace(/"/g,"'")+'':'',
-//         email:contact.email?''+contact.email.replace(/"/g,"'")+'':'',
-//         sites:contact.sitesName?''+contact.sitesName.replace(/"/g,"'")+'':'',
-//       };  
-//     } else {
-//       finalDataObj = {
-//         name:contact?getContactName(contact):'',
-//         title:contact.title?''+contact.title.replace(/"/g,"'")+'':'',
-//         types:contact.contactTypes?''+contact.contactTypes.join('|').replace(/"/g,"'")+'':'',
-//         customer:contact.customer?''+contact.customer.name.replace(/"/g,"'")+'':'',
-//         phone:contact.phone?''+contact.phone.replace(/"/g,"'")+'':'',
-//         email:contact.email?''+contact.email.replace(/"/g,"'")+'':'',
-//         sites:contact.sitesName?''+contact.sitesName.replace(/"/g,"'")+'':'',
-//       };  
-//     }
-
-//     finalDataRow = Object.values(finalDataObj);
-
-//     finalDataRow = finalDataRow.join(', ');
-//     finalData.push(finalDataRow);
-
-//   }
-
-//   let csvDataToWrite = finalData.join('\n');
-
-//   fs.writeFile(filePath, csvDataToWrite, 'utf8', function (err) {
-//     if (err) {
-//       console.log('Some error occured - file either not saved or corrupted file saved.');
-//       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-//     } else{
-//       return res.sendFile(filePath);
-//     }
-//   });
-// };
-
 exports.exportContactsJSONForCSV = async (req, res, next) => {
   try {
     const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -455,6 +383,10 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     // const fetchAllContacts = req.query.fetchAllContacts === true || req.query.fetchAllContacts === 'true' ? true : false;
     if(ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
+    } else {
+      let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+      if(listCustomers && listCustomers.length > 0)
+        queryString_.customer = { $in: listCustomers };
     }
     const populateValues = [
       {path: 'customer', select: 'name'},

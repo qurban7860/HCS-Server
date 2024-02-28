@@ -1260,6 +1260,10 @@ const { Config } = require('../../config/models');
 exports.exportProductsJSONforCSV = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : { isActive: true, isArchived: false };
+
+    let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+    this.query.customer = { $in: listCustomers };
+
     let sortBy = { createdAt: -1 };
 
     if (this.query.orderBy) {
@@ -1334,7 +1338,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           BillingSiteLongitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
           ShippingDate: shippingDateLTZ,
           InstallationDate: installationDateLTZ,
-          SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
+          SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone?.replace(/"/g, "'"))}`,
           AccountManager: product?.accountManager ? getContactName(product.accountManager) :"" ,
           ProjectManager: product?.projectManager ? getContactName(product.projectManager) :"" , 
           SupportManager: product?.supportManager ? getContactName(product.supportManager) :"" ,
@@ -1355,7 +1359,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           MachineModel: product?.machineModel?.name === undefined ? "" : (`${product?.machineModel?.name.replace(/"/g, "'")}`),
           Supplier: product?.supplier?.name === undefined ? "" : (`${product?.supplier?.name?.replace(/"/g, "'")}`),
           Status: product?.status?.name === undefined ? "" : (`${product?.status?.name.replace(/"/g, "'")}`),
-          WorkOrderRef: product?.workOrderRef === undefined ? "" : (`${product?.workOrderRef.replace(/"/g, "'")}`),
+          WorkOrderRef: product?.workOrderRef === undefined ? "" : (`${product?.workOrderRef?.replace(/"/g, "'")}`),
           FinancialCompany: product?.financialCompany?.name === undefined ? "" : (`${product?.financialCompany?.name.replace(/"/g, "'")}`),
           Customer: product?.customer?.name === undefined ? "" : (`${product?.customer?.name.replace(/"/g, "'")}`),
           InstallationSite: product?.instalationSite?.name === undefined ? "" : (`${product?.instalationSite?.name.replace(/"/g, "'")}`),
@@ -1368,7 +1372,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           BillingSiteLongitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long.replace(/"/g, "'"))}`,
           ShippingDate: shippingDateLTZ,
           InstallationDate: installationDateLTZ,
-          SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone.replace(/"/g, "'"))}`,
+          SiteMilestone: product?.siteMilestone === undefined ? "" : `${(product?.siteMilestone?.replace(/"/g, "'"))}`,
           AccountManager: product?.accountManager ? getContactName(product.accountManager) :"" ,
           ProjectManager: product?.projectManager ? getContactName(product.projectManager) :"" , 
           SupportManager: product?.supportManager ? getContactName(product.supportManager) :"" ,
