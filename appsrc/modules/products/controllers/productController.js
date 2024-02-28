@@ -789,7 +789,7 @@ exports.transferOwnership = async (req, res, next) => {
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
                 newMachineAfterTranspher: newMachineAfterTranspher._id,
-                transferredDate: new Date(),
+                transferredDate: req.body.transferredDate,
                 isActive: false,
                 status: parentMachineStatus._id,
                 globelMachineID: globelMachineID
