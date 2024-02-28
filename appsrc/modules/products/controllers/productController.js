@@ -252,31 +252,28 @@ exports.getProduct = async (req, res, next) => {
 
       if(machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)){
         const populateArray_ = [
-          {path: 'machineModel', select: '_id name category', 
-            populate: { path:"category" , select:"name description connections" }
-          },
-          {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
-          {path: 'supplier', select: '_id name'},
           {path: 'status', select: '_id name slug'},
           {path: 'customer', select: '_id clientCode name'},
-          {path: 'billingSite', select: ''},
-          {path: 'instalationSite', select: ''},
-          {path: 'accountManager', select: '_id firstName lastName'},
-          {path: 'projectManager', select: '_id firstName lastName'},
-          {path: 'supportManager', select: '_id firstName lastName'},
-          {path: 'financialCompany', select: '_id clientCode name'},
+          {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
           {path: 'transferredMachine', select: '_id serialNo name customer'},
           {path: 'createdBy', select: 'name'},
           {path: 'updatedBy', select: 'name'}
         ];
 
         const productLists = await Product.find({globelMachineID: machine?.globelMachineID})
-        .select('serialNo parentMachine parentSerialNo transferredDate transferredMachine parentMachineID status financialCompany customer instalationSite accountManager projectManager supportManager shippingDate installationDate')
+        .select('serialNo parentMachine parentSerialNo transferredDate transferredMachine parentMachineID status customer shippingDate installationDate globelMachineID')
         .populate(populateArray_)
         .lean().sort({_id: -1});
+        if (
+          productLists?.length === 1 &&
+          productLists[0]?.globelMachineID !== undefined &&
+          machine !== undefined &&
+          productLists[0]?.globelMachineID.toString() === machine?._id?.toString()
+        ){
+          productLists = [];
+        }
         machine.transferredHistory = productLists;
       }
-
       res.json(machine);
     }
   }
@@ -1463,9 +1460,10 @@ function getDocumentFromReq(req, reqType){
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
  
   
-    let doc = {};
+  let doc = {};
   if (reqType && reqType == "new"){
     doc = new Product({});
+    doc.globelMachineID = doc._id;
   }
   
   if ("serialNo" in req.body){
@@ -1482,10 +1480,6 @@ function getDocumentFromReq(req, reqType){
   }
   if ("parentSerialNo" in req.body){
     doc.parentSerialNo =  parentSerialNo;
-  }
-
-  if ("globelMachineID" in req.body){
-    doc.globelMachineID = globelMachineID;
   }
 
   if ("status" in req.body){
