@@ -19,9 +19,8 @@ const phoneNumberSchema = new Schema({
         type: String,
         required: true
     },
-    extention: {
-        type: String,
-        required: true
+    extensions: {
+        type: String
     }
 });
 
