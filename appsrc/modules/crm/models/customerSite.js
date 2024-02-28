@@ -9,13 +9,17 @@ const Schema = mongoose.Schema;
 const phoneNumberSchema = new Schema({
     type: {
         type: String,
-        enum: ['PHONE', 'FAX', 'OTHERS']
+        enum: ['PHONE', 'CELL', 'FAX', 'OTHERS']
     },
     countryCode: {
         type: String,
         required: true
     },
     number: {
+        type: String,
+        required: true
+    },
+    extention: {
         type: String,
         required: true
     }
