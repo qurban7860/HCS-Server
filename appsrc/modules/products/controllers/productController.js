@@ -464,7 +464,10 @@ exports.postProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    // await exports.checkDuplicateSerialNumber(req, res, null);
+    const dublicateRecord = await exports.checkDuplicateSerialNumber(req, res, null, false);
+    if(dublicateRecord) {
+      return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
+    }
 
     let listNewConnection = [];
     if (req.body.newConnectedMachines && req.body.newConnectedMachines.length > 0) {
@@ -571,7 +574,11 @@ exports.patchProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    // await exports.checkDuplicateSerialNumber(req, res, req.params.id);
+    const dublicateRecord = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
+    if(dublicateRecord) {
+      return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
+    }
+
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
     if(machine.status?.slug && machine.status.slug === 'transferred'){
       if(!("isVerified" in req.body)){
@@ -1152,17 +1159,19 @@ exports.fetchMachineTransferHistory = async (req, res, next) => {
   }
 }
 
-exports.checkDuplicateSerialNumber = async (req, res, machineid) => {
+exports.checkDuplicateSerialNumber = async (req, res, machineid, returnResponse = true) => {
   this.query = req.query != "undefined" ? req.query : {};
-  let fromAPI = false;
   if(req.query?.serialNo && req.query?.serialNo !== undefined) {
-    fromAPI = true;
     req.body.serialNo = req.query.serialNo;
   }
 
-  if(!req.body || !req.body?.serialNo || req.body?.serialNo.trim().length == 0)
-    return res.status(StatusCodes.BAD_REQUEST).json("No serialNo found")
-
+  if(!req.body || !req.body?.serialNo || req.body?.serialNo.trim().length == 0){
+    if(returnResponse) {
+      return res.status(StatusCodes.BAD_REQUEST).json("No serialNo found")
+    } else {
+      return null;
+    }
+  }
   try {
       const regex = new RegExp('^' + req.body.serialNo.replace(/\s/g, ''), 'i');
       const queryString_ = { slug: 'transferred'};
@@ -1176,17 +1185,26 @@ exports.checkDuplicateSerialNumber = async (req, res, machineid) => {
         queryString._id = { $ne: machineid };
       }
       const ProductFound = await Product.findOne(queryString).select('_id').lean();
-      console.log("ProductFound", ProductFound);
       if (ProductFound) {
+        if(returnResponse) {
           return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
-      } else {
-        if(fromAPI){
-          return res.status(StatusCodes.ACCEPTED).json("No serialNo Found!");
+        } else {
+          return "The serialNo is already linked to a machine.";
         }
-        console.log("not found...");
+      } else {
+        if(returnResponse) {
+          return res.status(StatusCodes.ACCEPTED).json("No serialNo Found!");
+        } else {
+          return null;
+        }
       }
   } catch (error) {
       console.error("Error checking serialNo:", error);
+      if(returnResponse) {
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json("Internal Server Error");
+      } else {
+        return "Internal Server Error";
+      }
   }
 }
 
