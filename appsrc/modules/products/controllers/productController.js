@@ -260,7 +260,7 @@ exports.getProduct = async (req, res, next) => {
           {path: 'updatedBy', select: 'name'}
         ];
 
-        const productLists = await Product.find({globelMachineID: machine?.globelMachineID})
+        let productLists = await Product.find({globelMachineID: machine?.globelMachineID})
         .select('serialNo parentMachine parentSerialNo transferredDate transferredMachine parentMachineID status customer shippingDate installationDate globelMachineID')
         .populate(populateArray_)
         .lean().sort({_id: -1});
@@ -452,7 +452,7 @@ exports.deleteProduct = async (req, res, next) => {
     } else {
       const machine = { _id: req.params.id };
       let machineAuditLog = createMachineAuditLogRequest(machine, 'Delete', req.body.loginUser.userId)
-      await postProductAuditLog(machineAuditLog);
+      //await postProductAuditLog(machineAuditLog);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -504,8 +504,12 @@ exports.postProduct = async (req, res, next) => {
           error._message
         );
       } else {
-        let machineAuditLog = createMachineAuditLogRequest(machine, 'Create', req.body.loginUser.userId)
-        await postProductAuditLog(machineAuditLog);
+        try{
+          let machineAuditLog = createMachineAuditLogRequest(machine, 'Create', req.body.loginUser.userId)
+          //await postProductAuditLog(machineAuditLog);
+        } catch(e) {
+          console.error(e);
+        }
 
         if(machine && Array.isArray(machineConnections) && machineConnections.length>0) 
           machine = await connectMachines(machine.id, machineConnections);
@@ -547,7 +551,7 @@ exports.postConnectedProduct = async (req) => {
     try {
       ProductObj = await dbservice.postObject(getDocumentFromReq(req, 'new'));
       let machineAuditLog = createMachineAuditLogRequest(ProductObj, 'Create', req.body.loginUser.userId);
-      await postProductAuditLog(machineAuditLog);
+      //await postProductAuditLog(machineAuditLog);
 
       if (ProductObj && Array.isArray(machineConnections) && machineConnections.length > 0) {
         ProductObj = await connectMachines(ProductObj.id, machineConnections);
@@ -668,6 +672,7 @@ exports.transferOwnership = async (req, res, next) => {
         // validate if machine is already in-transfer or not
         let parentMachine = await dbservice.getObjectById(Product, this.fields, req.body.machine, {path: 'status', select: ''});
         const globelMachineID = parentMachine?.globelMachineID && ObjectId.isValid(parentMachine.globelMachineID) ? parentMachine.globelMachineID : req.body.machine;
+        
         if (!parentMachine) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, 'Product'));
         }
@@ -705,20 +710,7 @@ exports.transferOwnership = async (req, res, next) => {
           // req.body.supportExpireDate = "";          
 
 
-          if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;
-
-          // // Assuming parentMachine.machineConnections and req.body.machineConnections are arrays
-          // const parentMachineConnections = parentMachine.machineConnections;
-          // const requestBodyConnections = req.body.machineConnections;
-          // if(parentMachineConnections && parentMachineConnections.length > 0 && requestBodyConnections && requestBodyConnections.length > 0) {
-          //   const filteredConnections = parentMachineConnections.filter(connection => !requestBodyConnections.includes(connection));
-          //   parentMachine.machineConnections = filteredConnections;
-          // }
-
-          // if(parentMachine.machineConnections && parentMachine.machineConnections.length > 0){
-          //   let disconnectConnectedMachines = await disconnectMachine_(parentMachine.id, parentMachine.machineConnections);
-          // }
-          
+          if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;          
           
           if(!req.body.status) {
             // update status of the new(transferred) machine
@@ -734,12 +726,12 @@ exports.transferOwnership = async (req, res, next) => {
           if (!parentMachineStatus) {
             return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, this.ProductStatus));
           } else {
-            const transferredMachine = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-            if (transferredMachine) {
+            const newMachineAfterTranspher = await dbservice.postObject(getDocumentFromReq(req, 'new'));
+            if (newMachineAfterTranspher) {
               const whereClause = {machine: req.body.machine, isArchived: false, isActive: true};
-              const setClause = {machine: transferredMachine._id};
+              const setClause = {machine: newMachineAfterTranspher._id};
               
-              await disconnectConnections(req, transferredMachine._id, parentMachine);
+              await disconnectConnections(req, newMachineAfterTranspher._id, parentMachine);
               
               // Step 2 
               if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
@@ -789,7 +781,7 @@ exports.transferOwnership = async (req, res, next) => {
 
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
-                transferredMachine: transferredMachine._id,
+                newMachineAfterTranspher: newMachineAfterTranspher._id,
                 transferredDate: new Date(),
                 isActive: false,
                 status: parentMachineStatus._id,
@@ -798,8 +790,8 @@ exports.transferOwnership = async (req, res, next) => {
               
               if(parentMachineUpdated){
                 let machineAuditLog = createMachineAuditLogRequest(parentMachine, 'Transfer', req.body.loginUser.userId);
-                await postProductAuditLog(machineAuditLog);
-                res.status(StatusCodes.CREATED).json({ Machine: transferredMachine });
+                //await postProductAuditLog(machineAuditLog);
+                res.status(StatusCodes.CREATED).json({ Machine: newMachineAfterTranspher });
               }
             }
           }
@@ -888,7 +880,7 @@ const disconnectConnections = async (request, newMachineId) => {
       console.error("Error in disconnectConnections:", error.message);
     }
   } else {
-    console.log("** Invalid New Machine ID or Request Body Connections");
+    console.info("No machine connections found to attach to transpher machine.");
   }
 };
 
@@ -1456,7 +1448,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel, 
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, manufactureDate, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, transferredDate, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
  
   
@@ -1480,6 +1472,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("parentSerialNo" in req.body){
     doc.parentSerialNo =  parentSerialNo;
+  }
+  if ("globelMachineID" in req.body){
+    doc.globelMachineID =  globelMachineID;
   }
 
   if ("status" in req.body){
@@ -1511,6 +1506,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("manufactureDate" in req.body){
     doc.manufactureDate = manufactureDate;
+  }
+  if ("transferredDate" in req.body){
+    doc.transferredDate = transferredDate;
   }
   
   if ("installationDate" in req.body){

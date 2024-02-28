@@ -28,8 +28,24 @@ const docSchema = new Schema({
     description: { type: String },
     // detailed description of machine
 
-    transferredDate: { type: Date },
+
+    transferredDate: {
+        type: Date,
+        validate: {
+            validator: function(transferDate) {
+                if (this.shippingDate && transferDate > this.shippingDate) {
+                    return false;
+                }
+                if (this.installationDate && transferDate > this.installationDate) {
+                    return false;
+                }
+                return true;
+            },
+            message: props => `transferred Date must be less than or equal to both shippingDate and installationDate`
+        }
+    },
     // date of transfer
+    
 
     transferredMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // transferred machine having new/updated customer data
