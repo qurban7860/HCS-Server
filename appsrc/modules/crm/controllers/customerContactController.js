@@ -69,7 +69,10 @@ exports.getCustomerContacts = async (req, res, next) => {
     delete this.query.orderBy;
   }
   this.customerId = req.params.customerId;
-  this.query.customer = this.customerId; 
+
+  if(this.customerId && ObjectId.isValid(this.customerId))
+   this.query.customer = this.customerId; 
+  
   this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   async function callbackFunc(error, response) {
