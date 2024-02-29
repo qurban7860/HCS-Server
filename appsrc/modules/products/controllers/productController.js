@@ -703,6 +703,7 @@ exports.transferOwnership = async (req, res, next) => {
         }
 
         const transferredDate = req.body.transferredDate;
+        console.log({transferredDate});
         if (parentMachine) {       
           req.body.serialNo = parentMachine.serialNo;
           req.body.machineModel = parentMachine.machineModel;
@@ -1459,7 +1460,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel, 
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, manufactureDate, transferredDate, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, purchasedDate, transferredDate, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, transferredFromMachine, alias } = req.body;
  
   
@@ -1520,6 +1521,10 @@ function getDocumentFromReq(req, reqType){
   }
   if ("transferredDate" in req.body){
     doc.transferredDate = transferredDate;
+  }
+
+  if ("purchasedDate" in req.body){
+    doc.purchasedDate = purchasedDate;
   }
   
   if ("installationDate" in req.body){
