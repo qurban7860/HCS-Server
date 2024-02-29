@@ -42,9 +42,18 @@ this.populate = [
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
       {path: 'financialCompany', select: '_id clientCode name'},
-      {path: 'transferredToMachine', select: '_id serialNo name customer'},
       {path: 'createdBy', select: 'name'},
-      {path: 'updatedBy', select: 'name'}
+      {path: 'updatedBy', select: 'name'},
+      {path: 'transferredToMachine', select: '_id serialNo name customer',
+      populate: {
+        path: 'customer',
+        select: '_id clientCode name'
+      }},
+      {path: 'transferredFromMachine', select: '_id serialNo name customer',
+      populate: {
+        path: 'customer',
+        select: '_id clientCode name'
+      }}
     ];
 
 async function processUserRoles(req) {
