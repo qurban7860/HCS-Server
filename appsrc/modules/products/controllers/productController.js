@@ -745,48 +745,34 @@ exports.transferOwnership = async (req, res, next) => {
               
               // Step 2 
               if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
-                console.log("req.body.isAllSettings", req.body.isAllSettings);
                 const responseProductTechParamValue = await ProductTechParamValue.updateMany(whereClause, setClause);
-                console.log("responseProductTechParamValue", responseProductTechParamValue);
               }
 
               if(req.body.isAllTools && (req.body.isAllTools == 'true' || req.body.isAllTools == true)){
                 req.body.tools = parentMachine.tools;              
-                console.log("req.body.isAllTools", req.body.isAllTools);
                 const responseProductToolInstalled = await ProductToolInstalled.updateMany(whereClause, setClause);
-                console.log("responseProductToolInstalled", responseProductToolInstalled);
               }
 
               if(req.body.isAllDrawings && (req.body.isAllDrawings == 'true' || req.body.isAllDrawings == true)){              
-                console.log("req.body.isAllDrawings", req.body.isAllDrawings);
                 const responseProductDrawing = await ProductDrawing.updateMany(whereClause, setClause);
-                console.log("responseProductDrawing", responseProductDrawing);
               }
 
               if(req.body.isAllProfiles && (req.body.isAllProfiles == 'true' || req.body.isAllProfiles == true)){              
-                console.log("req.body.isAllProfiles", req.body.isAllProfiles);
                 const responseProductProfile = await ProductProfile.updateMany(whereClause, setClause);
-                console.log("responseProductProfile", responseProductProfile);
               }
 
               if(req.body.isAllINIs && (req.body.isAllINIs == 'true' || req.body.isAllINIs == true)){              
-                console.log("req.body.isAllINIs", req.body.isAllINIs);
                 const responseProductConfiguration = await ProductConfiguration.updateMany(whereClause, setClause);
-                console.log("responseProductConfiguration", responseProductConfiguration);
               }
 
               // Step 3 List document for selection to transfer to new machine id
               if(req.body.machineDocuments && req.body.machineDocuments.length > 0) {
-                console.log("req.body.machineDocuments", req.body.machineDocuments);
                 const responseDocument = await Document.updateMany({_id: {$in: req.body.machineDocuments}}, setClause);
-                console.log("responseDocument", responseDocument);
               }
 
               // Step 4 List of existing connected machines to choose to move with new machine id. 
               if(req.body.machineConnections && req.body.machineConnections.length > 0) {
-                console.log("req.body.machineConnections", req.body.machineConnections);
                 const responseMachineConnection = await ProductConnection.updateMany({machine: {$in: req.body.machineConnections}}, setClause);
-                console.log("responseMachineConnection", responseMachineConnection);
               }
 
               // update old machine ownsership status
