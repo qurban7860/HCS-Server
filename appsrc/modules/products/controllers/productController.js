@@ -263,7 +263,7 @@ exports.getProduct = async (req, res, next) => {
         let productLists = await Product.find({globelMachineID: machine?.globelMachineID})
         .select('serialNo parentMachine parentSerialNo purchasedDate transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
         .populate(populateArray_)
-        .lean().sort({_id: -1});
+        .lean().sort({transferredDate: -1});
         if (
           productLists?.length === 1 &&
           productLists[0]?.globelMachineID !== undefined &&
