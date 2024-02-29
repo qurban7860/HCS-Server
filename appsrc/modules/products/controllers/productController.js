@@ -192,6 +192,9 @@ exports.getProduct = async (req, res, next) => {
   delete req.query.unfiltered;
   
 
+  if(!req.params.id || !ObjectId.isValid(req.params.id)) {
+    return res.status(StatusCodes.BAD_REQUEST).send("Machine uuid is not valid!");
+  }
   dbservice.getObjectById(Product, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, machine) {
     if (error) {
