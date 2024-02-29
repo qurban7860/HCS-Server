@@ -245,18 +245,9 @@ exports.getProduct = async (req, res, next) => {
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
 
 
-      if(machine && machine.transferredFromMachine) {
-        machine.transferredFrom = await Product.findOne({_id: machine.transferredFromMachine}).select('customer').populate({path: 'customer', select: 'name'});
-      }
-
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
         let queryString_ = {connectedMachine: machine._id, disconnectionDate: {$exists: false}};
         machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
-      }
-
-      if(machine?.transferredToMachine?.customer && ObjectId.isValid(machine?.transferredToMachine?.customer)){
-        let objectCustomer = await Customer.findOne({_id: machine?.transferredToMachine?.customer}).select('clientCode name tradingName type').lean();
-        machine.transferredToMachine.customer = objectCustomer;
       }
 
       if(machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)){
