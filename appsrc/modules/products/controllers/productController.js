@@ -261,7 +261,7 @@ exports.getProduct = async (req, res, next) => {
         ];
 
         let productLists = await Product.find({globelMachineID: machine?.globelMachineID})
-        .select('serialNo parentMachine parentSerialNo transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
+        .select('serialNo parentMachine parentSerialNo purchaseDate transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
         .populate(populateArray_)
         .lean().sort({_id: -1});
         if (
