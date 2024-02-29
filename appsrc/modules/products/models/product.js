@@ -29,7 +29,7 @@ const docSchema = new Schema({
     // detailed description of machine
 
     
-    purchasedDate: { type: Date },
+    purchaseDate: { type: Date },
     // Purchased Date
 
     transferredDate: {

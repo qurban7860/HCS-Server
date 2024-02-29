@@ -261,7 +261,7 @@ exports.getProduct = async (req, res, next) => {
         ];
 
         let productLists = await Product.find({globelMachineID: machine?.globelMachineID})
-        .select('serialNo parentMachine parentSerialNo purchasedDate transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
+        .select('serialNo parentMachine parentSerialNo purchaseDate transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
         .populate(populateArray_)
         .lean().sort({transferredDate: -1});
         if (
@@ -710,7 +710,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.parentSerialNo = parentMachine.parentSerialNo;
           req.body.transferredFromMachine = parentMachine._id;
           req.body.transferredDate = null;
-          req.body.purchasedDate = transferredDate;
+          req.body.purchaseDate = transferredDate;
           req.body.manufactureDate = parentMachine.manufactureDate;
           req.body.globelMachineID = globelMachineID;
           req.body.alias = parentMachine.alias;
@@ -893,7 +893,7 @@ function updateConnectingMachine(req, transferredDate) {
       supportExpireDate: ""
   };
   if(transferredDate && transferredDate !== undefined) {
-    data.purchasedDate = transferredDate
+    data.purchaseDate = transferredDate
   }
 
   for (const key in data) {
@@ -1459,7 +1459,7 @@ function getDocumentFromReq(req, reqType){
   const { serialNo, name, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel, 
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, manufactureDate, purchasedDate, transferredDate, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, purchaseDate, transferredDate, installationDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, transferredFromMachine, alias } = req.body;
  
   
@@ -1522,8 +1522,8 @@ function getDocumentFromReq(req, reqType){
     doc.transferredDate = transferredDate;
   }
 
-  if ("purchasedDate" in req.body){
-    doc.purchasedDate = purchasedDate;
+  if ("purchaseDate" in req.body){
+    doc.purchaseDate = purchaseDate;
   }
   
   if ("installationDate" in req.body){
