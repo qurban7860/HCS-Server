@@ -6,23 +6,6 @@ const GUID = require('mongoose-guid')(mongoose);
 
 const Schema = mongoose.Schema;
 
-const phoneNumberSchema = new Schema({
-    type: {
-        type: String
-    },
-    countryCode: {
-        type: String,
-        required: true
-    },
-    number: {
-        type: String,
-        required: true
-    },
-    extensions: {
-        type: String
-    }
-});
-
 const docSchema = new Schema({
     customer: { type: Schema.Types.ObjectId, ref: 'Customer' , required: true},
     // guid of customer from customers collection. 
@@ -44,8 +27,6 @@ const docSchema = new Schema({
     
     contacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
     // list of associated other contacts (GUIDs) from contacts collection
-
-    phoneNumbers: [phoneNumberSchema]
 },
 {
     collection: 'CustomerSites'

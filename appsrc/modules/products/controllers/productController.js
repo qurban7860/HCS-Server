@@ -703,7 +703,6 @@ exports.transferOwnership = async (req, res, next) => {
         }
 
         const transferredDate = req.body.transferredDate;
-        console.log({transferredDate});
         if (parentMachine) {       
           req.body.serialNo = parentMachine.serialNo;
           req.body.machineModel = parentMachine.machineModel;
