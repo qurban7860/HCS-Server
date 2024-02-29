@@ -28,6 +28,9 @@ const docSchema = new Schema({
     description: { type: String },
     // detailed description of machine
 
+    
+    purchasedDate: { type: Date },
+    // Purchased Date
 
     transferredDate: {
         type: Date,
@@ -47,10 +50,10 @@ const docSchema = new Schema({
     // date of transfer
     
 
-    transferredMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    transferredToMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // transferred machine having new/updated customer data
 
-    parentMachineID: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    transferredFromMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // parent machine ID(ownership transfer)
 
     status: { type: Schema.Types.ObjectId , ref: 'MachineStatus' },
@@ -136,8 +139,8 @@ docSchema.index({"name":1})
 docSchema.index({"serialNo":1})
 docSchema.index({"parentMachine":1})
 docSchema.index({"parentSerialNo":1})
-docSchema.index({"transferredMachine":1})
-docSchema.index({"parentMachineID":1})
+docSchema.index({"transferredToMachine":1})
+docSchema.index({"transferredFromMachine":1})
 docSchema.index({"status":1})
 docSchema.index({"supplier":1})
 docSchema.index({"machineModel":1})

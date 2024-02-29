@@ -42,7 +42,7 @@ this.populate = [
       {path: 'projectManager', select: '_id firstName lastName'},
       {path: 'supportManager', select: '_id firstName lastName'},
       {path: 'financialCompany', select: '_id clientCode name'},
-      {path: 'transferredMachine', select: '_id serialNo name customer'},
+      {path: 'transferredToMachine', select: '_id serialNo name customer'},
       {path: 'createdBy', select: 'name'},
       {path: 'updatedBy', select: 'name'}
     ];
@@ -236,8 +236,8 @@ exports.getProduct = async (req, res, next) => {
       machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
 
 
-      if(machine && machine.parentMachineID) {
-        machine.transferredFrom = await Product.findOne({_id: machine.parentMachineID}).select('customer').populate({path: 'customer', select: 'name'});
+      if(machine && machine.transferredFromMachine) {
+        machine.transferredFrom = await Product.findOne({_id: machine.transferredFromMachine}).select('customer').populate({path: 'customer', select: 'name'});
       }
 
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
@@ -245,9 +245,9 @@ exports.getProduct = async (req, res, next) => {
         machine.parentMachines = await ProductConnection.find(queryString_).sort({_id: -1}).select('machine').populate({path: 'machine', select: 'serialNo'});
       }
 
-      if(machine?.transferredMachine?.customer && ObjectId.isValid(machine?.transferredMachine?.customer)){
-        let objectCustomer = await Customer.findOne({_id: machine?.transferredMachine?.customer}).select('clientCode name tradingName type').lean();
-        machine.transferredMachine.customer = objectCustomer;
+      if(machine?.transferredToMachine?.customer && ObjectId.isValid(machine?.transferredToMachine?.customer)){
+        let objectCustomer = await Customer.findOne({_id: machine?.transferredToMachine?.customer}).select('clientCode name tradingName type').lean();
+        machine.transferredToMachine.customer = objectCustomer;
       }
 
       if(machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)){
@@ -255,13 +255,13 @@ exports.getProduct = async (req, res, next) => {
           {path: 'status', select: '_id name slug'},
           {path: 'customer', select: '_id clientCode name'},
           {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
-          {path: 'transferredMachine', select: '_id serialNo name customer'},
+          {path: 'transferredToMachine', select: '_id serialNo name customer'},
           {path: 'createdBy', select: 'name'},
           {path: 'updatedBy', select: 'name'}
         ];
 
         let productLists = await Product.find({globelMachineID: machine?.globelMachineID})
-        .select('serialNo parentMachine parentSerialNo transferredDate transferredMachine parentMachineID status customer shippingDate installationDate globelMachineID')
+        .select('serialNo parentMachine parentSerialNo transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
         .populate(populateArray_)
         .lean().sort({_id: -1});
         if (
@@ -285,7 +285,7 @@ exports.getProducts = async (req, res, next) => {
     {path: 'status', select: '_id name slug'},
     {path: 'customer', select: '_id clientCode name'},
     {
-      path: 'transferredMachine',
+      path: 'transferredToMachine',
       select: '_id serialNo customer',
       populate: { path: 'customer', select: '_id clientCode name' }
     }
@@ -295,7 +295,7 @@ exports.getProducts = async (req, res, next) => {
     listPopulate.push({path: 'instalationSite', select: ''});
   }
 
-  const listFields = 'serialNo name model customer installationDate shippingDate supportManager projectManager accountManager verifications status transferredDate transferredMachine isActive  createdAt';
+  const listFields = 'serialNo name model customer installationDate shippingDate supportManager projectManager accountManager verifications status transferredDate transferredToMachine isActive  createdAt';
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { serialNo: 1,  name: 1};
@@ -696,8 +696,8 @@ exports.transferOwnership = async (req, res, next) => {
         if(!parentMachine.isActive || parentMachine.isArchived){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Inactive or archived machines cannot be transferred'));
         }
-        // validate if an entry already exists with the same customer and parentMachineID
-        let alreadyTransferredParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, parentMachineID: req.body.machine, isActive: true, isArchived: false }, this.populate);
+        // validate if an entry already exists with the same customer and transferredFromMachine
+        let alreadyTransferredParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, transferredFromMachine: req.body.machine, isActive: true, isArchived: false }, this.populate);
         if(alreadyTransferredParentMachine){
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));          
         }
@@ -708,16 +708,15 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.machineModel = parentMachine.machineModel;
           req.body.parentMachine = parentMachine.parentMachine;
           req.body.parentSerialNo = parentMachine.parentSerialNo;
-          req.body.parentMachineID = parentMachine._id;
+          req.body.transferredFromMachine = parentMachine._id;
+          req.body.transferredDate = null;
+          req.body.purchasedDate = transferredDate;
           req.body.manufactureDate = parentMachine.manufactureDate;
           req.body.globelMachineID = globelMachineID;
           req.body.alias = parentMachine.alias;
           req.body.operators = parentMachine.operators;
           req.body.internalTags = parentMachine.internalTags;
           req.body.customerTags = parentMachine.customerTags;
-          req.body.transferredDate = null;
-                 
-          // req.body.supportExpireDate = "";          
 
 
           if(req.body.installationSite && ObjectId.isValid(req.body.installationSite)) req.body.instalationSite = req.body.installationSite;          
@@ -741,7 +740,7 @@ exports.transferOwnership = async (req, res, next) => {
               const whereClause = {machine: req.body.machine, isArchived: false, isActive: true};
               const setClause = {machine: newMachineAfterTranspher._id};
               
-              await disconnectConnections(req, newMachineAfterTranspher._id, parentMachine);
+              await disconnectConnections(req, newMachineAfterTranspher._id, transferredDate);
               
               // Step 2 
               if(req.body.isAllSettings && (req.body.isAllSettings == 'true' || req.body.isAllSettings == true)){              
@@ -777,7 +776,7 @@ exports.transferOwnership = async (req, res, next) => {
 
               // update old machine ownsership status
               let parentMachineUpdated = await dbservice.patchObject(Product, req.body.machine, {
-                newMachineAfterTranspher: newMachineAfterTranspher._id,
+                transferredToMachine: newMachineAfterTranspher._id,
                 transferredDate: transferredDate,
                 isActive: false,
                 status: parentMachineStatus._id,
@@ -803,7 +802,7 @@ exports.transferOwnership = async (req, res, next) => {
   }
 };
 
-const disconnectConnections = async (request, newMachineId) => {
+const disconnectConnections = async (request, newMachineId, transferredDate) => {
   const connectionToMove = request.body.machineConnections;
 
   if (newMachineId && ObjectId.isValid(newMachineId) && connectionToMove && Array.isArray(connectionToMove) && connectionToMove.length > 0) {
@@ -845,7 +844,7 @@ const disconnectConnections = async (request, newMachineId) => {
       
       //Update connection Machine Data to new machine data.
       try{
-        let updateProduct = updateConnectingMachine(request);
+        let updateProduct = updateConnectingMachine(request, transferredDate);
         const queryS_ = { _id: { $in: listConnectedMachineIds }};
         await Product.updateMany( queryS_, { $set: updateProduct });
       } catch (error){
@@ -877,7 +876,7 @@ const disconnectConnections = async (request, newMachineId) => {
   }
 };
 
-function updateConnectingMachine(req) {
+function updateConnectingMachine(req, transferredDate) {
   let data  = {
       customer: req.body.customer,
       financialCompany: updateProperty(req, "financialCompany"),
@@ -893,6 +892,10 @@ function updateConnectingMachine(req) {
       supportManager: updateProperty(req, "supportManager"),
       supportExpireDate: ""
   };
+  if(transferredDate && transferredDate !== undefined) {
+    data.purchasedDate = transferredDate
+  }
+
   for (const key in data) {
     if (data[key] === '' || data[key] === undefined || data[key] === null) {
       data[key] = null;
@@ -1136,7 +1139,7 @@ exports.fetchMachineTransferHistory = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   if(req.query?.globelMachineID && req.query?.globelMachineID !== undefined) {
     const productLists = await Product.find({globelMachineID: req.query.globelMachineID})
-                .select('serialNo parentMachine parentSerialNo name transferredDate transferredMachine parentMachineID status machineModel financialCompany customer instalationSite accountManager projectManager supportManager shippingDate installationDate')
+                .select('serialNo parentMachine parentSerialNo name transferredDate transferredToMachine transferredFromMachine status machineModel financialCompany customer instalationSite accountManager projectManager supportManager shippingDate installationDate')
                 .populate(this.populate)
                 .lean().sort({_id: -1});
     res.json(productLists);
@@ -1201,7 +1204,7 @@ exports.moveMachine = async (req, res, next) => {
   } else {
     try {
       if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
-        // validate if an entry already exists with the same customer and parentMachineID
+        // validate if an entry already exists with the same customer and transferredFromMachine
         
         let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine, isActive: true, isArchived: false});
         
@@ -1457,7 +1460,7 @@ function getDocumentFromReq(req, reqType){
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags, manufactureDate, transferredDate, installationDate, shippingDate, supportExpireDate,
-    isActive, isArchived, loginUser, machineConnections, parentMachineID, alias } = req.body;
+    isActive, isArchived, loginUser, machineConnections, transferredFromMachine, alias } = req.body;
  
   
   let doc = {};
@@ -1475,8 +1478,8 @@ function getDocumentFromReq(req, reqType){
   if ("parentMachine" in req.body){
     doc.parentMachine = parentMachine;
   }
-  if ("parentMachineID" in req.body){
-    doc.parentMachineID = parentMachineID;
+  if ("transferredFromMachine" in req.body){
+    doc.transferredFromMachine = transferredFromMachine;
   }
   if ("parentSerialNo" in req.body){
     doc.parentSerialNo =  parentSerialNo;
