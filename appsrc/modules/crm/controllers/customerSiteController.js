@@ -105,6 +105,10 @@ exports.postCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+      const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.number && phoneNumber?.number.trim() !== '' && phoneNumber?.number.length > 0);
+      req.body.phoneNumbers = validPhoneNumbers;
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
