@@ -255,18 +255,18 @@ exports.getProduct = async (req, res, next) => {
 
       if(machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)){
         const populateArray_ = [
-          {path: 'status', select: '_id name slug'},
           {path: 'customer', select: '_id clientCode name'},
-          {path: 'parentMachine', select: '_id name serialNo supplier machineModel'},
           {path: 'transferredToMachine', select: '_id serialNo name customer'},
-          {path: 'createdBy', select: 'name'},
-          {path: 'updatedBy', select: 'name'}
+          {path: 'transferredToMachine', select: '_id serialNo name customer'},
         ];
 
-        let productLists = await Product.find({globelMachineID: machine?.globelMachineID})
-        .select('serialNo parentMachine parentSerialNo purchaseDate transferredDate transferredToMachine transferredFromMachine status customer shippingDate installationDate globelMachineID')
-        .populate(populateArray_)
-        .lean().sort({transferredDate: -1});
+        let productLists = await Product.aggregate([
+          { $match: { globelMachineID: ObjectId(machine.globelMachineID) } },
+          { $project: { purchaseDate: 1,  transferredDate: 1,  transferredToMachine: 1,  transferredFromMachine: 1, customer: 1} },
+          { $sort: { transferredDate: 1 } }
+        ]);
+        productLists = await Product.populate(productLists, populateArray_);
+
         if (
           productLists?.length === 1 &&
           productLists[0]?.globelMachineID !== undefined &&
