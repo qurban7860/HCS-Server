@@ -48,7 +48,7 @@ const phoneNumberSchema = new Schema({
         type: String,
         required: true
     },
-    number: {
+    contactNumber: {
         type: String,
         required: true
     },
