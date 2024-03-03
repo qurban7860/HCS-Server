@@ -30,6 +30,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
+  {path: 'customer', select: 'name'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'},
   {path: 'primaryBillingContact', select: 'firstName lastName'},
@@ -58,7 +59,9 @@ exports.getCustomerSites = async (req, res, next) => {
       delete this.query.orderBy;
     }
     this.customerId = req.params.customerId;
-    this.query.customer = this.customerId; 
+    if(this.customerId && ObjectId.isValid(this.customerId))
+      this.query.customer = this.customerId; 
+    
     this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -102,6 +105,10 @@ exports.postCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+      const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
+      req.body.phoneNumbers = validPhoneNumbers;
+    }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -119,7 +126,6 @@ exports.postCustomerSite = async (req, res, next) => {
 };
 
 async function updateContactAddress(updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address) {
-  console.log("-->", updateAddressPrimaryTechnicalContact, primaryTechnicalContact, address);
   if (
     primaryTechnicalContact &&
     ObjectId.isValid(primaryTechnicalContact) &&
@@ -216,100 +222,6 @@ exports.patchCustomerSite = async (req, res, next) => {
   }
 };
 
-// exports.exportSites = async (req, res, next) => {
-//   const regex = new RegExp("^EXPORT_UUID$", "i");
-//   let EXPORT_UUID = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-//   EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true:false;
-  
-//   let finalData = ['Name,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Technical Contact'];
-
-//   if(EXPORT_UUID) {
-//     finalData = ['Name,CustomerID,Customer,Street,Suburb,City,Region,PostCode,Country,Latitude,Longitude,Contacts,Billing Contact,Billing Contact ID,Technical Contact,Technical Contact ID'];
-//   }
-
-//   let sites = await CustomerSite.find({customer: req.params.customerId, isActive:true,isArchived:false})
-//               .populate('customer')
-//               .populate('primaryBillingContact')
-//               .populate('primaryTechnicalContact');
-
-//   const filePath = path.resolve(__dirname, "../../../../uploads/Sites.csv");
-
-
-//   sites = JSON.parse(JSON.stringify(sites));
-//   for(let site of sites) {
-//     if(site && site.customer && (site.customer.isActive==false || site.customer.isArchived==true)) 
-//       continue;
-    
-//     if(Array.isArray(site.contacts) && site.contacts.length>0) {
-//       site.contacts = await CustomerContact.find({_id:{$in:site.contacts},isActive:true,isArchived:false});
-//       site.contactsName = site.contacts.map((c)=>`${c.firstName} ${c.lastName}`);
-//       site.contactsName = '"'+site.contactsName+'"'
-//     }
-
-//     if(EXPORT_UUID) { 
-//       finalDataObj = {
-//         name:site?''+site.name.replace(/"/g,"'")+'':'',
-//         customerId:site.customer?site.customer._id:'',
-//         customer:site.customer?''+site.customer.name.replace(/"/g,"'")+'':'',
-//         street:site.address?site.address.street?''+site.address.street.replace(/"/g,"'")+'':'':'',
-//         suburb:site.address?site.address.suburb?''+site.address.suburb.replace(/"/g,"'")+'':'':'',
-//         city:site.address?site.address.city?''+site.address.city.replace(/"/g,"'")+'':'':'',
-//         region:site.address?site.address.region?''+site.address.region.replace(/"/g,"'")+'':'':'',
-//         postCode:site.address?site.address.postcode?''+site.address.postcode.replace(/"/g,"'")+'':'':'',
-//         country:site.address?site.address.country?''+site.address.country.replace(/"/g,"'")+'':'':'',
-//         lat:site.lat?''+site.lat.replace(/"/g,"'")+'':'',
-//         long:site.long?''+site.long.replace(/"/g,"'")+'':'',
-//         contacts:site.contactsName?''+site.contactsName.replace(/"/g,"'")+'':'',
-//         billingContact:site.primaryBillingContact?getContactName(site.primaryBillingContact):'',
-//         billingContactID:site.primaryBillingContact?site.primaryBillingContact._id:'',
-//         technicalContact:site.primaryTechnicalContact?getContactName(site.primaryTechnicalContact):'',
-//         technicalContactID:site.primaryTechnicalContact?site.primaryTechnicalContact._id:'',
-//       };
-//     } else {
-//       finalDataObj = {
-//         name:site?''+site.name.replace(/"/g,"'")+'':'',
-//         customer:site.customer?''+site.customer.name.replace(/"/g,"'")+'':'',
-//         street:site.address?site.address.street?''+site.address.street.replace(/"/g,"'")+'':'':'',
-//         suburb:site.address?site.address.suburb?''+site.address.suburb.replace(/"/g,"'")+'':'':'',
-//         city:site.address?site.address.city?''+site.address.city.replace(/"/g,"'")+'':'':'',
-//         region:site.address?site.address.region?''+site.address.region.replace(/"/g,"'")+'':'':'',
-//         postCode:site.address?site.address.postcode?''+site.address.postcode.replace(/"/g,"'")+'':'':'',
-//         country:site.address?site.address.country?''+site.address.country.replace(/"/g,"'")+'':'':'',
-//         lat:site.lat?''+site.lat.replace(/"/g,"'")+'':'',
-//         long:site.long?''+site.long.replace(/"/g,"'")+'':'',
-//         contacts:site.contactsName?''+site.contactsName.replace(/"/g,"'")+'':'',
-//         billingContact:site.primaryBillingContact?getContactName(site.primaryBillingContact):'',
-//         technicalContact:site.primaryTechnicalContact?getContactName(site.primaryTechnicalContact):'',
-//       };
-//     }
-
-
-//     finalDataRow = Object.values(finalDataObj);
-//     let index = 0;
-
-//     for(let finalData of finalDataRow) {
-//       finalData = finalData.replace(/(\r\n|\r|\n)/g,'');
-//       finalDataRow[index] = finalData;
-//       index++;
-//     }
-
-//     finalDataRow = finalDataRow.join(',');
-//     finalData.push(finalDataRow);
-
-//   }
-
-//   let csvDataToWrite = finalData.join('\n');
-
-//   fs.writeFile(filePath, csvDataToWrite, 'utf8', function (err) {
-//     if (err) {
-//       console.log('Some error occured - file either not saved or corrupted file saved.');
-//       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-//     } else{
-//       return res.sendFile(filePath);
-//     }
-//   });
-// }
-
 exports.exportSitesJSONForCSV = async (req, res, next) => {
   try {
     const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -320,6 +232,10 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     // const fetchAllSites = req.query.fetchAllSites === true || req.query.fetchAllSites === 'true' ? true : false;
     if(ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
+    } else {
+      let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+      if(listCustomers && listCustomers.length > 0)
+        queryString_.customer = { $in: listCustomers };
     }
 
     const collationOptions = {
@@ -327,7 +243,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       strength: 2
     };
 
-    console.log(queryString_);
+
     let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({name: 1})
       .populate('customer')
       .populate('primaryBillingContact')
@@ -336,7 +252,6 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     sites = JSON.parse(JSON.stringify(sites));
     let listJSON = [];
 
-    console.log("sites", sites);
     const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
     await Promise.all(sites.map(async (site) => {
       if (site && site.customer && (site.customer.isActive == false || site.customer.isArchived == true))
@@ -354,6 +269,9 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
 
       let updatedDateLTZ = ""; 
       if(site.updatedAt && site.updatedAt.length > 0) { const updatedAt = new Date(site.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
+      
+      const phoneNumber_ = formatPhoneNumber(site);
+
       if (EXPORT_UUID) {
         finalDataObj = {
           SiteID: site._id ? site._id : '',
@@ -372,6 +290,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           TechnicalContactID: site.primaryTechnicalContact ? site.primaryTechnicalContact._id : '',
           TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Phone: phoneNumber_,
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
           CreationDate : createdDateLTZ,
@@ -393,6 +312,7 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Longitude: site.long ? '' + site.long.replace(/"/g, "'") + '' : '',
           BillingContact: site.primaryBillingContact ? getContactName(site.primaryBillingContact) : '',
           TechnicalContacts: site.primaryTechnicalContact ? getContactName(site.primaryTechnicalContact) : '',
+          Phone: phoneNumber_,
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
           CreationDate : createdDateLTZ,
@@ -410,6 +330,17 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
     console.error(error);
     res.status(500).send({ error: 'Internal Server Error' });
   }
+}
+
+function formatPhoneNumber(site, type = "PHONE") {
+  let phoneNumber_ = "";
+  const phoneNo = site?.phoneNumbers?.find(item => item.type === type);
+  if (phoneNo) {
+      const countryCode = phoneNo.countryCode ? (phoneNo.countryCode.startsWith('+') ? phoneNo.countryCode : `+${phoneNo.countryCode}`) : "";
+      const number = phoneNo.contactNumber ? ` ${phoneNo.contactNumber}` : "";
+      phoneNumber_ = countryCode + number;
+  }
+  return phoneNumber_;
 }
 
 function getContactName(contact) {

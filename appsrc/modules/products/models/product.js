@@ -14,7 +14,7 @@ const docSchema = new Schema({
     parentMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // parent machine id
 
-    transpherID: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    globelMachineID: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // This field serves as an identifier that remains unchanged with every machine transfer. It is initially populated and maintains its consistency with each subsequent transfer.
   
     parentSerialNo: { type: String },
@@ -28,13 +28,32 @@ const docSchema = new Schema({
     description: { type: String },
     // detailed description of machine
 
-    transferredDate: { type: Date },
-    // date of transfer
+    
+    purchaseDate: { type: Date },
+    // Purchased Date
 
-    transferredMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    transferredDate: {
+        type: Date,
+        validate: {
+            validator: function(transferDate) {
+                if (this.shippingDate && transferDate > this.shippingDate) {
+                    return false;
+                }
+                if (this.installationDate && transferDate > this.installationDate) {
+                    return false;
+                }
+                return true;
+            },
+            message: props => `transferred Date must be less than or equal to both shippingDate and installationDate`
+        }
+    },
+    // date of transfer
+    
+
+    transferredToMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // transferred machine having new/updated customer data
 
-    parentMachineID: { type: Schema.Types.ObjectId , ref: 'Machine' },
+    transferredFromMachine: { type: Schema.Types.ObjectId , ref: 'Machine' },
     // parent machine ID(ownership transfer)
 
     status: { type: Schema.Types.ObjectId , ref: 'MachineStatus' },
@@ -120,8 +139,8 @@ docSchema.index({"name":1})
 docSchema.index({"serialNo":1})
 docSchema.index({"parentMachine":1})
 docSchema.index({"parentSerialNo":1})
-docSchema.index({"transferredMachine":1})
-docSchema.index({"parentMachineID":1})
+docSchema.index({"transferredToMachine":1})
+docSchema.index({"transferredFromMachine":1})
 docSchema.index({"status":1})
 docSchema.index({"supplier":1})
 docSchema.index({"machineModel":1})

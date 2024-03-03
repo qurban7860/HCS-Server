@@ -415,9 +415,6 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
       this.query._id = documentId_;
     }
 
-    console.log("this.query._id", this.query._id);
-
-
     let listOfFiles = [];
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     if(documents && Array.isArray(documents) && documents.length>0) {
@@ -436,16 +433,9 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
             documentVersions = JSON.parse(JSON.stringify(documentVersions));
             for (let documentVersion of documentVersions) {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
-                let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
-
-                console.log('fileType -->', fileType);
-                
-
+                let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };               
                 documentFileQuery.fileType = { $regex: fileType, $options: 'i' };
-                
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
-                
-          
                 if (documentFiles && documentFiles.length > 0) {
                   for (let file of documentFiles) {
                     file = file.toObject();

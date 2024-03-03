@@ -40,10 +40,28 @@ let  docAddressSchema = {
     }
 }
 
+const phoneNumberSchema = new Schema({
+    type: {
+        type: String
+    },
+    countryCode: {
+        type: String,
+        required: true
+    },
+    contactNumber: {
+        type: String,
+        required: true
+    },
+    extensions: {
+        type: String
+    }
+});
+
 let  docContactSchema = {
     phone: { type: String },
     // phone/mobile numbers. Phone number must with country code. 
     // There can be multiple comma separated entries 
+    phoneNumbers: [phoneNumberSchema],
     
     email: { type: String },
     // Email addresses. There can be multiple comma separated entries
