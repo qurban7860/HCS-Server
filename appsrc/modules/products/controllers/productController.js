@@ -261,7 +261,7 @@ exports.getProduct = async (req, res, next) => {
         let productLists = await Product.aggregate([
           { $match: { globelMachineID: ObjectId(machine.globelMachineID) } },
           { $project: { purchaseDate: 1,  transferredDate: 1,  transferredToMachine: 1,  transferredFromMachine: 1, customer: 1} },
-          { $sort: { purchaseDate: 1 } }
+          { $sort: { purchaseDate: -1 } }
         ]);
         productLists = await Product.populate(productLists, populateArray_);
 
