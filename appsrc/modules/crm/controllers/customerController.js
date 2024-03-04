@@ -18,7 +18,7 @@ const { SecurityUser } = require('../../security/models');
 const _ = require('lodash');
 const fs = require('fs');
 const path = require('path');
-const { Config } = require('../modules/config/models');
+const { Config } = require('../../config/models');
 
 const customerSiteController = require('./customerSiteController');
 const customerContactController = require('./customerContactController');
