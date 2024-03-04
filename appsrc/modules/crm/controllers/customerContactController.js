@@ -6,7 +6,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const { Customer, CustomerSite, CustomerContact } = require('../models');
 const { Config } = require('../../config/models');
 const { ProductServiceRecords } = require('../../products/models');
-
+const applyUserFilter  = require('../utils/userFilters');
 
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
@@ -73,6 +73,14 @@ exports.getCustomerContacts = async (req, res, next) => {
   if(this.customerId && ObjectId.isValid(this.customerId))
    this.query.customer = this.customerId; 
   
+   const finalQuery = await applyUserFilter(req);
+   if(finalQuery) {
+     const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+     if(allowedCustomers?.length > 0) {
+       this.query.customer = { $in: allowedCustomers };
+     }
+   }
+
   this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   async function callbackFunc(error, response) {
@@ -127,8 +135,6 @@ exports.searchCustomerContacts = async (req, res, next) => {
     }
   }
 };
-
-
 
 exports.getSPCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
@@ -403,6 +409,15 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
       locale: 'en',
       strength: 2
     };
+
+    const finalQuery = await applyUserFilter(req);
+    if(finalQuery) {
+      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+      if(allowedCustomers?.length > 0) {
+        queryString_.customer = { $in: allowedCustomers };
+      }
+    }
+
     
     let contacts = await CustomerContact.find(queryString_).collation(collationOptions)
       .populate(populateValues).sort({name : 1});

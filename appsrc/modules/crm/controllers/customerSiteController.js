@@ -13,6 +13,8 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, CustomerContact, Customer } = require('../models');
+const applyUserFilter  = require('../utils/userFilters');
+
 const { Config, Country } = require('../../config/models');
 const { Product } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
@@ -58,6 +60,15 @@ exports.getCustomerSites = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
+
+    const finalQuery = await applyUserFilter(req);
+    if(finalQuery) {
+      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+      if(allowedCustomers?.length > 0) {
+        this.query.customer = { $in: allowedCustomers };
+      }
+    }
+
     this.customerId = req.params.customerId;
     if(this.customerId && ObjectId.isValid(this.customerId))
       this.query.customer = this.customerId; 
@@ -243,6 +254,14 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       strength: 2
     };
 
+
+    const finalQuery = await applyUserFilter(req);
+    if(finalQuery) {
+      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+      if(allowedCustomers?.length > 0) {
+        queryString_.customer = { $in: allowedCustomers };
+      }
+    }
 
     let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({name: 1})
       .populate('customer')
