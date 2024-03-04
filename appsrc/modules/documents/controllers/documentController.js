@@ -218,6 +218,8 @@ exports.getDocuments = async (req, res, next) => {
 
 
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
+    const documents__ = documents;
+    documents = documents.data;
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
 
@@ -261,8 +263,9 @@ exports.getDocuments = async (req, res, next) => {
         }
       }
     }
-    
-    res.json(documents);
+
+    documents__.data = documents;
+    res.json(documents__);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
