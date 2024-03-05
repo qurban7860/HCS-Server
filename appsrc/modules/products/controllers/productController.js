@@ -257,13 +257,27 @@ exports.getProduct = async (req, res, next) => {
           {path: 'transferredToMachine', select: '_id serialNo name customer'},
           {path: 'transferredToMachine', select: '_id serialNo name customer'},
         ];
+        let productLists = await Product
+        .find({globelMachineID: machine.globelMachineID})
+        .select('_id purchaseDate shippingDate transferredDate transferredToMachine transferredFromMachine customer')
+        .populate(populateArray_)
+        .lean();
+        
+        productLists.forEach(product => {
+          console.log("product.purchaseDate", product.purchaseDate);
+          if (!product.purchaseDate || product?.purchaseDate === '') {
+              product.purchaseDate = product.shippingDate;
+          }
+        });
 
-        let productLists = await Product.aggregate([
-          { $match: { globelMachineID: ObjectId(machine.globelMachineID) } },
-          { $project: { purchaseDate: 1,  transferredDate: 1,  transferredToMachine: 1,  transferredFromMachine: 1, customer: 1} },
-          { $sort: { purchaseDate: -1 } }
-        ]);
-        productLists = await Product.populate(productLists, populateArray_);
+        productLists.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
+
+        // let productLists = await Product.aggregate([
+        //   { $match: { globelMachineID: ObjectId(machine.globelMachineID) } },
+        //   { $project: { purchaseDate: 1,  transferredDate: 1,  transferredToMachine: 1,  transferredFromMachine: 1, customer: 1} },
+        //   { $sort: { purchaseDate: -1 } }
+        // ]);
+        // productLists = await Product.populate(productLists, populateArray_);
 
         if (
           productLists?.length === 1 &&
