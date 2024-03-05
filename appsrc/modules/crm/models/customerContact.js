@@ -23,13 +23,6 @@ const docSchema = new Schema({
         // a contact can be of technical, financial, etc. type. 
         // One contact can be of multiple types
         
-        phone: { type: String },
-        // phone/mobile numbers. Phone number must with country code. 
-        // There can be multiple comma separated entries 
-        
-        email: { type: String },
-        // Email addresses. There can be multiple comma separated entries
-
         reportingTo: { type: Schema.Types.ObjectId, ref: 'CustomerContact'},
         // Reporting to person.
         
@@ -45,6 +38,7 @@ const docSchema = new Schema({
         collection: 'CustomerContacts'
 });
 docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docContactSchema);
 docSchema.add(baseSchema.docAddressSchema);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
