@@ -297,6 +297,11 @@ exports.postCustomerContact = async (req, res, next) => {
       }
     }
 
+    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+      const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
+      req.body.phoneNumbers = validPhoneNumbers;
+    }
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -350,6 +355,11 @@ exports.patchCustomerContact = async (req, res, next) => {
       } else {
         return res.status(StatusCodes.BAD_REQUEST).send("Invalid Report to contact!");
       }
+    }
+
+    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+      const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
+      req.body.phoneNumbers = validPhoneNumbers;
     }
     
     this.dbservice.getObject(CustomerContact, this.query, this.populate, getObjectCallback);
