@@ -88,29 +88,26 @@ exports.getCustomerContacts = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-     
-      if(Array.isArray(response) && response.length>0) {
+      // if(Array.isArray(response) && response.length>0) {
         
-        response = JSON.parse(JSON.stringify(response));
-        let index = 0;
+      //   response = JSON.parse(JSON.stringify(response));
+      //   let index = 0;
 
-        for(let contact of response) {
+      //   for(let contact of response) {
 
-          let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
+      //     let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
       
-          if(isOperator) {
-            contact.isOperator = true;
-          }
-          else
-            contact.isOperator = false;
+      //     if(isOperator) {
+      //       contact.isOperator = true;
+      //     }
+      //     else
+      //       contact.isOperator = false;
           
-          response[index] = contact; 
-          index++;
-        }
+      //     response[index] = contact; 
+      //     index++;
+      //   }
 
-      }
-
-
+      // }
       res.json(response);
     }
   }
