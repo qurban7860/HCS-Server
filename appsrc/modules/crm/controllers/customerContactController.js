@@ -6,7 +6,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const { Customer, CustomerSite, CustomerContact } = require('../models');
 const { Config } = require('../../config/models');
 const { ProductServiceRecords } = require('../../products/models');
-
+const applyUserFilter  = require('../utils/userFilters');
 
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
@@ -73,6 +73,14 @@ exports.getCustomerContacts = async (req, res, next) => {
   if(this.customerId && ObjectId.isValid(this.customerId))
    this.query.customer = this.customerId; 
   
+   const finalQuery = await applyUserFilter(req);
+   if(finalQuery) {
+     const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+     if(allowedCustomers?.length > 0) {
+       this.query.customer = { $in: allowedCustomers };
+     }
+   }
+
   this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   
   async function callbackFunc(error, response) {
@@ -80,29 +88,26 @@ exports.getCustomerContacts = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-     
-      if(Array.isArray(response) && response.length>0) {
+      // if(Array.isArray(response) && response.length>0) {
         
-        response = JSON.parse(JSON.stringify(response));
-        let index = 0;
+      //   response = JSON.parse(JSON.stringify(response));
+      //   let index = 0;
 
-        for(let contact of response) {
+      //   for(let contact of response) {
 
-          let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
+      //     let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
       
-          if(isOperator) {
-            contact.isOperator = true;
-          }
-          else
-            contact.isOperator = false;
+      //     if(isOperator) {
+      //       contact.isOperator = true;
+      //     }
+      //     else
+      //       contact.isOperator = false;
           
-          response[index] = contact; 
-          index++;
-        }
+      //     response[index] = contact; 
+      //     index++;
+      //   }
 
-      }
-
-
+      // }
       res.json(response);
     }
   }
@@ -127,8 +132,6 @@ exports.searchCustomerContacts = async (req, res, next) => {
     }
   }
 };
-
-
 
 exports.getSPCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
@@ -294,6 +297,11 @@ exports.postCustomerContact = async (req, res, next) => {
       }
     }
 
+    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+      const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
+      req.body.phoneNumbers = validPhoneNumbers;
+    }
+
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -347,6 +355,11 @@ exports.patchCustomerContact = async (req, res, next) => {
       } else {
         return res.status(StatusCodes.BAD_REQUEST).send("Invalid Report to contact!");
       }
+    }
+
+    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+      const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
+      req.body.phoneNumbers = validPhoneNumbers;
     }
     
     this.dbservice.getObject(CustomerContact, this.query, this.populate, getObjectCallback);
@@ -403,6 +416,15 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
       locale: 'en',
       strength: 2
     };
+
+    const finalQuery = await applyUserFilter(req);
+    if(finalQuery) {
+      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+      if(allowedCustomers?.length > 0) {
+        queryString_.customer = { $in: allowedCustomers };
+      }
+    }
+
     
     let contacts = await CustomerContact.find(queryString_).collation(collationOptions)
       .populate(populateValues).sort({name : 1});
@@ -500,7 +522,7 @@ function getContactName(contact) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { firstName, lastName, title, contactTypes, phone, email, sites,  address, reportingTo, department, 
+  const { firstName, lastName, title, contactTypes, phone, phoneNumbers, email, sites,  address, reportingTo, department, 
     isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -527,6 +549,9 @@ function getDocumentFromReq(req, reqType){
   }
   if ("phone" in req.body){
     doc.phone = phone;
+  }
+  if ("phoneNumbers" in req.body){
+    doc.phoneNumbers = phoneNumbers;
   }
   if ("email" in req.body){
     doc.email = email;
