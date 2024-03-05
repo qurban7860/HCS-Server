@@ -216,6 +216,11 @@ exports.patchCustomerSite = async (req, res, next) => {
       }
     }
     else{
+      if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+        const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
+        req.body.phoneNumbers = validPhoneNumbers;
+      }
+      
       this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
