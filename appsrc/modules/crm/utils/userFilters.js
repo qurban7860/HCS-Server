@@ -12,6 +12,7 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
+const { Product } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 const { Country, Config } = require('../../config/models');
