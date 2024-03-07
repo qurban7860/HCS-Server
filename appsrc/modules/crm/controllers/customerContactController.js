@@ -395,12 +395,12 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     const regex = new RegExp("^EXPORT_UUID$", "i");
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
-    let queryString_ = { isActive: true, isArchived: false };
+    let queryString_ = { isArchived: false };
     // const fetchAllContacts = req.query.fetchAllContacts === true || req.query.fetchAllContacts === 'true' ? true : false;
     if(ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
     } else {
-      let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+      let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
       if(listCustomers && listCustomers.length > 0)
         queryString_.customer = { $in: listCustomers };
     }
