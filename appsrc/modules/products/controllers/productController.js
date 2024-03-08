@@ -264,7 +264,6 @@ exports.getProduct = async (req, res, next) => {
         .lean();
         
         productLists.forEach(product => {
-          console.log("product.purchaseDate", product.purchaseDate);
           if (!product.purchaseDate || product?.purchaseDate === '') {
               product.purchaseDate = product.shippingDate;
           }
@@ -467,7 +466,7 @@ exports.deleteProduct = async (req, res, next) => {
     } else {
       const machine = { _id: req.params.id };
       let machineAuditLog = createMachineAuditLogRequest(machine, 'Delete', req.body.loginUser.userId)
-      //await postProductAuditLog(machineAuditLog);
+      await postProductAuditLog(machineAuditLog);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
   }
@@ -523,8 +522,8 @@ exports.postProduct = async (req, res, next) => {
         );
       } else {
         try{
-          let machineAuditLog = createMachineAuditLogRequest(machine, 'Create', req.body.loginUser.userId)
-          //await postProductAuditLog(machineAuditLog);
+          let machineAuditLog = createMachineAuditLogRequest("PRODUCT", 'CREATE', req.body, machine);
+          await postProductAuditLog(machineAuditLog);
         } catch(e) {
           console.error(e);
         }
@@ -701,15 +700,15 @@ exports.transferOwnership = async (req, res, next) => {
 
         // validate if the machine has a valid status
         if(!(parentMachine.customer)){
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine without a customer cannot be transferred'));
+          return res.status(StatusCodes.BAD_REQUEST).send("Machine without a customer cannot be transferred");
         }
 
         if(isNonTransferrableMachine(parentMachine.status)){
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine status invalid for transfer'));
+          return res.status(StatusCodes.BAD_REQUEST).send("Machine status invalid for transfer");
         } 
 
         if(!parentMachine.isActive || parentMachine.isArchived){
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Inactive or archived machines cannot be transferred'));
+          return res.status(StatusCodes.BAD_REQUEST).send("Inactive or archived machines cannot be transferred");
         }
         // validate if an entry already exists with the same customer and transferredFromMachine
         let alreadyTransferredParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, transferredFromMachine: req.body.machine, isActive: true, isArchived: false }, this.populate);
@@ -840,7 +839,6 @@ const disconnectConnections = async (request, newMachineId, transferredDate) => 
           { path: 'connectedMachine', select: 'serialNo' }
         ]).lean();
 
-        console.log("connectionsWithOtherMachines", connectionsWithOtherMachines);
 
       //Remove connectionToMove from other machines.
         await Promise.all(connectionsWithOtherMachines.map(async (connection) => {
@@ -935,22 +933,34 @@ function isNonTransferrableMachine(status) {
   return false;
 }
 
-function createMachineAuditLogRequest(machine, activityType, loggedInUser) {
-  let machineAuditLog = {
-    body: JSON.parse(JSON.stringify(machine))
+function createMachineAuditLogRequest(recordType, activityType, oldObject, newObject, loggedInUser) {
+  const machineAuditLog = {
+    body: {
+      oldObject: oldObject,
+      machine: (oldObject && oldObject._id && ObjectId.isValid(oldObject._id)) ? oldObject._id : newObject._id,
+      recordType: recordType,
+      customer: (oldObject && oldObject.customer && ObjectId.isValid(oldObject.customer)) ? oldObject.customer : newObject.customer,
+      globelMachineID: newObject.globelMachineID,
+      activityType: activityType,
+      newObject: newObject
+    }
   };
-  machineAuditLog.body.machine = machine._id;
-  machineAuditLog.body.activityType = activityType;
-  if(activityType == 'Transfer'){
-    machineAuditLog.body.activitySummary = `Machine(ID:${machine._id}) owned by customer(ID:${machine.customer}) transferred by user(ID:${loggedInUser})`;
-    machineAuditLog.body.activityDetail = `Machine(ID:${machine._id}) owned by customer(ID:${machine.customer}) transferred by user(ID:${loggedInUser})`;
+  // switch (recordType) {
+  //   case "CREAT":
+  //     console.log("Record type is ABC");
+  //     break;
+  // }
+
+  if (activityType === 'Transfer') {
+    machineAuditLog.body.activitySummary = `Machine(ID:${newObject._id}) owned by customer(ID:${newObject.customer}) transferred by user(ID:${loggedInUser})`;
   } else {
-    machineAuditLog.body.activitySummary = `Machine(ID:${machine._id}) ${activityType} by user(ID:${loggedInUser})`;
-    machineAuditLog.body.activityDetail = `Machine(ID:${machine._id}) ${activityType} by user(ID:${loggedInUser})`;
+    machineAuditLog.body.activitySummary = `Machine(ID:${newObject._id}) ${activityType} by user(ID:${loggedInUser})`;
   }
 
   return machineAuditLog;
 }
+
+
 
 // TODO: SHOULD REMOVE FROM HERE AND SHOULD BE CENTERLIZED IN NEXT RELEASE.
 async function applyUserFilter(req) {
