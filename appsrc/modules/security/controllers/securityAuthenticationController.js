@@ -344,6 +344,7 @@ async function validateAndLoginUser(req, res, existingUser) {
               login: existingUser.login,
               email: existingUser.email,
               displayName: existingUser.name,
+              customer: existingUser?.customer?._id,
               roles: existingUser.roles,
               dataAccessibilityLevel: existingUser.dataAccessibilityLevel
             }

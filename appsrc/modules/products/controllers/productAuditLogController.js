@@ -18,12 +18,12 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
+this.orderBy = { createdAt: -1 };
 //this.populate = 'category';
 this.populate = [
-  {path: 'category', select: '_id name description'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'category', select: '_id name description' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
@@ -105,71 +105,56 @@ exports.patchProductAuditLog = async (req, res, next) => {
 };
 
 
-function getDocumentFromReq(req, reqType){
-  const { machine, category, model, supplier, status, note, 
-    tool, toolInstalled, techParam, techParamValue,
-    activityType, activitySummary, activityDetail,
-    isActive, isArchived, loginUser } = req.body;
-  
+function getDocumentFromReq(req, reqType) {
+  const { recordType, customer, globelMachineID, machine, activityType, oldObject, newObject, activitySummary, activityDetail, loginUser } = req.body;
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductAuditLog({});
   }
+  if ("recordType" in req.body) {
+    doc.recordType = recordType;
+  }
+  if ("customer" in req.body) {
+    doc.customer = customer;
+  }
+  if ("globelMachineID" in req.body) {
+    doc.globelMachineID = globelMachineID;
+  }
 
-  if ("machine" in req.body){
+  if ("machine" in req.body) {
     doc.machine = machine;
   }
-  if ("category" in req.body){
-    doc.category = category;
-  }
-  if ("model" in req.body){
-    doc.model = model;
-  }
-  if ("supplier" in req.body){
-    doc.supplier = supplier;
-  }
-
-  if ("status" in req.body){
-    doc.status = status;
-  }
-
-  if ("note" in req.body){
-    doc.note = note;
-  }
-
-  if ("tool" in req.body){
-    doc.tool = tool;
-  }
-
-  if ("toolInstalled" in req.body){
-    doc.toolInstalled = toolInstalled;
-  }
-
-  if ("techParam" in req.body){
-    doc.techParam = techParam;
-  }
-  if ("techParamValue" in req.body){
-    doc.techParamValue = techParamValue;
-  }
-  //activityType, activitySummary, activityDetail,
-  if ("activityType" in req.body){
+  if ("activityType" in req.body) {
     doc.activityType = activityType;
   }
-  if ("activitySummary" in req.body){
-    doc.activitySummary = activitySummary;
-  }
-  if ("activityDetail" in req.body){
-    doc.activityDetail = activityDetail;
-  }
-  
-  if ("isActive" in req.body){
-    doc.isActive = isActive;
-  }
-  if ("isArchived" in req.body){
-    doc.isArchived = isArchived;
+  if ("oldObject" in req.body) {
+    if (oldObject?.userInfo)
+      delete oldObject.userInfo;
+    if (oldObject?.loginUser)
+      delete oldObject.loginUser;
+    doc.oldObject = oldObject;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if ("newObject" in req.body) {
+    if (newObject?.userInfo)
+      delete newObject.userInfo;
+    if (newObject?.loginUser)
+      delete newObject.loginUser;
+    doc.newObject = newObject;
+  }
+
+  // if (doc.newObject && doc.oldObject) {
+  //   doc.objectDifference = jsonDiff(doc.oldObject, doc.newObject);
+  // }
+
+  if ("activitySummary" in req.body) {
+    doc.activitySummary = activitySummary;
+  }
+  if ("activityDetail" in req.body) {
+    doc.activityDetail = activityDetail;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -177,9 +162,29 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
-
-  //console.log("doc in http req: ", doc);
+  }
   return doc;
 
+}
+
+function jsonDiff(obj1, obj2) {
+  const result = {};
+
+  for (const key in obj1) {
+      if (obj1.hasOwnProperty(key)) {
+          if (!obj2.hasOwnProperty(key) || obj1[key] !== obj2[key]) {
+              result[key] = obj1[key];
+          }
+      }
+  }
+
+  for (const key in obj2) {
+      if (obj2.hasOwnProperty(key)) {
+          if (!obj1.hasOwnProperty(key) || obj1[key] !== obj2[key]) {
+              result[key] = obj2[key];
+          }
+      }
+  }
+
+  return result;
 }
