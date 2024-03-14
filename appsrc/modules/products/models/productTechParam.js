@@ -12,6 +12,10 @@ const docSchema = new Schema({
     
     code: { type: String, required: true, unique: true },
     // any reserved text for config name
+
+    alias: [{ type: String  }],
+
+    isIniRead: { type: Boolean , default: false },
     
     description: { type: String },
     // description of TechnicalParam

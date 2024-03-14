@@ -201,10 +201,12 @@ exports.moveContact = async (req, res, next) => {
   else {
     if(ObjectId.isValid(req.params.customerId)) {
       let customer = await Customer.findOne({ _id : req.params.customerId, isActive : true, isArchived : false });
-      let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
+      const query = { _id : req.body.contact, isActive : true, isArchived : false };
+      let contact = await CustomerContact.findOne(query).populate('customer');
       // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
 
-
+      console.log("contact", contact, query);
+      console.log(contact , contact.customer , contact.customer.type , contact.customer.type != 'SP');
       if(contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
         
         if (!customer || !contact ) 
