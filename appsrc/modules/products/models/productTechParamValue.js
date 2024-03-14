@@ -77,19 +77,6 @@ docSchema.pre('save', async function(next) {
         } catch (error) {
             next(error);
         }
-    } else if (this.isModified('techParamValue')) { // Checking if 'techParamValue' is being modified
-        // Logic for handling updates
-        const techParamValueToUpdate = this.techParamValue;
-        try {
-            this.history.push({
-                techParamValue: techParamValueToUpdate,
-                updatedAt: Date.now(),
-                updatedBy: this.updatedBy
-            });
-            next();
-        } catch (error) {
-            next(error);
-        }
     } else {
         next(); // No modifications, proceed with saving
     }

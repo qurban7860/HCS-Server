@@ -91,7 +91,7 @@ exports.postProductTechParamValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+    this.dbservice.postObject(exports.getDocumentFromReq(req, 'new'), callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -112,7 +112,7 @@ exports.patchProductTechParamValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(ProductTechParamValue, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(ProductTechParamValue, req.params.id, exports.getDocumentFromReq(req), callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -127,8 +127,8 @@ exports.patchProductTechParamValue = async (req, res, next) => {
   }
 };
 
-
-function getDocumentFromReq(req, reqType){
+exports.getDocumentFromReq = async (req, reqType) => {
+// function getDocumentFromReq(req, reqType){
   const { techParam, techParamValue, activatedAt, expiryDate, note, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
@@ -177,5 +177,4 @@ function getDocumentFromReq(req, reqType){
 
   //console.log("doc in http req: ", doc);
   return doc;
-
 }

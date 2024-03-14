@@ -12,7 +12,7 @@ const _ = require('lodash');
 let apiClientDBService = require('../service/apiClientDBService')
 this.dbservice = new apiClientDBService();
 
-const { Product } = require('../../products/models');
+const { Product, ProductTechParam } = require('../../products/models');
 
 const { ProductConfiguration } = require('../models');
 
@@ -20,17 +20,19 @@ const { ProductConfiguration } = require('../models');
 
 const apiLogController = require('../../apiclient/controllers/apiLogController');
 
+const productTechParamValueController = require('../../products/controllers/productTechParamValueController');
+
 const ObjectId = require('mongoose').Types.ObjectId;
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
+this.orderBy = { createdAt: -1 };
 //this.populate = 'category';
 this.populate = [
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
@@ -49,7 +51,7 @@ exports.getProductConfiguration = async (req, res, next) => {
 };
 
 exports.getProductConfigurations = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
   this.orderBy = { createdAt: -1 };
   this.dbservice.getObjectList(req, ProductConfiguration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
@@ -80,13 +82,6 @@ exports.postProductConfiguration = async (req, res, next) => {
   const errors = validationResult(req);
 
   req.body.apiType = "INI";
-  // const { SecurityUser} = require('../../security/models');
-  // let userObject = await SecurityUser.findOne(
-  //   { _id: req.body.loginUser.userId},
-  //   { roles: 1 }
-  // ).populate({path: 'roles' , select: 'name roleType isArchived isActive'});
-  // userObject.roles = userObject.roles.filter(role => (role.roleType === 'APIAccess' && role.isActive == true && role.isArchived == false));
-  // const roleAPIFound = userObject.roles && userObject.roles.length > 0 ? true : false;
 
   req.body.response = "APPROVED";
   const roleAPIFound = true;
@@ -95,23 +90,58 @@ exports.postProductConfiguration = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(ObjectId.isValid(req.body.inputGUID) && req.body.inputSerialNo){
-      const query__ = {_id: req.body.inputGUID, serialNo: (String(req.body.inputSerialNo).trim()) };
+    if (ObjectId.isValid(req.body.inputGUID) && req.body.inputSerialNo) {
+      const query__ = { _id: req.body.inputGUID, serialNo: (String(req.body.inputSerialNo).trim()) };
       let productObject = await Product.findOne(query__).select('_id');
-      if(productObject && !_.isEmpty(productObject)) {
-        req.body.machine = productObject._id;    
+      if (productObject && !_.isEmpty(productObject)) {
+        req.body.machine = productObject._id;
       }
     }
 
-    if(req.body.machine && roleAPIFound) {  
-      //req.body.additionalContextualInformation = "";
+    if (req.body.machine && roleAPIFound) {
       let productConfObjec = getDocumentFromReq(req, 'new');
-      console.log("productConfObjec", productConfObjec.configuration);
-      console.log("productConfObjec", );
+
+
+
+
+
+      const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('alias category').lean();
+
+      const fetchAliasValues = async (alias) => {
+        const propertyValues = [];
+        for (const element of alias) {
+          console.log(productConfObjec?.configuration, element)
+          const value = productConfObjec?.configuration[element];
+          if (value) {
+            propertyValues.push(value);
+          } else {
+            propertyValues.push("");
+          }
+        }
+        return propertyValues;
+      };
+
+      const rotatedParams = await Promise.all(paramsToAdd.map(async (param) => {
+        const aliasValues = await fetchAliasValues(param.alias);
+        return { ...param, aliasValues };
+      }));
+
+      await Promise.all(rotatedParams.map(async (datatoadd) => {
+        for (const [index, val] of datatoadd.alias.entries()) {
+          if (datatoadd.aliasValues[index]) {
+            let req_ = { body: { ...req.body } };
+            req_.body.techParam = datatoadd._id;
+            req_.body.techParamValue = datatoadd.aliasValues[index];
+            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_, 'new');
+            await objectReceived.save();
+          }
+        }
+      }));
+
       productConfObjec.configuration = replaceDotsWithSlashes(productConfObjec.configuration);
       const date = productConfObjec._id.getTimestamp();
       productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
-      
+
       let response = await this.dbservice.postObject(productConfObjec);
 
       if (!response) {
@@ -126,7 +156,7 @@ exports.postProductConfiguration = async (req, res, next) => {
     } else {
       const errorCode = 400;
       req.body.responseStatusCode = errorCode;
-      res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!": errorCode);
+      res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!" : errorCode);
     }
 
     const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req, 'new'); apiLogObject.save();
@@ -135,25 +165,25 @@ exports.postProductConfiguration = async (req, res, next) => {
 
 function replaceDotsWithSlashes(obj) {
   if (typeof obj !== 'object' || obj === null) {
-      return obj;
+    return obj;
   }
 
   if (Array.isArray(obj)) {
-      return obj.map(replaceDotsWithSlashes);
+    return obj.map(replaceDotsWithSlashes);
   }
 
   const newObj = {};
   for (let key in obj) {
-      if (Object.prototype.hasOwnProperty.call(obj, key)) {
-          if(key.includes(".")) {
-            const newKey = key.replace(/\./g, '---');
-            newObj[newKey] = replaceDotsWithSlashes(obj[key]);
-          } else {
-            const newKey = key.replace(/\---/g, '.');
-            newObj[newKey] = replaceDotsWithSlashes(obj[key]);  
-          }
-
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (key.includes(".")) {
+        const newKey = key.replace(/\./g, '---');
+        newObj[newKey] = replaceDotsWithSlashes(obj[key]);
+      } else {
+        const newKey = key.replace(/\---/g, '.');
+        newObj[newKey] = replaceDotsWithSlashes(obj[key]);
       }
+
+    }
   }
   return newObj;
 }
@@ -179,56 +209,56 @@ exports.patchProductConfiguration = async (req, res, next) => {
 };
 
 
-function getDocumentFromReq(req, reqType){
-  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, isActive, isArchived, loginUser} = req.body;
+function getDocumentFromReq(req, reqType) {
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, isActive, isArchived, loginUser } = req.body;
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductConfiguration({});
   }
 
-  if ("type" in req.body){
+  if ("type" in req.body) {
     doc.type = type;
   }
 
-  if ("backupid" in req.body){
+  if ("backupid" in req.body) {
     doc.backupid = backupid;
   }
 
 
-  if ("machine" in req.body){
+  if ("machine" in req.body) {
     doc.machine = machine;
   }
 
-  
-  if ("inputGUID" in req.body){
+
+  if ("inputGUID" in req.body) {
     doc.inputGUID = inputGUID;
   }
-  
-  if ("inputSerialNo" in req.body){
+
+  if ("inputSerialNo" in req.body) {
     doc.inputSerialNo = inputSerialNo;
   }
-  
-  if ("configuration" in req.body){
+
+  if ("configuration" in req.body) {
     doc.configuration = configuration;
   }
-  
-  if ("isManufacture" in req.body){
+
+  if ("isManufacture" in req.body) {
     doc.isManufacture = isManufacture;
   }
-  
-  if ("backupDate" in req.body){
+
+  if ("backupDate" in req.body) {
     doc.backupDate = backupDate;
   }
 
-  if ("isActive" in req.body){
+  if ("isActive" in req.body) {
     doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
   }
 
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -236,6 +266,6 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
   return doc;
 }

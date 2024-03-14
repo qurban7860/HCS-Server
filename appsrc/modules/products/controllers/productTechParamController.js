@@ -161,7 +161,7 @@ exports.patchProductTechParam = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, code, description, category, isActive, isArchived, loginUser } = req.body;
+  const { name, code, alias, isIniRead, description, category, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -174,6 +174,13 @@ function getDocumentFromReq(req, reqType){
   if ("code" in req.body){
     doc.code = code;
   }
+  if ("alias" in req.body){
+    doc.alias = alias;
+  }
+  if ("isIniRead" in req.body){
+    doc.isIniRead = isIniRead;
+  }
+
   if ("description" in req.body){
     doc.description = description;
   }
