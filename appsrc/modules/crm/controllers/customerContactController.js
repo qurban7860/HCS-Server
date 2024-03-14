@@ -204,6 +204,7 @@ exports.moveContact = async (req, res, next) => {
       let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
       // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
 
+      console.log("contact", contact);
       console.log(contact , contact.customer , contact.customer.type , contact.customer.type != 'SP');
       if(contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
         
