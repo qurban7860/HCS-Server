@@ -63,4 +63,37 @@ docSchema.pre('updateOne', async function(next) {
     }
 });
 
+docSchema.pre('save', async function(next) {
+    if (this.isNew) { // Checking if the document is new
+        // Logic for handling new documents
+        const techParamToAdd = this.techParamValue;
+        try {
+            this.history.push({
+                techParamValue: techParamToAdd,
+                updatedAt: Date.now(),
+                updatedBy: this.createdBy
+            });
+            next();
+        } catch (error) {
+            next(error);
+        }
+    } else if (this.isModified('techParamValue')) { // Checking if 'techParamValue' is being modified
+        // Logic for handling updates
+        const techParamValueToUpdate = this.techParamValue;
+        try {
+            this.history.push({
+                techParamValue: techParamValueToUpdate,
+                updatedAt: Date.now(),
+                updatedBy: this.updatedBy
+            });
+            next();
+        } catch (error) {
+            next(error);
+        }
+    } else {
+        next(); // No modifications, proceed with saving
+    }
+});
+
+
 module.exports = mongoose.model('MachineTechParamValue', docSchema);
