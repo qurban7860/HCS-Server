@@ -91,7 +91,8 @@ exports.postProductTechParamValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.postObject(exports.getDocumentFromReq(req, 'new'), callbackFunc);
+    const objectVal = await exports.getDocumentFromReq(req, 'new');
+    this.dbservice.postObject(objectVal, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
@@ -112,7 +113,8 @@ exports.patchProductTechParamValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    this.dbservice.patchObject(ProductTechParamValue, req.params.id, exports.getDocumentFromReq(req), callbackFunc);
+    const objectVal = await exports.getDocumentFromReq(req);
+    this.dbservice.patchObject(ProductTechParamValue, req.params.id, objectVal, callbackFunc);
     function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
