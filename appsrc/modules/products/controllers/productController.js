@@ -937,10 +937,10 @@ function createMachineAuditLogRequest(recordType, activityType, oldObject, newOb
   const machineAuditLog = {
     body: {
       oldObject: oldObject,
-      machine: (oldObject && oldObject._id && ObjectId.isValid(oldObject._id)) ? oldObject._id : newObject._id,
+      machine: (oldObject && oldObject?._id && ObjectId?.isValid(oldObject?._id)) ? oldObject?._id : newObject?._id,
       recordType: recordType,
-      customer: (oldObject && oldObject.customer && ObjectId.isValid(oldObject.customer)) ? oldObject.customer : newObject.customer,
-      globelMachineID: newObject.globelMachineID,
+      customer: (oldObject && oldObject?.customer && ObjectId?.isValid(oldObject?.customer)) ? oldObject?.customer : newObject?.customer,
+      globelMachineID: newObject?.globelMachineID,
       activityType: activityType,
       newObject: newObject
     }
@@ -952,9 +952,9 @@ function createMachineAuditLogRequest(recordType, activityType, oldObject, newOb
   // }
 
   if (activityType === 'Transfer') {
-    machineAuditLog.body.activitySummary = `Machine(ID:${newObject._id}) owned by customer(ID:${newObject.customer}) transferred by user(ID:${loggedInUser})`;
+    machineAuditLog.body.activitySummary = `Machine(ID:${newObject?._id}) owned by customer(ID:${newObject?.customer}) transferred by user(ID:${loggedInUser})`;
   } else {
-    machineAuditLog.body.activitySummary = `Machine(ID:${newObject._id}) ${activityType} by user(ID:${loggedInUser})`;
+    machineAuditLog.body.activitySummary = `Machine(ID:${newObject?._id}) ${activityType} by user(ID:${loggedInUser})`;
   }
 
   return machineAuditLog;
