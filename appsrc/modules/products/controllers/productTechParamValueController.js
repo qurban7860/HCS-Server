@@ -91,7 +91,24 @@ exports.postProductTechParamValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+
+
     const objectVal = await exports.getDocumentFromReq(req, 'new');
+
+    if (Array.isArray(req.body.machines)) {
+      for (let i = 0; i < req.body.machines.length; i++) {
+        const machine = req.body.machines[i];
+        req.body.machine = machine;
+        const objectVal_ = await exports.getDocumentFromReq(req, 'new');
+        this.dbservice.postObject(objectVal_, callbackFunc);
+        function callbackFunc(error, response) {
+          if (error) {
+          } else {
+          }
+        }
+      }
+    }
+    
     this.dbservice.postObject(objectVal, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
