@@ -201,10 +201,12 @@ exports.moveContact = async (req, res, next) => {
   else {
     if(ObjectId.isValid(req.params.customerId)) {
       let customer = await Customer.findOne({ _id : req.params.customerId, isActive : true, isArchived : false });
-      let contact = await CustomerContact.findOne({ _id : req.body.contact, isActive : true, isArchived : false }).populate('customer');
+      const query = { _id : req.body.contact, isActive : true, isArchived : false };
+      let contact = await CustomerContact.findOne(query).populate('customer');
       // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
 
-
+      console.log("contact", contact, query);
+      console.log(contact , contact.customer , contact.customer.type , contact.customer.type != 'SP');
       if(contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
         
         if (!customer || !contact ) 
@@ -395,12 +397,12 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     const regex = new RegExp("^EXPORT_UUID$", "i");
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
-    let queryString_ = { isActive: true, isArchived: false };
+    let queryString_ = { isArchived: false };
     // const fetchAllContacts = req.query.fetchAllContacts === true || req.query.fetchAllContacts === 'true' ? true : false;
     if(ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
     } else {
-      let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
+      let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
       if(listCustomers && listCustomers.length > 0)
         queryString_.customer = { $in: listCustomers };
     }
