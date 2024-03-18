@@ -43,7 +43,7 @@ const docSchema = new Schema({
         
         invitationStatus: { type: Boolean, default: false },
 
-        dataAccessibilityLevel: {type: String, enum: ['FILTER','GLOBAL'], default: 'FILTER'},
+        dataAccessibilityLevel: {type: String, enum: ['RESTRICTED','GLOBAL'], default: 'RESTRICTED'},
 
         roles: [
             { type: Schema.Types.ObjectId, ref: 'SecurityRole' }

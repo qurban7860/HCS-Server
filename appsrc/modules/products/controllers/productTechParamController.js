@@ -90,11 +90,15 @@ exports.postProductTechParam = async (req, res, next) => {
           _this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
           function callbackFunc(error, response) {
             if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-                error._message
-                //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-              );
+              if (error.code === 11000) {
+                console.log("Duplicate key error:", error.keyValue);
+                res.status(StatusCodes.BAD_REQUEST).send(`${error?.keyValue?.name ? "Name ":""} ${error?.keyValue?.code ? "code ":""}must be unique!`);
+              } else {
+                logger.error(new Error(error));
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+                  error._message
+                );
+              }
             } else {
               res.status(StatusCodes.CREATED).json({ MachineTechParam: response });
             }
@@ -134,11 +138,15 @@ exports.patchProductTechParam = async (req, res, next) => {
           _this.dbservice.patchObject(ProductTechParam, req.params.id, getDocumentFromReq(req), callbackFunc);
           function callbackFunc(error, result) {
             if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-                error._message
-                //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-              );
+              if (error.code === 11000) {
+                console.log("Duplicate key error:", error.keyValue);
+                res.status(StatusCodes.BAD_REQUEST).send(`${error?.keyValue?.name ? "Name ":""} ${error?.keyValue?.code ? "code ":""}must be unique!`);
+              } else {
+                logger.error(new Error(error));
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+                  error._message
+                );
+              }
             } else {
               res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, response));
 
@@ -161,7 +169,7 @@ exports.patchProductTechParam = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { name, code, alias, isIniRead, description, category, isActive, isArchived, loginUser } = req.body;
+  const { name, code, isIniRead, description, category, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -174,9 +182,9 @@ function getDocumentFromReq(req, reqType){
   if ("code" in req.body){
     doc.code = code;
   }
-  if ("alias" in req.body){
-    doc.alias = alias;
-  }
+  // if ("alias" in req.body){
+  //   doc.alias = alias;
+  // }
   if ("isIniRead" in req.body){
     doc.isIniRead = isIniRead;
   }
