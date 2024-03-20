@@ -589,6 +589,7 @@ function getDocumentFromReq(req, reqType){
       var reqMainSite = {};
       reqMainSite.body = mainSite;
       reqMainSite.body.loginUser = req.body.loginUser;
+      
       doc.mainSite = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
       doc.mainSite.customer = doc._id;
     }
