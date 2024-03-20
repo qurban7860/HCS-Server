@@ -590,12 +590,6 @@ function getDocumentFromReq(req, reqType){
       reqMainSite.body = mainSite;
       reqMainSite.body.loginUser = req.body.loginUser;
       
-      if(req?.body?.primaryTechnicalContact && ObjectId.isValid(req?.body?.primaryTechnicalContact))
-        reqMainSite.body.primaryTechnicalContact = req.body.primaryTechnicalContact;
-    
-      if(req?.body?.primaryBillingContact && ObjectId.isValid(req?.body?.primaryBillingContact))
-        reqMainSite.body.primaryBillingContact = req.body.primaryBillingContact;
-
       doc.mainSite = customerSiteController.getDocumentFromReq(reqMainSite, 'new');
       doc.mainSite.customer = doc._id;
     }
