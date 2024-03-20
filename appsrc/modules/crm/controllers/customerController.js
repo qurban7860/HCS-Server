@@ -31,22 +31,24 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'mainSite', select: 'address name phone email fax'}, 
+  {path: 'mainSite', select: 'address name phoneNumbers email fax primaryBillingContact primaryTechnicalContact website'}, 
   {path: 'primaryBillingContact', select: 'firstName lastName'},
   {path: 'primaryTechnicalContact', select: 'firstName lastName'},
   {path: 'accountManager', select: 'firstName lastName email'},
   {path: 'projectManager', select: 'firstName lastName email'},
   {path: 'supportManager', select: 'firstName lastName email'},
   {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  {path: 'updatedBy', select: 'name'},
+  {path: 'mainSite.primaryBillingContact', select: 'firstName lastName'},
+  {path: 'mainSite.primaryTechnicalContact', select: 'firstName lastName'},
 ];
 
 
 this.populateList = [
-  {path: 'mainSite', select: 'address name phone email'},
-  {path: 'accountManager', select: 'firstName lastName phone'},
-  {path: 'supportManager', select: 'firstName lastName phone'},
-  {path: 'projectManager', select: 'firstName lastName phone'}
+  {path: 'mainSite', select: 'address name phoneNumbers email'},
+  {path: 'accountManager', select: 'firstName lastName phoneNumbers'},
+  {path: 'supportManager', select: 'firstName lastName phoneNumbers'},
+  {path: 'projectManager', select: 'firstName lastName phoneNumbers'}
 ];
 
 
@@ -75,8 +77,6 @@ exports.getCustomer = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
     }
   }
-
-
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -86,6 +86,15 @@ exports.getCustomer = async (req, res, next) => {
 
 
       const customer = JSON.parse(JSON.stringify(response));    
+      if(customer?.mainSite?.primaryBillingContact && ObjectId.isValid(customer?.mainSite?.primaryBillingContact)){
+        customerContact_ = await CustomerContact.findOne({ _id: customer.mainSite.primaryBillingContact }).select('firstName lastName');
+        customer.mainSite.primaryBillingContact = customerContact_;       
+      }
+      if(customer?.mainSite?.primaryTechnicalContact && ObjectId.isValid(customer?.mainSite?.primaryTechnicalContact)){
+        customerContact_ = await CustomerContact.findOne({ _id: customer.mainSite.primaryTechnicalContact }).select('firstName lastName');
+        customer.mainSite.primaryTechnicalContact = customerContact_;       
+      }
+
       if(validFlag == 'extended'){  
         if(!(_.isEmpty(customer))) {
           if(customer.sites.length > 0){
@@ -530,7 +539,7 @@ function getGUIDs(inputData) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { name, clientCode, tradingName, type, mainSite, sites, contacts,
+  const { name, clientCode, ref, tradingName, type, mainSite, sites, contacts, website, 
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
@@ -552,7 +561,9 @@ function getDocumentFromReq(req, reqType){
     doc.clientCode = clientCode.trim();
   }
 
-  
+  if ("ref" in req.body){
+    doc.ref = ref.trim();
+  }
 
   if ("tradingName" in req.body){
     doc.tradingName = tradingName;
@@ -619,6 +630,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("contacts" in req.body){
     doc.contacts = contacts;
+  }
+
+  if ("website" in req.body){
+    doc.website = website;
   }
 
   if ("accountManager" in req.body){
