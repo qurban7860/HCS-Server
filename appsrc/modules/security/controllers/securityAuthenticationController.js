@@ -577,7 +577,7 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    console.log("req.body?.loginUser?.userId", req.body?.loginUser?.userId);
+    console.log("req.body?.loginUser?.userId", req.body);
     const existingUser = await SecurityUser.findOne({ _id: req.body?.loginUser?.userId, isActive: true, isArchived: false })
         .populate([{ path: 'customer', select: 'name type isActive isArchived' },
                   { path: 'contact', select: 'name isActive isArchived' }]);
