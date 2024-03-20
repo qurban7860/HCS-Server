@@ -13,9 +13,16 @@ const docSchema = new Schema({
         clientCode: { type: String, maxlength: 20},
         // This code may help us to identify customer with 3rd party system (ABEL). 
         
+        ref: { type: String, maxlength: 200, unique: true},
+        // reference code for referring and fetching data.
+        
+
         // tradingName: { type: String },
         tradingName: [{ type: String  }],
 
+        website: { type: String },
+        // website address of organization / site . 
+        
         //brand/trade name if the organization has it
         
         type: { type: String },
