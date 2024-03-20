@@ -35,6 +35,7 @@ exports.getProductTechParamValue = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      response.history = response.history.sort((a, b) => b.updatedAt - a.updatedAt); 
       res.json(response);
     }
   }
@@ -55,6 +56,9 @@ exports.getProductTechParamValues = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      response.forEach(doc => {
+        doc.history.sort((a, b) => b.updatedAt - a.updatedAt); // Change 'updatedAt' to your actual field name
+      });
       res.json(response);
     }
   }

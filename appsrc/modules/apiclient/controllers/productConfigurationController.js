@@ -105,11 +105,12 @@ exports.postProductConfiguration = async (req, res, next) => {
 
 
 
-      const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('alias category').lean();
+      const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('code category').lean();
 
-      const fetchAliasValues = async (alias) => {
+      const fetchCodeValues = async (code) => {
         const propertyValues = [];
-        for (const element of alias) {
+
+        for (const element of code) {
           console.log(productConfObjec?.configuration, element)
           const value = productConfObjec?.configuration[element];
           if (value) {
@@ -122,16 +123,20 @@ exports.postProductConfiguration = async (req, res, next) => {
       };
 
       const rotatedParams = await Promise.all(paramsToAdd.map(async (param) => {
-        const aliasValues = await fetchAliasValues(param.alias);
-        return { ...param, aliasValues };
+        if(!Array.isArray(param.code)) {
+          param.code = [param.code];
+        }
+
+        const codeValues = await fetchCodeValues(param.code);
+        return { ...param, codeValues };
       }));
 
       await Promise.all(rotatedParams.map(async (datatoadd) => {
-        for (const [index, val] of datatoadd.alias.entries()) {
-          if (datatoadd.aliasValues[index]) {
+        for (const [index, val] of datatoadd.code.entries()) {
+          if (datatoadd.codeValues[index]) {
             let req_ = { body: { ...req.body } };
             req_.body.techParam = datatoadd._id;
-            req_.body.techParamValue = datatoadd.aliasValues[index];
+            req_.body.techParamValue = datatoadd.codeValues[index];
             const objectReceived = await productTechParamValueController.getDocumentFromReq(req_, 'new');
             await objectReceived.save();
           }
