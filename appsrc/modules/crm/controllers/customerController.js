@@ -31,22 +31,24 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'mainSite', select: 'address name phone email fax'}, 
+  {path: 'mainSite', select: 'address name phoneNumbers email fax primaryBillingContact primaryTechnicalContact'}, 
   {path: 'primaryBillingContact', select: 'firstName lastName'},
   {path: 'primaryTechnicalContact', select: 'firstName lastName'},
   {path: 'accountManager', select: 'firstName lastName email'},
   {path: 'projectManager', select: 'firstName lastName email'},
   {path: 'supportManager', select: 'firstName lastName email'},
   {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  {path: 'updatedBy', select: 'name'},
+  {path: 'mainSite.primaryBillingContact', select: 'firstName lastName'},
+  {path: 'mainSite.primaryTechnicalContact', select: 'firstName lastName'},
 ];
 
 
 this.populateList = [
-  {path: 'mainSite', select: 'address name phone email'},
-  {path: 'accountManager', select: 'firstName lastName phone'},
-  {path: 'supportManager', select: 'firstName lastName phone'},
-  {path: 'projectManager', select: 'firstName lastName phone'}
+  {path: 'mainSite', select: 'address name phoneNumbers email'},
+  {path: 'accountManager', select: 'firstName lastName phoneNumbers'},
+  {path: 'supportManager', select: 'firstName lastName phoneNumbers'},
+  {path: 'projectManager', select: 'firstName lastName phoneNumbers'}
 ];
 
 
@@ -530,7 +532,7 @@ function getGUIDs(inputData) {
 }
 
 function getDocumentFromReq(req, reqType){
-  const { name, clientCode, tradingName, type, mainSite, sites, contacts,
+  const { name, clientCode, tradingName, type, mainSite, sites, contacts, website, 
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, 
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
@@ -619,6 +621,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("contacts" in req.body){
     doc.contacts = contacts;
+  }
+
+  if ("website" in req.body){
+    doc.website = website;
   }
 
   if ("accountManager" in req.body){
