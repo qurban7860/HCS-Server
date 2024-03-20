@@ -78,6 +78,13 @@ class CustomerService {
     async.waterfall([
       function (callback) {
         if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
+
+          if(req?.body?.primaryTechnicalContact && ObjectId.isValid(req?.body?.primaryTechnicalContact))
+            newdocument.mainSite.primaryTechnicalContact = req.body.primaryTechnicalContact;
+          
+          if(req?.body?.primaryBillingContact && ObjectId.isValid(req?.body?.primaryBillingContact))
+            newdocument.mainSite.primaryBillingContact = req.body.primaryBillingContact;
+          
           this.db.postObject(newdocument.mainSite, callbackFunction);
           function callbackFunction(error, response) {
             console.log(error);
