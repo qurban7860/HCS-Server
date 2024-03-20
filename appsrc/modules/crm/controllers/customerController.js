@@ -77,8 +77,6 @@ exports.getCustomer = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the customer is not permitted by the administrator.");
     }
   }
-
-
   this.dbservice.getObjectById(Customer, this.fields, req.params.id, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -88,6 +86,15 @@ exports.getCustomer = async (req, res, next) => {
 
 
       const customer = JSON.parse(JSON.stringify(response));    
+      if(customer?.mainSite?.primaryBillingContact && ObjectId.isValid(customer?.mainSite?.primaryBillingContact)){
+        customerContact_ = await CustomerContact.findOne({ _id: customer.mainSite.primaryBillingContact }).select('firstName lastName');
+        customer.mainSite.primaryBillingContact = customerContact_;       
+      }
+      if(customer?.mainSite?.primaryTechnicalContact && ObjectId.isValid(customer?.mainSite?.primaryTechnicalContact)){
+        customerContact_ = await CustomerContact.findOne({ _id: customer.mainSite.primaryTechnicalContact }).select('firstName lastName');
+        customer.mainSite.primaryTechnicalContact = customerContact_;       
+      }
+
       if(validFlag == 'extended'){  
         if(!(_.isEmpty(customer))) {
           if(customer.sites.length > 0){
