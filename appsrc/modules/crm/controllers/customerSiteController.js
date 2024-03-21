@@ -75,8 +75,6 @@ exports.getCustomerSites = async (req, res, next) => {
       this.query.customer = this.customerId;
       customerObj = await Customer.findOne({_id: this.customerId}).lean().select('mainSite');
     }
-
-    console.log(customerObj?.mainSite);
     
     this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
@@ -91,7 +89,6 @@ exports.getCustomerSites = async (req, res, next) => {
             response.unshift(item); // Add the item to the beginning of the response
           }
         }
-
         res.json(response);
       }
     }

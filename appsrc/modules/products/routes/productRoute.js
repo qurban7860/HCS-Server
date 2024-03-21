@@ -36,6 +36,8 @@ router.get(`${baseRouteForObject}/checkDuplicateSerialNumber/`, controller.check
 
 router.get(`${baseRouteForObject}/fetchMachineTransferHistory/`, controller.fetchMachineTransferHistory);
 
+router.get(`${baseRouteForObject}/searchProductId/`, controller.getProductId);
+
 router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
 router.post(`${baseRouteForObject}`, controller.postProduct);
