@@ -38,6 +38,7 @@ exports.getVersions = async (req, res, next) => {
       orderBy: '-name'
     };
 
+    console.log("config", config);
 
     axios(config)
       .then(response => {
