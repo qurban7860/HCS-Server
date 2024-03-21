@@ -30,24 +30,21 @@ this.populate = [
 
 
 exports.getVersions = async (req, res, next) => {
+  const config = getHeader();
+  config.url = `https://${process.env.JIRA_HOST}${process.env.JIRA_PROJECT}/version`,
+    config.method = 'get';
+  config.params = {
+    orderBy: '-name'
+  };
+
+  console.log("config", config);
+
+  axios(config)
+    .then(response => {
+      res.json(response.data);
+    })
   try {
-    const config = getHeader();
-    config.url = `https://${process.env.JIRA_HOST}${process.env.JIRA_PROJECT}/version`,
-      config.method = 'get';
-    config.params = {
-      orderBy: '-name'
-    };
 
-    console.log("config", config);
-
-    axios(config)
-      .then(response => {
-        res.json(response.data);
-      })
-      .catch(error => {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      });
 
   } catch (error) {
     logger.error(new Error(error));
