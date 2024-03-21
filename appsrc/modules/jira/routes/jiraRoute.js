@@ -11,6 +11,6 @@ const baseRouteForObject = `/releases/`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}`, controller.getVersions);
+router.get(`${baseRouteForObject}`, controller.getReleases);
 
 module.exports = router;

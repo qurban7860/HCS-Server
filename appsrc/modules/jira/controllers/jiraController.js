@@ -19,26 +19,16 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { country_name: 1 };
-this.populate = [
-  { path: 'createdBy', select: 'name' },
-  { path: 'customer', select: 'name' },
-  { path: 'updatedBy', select: 'name' },
-  { path: 'countries', select: '' }
-];
+this.params = { orderBy: '-name', id: 10026, name: "1.4.9" , released: false};
 
-
-
-exports.getVersions = async (req, res, next) => {
+exports.getReleases = async (req, res, next) => {
   try {
-    const config = getHeader();
-    config.url = `https://${process.env.JIRA_HOST}${process.env.JIRA_PROJECT}/version`,
-      config.method = 'get';
-    config.params = {
-      orderBy: '-name'
+    let config = {
+      url: getURL("version"),
+      method: 'get',
+      params: this.params,
+      ...getHeader(),
     };
-
-    console.log("config", config);
 
     axios(config)
       .then(response => {
@@ -48,7 +38,30 @@ exports.getVersions = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       });
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
 
+exports.getRelease = async (req, res, next) => {
+  try {
+    let config = {
+      url: getURL("version"),
+      method: 'get',
+      params: this.orderBy,
+      query: {id: "10026"},
+      ...getHeader(),
+    };
+
+    axios(config)
+      .then(response => {
+        res.json(response.data);
+      })
+      .catch(error => {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      });
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -66,4 +79,11 @@ function getHeader() {
     timeout: 10000,
   };
   return config;
+}
+
+function getURL(endpoint) {
+  const jiraHost = process.env.JIRA_HOST;
+  const jiraProject = process.env.JIRA_PROJECT;
+  const versionUrl = `https://${jiraHost}${jiraProject}/${endpoint}`;
+  return versionUrl;
 }
