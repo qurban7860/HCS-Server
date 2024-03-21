@@ -70,8 +70,13 @@ exports.getCustomerSites = async (req, res, next) => {
     }
 
     this.customerId = req.params.customerId;
-    if(this.customerId && ObjectId.isValid(this.customerId))
-      this.query.customer = this.customerId; 
+    let customerObj;
+    if(this.customerId && ObjectId.isValid(this.customerId)) {
+      this.query.customer = this.customerId;
+      customerObj = await Customer.findOne({_id: this.customerId}).lean().select('mainSite');
+    }
+
+    console.log(customerObj?.mainSite);
     
     this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
@@ -79,6 +84,14 @@ exports.getCustomerSites = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(json(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)));
       } else {
+        if(customerObj?.mainSite) {
+          let index = response.findIndex(item => item._id+"" === customerObj.mainSite+"");
+          if (index !== -1) {
+            let item = response.splice(index, 1)[0]; // Remove the item from the response
+            response.unshift(item); // Add the item to the beginning of the response
+          }
+        }
+
         res.json(response);
       }
     }
