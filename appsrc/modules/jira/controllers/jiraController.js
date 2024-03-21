@@ -61,8 +61,7 @@ function getHeader() {
   const base64String = Buffer.from(tokenString).toString('base64');
   const config = {
     headers: {
-      'Authorization': `Basic ${base64String}`,
-      'Cookie': 'atlassian.xsrf.token=657b7a25a1982ed9f117fabb874094bd9c282d48_lin'
+      'Authorization': `Basic ${base64String}`
     },
     timeout: 10000,
   };
