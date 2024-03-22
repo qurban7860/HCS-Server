@@ -23,12 +23,14 @@ this.params = { query: {name: "0.0.1"}};
 
 exports.getReleases = async (req, res, next) => {
   try {
+    const jiraProject = process.env.JIRA_PROJECT;
     let config = {
-      url: getURL("version"),
+      url: getURL("project/HPS/versions"),
       method: 'get',
       params: {orderBy:'-name'},
       ...getHeader(),
     };
+
 
     if(req?.query?.query) {
       config.params.query = req.query.query;
@@ -36,6 +38,28 @@ exports.getReleases = async (req, res, next) => {
     if(req?.query?.orderBy) {
       config.params.orderBy = req.query.orderBy;
     }
+
+    axios(config)
+      .then(response => {
+        res.json(response.data);
+      })
+      .catch(error => {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      });
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+exports.getRelease = async (req, res, next) => {
+  try {
+    let config = {
+      url: getURL(`version/${req.params.id}`),
+      method: 'get',
+      ...getHeader(),
+    };
 
     axios(config)
       .then(response => {
@@ -66,7 +90,6 @@ function getHeader() {
 
 function getURL(endpoint) {
   const jiraHost = process.env.JIRA_HOST;
-  const jiraProject = process.env.JIRA_PROJECT;
-  const versionUrl = `https://${jiraHost}${jiraProject}/${endpoint}`;
+  const versionUrl = `https://${jiraHost}/${endpoint}`;
   return versionUrl;
 }

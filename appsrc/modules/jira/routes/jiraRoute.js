@@ -7,10 +7,15 @@ const controller = controllers.jiraController;
 
 const router = express.Router();
 
-const baseRouteForObject = `/releases/`; 
+const baseRouteForObject = `/releases`; 
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}`, controller.getReleases);
+
+router.get(`${baseRouteForObject}/:id`, controller.getRelease);
+
+router.get(`${baseRouteForObject}/`, controller.getReleases);
+
+
 
 module.exports = router;
