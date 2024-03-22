@@ -373,15 +373,18 @@ exports.getProducts = async (req, res, next) => {
 exports.getProductId = async (req, res, next) => {
   const queryString = await processUserRoles(req);
 
-  if (!req?.query?.serialNo || !req?.query?.ref) {
+  if (!req?.query?.serialNo) {
     return res.status(StatusCodes.BAD_REQUEST).send("provide serial No and custoemr reference number!");
   }
 
   const customerObj_ = await Customer.findOne({ ref: req.query.ref }).select('_id').lean();
-  if (!customerObj_) {
-    return res.status(StatusCodes.BAD_REQUEST).send("customer not found against reference");
+  let queryStringVal = { serialNo: req.query.serialNo };
+
+  if(customerObj_?._id) {
+    queryStringVal.customer = customerObj_._id
   }
-  const product_ = await Product.findOne({ serialNo: req.query.serialNo, customer: customerObj_._id }).select('_id').lean();
+  
+  const product_ = await Product.findOne(queryStringVal).sort({_id: -1}).select('_id').lean();
   if (product_) {
     if (queryString) {
       const query_ = { ...queryString, _id: product_._id };
