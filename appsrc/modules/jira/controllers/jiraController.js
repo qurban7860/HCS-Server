@@ -19,40 +19,23 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.params = { orderBy: '-name', id: 10026, name: "1.4.9" , released: false};
+this.params = { query: {name: "0.0.1"}};
 
 exports.getReleases = async (req, res, next) => {
   try {
     let config = {
       url: getURL("version"),
       method: 'get',
-      params: this.params,
+      params: {orderBy:'-name'},
       ...getHeader(),
     };
 
-    axios(config)
-      .then(response => {
-        res.json(response.data);
-      })
-      .catch(error => {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      });
-  } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-  }
-};
-
-exports.getRelease = async (req, res, next) => {
-  try {
-    let config = {
-      url: getURL("version"),
-      method: 'get',
-      params: this.orderBy,
-      query: {id: "10026"},
-      ...getHeader(),
-    };
+    if(req?.query?.query) {
+      config.params.query = req.query.query;
+    }
+    if(req?.query?.orderBy) {
+      config.params.orderBy = req.query.orderBy;
+    }
 
     axios(config)
       .then(response => {
