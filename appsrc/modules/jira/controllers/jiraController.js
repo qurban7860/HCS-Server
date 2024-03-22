@@ -24,8 +24,10 @@ this.params = { query: {name: "0.0.1"}};
 exports.getReleases = async (req, res, next) => {
   try {
     const jiraProject = process.env.JIRA_PROJECT;
+    
+
     let config = {
-      url: getURL("project/HPS/versions"),
+      url: getURL("project/HPS/version"),
       method: 'get',
       params: {orderBy:'-name'},
       ...getHeader(),
