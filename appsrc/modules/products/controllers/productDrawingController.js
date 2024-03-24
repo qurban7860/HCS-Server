@@ -13,7 +13,7 @@ this.dbservice = new productDBService();
 
 const { ProductCategory, ProductModel, ProductDrawing } = require('../models');
 
-const { Document } = require('../../documents/models');
+const { Document, DocumentType } = require('../../documents/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -38,13 +38,28 @@ exports.getProductDrawing = async (req, res, next) => {
 };
 
 exports.getProductDrawings = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
+  let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();  
   this.dbservice.getObjectList(req, ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      if (response?.length > 0 && docTypes_?.length > 0) {
+        response.sort((a, b) => {
+            const indexA = docTypes_.findIndex(doc => doc._id.toString() === a.documentType._id.toString());
+            const indexB = docTypes_.findIndex(doc => doc._id.toString() === b.documentType._id.toString());
+            
+            if (indexA !== -1 && indexB === -1) {
+                return -1; // Move a before b
+            } else if (indexA === -1 && indexB !== -1) {
+                return 1; // Move b before a
+            } else {
+                return 0; // Keep the order unchanged
+            }
+        });
+      }
       res.json(response);
     }
   }
