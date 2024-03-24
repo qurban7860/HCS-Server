@@ -48,7 +48,7 @@ exports.getProductDrawings = async (req, res, next) => {
     } else {
       if(response?.size > 0 && docTypes_?.size > 0) {
         response.type.sort((a, b) => {
-          if (docTypes_.findIndex(doc => doc._id.toString() === a._id) !== -1) return -1;
+          if (docTypes_.findIndex(doc => doc._id.toString() === a._id.toString()) !== -1) return -1;
           else return 0;
         });
       }
