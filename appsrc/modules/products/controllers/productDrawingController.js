@@ -39,7 +39,7 @@ exports.getProductDrawing = async (req, res, next) => {
 
 exports.getProductDrawings = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  let docTypes_ = await DocumentType.find({ decoiler: true }).select('_id').lean();  
+  let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();  
   this.dbservice.getObjectList(req, ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

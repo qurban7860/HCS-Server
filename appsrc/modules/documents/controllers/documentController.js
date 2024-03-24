@@ -218,7 +218,7 @@ exports.getDocuments = async (req, res, next) => {
 
 
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
-    let docTypes_ = await DocumentType.find({ decoiler: true }).select('_id').lean();
+    let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
 
     let assemblyDrawings = await Document.find({ ...this.query, docType: { $in: docTypes_ } })
       .populate(this.populate)
