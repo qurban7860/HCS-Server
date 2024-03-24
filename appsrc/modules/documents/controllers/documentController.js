@@ -227,7 +227,7 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-      console.log("assemblyDrawings", assemblyDrawings.size);
+      console.log("assemblyDrawings", assemblyDrawings);
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
