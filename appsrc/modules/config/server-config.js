@@ -38,6 +38,8 @@ const apiclientRoute  = require ('../apiclient/routes');
 
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
+const jiraRoute  = require ('../jira/routes');
+
 // const backupRoute  = require ('../backups/routes');
 
 
@@ -132,6 +134,8 @@ class App {
     apiclientRoute.registerapiClientRoutes(this.app, apiPath); 
     configRoute.registerConfigRoutes(this.app, apiPath);
     logRoute.registerlogRoutes(this.app, apiPath);
+    jiraRoute.registerJiraRoutes(this.app, apiPath);
+    
     // backupRoute.registerBackupRoutes(this.app, apiPath);
   }
 
