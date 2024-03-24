@@ -13,7 +13,7 @@ this.dbservice = new productDBService();
 
 const { ProductCategory, ProductModel, ProductDrawing } = require('../models');
 
-const { Document } = require('../../documents/models');
+const { Document, DocumentType } = require('../../documents/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
