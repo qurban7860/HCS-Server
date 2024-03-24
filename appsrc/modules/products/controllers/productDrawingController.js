@@ -46,10 +46,18 @@ exports.getProductDrawings = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if(response?.size > 0 && docTypes_?.size > 0) {
-        response.type.sort((a, b) => {
-          if (docTypes_.findIndex(doc => doc._id.toString() === a._id.toString()) !== -1) return -1;
-          else return 0;
+      if (response?.length > 0 && docTypes_?.length > 0) {
+        response.sort((a, b) => {
+            const indexA = docTypes_.findIndex(doc => doc._id.toString() === a.documentType._id.toString());
+            const indexB = docTypes_.findIndex(doc => doc._id.toString() === b.documentType._id.toString());
+            
+            if (indexA !== -1 && indexB === -1) {
+                return -1; // Move a before b
+            } else if (indexA === -1 && indexB !== -1) {
+                return 1; // Move b before a
+            } else {
+                return 0; // Keep the order unchanged
+            }
         });
       }
       res.json(response);
