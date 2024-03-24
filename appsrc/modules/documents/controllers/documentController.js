@@ -227,8 +227,6 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-      console.log("assemblyDrawings", assemblyDrawings);
-
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
@@ -260,6 +258,7 @@ exports.getDocuments = async (req, res, next) => {
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
 
+      console.log("isVersionNeeded", isVersionNeeded);
       if(isVersionNeeded) {
         let documentIndex = 0;
         for(let document_ of documents) {

@@ -38,13 +38,20 @@ exports.getProductDrawing = async (req, res, next) => {
 };
 
 exports.getProductDrawings = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
+  let docTypes_ = await DocumentType.find({ decoiler: true }).select('_id').lean();  
   this.dbservice.getObjectList(req, ProductDrawing, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      if(response?.size > 0 && docTypes_?.size > 0) {
+        response.type.sort((a, b) => {
+          if (docTypes_.findIndex(doc => doc._id.toString() === a._id) !== -1) return -1;
+          else return 0;
+        });
+      }
       res.json(response);
     }
   }
