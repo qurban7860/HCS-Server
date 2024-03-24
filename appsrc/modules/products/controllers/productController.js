@@ -370,6 +370,41 @@ exports.getProducts = async (req, res, next) => {
   }
 };
 
+exports.getProductId = async (req, res, next) => {
+  const queryString = await processUserRoles(req);
+
+  if (!req?.query?.serialNo) {
+    return res.status(StatusCodes.BAD_REQUEST).send("provide serial No and custoemr reference number!");
+  }
+
+  const customerObj_ = await Customer.findOne({ ref: req.query.ref }).select('_id').lean();
+  let queryStringVal = { serialNo: req.query.serialNo };
+
+  if(customerObj_?._id) {
+    queryStringVal.customer = customerObj_._id
+  }
+  
+  const product_ = await Product.findOne(queryStringVal).sort({_id: -1}).select('_id').lean();
+  if (product_) {
+    if (queryString) {
+      const query_ = { ...queryString, _id: product_._id };
+      const proObj = await Product.findOne(query_).select('_id').lean();
+
+      if (!proObj) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Access denied for the machine is not permitted by the administrator.");
+      }
+    }
+
+    delete req.query.unfiltered;
+    if (!product_._id || !ObjectId.isValid(product_._id)) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Machine uuid is not valid!");
+    }
+    res.json(product_);
+  } else {
+    return res.status(StatusCodes.BAD_REQUEST).send("Machine not found!");
+  }
+};
+
 exports.getConnectionProducts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   aggregateQuery = [
