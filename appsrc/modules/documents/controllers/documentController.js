@@ -220,11 +220,14 @@ exports.getDocuments = async (req, res, next) => {
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     let docTypes_ = await DocumentType.find({ decoiler: true }).select('_id').lean();
 
+    console.log("docTypes_", docTypes_);
     let assemblyDrawings = await Document.find({ ...this.query, docType: { $in: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
+
+      console.log("assemblyDrawings", assemblyDrawings.size);
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
@@ -233,7 +236,7 @@ exports.getDocuments = async (req, res, next) => {
       .lean();
 
     let documents = assemblyDrawings.concat(otherDocuments);
-    
+
     if (req.body.page || req.body.page === 0) {
       let page = parseInt(req.body.page) || 0; // Current page number
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
