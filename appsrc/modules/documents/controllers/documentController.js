@@ -263,6 +263,7 @@ exports.getDocuments = async (req, res, next) => {
       documents = JSON.parse(JSON.stringify(documents));
 
       console.log("isVersionNeeded", isVersionNeeded);
+      isVersionNeeded = false;
       if(isVersionNeeded) {
         let documentIndex = 0;
         for(let document_ of documents) {
