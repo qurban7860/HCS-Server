@@ -236,14 +236,18 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
+      console.log("assemblyDrawings", assemblyDrawings);
+      console.log("otherDocuments", otherDocuments);
     let documents = assemblyDrawings.concat(otherDocuments);
+    console.log("documents", documents);
+    
+
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       const totalPages = Math.ceil(documents.length / pageSize);
       const totalCount = documents.length;
       let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
-      console.log("documents 2", documents);
       documents = documents.slice(skip, skip + pageSize);
 
       let listDocuments = {
