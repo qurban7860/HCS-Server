@@ -236,10 +236,8 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-      console.log("assemblyDrawings", assemblyDrawings);
-      console.log("otherDocuments", otherDocuments);
+
     let documents = assemblyDrawings.concat(otherDocuments);
-    console.log("documents", documents);
     
 
     if (req.body.page || req.body.page === 0) {
@@ -248,10 +246,8 @@ exports.getDocuments = async (req, res, next) => {
       const totalCount = documents.length;
       let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
-      console.log(skip, skip + pageSize);
       documents = documents.slice(skip, skip + pageSize);
-      console.log("documentsa", documents);
-
+      
       let listDocuments = {
         data: documents,
         ...(req.body.page && {
