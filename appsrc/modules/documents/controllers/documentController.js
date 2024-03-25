@@ -248,6 +248,7 @@ exports.getDocuments = async (req, res, next) => {
       const totalCount = documents.length;
       let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
+      console.log(skip, skip + pageSize);
       documents = documents.slice(skip, skip + pageSize);
 
       let listDocuments = {
