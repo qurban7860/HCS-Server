@@ -233,20 +233,21 @@ exports.getDocuments = async (req, res, next) => {
       .lean();
 
     let documents = assemblyDrawings.concat(otherDocuments);
-
     if (req.body.page || req.body.page === 0) {
-      let page = parseInt(req.body.page) || 0; // Current page number
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
+      const totalPages = Math.ceil(documents.length / pageSize);
+      const totalCount = documents.length;
+      let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
       documents = documents.slice(skip, skip + pageSize);
 
       let listDocuments = {
         data: documents,
         ...(req.body.page && {
-          totalPages: Math.ceil(documents.length / pageSize),
+          totalPages: totalPages,
           currentPage: page,
           pageSize: pageSize,
-          totalCount: documents.length
+          totalCount: totalCount
         })
       }
       documents = listDocuments;
