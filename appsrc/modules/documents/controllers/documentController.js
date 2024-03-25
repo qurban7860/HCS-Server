@@ -250,6 +250,7 @@ exports.getDocuments = async (req, res, next) => {
       let skip = req.body.page * pageSize;
       console.log(skip, skip + pageSize);
       documents = documents.slice(skip, skip + pageSize);
+      console.log("documentsa", documents);
 
       let listDocuments = {
         data: documents,
