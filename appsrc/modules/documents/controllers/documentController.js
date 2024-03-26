@@ -220,11 +220,15 @@ exports.getDocuments = async (req, res, next) => {
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
 
+    console.log("docTypes_", docTypes_);
     let assemblyDrawings = await Document.find({ ...this.query, docType: { $in: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
+
+      console.log("assemblyDrawings", assemblyDrawings);
+    
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
@@ -232,21 +236,25 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
+
     let documents = assemblyDrawings.concat(otherDocuments);
+    
 
     if (req.body.page || req.body.page === 0) {
-      let page = parseInt(req.body.page) || 0; // Current page number
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
+      const totalPages = Math.ceil(documents.length / pageSize);
+      const totalCount = documents.length;
+      let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
       documents = documents.slice(skip, skip + pageSize);
-
+      
       let listDocuments = {
         data: documents,
         ...(req.body.page && {
-          totalPages: Math.ceil(documents.length / pageSize),
+          totalPages: totalPages,
           currentPage: page,
           pageSize: pageSize,
-          totalCount: documents.length
+          totalCount: totalCount
         })
       }
       documents = listDocuments;
@@ -258,6 +266,7 @@ exports.getDocuments = async (req, res, next) => {
       documents = JSON.parse(JSON.stringify(documents));
 
       console.log("isVersionNeeded", isVersionNeeded);
+      isVersionNeeded = false;
       if(isVersionNeeded) {
         let documentIndex = 0;
         for(let document_ of documents) {
