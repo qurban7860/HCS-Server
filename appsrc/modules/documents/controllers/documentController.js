@@ -220,14 +220,12 @@ exports.getDocuments = async (req, res, next) => {
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
 
-    console.log("docTypes_", docTypes_);
     let assemblyDrawings = await Document.find({ ...this.query, docType: { $in: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
 
-      console.log("assemblyDrawings", assemblyDrawings);
     
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
@@ -265,8 +263,6 @@ exports.getDocuments = async (req, res, next) => {
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
 
-      console.log("isVersionNeeded", isVersionNeeded);
-      isVersionNeeded = false;
       if(isVersionNeeded) {
         let documentIndex = 0;
         for(let document_ of documents) {
@@ -348,9 +344,6 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
     delete req.body.pageSize;
   }
   page ++;
-
-  console.log("page", page);
-  console.log("pageSize", pageSize);
 
   
   try {
@@ -542,8 +535,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       isArchived: false,
       eTag: { $exists: false },
     }).sort({_id: -1}).limit(1000);
-    console.log("filteredFiles", filteredFiles.length);
-
+   
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
         try {
@@ -553,8 +545,6 @@ exports.putDocumentFilesETag = async (req, res, next) => {
             const base64Data = dataReceived.replace(/^data:[\w/]+;base64,/, '');
             const imageBuffer = Buffer.from(base64Data, 'base64');
             const ETagGenerated = await awsService.generateEtag(imageBuffer);
-            console.log("** ETagGenerated @", ETagGenerated);
-            console.log("** fileData.ETag @", fileData.ETag);
             
             await DocumentFile.updateOne(
               { _id: fileObj._id },
