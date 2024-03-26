@@ -226,27 +226,33 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
+    
+
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
 
+
     let documents = assemblyDrawings.concat(otherDocuments);
+    
 
     if (req.body.page || req.body.page === 0) {
-      let page = parseInt(req.body.page) || 0; // Current page number
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
+      const totalPages = Math.ceil(documents.length / pageSize);
+      const totalCount = documents.length;
+      let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
       documents = documents.slice(skip, skip + pageSize);
-
+      
       let listDocuments = {
         data: documents,
         ...(req.body.page && {
-          totalPages: Math.ceil(documents.length / pageSize),
+          totalPages: totalPages,
           currentPage: page,
           pageSize: pageSize,
-          totalCount: documents.length
+          totalCount: totalCount
         })
       }
       documents = listDocuments;
@@ -257,7 +263,6 @@ exports.getDocuments = async (req, res, next) => {
     if(documents && Array.isArray(documents) && documents.length>0) {
       documents = JSON.parse(JSON.stringify(documents));
 
-      console.log("isVersionNeeded", isVersionNeeded);
       if(isVersionNeeded) {
         let documentIndex = 0;
         for(let document_ of documents) {
@@ -339,9 +344,6 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
     delete req.body.pageSize;
   }
   page ++;
-
-  console.log("page", page);
-  console.log("pageSize", pageSize);
 
   
   try {
@@ -533,8 +535,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       isArchived: false,
       eTag: { $exists: false },
     }).sort({_id: -1}).limit(1000);
-    console.log("filteredFiles", filteredFiles.length);
-
+   
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
         try {
@@ -544,8 +545,6 @@ exports.putDocumentFilesETag = async (req, res, next) => {
             const base64Data = dataReceived.replace(/^data:[\w/]+;base64,/, '');
             const imageBuffer = Buffer.from(base64Data, 'base64');
             const ETagGenerated = await awsService.generateEtag(imageBuffer);
-            console.log("** ETagGenerated @", ETagGenerated);
-            console.log("** fileData.ETag @", fileData.ETag);
             
             await DocumentFile.updateOne(
               { _id: fileObj._id },
