@@ -56,8 +56,10 @@ exports.getProductServiceRecord = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
 
-      response = JSON.parse(JSON.stringify(response));
-
+      response = JSON.parse(JSON.stringify(response));     
+      const queryToFindCurrentVer = {serviceId: response.serviceId, isActive: true, isArchived: false, isHistory: false};
+      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate').sort({_id: -1}).lean();
+      response.currentVersion = currentVersion;
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
       }
