@@ -263,6 +263,9 @@ exports.postCustomer = async (req, res, next) => {
     if(CustomerObj) {
       res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
     } else {
+      if(req.body.ref?.trim().length === 0) {
+        delete req.body.ref;
+      }
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       var _this = this;
       function callbackFunc(error, response) {
