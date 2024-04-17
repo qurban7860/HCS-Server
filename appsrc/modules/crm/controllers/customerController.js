@@ -388,7 +388,7 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
 
-    let query__ = { isActive: true, isArchived: false };
+    let query__ = { isArchived: false };
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     if(listCustomers && listCustomers.length > 0)
       query__._id = { $in: listCustomers };

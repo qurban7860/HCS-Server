@@ -1328,6 +1328,12 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : { isActive: true, isArchived: false };
 
+    if(this.query.isArchived && this.query.isArchived === 'ALL') {
+      delete this.query.isArchived;
+    } else {
+      this.query.isArchived = false;  
+    }
+
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     this.query.customer = { $in: listCustomers };
 
@@ -1382,9 +1388,6 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
       
 
       if (EXPORT_UUID) {
-
-
-
         finalDataObj = {
           ProductID: "" + (product._id) + "",
           SerialNo: `${product?.serialNo?.replace(/"/g, "'")}`,
@@ -1395,12 +1398,18 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           WorkOrderRef: product?.workOrderRef === undefined || !product?.workOrderRef ? "" : (`${product?.workOrderRef?.replace(/"/g, "'")}`),
           FinancialCompany: product?.financialCompany?.name === undefined ? "" : (`${product?.financialCompany?.name?.replace(/"/g, "'")}`),
           Customer: product?.customer?.name === undefined ? "" : (`${product?.customer?.name?.replace(/"/g, "'")}`),
-          InstallationSite: product?.instalationSite?.name === undefined ? "" : (`${product?.instalationSite?.name?.replace(/"/g, "'")}`),
-          InstallationSiteAddress: `${(fetchAddressCSV(product?.instalationSite?.address)?.replace(/"/g, "'"))}`,
+          InstallationSite: product?.instalationSite?.name === undefined ? "" : (`${product?.instalationSite?.name?.replace(/"/g, "'")}`),        
+          InstallationSiteStreet: product?.instalationSite?.address?.street === undefined ? "" : (`${product?.instalationSite?.address?.street.replace(/"/g, "'")}`),
+          InstallationSiteSuburb: product?.instalationSite?.address?.suburb === undefined ? "" : (`${product?.instalationSite?.address?.suburb.replace(/"/g, "'")}`),
+          InstallationSiteCity: product?.instalationSite?.address?.city === undefined ? "" : (`${product?.instalationSite?.address?.city.replace(/"/g, "'")}`),
+          InstallationSiteRegion: product?.instalationSite?.address?.region === undefined ? "" : (`${product?.instalationSite?.address?.region.replace(/"/g, "'")}`),
+          InstallationSitePostcode: product?.instalationSite?.address?.postcode === undefined ? "" : (`${product?.instalationSite?.address?.postcode.replace(/"/g, "'")}`),
+          InstallationSiteCountry: product?.instalationSite?.address?.country === undefined ? "" : (`${product?.instalationSite?.address?.country.replace(/"/g, "'")}`),
           InstallationSiteLatitude: product?.instalationSite?.lat === undefined ? "" : `${(product?.instalationSite?.lat?.replace(/"/g, "'"))}`,
           InstallationSiteLongitude: product?.instalationSite?.long === undefined ? "" : `${(product?.instalationSite?.long?.replace(/"/g, "'"))}`,
           BillingSite: product?.billingSite?.name === undefined ? "" : `${(product?.billingSite?.name?.replace(/"/g, "'"))}`,
           BillingSiteAddress: `${(fetchAddressCSV(product?.billingSite?.address)?.replace(/"/g, "'"))}`,
+          BillingSiteCountry: product?.billingSite?.address?.country === undefined ? "" : (`${product?.billingSite?.address?.country.replace(/"/g, "'")}`),
           BillingSiteLatitude: product?.billingSite?.lat === undefined ? "" : `${(product?.billingSite?.lat?.replace(/"/g, "'"))}`,
           BillingSiteLongitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long?.replace(/"/g, "'"))}`,
           ShippingDate: shippingDateLTZ,
@@ -1430,11 +1439,17 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           FinancialCompany: product?.financialCompany?.name === undefined ? "" : (`${product?.financialCompany?.name?.replace(/"/g, "'")}`),
           Customer: product?.customer?.name === undefined ? "" : (`${product?.customer?.name?.replace(/"/g, "'")}`),
           InstallationSite: product?.instalationSite?.name === undefined ? "" : (`${product?.instalationSite?.name?.replace(/"/g, "'")}`),
-          InstallationSiteAddress: `${(fetchAddressCSV(product?.instalationSite?.address)?.replace(/"/g, "'"))}`,
+          InstallationSiteStreet: product?.instalationSite?.address?.street === undefined ? "" : (`${product?.instalationSite?.address?.street.replace(/"/g, "'")}`),
+          InstallationSiteSuburb: product?.instalationSite?.address?.suburb === undefined ? "" : (`${product?.instalationSite?.address?.suburb.replace(/"/g, "'")}`),
+          InstallationSiteCity: product?.instalationSite?.address?.city === undefined ? "" : (`${product?.instalationSite?.address?.city.replace(/"/g, "'")}`),
+          InstallationSiteRegion: product?.instalationSite?.address?.region === undefined ? "" : (`${product?.instalationSite?.address?.region.replace(/"/g, "'")}`),
+          InstallationSitePostcode: product?.instalationSite?.address?.postcode === undefined ? "" : (`${product?.instalationSite?.address?.postcode.replace(/"/g, "'")}`),
+          InstallationSiteCountry: product?.instalationSite?.address?.country === undefined ? "" : (`${product?.instalationSite?.address?.country.replace(/"/g, "'")}`),
           InstallationSiteLatitude: product?.instalationSite?.lat === undefined ? "" : `${(product?.instalationSite?.lat?.replace(/"/g, "'"))}`,
           InstallationSiteLongitude: product?.instalationSite?.long === undefined ? "" : `${(product?.instalationSite?.long?.replace(/"/g, "'"))}`,
           BillingSite: product?.billingSite?.name === undefined ? "" : `${(product?.billingSite?.name?.replace(/"/g, "'"))}`,
           BillingSiteAddress: `${(fetchAddressCSV(product?.billingSite?.address)?.replace(/"/g, "'"))}`,
+          BillingSiteCountry: product?.billingSite?.address?.country === undefined ? "" : (`${product?.billingSite?.address?.country.replace(/"/g, "'")}`),
           BillingSiteLatitude: product?.billingSite?.lat === undefined ? "" : `${(product?.billingSite?.lat?.replace(/"/g, "'"))}`,
           BillingSiteLongitude: product?.billingSite?.long === undefined ? "" : `${(product?.billingSite?.long?.replace(/"/g, "'"))}`,
           ShippingDate: shippingDateLTZ,
@@ -1505,7 +1520,7 @@ function fetchAddressCSV(address) {
     return ''; // Return an empty string or handle the error as needed
   }
 
-  const addressComponents = ['street', 'suburb', 'city', 'region', 'postcode', 'country'];
+  const addressComponents = ['street', 'suburb', 'city', 'region', 'postcode'];
 
   const formattedAddressCSV = addressComponents
     .map(component => address[component])
