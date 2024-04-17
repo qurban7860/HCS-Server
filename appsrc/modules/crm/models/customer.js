@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
-const { softDeletePlugin } = require('soft-delete-plugin-mongoose');
+
 const GUID = require('mongoose-guid')(mongoose);
 const baseSchema = require('../../../base/baseSchema');
 
@@ -13,10 +13,9 @@ const docSchema = new Schema({
         clientCode: { type: String, maxlength: 20},
         // This code may help us to identify customer with 3rd party system (ABEL). 
         
-        ref: { type: String, maxlength: 200, unique: true},
+        ref: { type: String, maxlength: 200, unique: true, sparse: true},
         // reference code for referring and fetching data.
-        
-
+      
         // tradingName: { type: String },
         tradingName: [{ type: String  }],
 

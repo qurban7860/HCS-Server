@@ -263,6 +263,9 @@ exports.postCustomer = async (req, res, next) => {
     if(CustomerObj) {
       res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
     } else {
+      if(req.body.ref?.trim().length === 0) {
+        delete req.body.ref;
+      }
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       var _this = this;
       function callbackFunc(error, response) {
@@ -385,7 +388,7 @@ exports.exportCustomersJSONForCSV = async (req, res, next) => {
     let EXPORT_UUID = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
 
-    let query__ = { isActive: true, isArchived: false };
+    let query__ = { isArchived: false };
     let listCustomers = await Customer.find({"excludeReports": { $ne: true }}).select('_id').lean();
     if(listCustomers && listCustomers.length > 0)
       query__._id = { $in: listCustomers };
