@@ -44,14 +44,25 @@ exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
     if(this.query?.fromDate && this.query?.fromDate) {
-      this.query.date =  {
-        $gte: new Date(this.query.fromDate),
-        $lte: new Date(this.query.toDate)
-      };
-      this.query.date = {
-        $gte: new Date(this.query.date.$gte.toISOString()),
-        $lte: new Date(this.query.date.$lte.toISOString())
-      };
+      if(this.query?.isCreatedAt) {
+        this.query.createdAt =  {
+          $gte: new Date(this.query.fromDate),
+          $lte: new Date(this.query.toDate)
+        };
+        this.query.createdAt = {
+          $gte: new Date(this.query.date.$gte.toISOString()),
+          $lte: new Date(this.query.date.$lte.toISOString())
+        };
+      } else {
+        this.query.date =  {
+          $gte: new Date(this.query.fromDate),
+          $lte: new Date(this.query.toDate)
+        };
+        this.query.date = {
+          $gte: new Date(this.query.date.$gte.toISOString()),
+          $lte: new Date(this.query.date.$lte.toISOString())
+        }; 
+      }
     }
     
     delete this.query?.fromDate;
