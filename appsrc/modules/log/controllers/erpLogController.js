@@ -50,8 +50,8 @@ exports.getLogs = async (req, res, next) => {
           $lte: new Date(this.query.toDate)
         };
         this.query.createdAt = {
-          $gte: new Date(this.query.date.$gte.toISOString()),
-          $lte: new Date(this.query.date.$lte.toISOString())
+          $gte: new Date(this.query.createdAt.$gte.toISOString()),
+          $lte: new Date(this.query.createdAt.$lte.toISOString())
         };
       } else {
         this.query.date =  {
