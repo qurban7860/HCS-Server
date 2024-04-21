@@ -19,6 +19,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 exports.getPM2Logs = async (req, res, next) => {
   try {
+    const { app, out_log, err_log, page, linesPerPage } = req.query;
     pm2.connect((err) => {
       if (err) {
         console.error(err);
@@ -60,13 +61,16 @@ exports.getPM2Logs = async (req, res, next) => {
           logPaths = [targetProcess.pm2_env.pm_out_log_path, targetProcess.pm2_env.pm_err_log_path];
         }
 
-        // Read log files asynchronously (you may need to use a library like 'fs' for this)
-        // For demonstration purposes, let's assume you're using 'fs' module
-        // const logs = logPaths.map(logPath => fs.readFileSync(logPath, 'utf8'));
+        // Read log files asynchronously
         const logs = logPaths.map(logPath => {
           const content = fs.readFileSync(logPath, 'utf8');
-          // Split content by lines, slice to keep last 100 lines, and join back
-          return content.split('\n').slice(-100).join('\n');
+          // Split content by lines
+          const lines = content.split('\n');
+          // Calculate start and end index for pagination
+          const startIndex = (page - 1) * linesPerPage;
+          const endIndex = startIndex + parseInt(linesPerPage);
+          // Select lines for the current page
+          return lines.slice(startIndex, endIndex).join('\n');
         });
 
 
