@@ -18,7 +18,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 
 exports.getPM2Logs = async (req, res, next) => {
-  try { 
+  try {
     pm2.connect((err) => {
       if (err) {
         console.error(err);
@@ -33,11 +33,11 @@ exports.getPM2Logs = async (req, res, next) => {
           return res.status(500).json({ error: 'Failed to get process list from PM2' });
         }
         const names = processList.map(item => item.name);
-        if(!req.query.app) {
+        if (!req.query.app) {
           return res.status(500).json({ error: `Please select from applications:[${names}]` });
-        } 
-        
-        
+        }
+
+
 
         // Find the process you're interested in
         const targetProcess = processList.find(process => process.name === req.query.app);
@@ -49,11 +49,11 @@ exports.getPM2Logs = async (req, res, next) => {
 
         // Get log file paths
         let logPaths = [];
-        if(req.query.out_log === 'true' || req.query.err_log === 'true') {
-          if(req.query.out_log === 'true') {
+        if (req.query.out_log === 'true' || req.query.err_log === 'true') {
+          if (req.query.out_log === 'true') {
             logPaths.push(targetProcess.pm2_env.pm_out_log_path);
           }
-          if(req.query.err_log === 'true'){
+          if (req.query.err_log === 'true') {
             logPaths.push(targetProcess.pm2_env.pm_err_log_path);
           }
         } else {
@@ -62,7 +62,13 @@ exports.getPM2Logs = async (req, res, next) => {
 
         // Read log files asynchronously (you may need to use a library like 'fs' for this)
         // For demonstration purposes, let's assume you're using 'fs' module
-        const logs = logPaths.map(logPath => fs.readFileSync(logPath, 'utf8'));
+        // const logs = logPaths.map(logPath => fs.readFileSync(logPath, 'utf8'));
+        const logs = logPaths.map(logPath => {
+          const content = fs.readFileSync(logPath, 'utf8');
+          // Split content by lines, slice to keep last 100 lines, and join back
+          return content.split('\n').slice(-100).join('\n');
+        });
+
 
         pm2.disconnect(); // Disconnect from PM2
         // Send logs as response
