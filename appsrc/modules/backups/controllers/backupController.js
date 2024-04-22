@@ -134,7 +134,7 @@ exports.patchBackup = async (req, res, next) => {
 };
 
 
-cron.schedule('*/15 * * * * *', () => {
+cron.schedule('0 */2 * * *', () => {
   try {
     console.log('Cron job is running every 30 seconds...');
     exports.backupMongoDB();
