@@ -351,6 +351,16 @@ exports.getProducts = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      const machineProfileQuery = { type: "MANUFACTURE", isActive: true, isArchived: false };
+      const machineProfiles = await ProductProfile.find(machineProfileQuery).select('machine names defaultName web flange').sort({ _id: 1 });
+      products = products.map(product => product.toObject());
+      for (const [index, product] of products.entries()) {
+        const profile = machineProfiles.find(profile => profile.machine+'' === product._id+'');
+        if (profile) {
+          products[index].profile = profile;
+        }
+      }
+      
       if(req.query.getConnectedMachine) {
         let index = 0;
         let filteredProducts = [];

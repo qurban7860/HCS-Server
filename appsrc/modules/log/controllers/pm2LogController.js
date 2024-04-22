@@ -3,8 +3,11 @@ const fs = require('fs');
 
 exports.getPM2Logs = async (req, res) => {
   try {
-    const { app = 'hcs-dev-server', out_log = true, err_log, pageNumber = 0, pageSize = 100} = req.query;
+    var { app = 'hcs-dev-server', out_log = true, err_log, pageNumber = 0, pageSize = 100} = req.query;
+    pageNumber = parseInt(pageNumber);
+    pageSize = parseInt(pageSize);
 
+    console.log(pageNumber, pageSize);
     if (!app) {
       return res.status(400).json({ error: 'Please provide the application name' });
     }
