@@ -1,92 +1,57 @@
-const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const pm2 = require('pm2');
-const _ = require('lodash');
-const HttpError = require('../../config/models/http-error');
-const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static')
 const fs = require('fs');
-let logDBService = require('../service/logDBService')
-this.dbservice = new logDBService();
-const { LogFormat } = require('../models');
 
-this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-
-
-
-exports.getPM2Logs = async (req, res, next) => {
+exports.getPM2Logs = async (req, res) => {
   try {
-    const { app, out_log, err_log, page, linesPerPage } = req.query;
+    const { app = 'hcs-dev-server', out_log = true, err_log, pageNumber = 0, pageSize = 100} = req.query;
 
     if (!app) {
       return res.status(400).json({ error: 'Please provide the application name' });
     }
 
-    // Connect to PM2
     pm2.connect((err) => {
       if (err) {
         console.error(err);
         return res.status(500).json({ error: 'Failed to connect to PM2' });
       }
 
-      // Get list of running processes
       pm2.list((err, processList) => {
         if (err) {
           console.error(err);
-          pm2.disconnect(); // Disconnect from PM2
+          pm2.disconnect();
           return res.status(500).json({ error: 'Failed to get process list from PM2' });
         }
 
         const names = processList.map(item => item.name);
 
         if (!names.includes(app)) {
-          pm2.disconnect(); // Disconnect from PM2
+          pm2.disconnect();
           return res.status(404).json({ error: `Process not found! Available processes: [${names}]` });
         }
 
-        // Find the process you're interested in
         const targetProcess = processList.find(process => process.name === app);
 
-        // Get log file paths
-        let logPaths = [];
+        let filePath = null;
         if (out_log === 'true') {
-          logPaths.push(targetProcess.pm2_env.pm_out_log_path);
+          filePath = targetProcess.pm2_env.pm_out_log_path;
         }
         if (err_log === 'true') {
-          logPaths.push(targetProcess.pm2_env.pm_err_log_path);
+          filePath = targetProcess.pm2_env.pm_err_log_path;
         }
 
-        // Read log files asynchronously
-        const logs = [];
+        const stream = fs.createReadStream(filePath, { encoding: 'utf8' });
 
-        logPaths.forEach(logPath => {
-          const tail = new Tail(logPath);
-          let lines = [];
+        readPage(pageNumber, pageSize, stream, (pageLines, error) => {
+          if (error) {
+              console.error('Error:', error);
+              return res.status(500).json({ error: 'Internal server error' });
+          }
 
-          tail.on('line', (line) => {
-            lines.push(line);
-          });
-
-          tail.on('error', (error) => {
-            console.error('Error reading log file:', error);
-          });
-
-          tail.on('end', () => {
-            // Calculate start and end index for pagination
-            const startIndex = Math.max(lines.length - (page * linesPerPage), 0);
-            const endIndex = Math.max(startIndex + parseInt(linesPerPage), 0);
-            // Select lines for the current page
-            logs.push(lines.slice(startIndex, endIndex).join('\n'));
-            // Disconnect from PM2 when all logs are processed
-            if (logs.length === logPaths.length) {
-              pm2.disconnect();
-              // Send logs as response
-              res.json({ logs });
-            }
-          });
+          if (pageLines !== null) {
+              return res.status(200).json({ lines: pageLines });
+          } else {
+              console.log('End of file reached.');
+          }
         });
       });
     });
@@ -95,3 +60,34 @@ exports.getPM2Logs = async (req, res, next) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 };
+
+function readPage(pageNumber, pageSize, stream, callback) {
+  let lines = [];
+  let currentPage = 0;
+
+  stream.on('data', (chunk) => {
+      const chunkLines = chunk.toString().split('\n');
+      lines = lines.concat(chunkLines);
+  });
+
+  stream.on('end', () => {
+      lines.reverse();
+      const start = pageNumber * pageSize;
+      const end = start + pageSize;
+      const pageLines = lines.slice(start, end);
+
+      currentPage++;
+
+      if (currentPage === pageNumber + 1) {
+          callback(pageLines);
+      } else {
+          console.log('End of file reached before desired page.');
+          callback(null);
+      }
+  });
+
+  stream.on('error', (err) => {
+      console.error('Error reading file:', err);
+      callback(null, err);
+  });
+}
