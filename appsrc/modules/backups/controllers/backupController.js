@@ -35,15 +35,6 @@ this.populate = [
   { path: 'countries', select: '' }
 ];
 
-cron.schedule('*/5 * * * * *', () => {
-  try {
-    console.log('Cron job is running every 30 seconds...');
-    exports.backupMongoDB();
-  } catch (error) {
-    console.error('Error occurred while running backupMongoDB:', error);
-  }
-});
-
 exports.getBackup = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(Backup, this.fields, req.params.id, this.populate);
@@ -143,7 +134,14 @@ exports.patchBackup = async (req, res, next) => {
 };
 
 
-
+cron.schedule('*/15 * * * * *', () => {
+  try {
+    console.log('Cron job is running every 30 seconds...');
+    exports.backupMongoDB();
+  } catch (error) {
+    console.error('Error occurred while running backupMongoDB:', error);
+  }
+});
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
