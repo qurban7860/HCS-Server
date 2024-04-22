@@ -35,6 +35,15 @@ this.populate = [
   { path: 'countries', select: '' }
 ];
 
+cron.schedule('*/5 * * * * *', () => {
+  try {
+    console.log('Cron job is running every 30 seconds...');
+    exports.backupMongoDB();
+  } catch (error) {
+    console.error('Error occurred while running backupMongoDB:', error);
+  }
+});
+
 exports.getBackup = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(Backup, this.fields, req.params.id, this.populate);
@@ -134,18 +143,11 @@ exports.patchBackup = async (req, res, next) => {
 };
 
 
-// cron.schedule('*/15 * * * * *', () => {
-//   try {
-//     console.log('Cron job is running every 30 seconds...');
-//     exports.backupMongoDB();
-//   } catch (error) {
-//     console.error('Error occurred while running backupMongoDB:', error);
-//   }
-// });
+
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
-  const emailToSend = 'harisahmaad@hotmail.com'
+  const emailToSend = 'haris@terminustech.com'
   let emailSubject = "MONGO DB BACKUP";
 
   const {
@@ -275,7 +277,6 @@ exports.backupMongoDB = async (req, res, next) => {
   );
 }
 
-
 async function uploadToS3(filePath, key, folderName) {
   const fileContent = fs.readFileSync(filePath);
   const params = {
@@ -292,7 +293,6 @@ async function uploadToS3(filePath, key, folderName) {
     throw err;
   }
 }
-
 
 function getDocumentFromReq(req, reqType) {
   const {
