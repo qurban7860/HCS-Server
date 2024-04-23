@@ -12,6 +12,9 @@ router.use(checkAuth, checkCustomer);
 
 const basicRoute = 'pm2'; 
 
+router.get(`/${basicRoute}/pm2list`, controller.getPM2List);
+
 router.get(`/${basicRoute}/`, controller.getPM2Logs);
+
 
 module.exports = router;

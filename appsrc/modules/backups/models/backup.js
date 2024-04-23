@@ -20,7 +20,6 @@ const docSchema = new Schema({
         collection: 'Backups'
 });
 
-docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
 

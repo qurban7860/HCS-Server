@@ -63,6 +63,30 @@ exports.getPM2Logs = async (req, res) => {
   }
 };
 
+exports.getPM2List = async (req, res) => {
+  try {
+    pm2.connect((err) => {
+      if (err) {
+        console.error(err);
+        return res.status(500).json({ error: 'Failed to connect to PM2' });
+      }
+
+      pm2.list((err, processList) => {
+        if (err) {
+          console.error(err);
+          pm2.disconnect();
+          return res.status(500).json({ error: 'Failed to get process list from PM2' });
+        }
+        const names = processList.map(item => item.name);
+        return res.status(200).send(names);
+      });
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
 function readFile(pageNumber, pageSize, stream, callback) {
   let lines = [];
 
