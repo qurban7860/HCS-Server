@@ -7,7 +7,6 @@ exports.getPM2Logs = async (req, res) => {
     pageNumber = parseInt(pageNumber);
     pageSize = parseInt(pageSize);
 
-    console.log(pageNumber, pageSize);
     if (!app) {
       return res.status(400).json({ error: 'Please provide the application name' });
     }
@@ -44,7 +43,7 @@ exports.getPM2Logs = async (req, res) => {
 
         const stream = fs.createReadStream(filePath, { encoding: 'utf8' });
 
-        readPage(pageNumber, pageSize, stream, (pageLines, error) => {
+        readFile(pageNumber, pageSize, stream, (pageLines, error) => {
           if (error) {
               console.error('Error:', error);
               return res.status(500).json({ error: 'Internal server error' });
@@ -53,7 +52,7 @@ exports.getPM2Logs = async (req, res) => {
           if (pageLines !== null) {
               return res.status(200).json({ lines: pageLines });
           } else {
-              console.log('End of file reached.');
+            return res.status(200).send('End of file reached.');
           }
         });
       });
@@ -64,9 +63,8 @@ exports.getPM2Logs = async (req, res) => {
   }
 };
 
-function readPage(pageNumber, pageSize, stream, callback) {
+function readFile(pageNumber, pageSize, stream, callback) {
   let lines = [];
-  let currentPage = 0;
 
   stream.on('data', (chunk) => {
       const chunkLines = chunk.toString().split('\n');
@@ -79,14 +77,17 @@ function readPage(pageNumber, pageSize, stream, callback) {
       const end = start + pageSize;
       const pageLines = lines.slice(start, end);
 
-      currentPage++;
+      console.log("--------------**---------------------");
+      console.log("Total lines:", lines.length);
+      console.log({start}, {end});
+      console.log("-----------------------------------");
 
-      if (currentPage === pageNumber + 1) {
-          callback(pageLines);
+      if(start >= lines.length) {
+        callback(null);
       } else {
-          console.log('End of file reached before desired page.');
-          callback(null);
+        callback({Lines: pageLines});
       }
+      
   });
 
   stream.on('error', (err) => {
