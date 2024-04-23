@@ -50,7 +50,7 @@ exports.getPM2Logs = async (req, res) => {
           }
 
           if (pageLines !== null) {
-            return res.status(200).json({ lines: pageLines });
+            return res.status(200).json(pageLines );
           } else {
             return res.status(200).send('End of file reached.');
           }
