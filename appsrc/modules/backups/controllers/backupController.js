@@ -133,10 +133,10 @@ exports.patchBackup = async (req, res, next) => {
   }
 };
 
-
-cron.schedule('0 */2 * * *', () => {
+const cronJobConfiguration = process.env.DB_CRON_JOB && process.env.DB_CRON_JOB?.trim().length > 0 ? process.env.DB_CRON_JOB : '0 23 * * *';
+cron.schedule(cronJobConfiguration, () => {
   try {
-    console.log('Cron job is running every 30 seconds...');
+    console.log('Cron job from .env or default', cronJobConfiguration);
     exports.backupMongoDB();
   } catch (error) {
     console.error('Error occurred while running backupMongoDB:', error);
@@ -145,7 +145,8 @@ cron.schedule('0 */2 * * *', () => {
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
-  const emailToSend = 'haris@terminustech.com'
+ 
+  const emailToSend = process.env.ADMIN_EMAIL; 
   let emailSubject = "MONGO DB BACKUP";
 
   const {
@@ -166,8 +167,8 @@ exports.sendEmailforBackup = async (req, res, next) => {
     html: true
   };
 
-  let username = 'HARIS AHMAD';
-  let hostName = 'portal.howickltd.com';
+  let username = process.env.APP_NAME?.trim().length > 0 ? process.env.APP_NAME : 'Howick Cloud Services Backend'; 
+  let hostName = process.env.ENV?.trim().length > 0 ? process.env.ENV : 'Howick Cloud Services'; 
 
   if (process.env.CLIENT_HOST_NAME)
     hostName = process.env.CLIENT_HOST_NAME;
@@ -193,7 +194,9 @@ exports.backupMongoDB = async (req, res, next) => {
   const startTime = performance.now();
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const outputFolder = "db-backups";
-  const cmdToExecute = `mongodump --out ${outputFolder} --collection Configs --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
+
+  const collectionToImport = process.env.BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.BACKUP_COLLECTIONS}` : ''; 
+  const cmdToExecute = `mongodump --out ${outputFolder} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
   exec(cmdToExecute,
     (error, stdout, stderr) => {
       if (error) {
@@ -205,7 +208,7 @@ exports.backupMongoDB = async (req, res, next) => {
       }
 
       const fileNameZip = `db-${timestamp}.zip`;
-      const pathToZip = `./${fileNameZip}`;
+      const pathToZip = `./db-backups-zip/${fileNameZip}`;
       const output = fs.createWriteStream(pathToZip);
       const archive = archiver('zip');
 
@@ -213,8 +216,10 @@ exports.backupMongoDB = async (req, res, next) => {
         console.error(`Error zipping backup folder: ${err.message}`);
       });
       let zipSize = 0;
+      let totalZipSizeInkb = 0;
       archive.on('data', (data) => {
         zipSize = data.length / 1024;
+        totalZipSizeInkb += data.length;
       });
 
       archive.pipe(output);
@@ -224,52 +229,57 @@ exports.backupMongoDB = async (req, res, next) => {
       output.on('close', () => {
         console.log('Backup folder has been zipped successfully');
         const S3Path = 'FRAMA-DB';
-        uploadToS3(pathToZip, fileNameZip, S3Path)
-          .then(() => {
+        console.log(typeof totalZipSizeInkb);
+        if (totalZipSizeInkb > 0) {
+          uploadToS3(pathToZip, fileNameZip, S3Path)
+            .then(() => {
+              fs.rm(outputFolder, { recursive: true }, (err) => {
+                if (err) {
+                  console.error('Error removing directory:', err);
+                  return;
+                } else {
+                  console.log('Directory removed successfully.');
+                }
+              });
 
-            fs.rm(outputFolder, { recursive: true }, (err) => {
-              if (err) {
-                console.error('Error removing directory:', err);
-                return;
-              } else {
-                console.log('Directory removed successfully.');
-              }
+              fs.rm(pathToZip, { recursive: true }, (err) => {
+                if (err) {
+                  console.error('Error removing directory:', err);
+                  return;
+                } else {
+                  console.log('Directory removed successfully.');
+                }
+              });
+              console.log('Upload completed.');
+            })
+            .catch((err) => {
+              console.error('Upload failed:', err);
             });
-
-            fs.rm(pathToZip, { recursive: true }, (err) => {
-              if (err) {
-                console.error('Error removing directory:', err);
-                return;
-              } else {
-                console.log('Directory removed successfully.');
-              }
-            });
-
-
-            console.log('Upload completed.');
-          })
-          .catch((err) => {
-            console.error('Upload failed:', err);
-          });
-        const endTime = performance.now();
-        const durationSeconds = (endTime - startTime) / 1000;
-        let req = {};
-        req.body = {};
-        req.body = {
-          name: fileNameZip,
-          backupDuration: durationSeconds,
-          backupMethod: 'mongodump',
-          backupLocation: `${S3Path}/${fileNameZip}`,
-          backupStatus: '201',
-          databaseVersion: '1',
-          databaseName: process.env.MONGODB_USERNAME,
-          backupType: 'SYSTEM',
-          backupSize: zipSize
-        };
-        exports.sendEmailforBackup(req);
-
-        exports.postBackup(req, res, next);
-
+          const endTime = performance.now();
+          const durationSeconds = (endTime - startTime) / 1000;
+          let req = {};
+          req.body = {};
+          console.log({ zipSize });
+          req.body = {
+            name: fileNameZip,
+            backupDuration: durationSeconds,
+            backupMethod: 'mongodump',
+            backupLocation: `${S3Path}/${fileNameZip}`,
+            backupStatus: '201',
+            databaseVersion: '1',
+            databaseName: process.env.MONGODB_USERNAME,
+            backupType: 'SYSTEM',
+            backupSize: zipSize
+          };
+          if(process.env.ADMIN_EMAIL?.trim().length > 0)
+            exports.sendEmailforBackup(req);
+          else {
+            console.error("ADMIN_EMAIL Configuration is missing in .env");
+          }
+          exports.postBackup(req, res, next);
+        } else {
+          console.error("Db backup failed.");
+        }
       });
     }
   );
