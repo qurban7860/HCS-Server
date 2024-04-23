@@ -208,7 +208,7 @@ exports.backupMongoDB = async (req, res, next) => {
       }
 
       const fileNameZip = `db-${timestamp}.zip`;
-      const pathToZip = `./db-backups-zip/${fileNameZip}`;
+      const pathToZip = `./${fileNameZip}`;
       const output = fs.createWriteStream(pathToZip);
       const archive = archiver('zip');
 
@@ -229,7 +229,7 @@ exports.backupMongoDB = async (req, res, next) => {
       output.on('close', () => {
         console.log('Backup folder has been zipped successfully');
         const S3Path = 'FRAMA-DB';
-        console.log(typeof totalZipSizeInkb);
+        console.log('SIZE: ',totalZipSizeInkb);
         if (totalZipSizeInkb > 0) {
           uploadToS3(pathToZip, fileNameZip, S3Path)
             .then(() => {
