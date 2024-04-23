@@ -3,7 +3,7 @@ const fs = require('fs');
 
 exports.getPM2Logs = async (req, res) => {
   try {
-    var { app = 'hcs-dev-server', out_log = true, err_log, pageNumber = 0, pageSize = 100} = req.query;
+    var { app = 'hcs-dev-server', out_log = true, err_log, pageNumber = 0, pageSize = 100 } = req.query;
     pageNumber = parseInt(pageNumber);
     pageSize = parseInt(pageSize);
 
@@ -45,12 +45,12 @@ exports.getPM2Logs = async (req, res) => {
 
         readFile(pageNumber, pageSize, stream, (pageLines, error) => {
           if (error) {
-              console.error('Error:', error);
-              return res.status(500).json({ error: 'Internal server error' });
+            console.error('Error:', error);
+            return res.status(500).json({ error: 'Internal server error' });
           }
 
           if (pageLines !== null) {
-              return res.status(200).json({ lines: pageLines });
+            return res.status(200).json({ lines: pageLines });
           } else {
             return res.status(200).send('End of file reached.');
           }
@@ -67,31 +67,39 @@ function readFile(pageNumber, pageSize, stream, callback) {
   let lines = [];
 
   stream.on('data', (chunk) => {
-      const chunkLines = chunk.toString().split('\n');
-      lines = lines.concat(chunkLines);
+    const chunkLines = chunk.toString().split('\n');
+    lines = lines.concat(chunkLines);
   });
 
   stream.on('end', () => {
-      lines.reverse();
-      const start = pageNumber * pageSize;
-      const end = start + pageSize;
-      const pageLines = lines.slice(start, end);
+    lines.reverse();
+    const start = pageNumber * pageSize;
+    const end = start + pageSize;
+    const pageLines = lines.slice(start, end);
 
-      console.log("--------------**---------------------");
-      console.log("Total lines:", lines.length);
-      console.log({start}, {end});
-      console.log("-----------------------------------");
+    console.log("--------------**---------------------");
+    console.log("Total lines:", lines.length);
+    console.log({ start }, { end });
+    console.log("-----------------------------------");
 
-      if(start >= lines.length) {
-        callback(null);
-      } else {
-        callback({Lines: pageLines});
+    if (start >= lines.length) {
+      callback(null);
+    } else {
+      const returnResponce = {
+        data: pageLines,
+        totalPages: Math.ceil(lines.length / pageSize),
+        currentPage: pageNumber,
+        pageSize: pageSize,
+        totalCount: (lines.length)
       }
-      
+
+      callback(returnResponce);
+    }
+
   });
 
   stream.on('error', (err) => {
-      console.error('Error reading file:', err);
-      callback(null, err);
+    console.error('Error reading file:', err);
+    callback(null, err);
   });
 }
