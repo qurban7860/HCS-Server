@@ -29,10 +29,12 @@ const docSchema = new Schema({
         department: { type: Schema.Types.ObjectId, ref: 'Department'},
         // Reporting to person.
         
-        
         sites: [{ type: Schema.Types.ObjectId, ref: 'CustomerSite' }],
         // list of sites with which this contact is associated. 
         // It may not required at this moment
+
+        formerEmployee: { type: Boolean , default: false },
+
 },
 {
         collection: 'CustomerContacts'
