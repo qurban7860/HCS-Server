@@ -218,7 +218,7 @@ exports.backupMongoDB = async (req, res, next) => {
       let zipSize = 0;
       let totalZipSizeInkb = 0;
       archive.on('data', (data) => {
-        zipSize = data.length / 1024;
+        zipSize = data.length / (1024 * 1024); // Size in MB
         totalZipSizeInkb += data.length;
       });
 
