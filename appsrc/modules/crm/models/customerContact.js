@@ -35,6 +35,8 @@ const docSchema = new Schema({
 
         formerEmployee: { type: Boolean , default: false },
 
+        archivedByCustomer: {type: Boolean, default: false},
+
 },
 {
         collection: 'CustomerContacts'

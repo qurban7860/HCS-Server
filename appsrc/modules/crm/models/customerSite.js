@@ -27,6 +27,8 @@ const docSchema = new Schema({
     
     contacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
     // list of associated other contacts (GUIDs) from contacts collection
+
+    archivedByCustomer: {type: Boolean, default: false},
 },
 {
     collection: 'CustomerSites'
