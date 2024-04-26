@@ -243,7 +243,7 @@ exports.getProduct = async (req, res, next) => {
       }
 
       let machineProfileQuery = {type:"MANUFACTURE", machine: machine._id, isActive:true, isArchived:false};
-      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
+      machine.machineProfiles = await ProductProfile.find(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
 
 
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
@@ -355,9 +355,9 @@ exports.getProducts = async (req, res, next) => {
       const machineProfiles = await ProductProfile.find(machineProfileQuery).select('machine names defaultName web flange').sort({ _id: 1 });
       products = products.map(product => product.toObject());
       for (const [index, product] of products.entries()) {
-        const profile = machineProfiles.find(profile => profile.machine+'' === product._id+'');
-        if (profile) {
-          products[index].profile = profile;
+        const profiles = machineProfiles.filter(profile => profile.machine + '' === product._id + '');
+        if (profiles) {
+          products[index].profiles = profiles;
         }
       }
       
