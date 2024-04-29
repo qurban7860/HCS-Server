@@ -639,7 +639,7 @@ exports.patchProduct = async (req, res, next) => {
     }
 
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
-    if(machine.status?.slug && machine.status.slug === 'transferred'){
+    if(machine.status?.slug && machine.status.slug === 'transferred' && !("isArchived" in req.body)){
       if(!("isVerified" in req.body)){
         return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
       }
