@@ -247,7 +247,7 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(req.body.ref?.trim().length === 0) {
+    if(req.body.ref?.trim().length > 0) {
       let refCode = "^" + req.body.ref.trim() + "$";
       let queryRef = {
         ref: {
@@ -318,7 +318,7 @@ exports.patchCustomer = async (req, res, next) => {
       CustomerObj = await Customer.findOne(queryCustomer);
     }
 
-    if(req.body.ref?.trim().length === 0) {
+    if(req.body.ref?.trim().length > 0) {
       let refCode = "^" + req.body.ref.trim() + "$";
       let queryRef = {
         ref: {
