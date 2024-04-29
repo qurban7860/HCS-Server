@@ -215,10 +215,8 @@ exports.backupMongoDB = async (req, res, next) => {
       archive.on('error', (err) => {
         console.error(`Error zipping backup folder: ${err.message}`);
       });
-      let zipSize = 0;
       let totalZipSizeInkb = 0;
       archive.on('data', (data) => {
-        zipSize = data.length / (1024 * 1024); // Size in MB
         totalZipSizeInkb += data.length;
       });
 
@@ -259,7 +257,7 @@ exports.backupMongoDB = async (req, res, next) => {
           const durationSeconds = (endTime - startTime) / 1000;
           let req = {};
           req.body = {};
-          console.log({ zipSize });
+          console.log({ totalZipSizeInkb });
           req.body = {
             name: fileNameZip,
             backupDuration: durationSeconds,
@@ -269,7 +267,7 @@ exports.backupMongoDB = async (req, res, next) => {
             databaseVersion: '1',
             databaseName: process.env.MONGODB_USERNAME,
             backupType: 'SYSTEM',
-            backupSize: zipSize
+            backupSize: totalZipSizeInkb > 0 ? totalZipSizeInkb / (1024 * 1024) : 0
           };
           if(process.env.ADMIN_EMAIL?.trim().length > 0)
             exports.sendEmailforBackup(req);
