@@ -339,6 +339,10 @@ exports.patchCustomer = async (req, res, next) => {
         return res.status(StatusCodes.ACCEPTED).json(customer);
       }
 
+      if(req.body.ref?.trim().length === 0) {
+        delete req.body.ref;
+      }
+
       this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
