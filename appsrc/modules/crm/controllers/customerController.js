@@ -247,6 +247,19 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body.ref?.trim().length === 0) {
+      let refCode = "^" + req.body.ref.trim() + "$";
+      let queryRef = {
+        ref: {
+          $regex: refCode,
+          $options: 'i'
+        }
+      };
+      const refFound = await Customer.findOne(queryRef).lean().select('_id');
+      if(refFound) {
+        return res.status(StatusCodes.BAD_REQUEST).send(`The reference already exists within the system, indicating duplication constraints.`);
+      }
+    }
 
     if (req.body.clientCode && typeof req.body.clientCode != "undefined" && req.body.clientCode.length > 0) {
       let clientCode = "^" + req.body.clientCode.trim() + "$";
@@ -263,9 +276,6 @@ exports.postCustomer = async (req, res, next) => {
     if (CustomerObj) {
       res.status(StatusCodes.CONFLICT).send("Customer already exists with same client code!");
     } else {
-      if (req.body.ref?.trim().length === 0) {
-        delete req.body.ref;
-      }
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       var _this = this;
       function callbackFunc(error, response) {
@@ -307,6 +317,20 @@ exports.patchCustomer = async (req, res, next) => {
       CustomerObj = await Customer.findOne(queryCustomer);
     }
 
+    if(req.body.ref?.trim().length === 0) {
+      let refCode = "^" + req.body.ref.trim() + "$";
+      let queryRef = {
+        ref: {
+          $regex: refCode,
+          $options: 'i'
+        }, _id: { $ne: req.params.id }
+      };
+      const refFound = await Customer.findOne(queryRef).lean().select('_id');
+      if(refFound) {
+        return res.status(StatusCodes.BAD_REQUEST).send(`The reference already exists within the system, indicating duplication constraints.`);
+      }
+    }
+
     if (!CustomerObj) {
       if (("isArchived" in req.body && req.body.isArchived === true) || ("isActive" in req.body && req.body.isActive === false)) {
         let customer = await Customer.findById(req.params.id);
@@ -344,10 +368,6 @@ exports.patchCustomer = async (req, res, next) => {
         })
         customer = await customer.save();
         return res.status(StatusCodes.ACCEPTED).json(customer);
-      }
-
-      if(req.body.ref?.trim().length === 0) {
-        delete req.body.ref;
       }
 
       this.dbservice.patchObject(Customer, req.params.id, getDocumentFromReq(req), callbackFunc);
