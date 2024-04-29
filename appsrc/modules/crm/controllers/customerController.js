@@ -256,6 +256,7 @@ exports.postCustomer = async (req, res, next) => {
         }
       };
       const refFound = await Customer.findOne(queryRef).lean().select('_id');
+      console.log({refFound});
       if(refFound) {
         return res.status(StatusCodes.BAD_REQUEST).send(`The reference already exists within the system, indicating duplication constraints.`);
       }
