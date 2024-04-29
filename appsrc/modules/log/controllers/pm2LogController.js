@@ -101,11 +101,6 @@ function readFile(pageNumber, pageSize, stream, callback) {
     const end = start + pageSize;
     const pageLines = lines.slice(start, end);
 
-    console.log("--------------**---------------------");
-    console.log("Total lines:", lines.length);
-    console.log({ start }, { end });
-    console.log("-----------------------------------");
-
     if (start >= lines.length) {
       callback(null);
     } else {
