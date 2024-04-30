@@ -31,9 +31,10 @@ const docSchema = new Schema({
   files : [],
   // list of documents/images related to this checkitem
 
-  isHistory: {type: Boolean, default: false}
+  isHistory: {type: Boolean, default: false},
   //if value is updated flag should be set to true as considered as history one.
 
+  archivedByMachine: {type: Boolean, default: false},
 },
 {
     collection: 'MachineServiceRecordValues'

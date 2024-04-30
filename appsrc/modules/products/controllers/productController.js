@@ -12,8 +12,11 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductDrawing, ProductServiceRecords, ProductLicense } = require('../models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceRecords, ProductServiceRecordValue, ProductLicense } = require('../models');
 const { ProductConfiguration } = require('../../apiclient/models');
+
+const { ErpLog } = require('../../log/models');
+
 const { Document } = require('../../documents/models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 const { postProductAuditLog, patchProductAuditLog } =  require('./productAuditLogController');
@@ -633,6 +636,7 @@ exports.patchProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    await updateArchivedStatus(req);
     const dublicateRecord = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
     if(dublicateRecord) {
       return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
@@ -727,6 +731,29 @@ exports.patchProduct = async (req, res, next) => {
     }
   }
 };
+
+async function updateArchivedStatus(req) {
+  if ("isArchived" in req.body) {
+    const machineid = req.params.id;
+    const isArchived = req.body.isArchived;
+    let whereClause = { machine: machineid, isArchived: !isArchived };
+    if(!isArchived) {
+      whereClause.archivedByMachine = true;
+    }
+    const setClause = { isArchived: isArchived, archivedByMachine: isArchived };
+    await ProductTechParamValue.updateMany(whereClause, setClause);
+    await ProductToolInstalled.updateMany(whereClause, setClause);
+    await ProductNote.updateMany(whereClause, setClause);
+    await ProductDrawing.updateMany(whereClause, setClause);
+    await Document.updateMany(whereClause, setClause);
+    await ProductLicense.updateMany(whereClause, setClause);
+    await ProductProfile.updateMany(whereClause, setClause);
+    await ProductServiceRecords.updateMany(whereClause, setClause);
+    await ProductServiceRecordValue.updateMany(whereClause, setClause);
+    await ProductConfiguration.updateMany(whereClause, setClause);
+    await ErpLog.updateMany(whereClause, setClause); //optional
+  }
+}
 
 exports.transferOwnership = async (req, res, next) => {
   const errors = validationResult(req);

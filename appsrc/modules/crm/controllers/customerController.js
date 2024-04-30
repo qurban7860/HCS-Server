@@ -420,7 +420,9 @@ async function updateArchivedStatus(req) {
     const isArchived = req.body.isArchived;
     const whereClause = { customer: customerId, isArchived: !isArchived };
     const setClause = { isArchived: isArchived, archivedByCustomer: isArchived };
-
+    if(!isArchived) {
+      whereClause.archivedByMachine = true;
+    }
     await CustomerSite.updateMany(whereClause, setClause);
     await CustomerContact.updateMany(whereClause, setClause);
     await CustomerNote.updateMany(whereClause, setClause);

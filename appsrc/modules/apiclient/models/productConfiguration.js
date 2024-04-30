@@ -28,6 +28,8 @@ const docSchema = new Schema({
 
     backupDate: { type: Date },
 
+    archivedByMachine: {type: Boolean, default: false},
+
 },
 {
     collection: 'MachineConfigurations'

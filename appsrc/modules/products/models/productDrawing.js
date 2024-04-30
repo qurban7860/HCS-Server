@@ -16,7 +16,9 @@ const docSchema = new Schema({
     documentType: { type: Schema.Types.ObjectId, required:true, ref: 'DocumentType' },
     // any note for attachment
     
-    document: { type: Schema.Types.ObjectId, required:true, ref: 'Document' }
+    document: { type: Schema.Types.ObjectId, required:true, ref: 'Document' },
+    
+    archivedByMachine: {type: Boolean, default: false},
 
 },
 {

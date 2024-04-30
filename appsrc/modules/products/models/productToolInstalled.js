@@ -105,6 +105,8 @@ const docSchema = new Schema({
         // will inherit list of conditions from Machine Tool Installed
     }],
 
+    archivedByMachine: {type: Boolean, default: false},
+
 },
 {
     collection: 'MachineToolsInstalled'
