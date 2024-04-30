@@ -21,6 +21,8 @@ const docSchema = new Schema({
         
         note: { type: String, required: true },
         // This will be used to handle any kind of comments or notes against any above field
+
+        archivedByCustomer: {type: Boolean, default: false},
 },
 {
         collection: 'CustomerNotes'

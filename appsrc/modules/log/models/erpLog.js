@@ -56,6 +56,8 @@ const docSchema = new Schema({
         customer : { type: Schema.Types.ObjectId , ref: 'Customer' },
         
         machine : { type: Schema.Types.ObjectId , ref: 'Machine' },
+
+        archivedByMachine: {type: Boolean, default: false},
         
 },
 {

@@ -23,7 +23,9 @@ const docSchema = new Schema({
         waste: { type: Number },
         extensionTime:{ type: Date , default: Date.now, required: true },
         requestTime:{ type: Date , default: Date.now, required: true } 
-    }  
+    },
+    
+    archivedByMachine: {type: Boolean, default: false},
       
 },
 {

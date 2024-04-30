@@ -525,7 +525,7 @@ function getContactName(contact) {
 
 function getDocumentFromReq(req, reqType){
   const { firstName, lastName, title, contactTypes, phone, phoneNumbers, email, sites,  address, reportingTo, department, 
-    isActive, isArchived, loginUser } = req.body;
+    formerEmployee, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -571,6 +571,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("reportingTo" in req.body){
     doc.reportingTo = reportingTo;
+  }
+
+  if ("formerEmployee" in req.body){
+    doc.formerEmployee = formerEmployee;
   }
   
   if ("isActive" in req.body){

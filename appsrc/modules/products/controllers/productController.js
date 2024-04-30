@@ -12,8 +12,11 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductDrawing, ProductServiceRecords, ProductLicense } = require('../models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceRecords, ProductServiceRecordValue, ProductLicense } = require('../models');
 const { ProductConfiguration } = require('../../apiclient/models');
+
+const { ErpLog } = require('../../log/models');
+
 const { Document } = require('../../documents/models');
 const { connectMachines, disconnectMachine_ } = require('./productConnectionController');
 const { postProductAuditLog, patchProductAuditLog } =  require('./productAuditLogController');
@@ -243,7 +246,7 @@ exports.getProduct = async (req, res, next) => {
       }
 
       let machineProfileQuery = {type:"MANUFACTURE", machine: machine._id, isActive:true, isArchived:false};
-      machine.machineProfile = await ProductProfile.findOne(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
+      machine.machineProfiles = await ProductProfile.find(machineProfileQuery).select('names defaultName web flange').sort({_id: 1});
 
 
       if(machine && machine.machineModel && machine.machineModel.category && machine.machineModel.category.connections) {
@@ -351,6 +354,16 @@ exports.getProducts = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
+      const machineProfileQuery = { type: "MANUFACTURE", isActive: true, isArchived: false };
+      const machineProfiles = await ProductProfile.find(machineProfileQuery).select('machine names defaultName web flange').sort({ _id: 1 });
+      products = products.map(product => product.toObject());
+      for (const [index, product] of products.entries()) {
+        const profiles = machineProfiles.filter(profile => profile.machine + '' === product._id + '');
+        if (profiles) {
+          products[index].profiles = profiles;
+        }
+      }
+      
       if(req.query.getConnectedMachine) {
         let index = 0;
         let filteredProducts = [];
@@ -623,13 +636,14 @@ exports.patchProduct = async (req, res, next) => {
     console.log("errors machine patch request",errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    await updateArchivedStatus(req);
     const dublicateRecord = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
     if(dublicateRecord) {
       return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
     }
 
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
-    if(machine.status?.slug && machine.status.slug === 'transferred'){
+    if(machine.status?.slug && machine.status.slug === 'transferred' && !("isArchived" in req.body)){
       if(!("isVerified" in req.body)){
         return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
       }
@@ -717,6 +731,29 @@ exports.patchProduct = async (req, res, next) => {
     }
   }
 };
+
+async function updateArchivedStatus(req) {
+  if ("isArchived" in req.body) {
+    const machineid = req.params.id;
+    const isArchived = req.body.isArchived;
+    let whereClause = { machine: machineid, isArchived: !isArchived };
+    if(!isArchived) {
+      whereClause.archivedByMachine = true;
+    }
+    const setClause = { isArchived: isArchived, archivedByMachine: isArchived };
+    await ProductTechParamValue.updateMany(whereClause, setClause);
+    await ProductToolInstalled.updateMany(whereClause, setClause);
+    await ProductNote.updateMany(whereClause, setClause);
+    await ProductDrawing.updateMany(whereClause, setClause);
+    await Document.updateMany(whereClause, setClause);
+    await ProductLicense.updateMany(whereClause, setClause);
+    await ProductProfile.updateMany(whereClause, setClause);
+    await ProductServiceRecords.updateMany(whereClause, setClause);
+    await ProductServiceRecordValue.updateMany(whereClause, setClause);
+    await ProductConfiguration.updateMany(whereClause, setClause);
+    await ErpLog.updateMany(whereClause, setClause); //optional
+  }
+}
 
 exports.transferOwnership = async (req, res, next) => {
   const errors = validationResult(req);

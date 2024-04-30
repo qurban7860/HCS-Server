@@ -26,7 +26,7 @@ this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'},
   {path: 'customer', select: 'name isActive'},
-  {path: 'contact', select: 'firstName lastName isActive'},
+  {path: 'contact', select: 'firstName lastName formerEmployee isActive'},
   {path: 'roles', select: ''},
   {path: 'regions', populate: {
     path: 'countries',
@@ -38,7 +38,7 @@ this.populate = [
 
 this.populateList = [
   {path: 'customer', select: 'name'},
-  {path: 'contact', select: 'firstName lastName'},
+  {path: 'contact', select: 'firstName lastName formerEmployee'},
   {path: 'roles', select: ''},
   // {path: 'regions', select: ''},
 ];
