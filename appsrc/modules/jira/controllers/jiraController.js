@@ -19,25 +19,25 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.params = { query: {name: "0.0.1"}};
+this.params = { query: { name: "0.0.1" } };
 
 exports.getReleases = async (req, res, next) => {
   try {
     const jiraProject = process.env.JIRA_PROJECT;
-    
+
 
     let config = {
       url: getURL("project/HPS/version"),
       method: 'get',
-      params: {orderBy:'-name'},
+      params: { orderBy: '-name' },
       ...getHeader(),
     };
 
 
-    if(req?.query?.query) {
+    if (req?.query?.query) {
       config.params.query = req.query.query;
     }
-    if(req?.query?.orderBy) {
+    if (req?.query?.orderBy) {
       config.params.orderBy = req.query.orderBy;
     }
 
@@ -77,13 +77,72 @@ exports.getRelease = async (req, res, next) => {
   }
 };
 
+exports.getTickets = async (req, res, next) => {
+  try {
+    const jiraProject = process.env.JIRA_HWKSC_PROJECT;
+    const URL = getURL("search");
+    const HEADER = await getHWKSCHeader();
+    let config = {
+      url: URL,
+      method: 'get',
+      params: {
+        jql: `project = ${jiraProject}`,
+        orderBy: '-created',
+        startAt:0,
+        maxResults:10
+      },
+      ...HEADER,
+    };
+
+    if (req?.query?.query) {
+      config.params.query = req.query.query;
+    }
+
+    if (req?.query?.orderBy) {
+      config.params.orderBy = req.query.orderBy;
+    }
+
+    if (req?.query?.startAt) {
+      config.params.startAt = req.query.startAt;
+    }
+
+    if (req?.query?.maxResults) {
+      config.params.maxResults = req.query.maxResults;
+    }
+
+    axios(config)
+      .then(response => {
+        res.json(response.data);
+      })
+      .catch(error => {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      });
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
 
 function getHeader() {
   const tokenString = `${process.env.JIRA_USERNAME}:${process.env.JIRA_API_TOKEN}`;
   const base64String = Buffer.from(tokenString).toString('base64');
   const config = {
     headers: {
-      'Authorization': `Basic ${base64String}`
+      'Authorization': `Basic ${base64String}`, "Accept-Encoding": "gzip,deflate,compress"
+    },
+    timeout: 10000,
+  };
+  return config;
+}
+
+async function getHWKSCHeader() {
+  const tokenString = `${process.env.JIRA_HWKSC_USERNAME}:${process.env.JIRA_HWKSC_API_TOKEN}`;
+  const base64String = Buffer.from(tokenString).toString('base64');
+  const config = {
+    headers: {
+      'Authorization': `Basic ${base64String}`, "Accept-Encoding": "gzip,deflate,compress"
     },
     timeout: 10000,
   };
