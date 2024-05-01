@@ -79,9 +79,19 @@ exports.getRelease = async (req, res, next) => {
 
 exports.getTickets = async (req, res, next) => {
   try {
-    const jiraProject = process.env.JIRA_HWKSC_PROJECT;
+    let jiraProject =  'HWKSC';
+    if (req?.query?.project) {
+      jiraProject = req?.query?.project;
+    }
+
     const URL = getURL("search");
-    const HEADER = await getHWKSCHeader();
+    let HEADER = '';
+    if(jiraProject === 'HWKSC') {
+      HEADER = await getHWKSCHeader();
+    } else {
+      HEADER = await getHeader();
+    }
+    
     let config = {
       url: URL,
       method: 'get',
