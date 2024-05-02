@@ -23,7 +23,9 @@ const docSchema = new Schema({
         techParamValue: { type: String, required: true },
         updatedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
         updatedAt: { type: Date, default: Date.now },
-    }]
+    }],
+
+    archivedByMachine: {type: Boolean, default: false},
 },
 {
     collection: 'MachineTechParamValues'

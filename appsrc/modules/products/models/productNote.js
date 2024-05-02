@@ -12,6 +12,8 @@ const docSchema = new Schema({
   
     note: { type: String, required: true },
     // license key
+
+    archivedByMachine: {type: Boolean, default: false},
 },
 {
     collection: 'MachineNotes'

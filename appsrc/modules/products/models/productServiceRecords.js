@@ -74,6 +74,8 @@ const docSchema = new Schema({
 
   isHistory: { type: Boolean, default: false },
   // just indication of current active record.
+
+  archivedByMachine: {type: Boolean, default: false},
 },
 {
     collection: 'MachineServiceRecords'

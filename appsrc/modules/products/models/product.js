@@ -127,6 +127,11 @@ const docSchema = new Schema({
     verifications : [{
         verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
         verifiedDate: { type: Date }
+    }],
+
+    statusChangeHistory : [{
+        status : { type: Schema.Types.ObjectId , ref: 'MachineStatus' },
+        dated: { type: Date }
     }]
 },
 {

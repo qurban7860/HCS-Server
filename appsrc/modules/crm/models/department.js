@@ -9,6 +9,8 @@ const docSchema = new Schema({
         departmentName: { type: String, required: true},
         // Department Name
 
+        forCustomer: { type: Boolean, default:false },
+
         isDefault: { type: Boolean, default:false }
 },
 {
