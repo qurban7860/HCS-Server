@@ -38,6 +38,8 @@ router.get(`${baseRouteForObject}/fetchMachineTransferHistory/`, controller.fetc
 
 router.get(`${baseRouteForObject}/searchProductId/`, controller.getProductId);
 
+router.patch(`${baseRouteForObject}/:id/updateStatus/:statusid`, controller.patchProductStatus);
+
 router.get(`${baseRouteForObject}/:id`, controller.getProduct);
 
 router.post(`${baseRouteForObject}`, controller.postProduct);

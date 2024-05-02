@@ -46,7 +46,7 @@ async function main() {
 
     // var finalResults = [];
     // for (const loggingObj of logging) {
-    //     if (!loggingObj.drawingAlreadyExists && !loggingObj.drawingInsertedScript) {
+    //     if (!loggingObj.machineDrawingAlreadyExists && !loggingObj.machineDrawingAdded) {
     //         if (!loggingObj.propertiesNotFound || loggingObj.propertiesNotFound?.length === 0) {
     //             try {
     //                 const response = await uploadDocument(loggingObj);
@@ -143,20 +143,20 @@ async function main() {
                         let etags = [];
                         etags.push(ETAG);
                         const data_ = await checkFileExistenceByETag(etags);
-                        let fileFound = false;
+                        let fileETAGAlreadyExist = false;
                         if (data_[0]?.documentFiles) {
-                            fileFound = true;
+                            fileETAGAlreadyExist = true;
                             searchedObject = await data_.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === ETAG.toString());
                         }
 
 
                         let justDrawingInsertedThroughScript = false;
-                        let drawingAlreadyExists = false;
+                        let machineDrawingAlreadyExists = false;
 
                         if (searchedObject) {
                             const query_Search_Drawing = { document: searchedObject.document, machine: productObject._id };
-                            drawingAlreadyExists = await ProductDrawing.findOne(query_Search_Drawing);
-                            if (!drawingAlreadyExists) {
+                            machineDrawingAlreadyExists = await ProductDrawing.findOne(query_Search_Drawing);
+                            if (!machineDrawingAlreadyExists) {
                                 const payload = {
                                     "machine": productObject._id,
                                     "documentId": searchedObject.document,
@@ -189,16 +189,16 @@ async function main() {
                         const versionNumber = matches_Version ? matches_Version[1] : 1;
 
                         const pdfData = fs.readFileSync(filePath);
-                        drawingAlreadyExists = drawingAlreadyExists ? true : false;
+                        machineDrawingAlreadyExists = machineDrawingAlreadyExists ? true : false;
                         const objectValues = {
                             pdfData, filePath_, referenceNumber, versionNumber, docxCategory, docxTypeDB,
-                            childFolder, productObject, fileName, filePath, drawingAlreadyExists, justDrawingInsertedThroughScript, fileFound,
+                            childFolder, productObject, fileName, filePath, machineDrawingAlreadyExists, justDrawingInsertedThroughScript, fileETAGAlreadyExist,
                         }
                         const data_log = await parsePDFAndLog(objectValues);
 
 
 
-                        // if (!data_log.drawingAlreadyExists && !data_log.drawingInsertedScript) {
+                        // if (!data_log.machineDrawingAlreadyExists && !data_log.machineDrawingAdded) {
                         //     const propertiesNotFound = checkKeyValues(data_log);
 
                         //     if (!propertiesNotFound || propertiesNotFound?.length == 0) {
@@ -219,7 +219,7 @@ async function main() {
                         if (propertiesNotFound && propertiesNotFound?.length != 0) {
                             data_log.propertiesNotFound = propertiesNotFound;
                         } else {
-                            if (!data_log.drawingAlreadyExists && !data_log.drawingInsertedScript) {
+                            if (!data_log.machineDrawingAlreadyExists && !data_log.machineDrawingAdded) {
                                 if (!data_log.propertiesNotFound || data_log.propertiesNotFound?.length === 0) {
                                     try {
                                         // const response = await uploadDocument(data_log);
@@ -283,10 +283,9 @@ async function main() {
                     customerAccess: false,
                     isActive: true,
                     imagePath: obj.filePath,
-                    fileFound: obj.fileFound,
-                    drawingAlreadyExists: obj.drawingAlreadyExists ? true : false,
-                    drawingInsertedScript: obj.justDrawingInsertedThroughScript,
-                    uploadedSuccessfull: false,
+                    fileETAGAlreadyExist: obj.fileETAGAlreadyExist,
+                    machineDrawingAlreadyExists: obj.machineDrawingAlreadyExists ? true : false,
+                    machineDrawingAdded: obj.justDrawingInsertedThroughScript
                 };
                 resolve(logging);
             }).catch(function (error) {
@@ -366,7 +365,7 @@ async function main() {
         try {
             const { folderName, serialNo_DB, drawingMachine, documentCategory, documentCategoryName, documentType,
                 documentTypeName, displayName, name, versionNo, referenceNumber, stockNumber,
-                customerAccess, isActive, imagePath, drawingAlreadyExists, drawingInsertedScript } = data;
+                customerAccess, isActive, imagePath, machineDrawingAlreadyExists, machineDrawingAdded } = data;
 
             // Read the image file
             const imageData = fs.readFileSync(imagePath);
@@ -510,13 +509,13 @@ async function checkKeyValues(properties) {
     const keys_Values = { ...properties };
 
     // Remove specific keys from the copied object
-    delete keys_Values.drawingInsertedScript;
+    delete keys_Values.machineDrawingAdded;
     delete keys_Values.uploadedSuccessfull;
     delete keys_Values.customerAccess;
     delete keys_Values.documentTypeName;
-    delete keys_Values.drawingAlreadyExists;
+    delete keys_Values.machineDrawingAlreadyExists;
     delete keys_Values.documentCategoryName;
-    delete keys_Values.fileFound;
+    delete keys_Values.fileETAGAlreadyExist;
 
 
 

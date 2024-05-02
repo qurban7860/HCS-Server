@@ -16,6 +16,8 @@ router.get(`${baseRouteForObject}/:id`, controller.getRelease);
 
 router.get(`${baseRouteForObject}/`, controller.getReleases);
 
+router.get(`/tickets/`, controller.getTickets);
+
 
 
 module.exports = router;
