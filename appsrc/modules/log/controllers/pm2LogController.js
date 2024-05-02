@@ -99,8 +99,12 @@ function readFile(pageNumber, pageSize, stream, callback) {
     lines.reverse();
     const start = pageNumber * pageSize;
     const end = start + pageSize;
-    // const pageLines = lines.slice(start, end);
+    // let pageLines = lines.slice(start, end);
+    // pageLines.sort((a, b) => b.localeCompare(a));
+    // const resultString = pageLines.join('\n');
     const pageLines = lines.slice(start, end).join('\n');
+
+
 
     if (start >= lines.length) {
       callback(null);
