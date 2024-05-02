@@ -91,18 +91,34 @@ exports.getTickets = async (req, res, next) => {
     } else {
       HEADER = await getHeader();
     }
+
+    let JQL = `project = ${jiraProject}`;
+
+    if(req?.query?.serialNo?.trim().length > 0){
+      JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
+    }
+
+
+    if(req?.query?.ref?.trim().length > 0){
+      JQL += ` AND Organizations = "${req.query.ref}" `;
+    }
+
+    console.log({JQL});
+
     
     let config = {
       url: URL,
       method: 'get',
       params: {
-        jql: `project = ${jiraProject}`,
+        jql: JQL,
         orderBy: '-created',
         startAt:0,
         maxResults:10
       },
       ...HEADER,
     };
+
+    
 
     if (req?.query?.query) {
       config.params.query = req.query.query;
@@ -125,11 +141,9 @@ exports.getTickets = async (req, res, next) => {
         res.json(response.data);
       })
       .catch(error => {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Validation failed!");
       });
   } catch (error) {
-    logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
