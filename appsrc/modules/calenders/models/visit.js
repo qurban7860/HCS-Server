@@ -8,31 +8,32 @@ const Schema = mongoose.Schema;
 const docSchema = new Schema({
         customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
 
-        site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
-
-        contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
 
         machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
 
+        site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' }, //if customer and machine is inserted then its installation site is there.
+
         jiraTicket: { type: String, required: true },
 
-        technicians: [{ type: Schema.Types.ObjectId, ref: 'SecurityUsers', required: true }],
-        
+        primaryTechnician: { type: Schema.Types.ObjectId, ref: 'CustomerContact', required: true },     //Howick Technicians
+
+        supportingTechnicians: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact', required: true }], //Howick Technicians
+
+        notifyContacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact', required: true }], // All Contacts Howick
+
         status: {
                 type: String,
-                enum: ['scheduled', 'in_progress', 'completed', 'cancelled'],
-                default: 'scheduled'
+                enum: ['SCHEDULED', 'IN_PROCESS', 'COMPLETED', 'CANCELLED'],
+                default: 'SCHEDULED'
         },
-        
-        title: { type: String, maxlength: 200 },
-        
-        description: { type: String, maxlength: 200 },
-        
-        start: { type: Date, required: true },
-        
-        end: { type: Date, required: true },
-        
-        completedBy: [{ type: Schema.Types.ObjectId, ref: 'SecurityUsers', required: true }],
+
+
+        purposeOfVisit: { type: String, maxlength: 500 },
+
+        visitNote: { type: String, maxlength: 200 },
+
+        visitDate: { type: Date, required: true }
 },
         {
                 collection: 'Visits'

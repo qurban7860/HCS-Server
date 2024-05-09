@@ -96,7 +96,8 @@ exports.patchVisit = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType) {
-  const { customer, site, contact, machine, jiraTicket, technicians, status, title, description, start, end, completedBy, loginUser } = req.body;
+  const { customer, site, contact, machine, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
+    purposeOfVisit, visitNote, visitDate, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -120,27 +121,30 @@ function getDocumentFromReq(req, reqType) {
   if ("jiraTicket" in req.body) {
     doc.jiraTicket = jiraTicket;
   }
-  if ("technicians" in req.body) {
-    doc.technicians = technicians;
+
+  if ("primaryTechnician" in req.body) {
+    doc.primaryTechnician = primaryTechnician;
+  }
+  if ("supportingTechnicians" in req.body) {
+    doc.supportingTechnicians = supportingTechnicians;
+  }
+  if ("notifyContacts" in req.body) {
+    doc.notifyContacts = notifyContacts;
+  }
+  if ("notifyContacts" in req.body) {
+    doc.notifyContacts = notifyContacts;
   }
   if ("status" in req.body) {
     doc.status = status;
   }
-  if ("title" in req.body) {
-    doc.title = title;
+  if ("purposeOfVisit" in req.body) {
+    doc.purposeOfVisit = purposeOfVisit;
   }
-  if ("description" in req.body) {
-    doc.description = description;
+  if ("visitNote" in req.body) {
+    doc.visitNote = visitNote;
   }
-
-  if ("start" in req.body) {
-    doc.start = start;
-  }
-  if ("end" in req.body) {
-    doc.end = end;
-  }
-  if ("completedBy" in req.body) {
-    doc.completedBy = completedBy;
+  if ("visitDate" in req.body) {
+    doc.visitDate = visitDate;
   }
 
   if (reqType == "new" && "loginUser" in req.body) {
