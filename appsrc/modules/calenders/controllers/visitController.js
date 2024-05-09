@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let calenderDBService = require('../service/calenderDBService')
 this.dbservice = new calenderDBService();
 
-const { Visit } = require('../../config/models');
+const { Visit } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -99,6 +99,9 @@ function getDocumentFromReq(req, reqType) {
   const { customer, site, contact, machine, jiraTicket, technicians, status, title, description, start, end, completedBy, loginUser } = req.body;
 
   let doc = {};
+  if (reqType && reqType == "new") {
+    doc = new Visit({});
+  }
 
   if ("customer" in req.body) {
     doc.customer = customer;
