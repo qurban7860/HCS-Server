@@ -77,22 +77,6 @@ class CustomerService {
     const db = this.db;
     async.waterfall([
       function (callback) {
-        if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
-          this.db.postObject(newdocument.mainSite, callbackFunction);
-          function callbackFunction(error, response) {
-            console.log(error);
-            if (error) callback(error, {});
-            else {
-              newdocument.sites.push(response._id);
-              newdocument.mainSite = response._id;
-              callback(null, newdocument);
-            }
-          }
-        } else {
-          callback(null, newdocument);
-        }
-      }.bind(this),
-      function (data, callback) {
         if (newdocument.billingContact != undefined && typeof newdocument.billingContact !== "string") {
           this.db.postObject(newdocument.billingContact, callbackFunction);
           function callbackFunction(error, response) {
@@ -117,6 +101,24 @@ class CustomerService {
             else {
               newdocument.contacts.push(response._id);
               newdocument.primaryTechnicalContact = response._id;
+              callback(null, newdocument);
+            }
+          }
+        } else {
+          callback(null, newdocument);
+        }
+      }.bind(this),
+      function (data, callback) {
+        if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
+          newdocument.mainSite.primaryTechnicalContact = newdocument.primaryTechnicalContact;
+          newdocument.mainSite.primaryBillingContact = newdocument.primaryTechnicalContact;
+          this.db.postObject(newdocument.mainSite, callbackFunction);
+          function callbackFunction(error, response) {
+            console.log(error);
+            if (error) callback(error, {});
+            else {
+              newdocument.sites.push(response._id);
+              newdocument.mainSite = response._id;
               callback(null, newdocument);
             }
           }
