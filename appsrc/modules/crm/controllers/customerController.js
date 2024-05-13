@@ -609,6 +609,10 @@ function getDocumentFromReq(req, reqType) {
     doc.name = name;
   }
 
+  if ("isTechnicalContactSameAsBillingContact" in req.body) {
+    doc.isTechnicalContactSameAsBillingContact = isTechnicalContactSameAsBillingContact;
+  }
+
   if ("clientCode" in req.body) {
     doc.clientCode = clientCode.trim();
   }
