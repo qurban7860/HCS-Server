@@ -592,7 +592,7 @@ function getGUIDs(inputData) {
 
 function getDocumentFromReq(req, reqType) {
   const { name, clientCode, ref, tradingName, type, mainSite, sites, contacts, website,
-    billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact,
+    billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, isTechnicalContactSameAsBillingContact,
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
   let doc = {};
@@ -646,12 +646,14 @@ function getDocumentFromReq(req, reqType) {
       doc.mainSite.customer = doc._id;
     }
 
-    if (technicalContact != undefined && typeof technicalContact !== "string") {
-      var reqprimaryTechnicalContact = {};
-      reqprimaryTechnicalContact.body = technicalContact;
-      reqprimaryTechnicalContact.body.loginUser = req.body.loginUser;
-      doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
-      doc.technicalContact.customer = doc._id;
+    if(!isTechnicalContactSameAsBillingContact) {
+      if (technicalContact != undefined && typeof technicalContact !== "string") {
+        var reqprimaryTechnicalContact = {};
+        reqprimaryTechnicalContact.body = technicalContact;
+        reqprimaryTechnicalContact.body.loginUser = req.body.loginUser;
+        doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
+        doc.technicalContact.customer = doc._id;
+      }
     }
 
     if (billingContact != undefined && typeof billingContact !== "string") {

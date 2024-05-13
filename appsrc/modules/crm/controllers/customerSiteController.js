@@ -12,7 +12,12 @@ const _ = require('lodash');
 let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
-const { CustomerSite, CustomerContact, Customer } = require('../models');
+const { CustomerSite, CustomerContact, Customer, CustomerNote } = require('../models');
+const { ProductServiceRecords } = require('../../products/models');
+const { Visit } = require('../../calenders/models');
+
+const { Document } = require('../../documents/models');
+
 const applyUserFilter  = require('../utils/userFilters');
 
 const { Config, Country } = require('../../config/models');
@@ -173,6 +178,38 @@ exports.patchCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
+    if(req.body?.isArchived == 'true' || req.body?.isArchived === true ){
+      const customerFound = await Customer.findOne({mainSite: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(customerFound) {
+        res.status(StatusCodes.BAD_REQUEST).send("linked with customers"); 
+      }
+
+      const noteFound = await CustomerNote.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      console.log({noteFound});
+      if(noteFound) {
+        return res.status(StatusCodes.BAD_REQUEST).send("linked with Notes"); 
+      }
+
+      const documentSite = await Document.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(documentSite) {
+        return res.status(StatusCodes.BAD_REQUEST).send("linked with Document"); 
+      }
+
+      const productSite = await Product.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(productSite) {
+        return res.status(StatusCodes.BAD_REQUEST).send("linked with Product"); 
+      }
+
+      const productServiceRecord = await ProductServiceRecords.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(productServiceRecord) {
+        return res.status(StatusCodes.BAD_REQUEST).send("linked with Product Service Record"); 
+      }
+
+      const visitRecord = await Visit.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(visitRecord) {
+        return res.status(StatusCodes.BAD_REQUEST).send("linked with Product Service Record"); 
+      }
+    }
     if("isArchived" in req.body){
       // check if site exiists in customer schema
       let queryString  = { _id: req.params.customerId, mainSite: req.params.id };
