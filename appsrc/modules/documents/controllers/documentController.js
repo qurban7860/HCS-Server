@@ -294,7 +294,7 @@ exports.getDocuments = async (req, res, next) => {
 
             if(isDrawing) {
               document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
-              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item.machine.serialNo).join(', ');
+              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item?.machine?.serialNo).join(', ');
             }
             document_.documentVersions = documentVersions;
           }
