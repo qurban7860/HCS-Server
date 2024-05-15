@@ -24,8 +24,12 @@ this.populate = [
   { path: 'customer', select: 'name ref clientCode' },
   { path: 'site', select: 'name' },
   { path: 'contact', select: 'firstName lastName' },
-  { path: 'notifyContacts', select: 'firstName lastName phone email' },
-  { path: 'supportingTechnicians', select: 'firstName lastName phone email' },
+  { path: 'notifyContacts', select: 'firstName lastName' },
+  { path: 'supportingTechnicians', select: 'firstName lastName' },
+  { path: 'primaryTechnician', select: 'firstName lastName' },
+
+  
+
   { path: 'machine', select: 'serialNo' },
   { path: 'technicians', select: 'name phone email' },
   { path: 'completedBy', select: 'name phone email' },
