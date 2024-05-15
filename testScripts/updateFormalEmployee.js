@@ -12,7 +12,7 @@ const util = require('util');
 
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
 async function main() {
-    const listUsers = await SecurityUser.find({ currentEmployee: true }).select('-_id contact').lean();
+    const listUsers = await SecurityUser.find({ currentEmployee: false }).select('-_id contact').lean();
     const contactIds = listUsers.map(user => user.contact);
     const updatedRecords = await CustomerContact.updateMany(
         { _id: { $in: contactIds } },
