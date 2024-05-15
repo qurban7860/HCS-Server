@@ -3,10 +3,15 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { Customer, CustomerSite, CustomerContact } = require('../models');
+
+const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const { Config } = require('../../config/models');
-const { ProductServiceRecords } = require('../../products/models');
-const applyUserFilter  = require('../utils/userFilters');
+const { ProductServiceRecords, Product } = require('../../products/models');
+const { Visit } = require('../../calenders/models');
+const { SecurityUser } = require('../../security/models');
+const { Document, DocumentVersion, DocumentFile } = require('../../documents/models');
+
+const applyUserFilter = require('../utils/userFilters');
 
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
@@ -22,21 +27,19 @@ const ObjectId = require('mongoose').Types.ObjectId;
 const fs = require('fs');
 const path = require('path');
 
-
-
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { createdAt: -1 };
 this.populate = [
-                {path: 'customer', select: 'name'},
-                {path: 'department', select: 'departmentName'},
-                {path: 'reportingTo', select: 'firstName lastName'},
-                {path: 'createdBy', select: 'name'},
-                {path: 'updatedBy', select: 'name'}
-                ];
+  { path: 'customer', select: 'name' },
+  { path: 'department', select: 'departmentName' },
+  { path: 'reportingTo', select: 'firstName lastName' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
+];
 
 
 exports.getCustomerContact = async (req, res, next) => {
@@ -46,9 +49,9 @@ exports.getCustomerContact = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      let operatorsList = await ProductServiceRecords.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceRecordConfig machine').populate({path: "serviceRecordConfig", select: "docTitle"});
+      let operatorsList = await ProductServiceRecords.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceRecordConfig machine').populate({ path: "serviceRecordConfig", select: "docTitle" });
 
-      if(operatorsList && operatorsList.length > 0) {
+      if (operatorsList && operatorsList.length > 0) {
         response = JSON.parse(JSON.stringify(response));
         response.serviceRecords = operatorsList;
       }
@@ -62,47 +65,47 @@ exports.getCustomerContact = async (req, res, next) => {
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.orderBy = {firstName: 1, lastName: 1};
+  this.orderBy = { firstName: 1, lastName: 1 };
   this.query = req.query != "undefined" ? req.query : {};
-  if(this.query.orderBy) {
+  if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
   this.customerId = req.params.customerId;
 
-  if(this.customerId && ObjectId.isValid(this.customerId))
-   this.query.customer = this.customerId; 
-  
-   const finalQuery = await applyUserFilter(req);
-   if(finalQuery) {
-     const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-     if(allowedCustomers?.length > 0) {
-       this.query.customer = { $in: allowedCustomers };
-     }
-   }
+  if (this.customerId && ObjectId.isValid(this.customerId))
+    this.query.customer = this.customerId;
+
+  const finalQuery = await applyUserFilter(req);
+  if (finalQuery) {
+    const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+    if (allowedCustomers?.length > 0) {
+      this.query.customer = { $in: allowedCustomers };
+    }
+  }
 
   this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  
+
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       // if(Array.isArray(response) && response.length>0) {
-        
+
       //   response = JSON.parse(JSON.stringify(response));
       //   let index = 0;
 
       //   for(let contact of response) {
 
       //     let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
-      
+
       //     if(isOperator) {
       //       contact.isOperator = true;
       //     }
       //     else
       //       contact.isOperator = false;
-          
+
       //     response[index] = contact; 
       //     index++;
       //   }
@@ -115,14 +118,14 @@ exports.getCustomerContacts = async (req, res, next) => {
 
 exports.searchCustomerContacts = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  if(this.query.customerArr){
+  if (this.query.customerArr) {
     const customerIds = JSON.parse(this.query.customerArr);
     this.query.customer = { $in: customerIds };
     delete this.query.customerArr;
   }
-  
+
   this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  
+
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -147,35 +150,35 @@ exports.getSPCustomerContacts = async (req, res, next) => {
     },
     {
       $match: {
-        "customer.type" : "SP",
-        "customer.isActive" : true,
-        "customer.isArchived" : false
-          
-          
-        
+        "customer.type": "SP",
+        "customer.isActive": true,
+        "customer.isArchived": false
+
+
+
       }
     },
     {
       $sort: {
-        "firstName" : 1,
-        "lastName" : 1
+        "firstName": 1,
+        "lastName": 1
       }
     },
-      {
-    $lookup: {
-      from: "CustomerContacts",
-      localField: "_id",
-      foreignField: "_id",
-      as: "contact"
+    {
+      $lookup: {
+        from: "CustomerContacts",
+        localField: "_id",
+        foreignField: "_id",
+        as: "contact"
+      }
+    },
+    {
+      $match: {
+        "contact.isActive": true,
+        "contact.isArchived": false
+
+      }
     }
-  },
-  {
-    $match: {
-      "contact.isActive": true,
-      "contact.isArchived": false
-        
-    }
-  }
   ];
 
   var params = {};
@@ -194,27 +197,27 @@ exports.getSPCustomerContacts = async (req, res, next) => {
 
 exports.moveContact = async (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } 
+  }
   else {
-    if(ObjectId.isValid(req.params.customerId)) {
-      let customer = await Customer.findOne({ _id : req.params.customerId, isActive : true, isArchived : false });
-      const query = { _id : req.body.contact, isActive : true, isArchived : false };
+    if (ObjectId.isValid(req.params.customerId)) {
+      let customer = await Customer.findOne({ _id: req.params.customerId, isActive: true, isArchived: false });
+      const query = { _id: req.body.contact, isActive: true, isArchived: false };
       let contact = await CustomerContact.findOne(query).populate('customer');
       // let sites = await CustomerSite.find({_id:{$in:req.body.sites}, isActive : true, isArchived : false });
 
       console.log("contact", contact, query);
-      console.log(contact , contact.customer , contact.customer.type , contact.customer.type != 'SP');
-      if(contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
-        
-        if (!customer || !contact ) 
+      console.log(contact, contact.customer, contact.customer.type, contact.customer.type != 'SP');
+      if (contact && contact.customer && contact.customer.type && contact.customer.type != 'SP') {
+
+        if (!customer || !contact)
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
 
-        if (!contact || 
-          (contact.customer && 
-            (contact.customer.primaryBillingContact==contact._id || contact.customer.primaryTechnicalContact==contact._id))) 
+        if (!contact ||
+          (contact.customer &&
+            (contact.customer.primaryBillingContact == contact._id || contact.customer.primaryTechnicalContact == contact._id)))
           return res.status(StatusCodes.BAD_REQUEST).send('Contact Not found or its used in a customer');
 
         // if(contact.customer && req.body.sites.indexOf(contact.customer.mainSite)>-1) {
@@ -222,17 +225,17 @@ exports.moveContact = async (req, res, next) => {
         // }
 
         // sites = sites.map( (s) => s._id );
-        
+
         contact.customer = customer;
         contact.sites = [];
-      
+
         contact = await contact.save();
-        
+
         return res.status(StatusCodes.OK).json({ Contact: contact });
       } else {
-        return res.status(StatusCodes.BAD_REQUEST).send(contact ? "Service provider contact can't be moved!":"Contact not found!");
+        return res.status(StatusCodes.BAD_REQUEST).send(contact ? "Service provider contact can't be moved!" : "Contact not found!");
       }
-    } 
+    }
     else {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
     }
@@ -243,11 +246,11 @@ exports.moveContact = async (req, res, next) => {
 exports.deleteCustomerContact = async (req, res, next) => {
   let id = req.params.id;
   let customerId = req.params.customerId;
-  
-  if(req.params.id && req.params.customerId) {
-    let customerContact = await CustomerContact.findOne({_id:req.params.id, customer:req.params.customerId});
-    
-    if(customerContact) {
+
+  if (req.params.id && req.params.customerId) {
+    let customerContact = await CustomerContact.findOne({ _id: req.params.id, customer: req.params.customerId });
+
+    if (customerContact) {
 
       this.dbservice.deleteObject(CustomerContact, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
@@ -270,17 +273,17 @@ exports.deleteCustomerContact = async (req, res, next) => {
 
 exports.postCustomerContact = async (req, res, next) => {
   await body('email')
-  .optional()
-  .custom((value, { req }) => {
-    if (!value || value.trim() === '') {
-      return true;
-    } else {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      // return validator.isEmail(value);
-    }
-  })
-  .withMessage('Invalid email format')
-  .run(req);
+    .optional()
+    .custom((value, { req }) => {
+      if (!value || value.trim() === '') {
+        return true;
+      } else {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        // return validator.isEmail(value);
+      }
+    })
+    .withMessage('Invalid email format')
+    .run(req);
 
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -288,10 +291,10 @@ exports.postCustomerContact = async (req, res, next) => {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, error.msg));
     });
   } else {
-    if(req.body.reportingTo) {
-      if(ObjectId.isValid(req.body.reportingTo)) {
-        let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
-        if(!reportToContact || _.isEmpty(reportToContact)) {
+    if (req.body.reportingTo) {
+      if (ObjectId.isValid(req.body.reportingTo)) {
+        let reportToContact = await CustomerContact.findOne({ _id: req.body.reportingTo, customer: req.params.customerId });
+        if (!reportToContact || _.isEmpty(reportToContact)) {
           return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
         }
       } else {
@@ -299,7 +302,7 @@ exports.postCustomerContact = async (req, res, next) => {
       }
     }
 
-    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+    if (req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
       const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
       req.body.phoneNumbers = validPhoneNumbers;
     }
@@ -310,7 +313,7 @@ exports.postCustomerContact = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.CREATED).json({ customerCategory: response });
       }
@@ -319,19 +322,24 @@ exports.postCustomerContact = async (req, res, next) => {
 };
 
 exports.patchCustomerContact = async (req, res, next) => {
+
+  const contactAttached = await checkIfContactIsAttached(req, res);
+  if(contactAttached) {
+    return res.status(StatusCodes.BAD_REQUEST).send(contactAttached); 
+  }
   await body('email')
-  .optional()
-  .custom((value, { req }) => {
-    if (!value || value.trim() === '') {
-      return true;
-    } else {
-      return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-      // return validator.isEmail(value);
-    }
-  })
-  .withMessage('Invalid email format')
-  .run(req);
-  
+    .optional()
+    .custom((value, { req }) => {
+      if (!value || value.trim() === '') {
+        return true;
+      } else {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+        // return validator.isEmail(value);
+      }
+    })
+    .withMessage('Invalid email format')
+    .run(req);
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     errors.errors.forEach(error => {
@@ -339,18 +347,22 @@ exports.patchCustomerContact = async (req, res, next) => {
     });
   } else {
     var _this = this;
-    this.query = req.query != "undefined" ? req.query : {}; 
+    this.query = req.query != "undefined" ? req.query : {};
     this.query.customer = req.params.customerId;
     this.query._id = req.params.id;
+
+ 
+
+
     // let queryString  = { _id: req.params.customerId, customer: req.params.id };
 
-    if(req.body.reportingTo) {
-      if(ObjectId.isValid(req.body.reportingTo)) {
-        if(req.body.reportingTo == req.params.id) {
+    if (req.body.reportingTo) {
+      if (ObjectId.isValid(req.body.reportingTo)) {
+        if (req.body.reportingTo == req.params.id) {
           return res.status(StatusCodes.BAD_REQUEST).send("Contact can't able to report to it self!");
         } else {
-          let reportToContact = await CustomerContact.findOne({_id: req.body.reportingTo, customer: req.params.customerId});
-          if(!reportToContact || _.isEmpty(reportToContact)) {
+          let reportToContact = await CustomerContact.findOne({ _id: req.body.reportingTo, customer: req.params.customerId });
+          if (!reportToContact || _.isEmpty(reportToContact)) {
             return res.status(StatusCodes.BAD_REQUEST).send("Report to contact is not related to this customer!");
           }
         }
@@ -359,18 +371,18 @@ exports.patchCustomerContact = async (req, res, next) => {
       }
     }
 
-    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+    if (req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
       const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
       req.body.phoneNumbers = validPhoneNumbers;
     }
-    
+
     this.dbservice.getObject(CustomerContact, this.query, this.populate, getObjectCallback);
     async function getObjectCallback(error, response) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else { 
-        if(!(_.isEmpty(response))){
+      } else {
+        if (!(_.isEmpty(response))) {
           _this.dbservice.patchObject(CustomerContact, req.params.id, getDocumentFromReq(req), callbackFunc);
           function callbackFunc(error, result) {
             if (error) {
@@ -378,18 +390,94 @@ exports.patchCustomerContact = async (req, res, next) => {
               res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
                 error
                 //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-                );
+              );
             } else {
               res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
             }
           }
-        }else{
+        } else {
           res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Customer ID Mismatch!"));
         }
       }
-    }  
+    }
   }
 };
+
+async function checkIfContactIsAttached(req, res) {
+  try {
+    if (req.body?.isArchived == 'true' || req.body?.isArchived === true) {
+      let $or = [
+        { contacts: req.params.id },
+        { primaryBillingContact: req.params.id },
+        { primaryTechnicalContact: req.params.id },
+        { accountManager: req.params.id },
+        { projectManager: req.params.id },
+        { supportManager: req.params.id }
+      ];
+      const customerObj_ = await Customer.findOne({ $or, isActive: true, isArchived: false }).select('_id').lean();
+      if (customerObj_) {
+        return "Contact is attached with Customer";
+      }
+
+      $or = [
+        { primaryTechnicalContact: req.params.id },
+        { primaryBillingContact: req.params.id }
+      ];
+      const customerSite_ = await CustomerSite.findOne({ $or, isActive: true, isArchived: false }).select('_id').lean();
+      if (customerSite_) {
+        return "Contact is attached with Customer Site";
+      }
+
+      const customerNoteFound = await CustomerNote.findOne({ contact: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (customerNoteFound) {
+        return "Contact is attached with Customer Notes";
+      }
+
+      $or = [
+        { operators: req.params.id },
+        { accountManager: req.params.id },
+        { projectManager: req.params.id },
+        { supportManager: req.params.id }
+      ];
+      const productQuery_ = await Product.findOne({ $or, isActive: true, isArchived: false }).select('_id').lean();
+      if (productQuery_) {
+        return "Contact is attached with Machine";
+      }
+
+      const productService_ = await ProductServiceRecords.findOne({ operators: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (productService_) {
+        return "Contact is attached with Product Service";
+      }
+
+      const securityUser_ = await SecurityUser.findOne({ contact: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (securityUser_) {
+        return "Contact is attached with User";
+      }
+
+      $or = [
+        { contact: req.params.id },
+        { primaryTechnician: req.params.id },
+        { supportingTechnicians: req.params.id },
+        { notifyContacts: req.params.id }
+      ];
+      const visitQuery_ = await Visit.findOne({ $or, isActive: true, isArchived: false }).select('_id').lean();
+      if (visitQuery_) {
+        return "Contact is attached in calender visit";
+      }
+
+      const docxQuery_ = await Document.findOne({ contact: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (docxQuery_) {
+        return "Contact is attached with Document";
+      }
+
+      return null;
+    }
+  } catch (error) {
+    console.error("Error occurred:", error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Internal Server Error");
+  }
+}
+
 
 
 exports.exportContactsJSONForCSV = async (req, res, next) => {
@@ -399,19 +487,19 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     EXPORT_UUID = EXPORT_UUID && EXPORT_UUID.value.trim().toLowerCase() === 'true' ? true : false;
     let queryString_ = { isArchived: false };
     // const fetchAllContacts = req.query.fetchAllContacts === true || req.query.fetchAllContacts === 'true' ? true : false;
-    if(ObjectId.isValid(req?.params?.customerId)) {
+    if (ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
     } else {
-      let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
-      if(listCustomers && listCustomers.length > 0)
+      let listCustomers = await Customer.find({ "excludeReports": { $ne: true }, isArchived: false }).select('_id').lean();
+      if (listCustomers && listCustomers.length > 0)
         queryString_.customer = { $in: listCustomers };
     }
     const populateValues = [
-      {path: 'customer', select: 'name'},
-      {path: 'department', select: 'departmentName'},
-      {path: 'reportingTo', select: 'firstName lastName'},
-      {path: 'createdBy', select: 'name'},
-      {path: 'updatedBy', select: 'name'}
+      { path: 'customer', select: 'name' },
+      { path: 'department', select: 'departmentName' },
+      { path: 'reportingTo', select: 'firstName lastName' },
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
     ];
 
     const collationOptions = {
@@ -420,21 +508,21 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
     };
 
     const finalQuery = await applyUserFilter(req);
-    if(finalQuery) {
+    if (finalQuery) {
       const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-      if(allowedCustomers?.length > 0) {
+      if (allowedCustomers?.length > 0) {
         queryString_.customer = { $in: allowedCustomers };
       }
     }
 
-    
+
     let contacts = await CustomerContact.find(queryString_).collation(collationOptions)
-      .populate(populateValues).sort({name : 1});
+      .populate(populateValues).sort({ name: 1 });
 
     contacts = JSON.parse(JSON.stringify(contacts));
     let listJSON = [];
     const options = { timeZone: 'Pacific/Auckland', year: 'numeric', month: 'numeric', day: 'numeric' };
-    
+
     await Promise.all(contacts.map(async (contact) => {
       if (contact && contact.customer && (contact.customer.isActive == false || contact.customer.isArchived == true))
         return;
@@ -446,13 +534,13 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
       }
 
       let finalDataObj;
-      let createdDateLTZ = ""; 
-      if(contact.createdAt && contact.createdAt.length > 0) { const createdDate = new Date(contact.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
+      let createdDateLTZ = "";
+      if (contact.createdAt && contact.createdAt.length > 0) { const createdDate = new Date(contact.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
 
-      let updatedDateLTZ = ""; 
-      if(contact.updatedAt && contact.updatedAt.length > 0) { const updatedAt = new Date(contact.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
+      let updatedDateLTZ = "";
+      if (contact.updatedAt && contact.updatedAt.length > 0) { const updatedAt = new Date(contact.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }
 
-      
+
       if (EXPORT_UUID) {
         finalDataObj = {
           ContactID: contact._id,
@@ -470,11 +558,11 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           City: contact.address ? (contact.address.city ? '' + contact.address.city.replace(/"/g, "'") + '' : '') : '',
           Region: contact.address ? (contact.address.region ? '' + contact.address.region.replace(/"/g, "'") + '' : '') : '',
           PostCode: contact.address ? (contact.address.postcode ? '' + contact.address.postcode.replace(/"/g, "'") + '' : '') : '',
-          Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
-          CreationDate : createdDateLTZ,
-          ModificationDate : updatedDateLTZ,
-          Active : contact.isActive ? 'true' : 'false',
-          Archived : contact.isArchived ? 'true' : 'false'
+          Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',
+          CreationDate: createdDateLTZ,
+          ModificationDate: updatedDateLTZ,
+          Active: contact.isActive ? 'true' : 'false',
+          Archived: contact.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
@@ -491,14 +579,14 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
           City: contact.address ? (contact.address.city ? '' + contact.address.city.replace(/"/g, "'") + '' : '') : '',
           Region: contact.address ? (contact.address.region ? '' + contact.address.region.replace(/"/g, "'") + '' : '') : '',
           PostCode: contact.address ? (contact.address.postcode ? '' + contact.address.postcode.replace(/"/g, "'") + '' : '') : '',
-          Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',          
-          CreationDate : createdDateLTZ,
-          ModificationDate : updatedDateLTZ,
-          Active : contact.isActive ? 'true' : 'false',
-          Archived : contact.isArchived ? 'true' : 'false'
+          Country: contact.address ? (contact.address.country ? '' + contact.address.country.replace(/"/g, "'") + '' : '') : '',
+          CreationDate: createdDateLTZ,
+          ModificationDate: updatedDateLTZ,
+          Active: contact.isActive ? 'true' : 'false',
+          Archived: contact.isArchived ? 'true' : 'false'
         };
       }
-      
+
 
       listJSON.push(finalDataObj);
     }));
@@ -514,77 +602,77 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
 function getContactName(contact) {
   let fullName = '';
 
-  if(contact && contact.firstName)
-    fullName+= contact.firstName.replace(/"/g,"'");
+  if (contact && contact.firstName)
+    fullName += contact.firstName.replace(/"/g, "'");
 
-  if(contact && contact.lastName)
-    fullName+= contact.lastName.replace(/"/g,"'");
+  if (contact && contact.lastName)
+    fullName += contact.lastName.replace(/"/g, "'");
 
-  return fullName+'';
+  return fullName + '';
 }
 
-function getDocumentFromReq(req, reqType){
-  const { firstName, lastName, title, contactTypes, phone, phoneNumbers, email, sites,  address, reportingTo, department, 
+function getDocumentFromReq(req, reqType) {
+  const { firstName, lastName, title, contactTypes, phone, phoneNumbers, email, sites, address, reportingTo, department,
     formerEmployee, isActive, isArchived, loginUser } = req.body;
-  
+
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new CustomerContact({});
   }
-  if (req.params){
+  if (req.params) {
     doc.customer = req.params.customerId;
-  }else{
+  } else {
     doc.customer = req.body.customer;
   }
 
-  if ("firstName" in req.body){
+  if ("firstName" in req.body) {
     doc.firstName = firstName;
   }
-  if ("lastName" in req.body){
+  if ("lastName" in req.body) {
     doc.lastName = lastName;
   }
-  if ("title" in req.body){
+  if ("title" in req.body) {
     doc.title = title;
   }
-  if ("contactTypes" in req.body){
+  if ("contactTypes" in req.body) {
     doc.contactTypes = contactTypes;
   }
-  if ("phone" in req.body){
+  if ("phone" in req.body) {
     doc.phone = phone;
   }
-  if ("phoneNumbers" in req.body){
+  if ("phoneNumbers" in req.body) {
     doc.phoneNumbers = phoneNumbers;
   }
-  if ("email" in req.body){
+  if ("email" in req.body) {
     doc.email = email;
   }
-  if ("sites" in req.body){
+  if ("sites" in req.body) {
     doc.sites = sites;
   }
-  if ("address" in req.body){
+  if ("address" in req.body) {
     doc.address = address;
   }
 
-  if ("department" in req.body){
+  if ("department" in req.body) {
     doc.department = department;
   }
 
-  if ("reportingTo" in req.body){
+  if ("reportingTo" in req.body) {
     doc.reportingTo = reportingTo;
   }
 
-  if ("formerEmployee" in req.body){
+  if ("formerEmployee" in req.body) {
     doc.formerEmployee = formerEmployee;
   }
-  
-  if ("isActive" in req.body){
+
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -592,7 +680,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
 
   return doc;
