@@ -105,13 +105,15 @@ class CustomerService {
             }
           }
         } else {
+          if(newdocument?.isTechnicalContactSameAsBillingContact)
+          newdocument.primaryTechnicalContact = newdocument.primaryBillingContact;
           callback(null, newdocument);
         }
       }.bind(this),
       function (data, callback) {
         if (newdocument.mainSite != undefined && typeof newdocument.mainSite !== "string") {
           newdocument.mainSite.primaryTechnicalContact = newdocument.primaryTechnicalContact;
-          newdocument.mainSite.primaryBillingContact = newdocument.primaryTechnicalContact;
+          newdocument.mainSite.primaryBillingContact = newdocument.primaryBillingContact;
           this.db.postObject(newdocument.mainSite, callbackFunction);
           function callbackFunction(error, response) {
             console.log(error);

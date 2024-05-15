@@ -181,33 +181,33 @@ exports.patchCustomerSite = async (req, res, next) => {
     if(req.body?.isArchived == 'true' || req.body?.isArchived === true ){
       const customerFound = await Customer.findOne({mainSite: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       if(customerFound) {
-        res.status(StatusCodes.BAD_REQUEST).send("linked with customers"); 
+        res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Customers"); 
       }
 
       const noteFound = await CustomerNote.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       console.log({noteFound});
       if(noteFound) {
-        return res.status(StatusCodes.BAD_REQUEST).send("linked with Notes"); 
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Notes"); 
       }
 
       const documentSite = await Document.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       if(documentSite) {
-        return res.status(StatusCodes.BAD_REQUEST).send("linked with Document"); 
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Documents"); 
       }
 
       const productSite = await Product.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       if(productSite) {
-        return res.status(StatusCodes.BAD_REQUEST).send("linked with Product"); 
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product"); 
       }
 
       const productServiceRecord = await ProductServiceRecords.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       if(productServiceRecord) {
-        return res.status(StatusCodes.BAD_REQUEST).send("linked with Product Service Record"); 
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached Product Service Record"); 
       }
 
       const visitRecord = await Visit.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       if(visitRecord) {
-        return res.status(StatusCodes.BAD_REQUEST).send("linked with Product Service Record"); 
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached Product Service Record"); 
       }
     }
     if("isArchived" in req.body){

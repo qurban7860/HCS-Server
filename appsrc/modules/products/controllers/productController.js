@@ -756,8 +756,8 @@ exports.patchProductStatus = async (req, res, next) => {
   } else {
     const productid = req.params.id;
     const statusid = req.params.statusid;
-    
-    if(!isValidDate(req.body.dated)) {
+
+    if (!isValidDate(req.body.dated)) {
       return res.status(StatusCodes.BAD_REQUEST).send(`The validation parameter for the date is not valid.`);
     }
 
@@ -770,8 +770,8 @@ exports.patchProductStatus = async (req, res, next) => {
     if (!productStatus) {
       return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid status id to proceed!`);
     } else {
-      console.log(productStatus._id , statusid);
-      if(productObj.status == statusid) {
+      console.log(productStatus._id, statusid);
+      if (productObj.status == statusid) {
         return res.status(StatusCodes.BAD_REQUEST).send(`Attempting to update the status(${productStatus?.name}) that the machine already possesses!`);
       }
     }
@@ -795,6 +795,19 @@ exports.patchProductStatus = async (req, res, next) => {
         status: statusid
       }
     };
+
+    if (productStatus?.slug === 'assembly') {
+      updateClause.$set.purchaseDate = req.body.dated;
+    } else if (productStatus?.slug === 'readyforshipment' || productStatus?.slug === 'freight') {
+      updateClause.$set.shippingDate = req.body.dated;
+    } else if (productStatus?.slug === 'decommissioned') {
+      // Handle Decommissioned status
+    } else if (productStatus?.slug === 'commissioned') {
+      updateClause.$set.installationDate = req.body.dated;
+    }
+
+    console.log(productStatus?.slug, {updateClause});
+
     const updatedProcess = await Product.updateOne(whereClause, updateClause);
 
     if (updatedProcess) {
