@@ -226,7 +226,19 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-    
+      const orCondition = [
+      ];
+  
+      if (this.query?.searchString) {
+        const regexCondition = { '$regex': escapeRegExp(this.query.searchString), '$options': 'i' };
+        orCondition.push({ name: regexCondition });
+        orCondition.push({ displayName: regexCondition });
+        orCondition.push({ referenceNumber: regexCondition });
+        orCondition.push({ stockNumber: regexCondition });
+        
+        delete this.query.searchString;
+      }
+      this.query.$or = orCondition;
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
@@ -311,6 +323,10 @@ exports.getDocuments = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 
 // TODO: Improve funtionality and restructure.
