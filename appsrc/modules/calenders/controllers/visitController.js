@@ -186,6 +186,14 @@ function getDocumentFromReq(req, reqType) {
     doc.visitDate = visitDate;
   }
 
+  if ("isActive" in req.body) {
+    doc.isActive = isActive;
+  }
+
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
+  }
+
   if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
