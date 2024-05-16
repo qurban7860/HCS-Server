@@ -237,12 +237,14 @@ exports.getDocuments = async (req, res, next) => {
         orCondition.push({ stockNumber: regexCondition });
         
         delete this.query.searchString;
+
+        if(orCondition?.length > 0) {
+          console.log("not ok", orCondition?.length);
+          this.query.$or = orCondition;
+        }
       }
 
-      if(orCondition?.length > 0) {
-        console.log("not ok", orCondition?.length);
-        this.query.$or = orCondition;
-      }
+
 
       console.log("this.query.$or", this.query);
 
