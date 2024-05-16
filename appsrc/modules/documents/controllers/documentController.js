@@ -239,7 +239,6 @@ exports.getDocuments = async (req, res, next) => {
         delete this.query.searchString;
 
         if(orCondition?.length > 0) {
-          console.log("not ok", orCondition?.length);
           this.query.$or = orCondition;
         }
       }

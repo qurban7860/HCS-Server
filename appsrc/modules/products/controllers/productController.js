@@ -797,11 +797,11 @@ exports.patchProductStatus = async (req, res, next) => {
     };
 
     if (productStatus?.slug === 'assembly') {
-      updateClause.$set.purchaseDate = req.body.dated;
-    } else if (productStatus?.slug === 'readyforshipment' || productStatus?.slug === 'freight') {
+      updateClause.$set.manufactureDate = req.body.dated;
+    } else if (productStatus?.slug === 'freight') {
       updateClause.$set.shippingDate = req.body.dated;
     } else if (productStatus?.slug === 'decommissioned') {
-      // Handle Decommissioned status
+      updateClause.$set.decommissionedDate = req.body.dated;
     } else if (productStatus?.slug === 'commissioned') {
       updateClause.$set.installationDate = req.body.dated;
     }
@@ -1657,7 +1657,7 @@ function getDocumentFromReq(req, reqType) {
   const { serialNo, name, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel,
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, manufactureDate, purchaseDate, transferredDate, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, purchaseDate, transferredDate, installationDate, decommissionedDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, transferredFromMachine, alias } = req.body;
 
 
@@ -1727,6 +1727,10 @@ function getDocumentFromReq(req, reqType) {
   if ("installationDate" in req.body) {
     doc.installationDate = installationDate;
   }
+  if ("decommissionedDate" in req.body) {
+    doc.decommissionedDate = decommissionedDate;
+  }
+
   if ("shippingDate" in req.body) {
     doc.shippingDate = shippingDate;
   }
