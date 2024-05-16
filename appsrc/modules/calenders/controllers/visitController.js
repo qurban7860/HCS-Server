@@ -50,9 +50,10 @@ exports.getVisit = async (req, res, next) => {
 exports.getVisits = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-
     const queryDates = await fetchVisitsDates(req.query?.month, req.query?.year);
     this.query.visitDate = queryDates.visitDate;
+    delete this.query.month;
+    delete this.query.year;
     const response = await this.dbservice.getObjectList(req, Visit, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
@@ -62,6 +63,10 @@ exports.getVisits = async (req, res, next) => {
 };
 
 async function fetchVisitsDates(month = (new Date()).getMonth() + 1, year = (new Date()).getFullYear()) {
+  
+  console.log("month", month);
+  console.log("year", year);
+  
   // Calculate the start and end dates for the month
   const startDate = new Date(year, month - 1, 1); // month is 0-based index in JavaScript
   const endDate = new Date(year, month, 0);
