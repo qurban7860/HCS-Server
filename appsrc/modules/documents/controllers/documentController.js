@@ -244,7 +244,7 @@ exports.getDocuments = async (req, res, next) => {
         this.query.$or = orCondition;
       }
 
-      console.log("this.query.$or", this.query.$or);
+      console.log("this.query.$or", this.query);
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
