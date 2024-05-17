@@ -809,10 +809,10 @@ exports.patchProductStatus = async (req, res, next) => {
     const updatedProcess = await Product.updateOne(whereClause, updateClause); 
 
 
-    console.log("req.query?.updateConnectedMachines", req.query?.updateConnectedMachines);
+    console.log("req.body?.updateConnectedMachines", req.body?.updateConnectedMachines);
 
-    if(req.query?.updateConnectedMachines && (req.query?.updateConnectedMachines === true || req.query?.updateConnectedMachines == 'true')) {
-      console.log("req.query?.updateConnectedMachines OK");
+    if(req.body?.updateConnectedMachines && (req.body?.updateConnectedMachines === true || req.body?.updateConnectedMachines == 'true')) {
+      console.log("req.body?.updateConnectedMachines OK");
     
       const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
       const results_ = await ProductConnection.updateMany(whereClause_, updateClause); 
