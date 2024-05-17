@@ -136,7 +136,7 @@ exports.patchVisit = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType) {
   const { customer, site, contact, machine, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
-    purposeOfVisit, visitNote, isActive, isArchived, visitDate, loginUser } = req.body;
+    purposeOfVisit, visitNote, isActive, isArchived, visitDate, start, end, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -185,6 +185,15 @@ function getDocumentFromReq(req, reqType) {
   if ("visitDate" in req.body) {
     doc.visitDate = visitDate;
   }
+
+  if ("start" in req.body) {
+    doc.start = start;
+  }
+
+  if ("end" in req.body) {
+    doc.end = end;
+  }
+
 
   if ("isActive" in req.body) {
     doc.isActive = isActive;

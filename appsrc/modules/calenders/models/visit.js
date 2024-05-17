@@ -33,7 +33,9 @@ const docSchema = new Schema({
 
         visitNote: { type: String, maxlength: 200 },
 
-        visitDate: { type: Date, required: true }
+        visitDate: { type: Date, required: true },
+        start: { type: Date },
+        end: { type: Date }
 },
         {
                 collection: 'Visits'
