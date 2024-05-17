@@ -776,8 +776,6 @@ exports.patchProductStatus = async (req, res, next) => {
       }
     }
 
-    console.log("productStatus", productStatus);
-
     if (productStatus?.slug === 'transferred') {
       return res.status(StatusCodes.BAD_REQUEST).send(`you can not change directly to transphred from here`);
     }
@@ -808,7 +806,13 @@ exports.patchProductStatus = async (req, res, next) => {
 
     console.log(productStatus?.slug, {updateClause});
 
-    const updatedProcess = await Product.updateOne(whereClause, updateClause);
+    const updatedProcess = await Product.updateOne(whereClause, updateClause); 
+
+
+    if(req.query?.updateConnectedMachines && (req.query?.updateConnectedMachines === true || req.query?.updateConnectedMachines == 'true')) {
+      const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
+      await ProductConnection.updateMany(whereClause_, updateClause); 
+    }
 
     if (updatedProcess) {
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
