@@ -109,9 +109,10 @@ exports.postVisit = async (req, res, next) => {
   } else {
     try {
       const requestedObject = getDocumentFromReq(req, 'new');
-      console.log(requestedObject);
-      const response = await this.dbservice.postObject(requestedObject);
-      res.status(StatusCodes.CREATED).json({ Visit: response });
+      const response = await this.dbservice.postObject(requestedObject);      
+      const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, response._id, this.populate);
+      res.status(StatusCodes.CREATED).json({ Visit: objectWithPopulate });
+
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -126,7 +127,8 @@ exports.patchVisit = async (req, res, next) => {
   } else {
     try {
       const result = await this.dbservice.patchObject(Visit, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, req.params.id, this.populate);
+      res.status(StatusCodes.ACCEPTED).json({ Visit: objectWithPopulate });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
