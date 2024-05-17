@@ -804,21 +804,19 @@ exports.patchProductStatus = async (req, res, next) => {
       updateClause.$set.installationDate = req.body.dated;
     }
 
-    console.log(productStatus?.slug, {updateClause});
-
     const updatedProcess = await Product.updateOne(whereClause, updateClause); 
-
-
-    console.log("req.body?.updateConnectedMachines", req.body?.updateConnectedMachines);
-
     if(req.body?.updateConnectedMachines && (req.body?.updateConnectedMachines === true || req.body?.updateConnectedMachines == 'true')) {
-      console.log("req.body?.updateConnectedMachines OK");
-    
       const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
-      const results_ = await ProductConnection.updateMany(whereClause_, updateClause); 
-      console.log({results_});
+      try {
+        const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine').lean();
+        const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine);
+        if(connectedMachineIds?.length > 0) {
+          const results_ = await Product.updateMany({_id: {$in: connectedMachineIds}, isActive: true, isArchived: false}, updateClause);
+        }
+      } catch (error) {
+        console.error("Error updating ProductConnection:", error);
+      }
     }
-
     if (updatedProcess) {
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
     } else {
