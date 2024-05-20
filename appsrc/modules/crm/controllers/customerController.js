@@ -12,6 +12,9 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
+
+const { document } = require('../../documents/models');
+
 const applyUserFilter = require('../utils/userFilters');
 const { Product, ProductStatus } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
@@ -428,6 +431,7 @@ async function updateArchivedStatus(req) {
     await CustomerSite.updateMany(whereClause, setClause);
     await CustomerContact.updateMany(whereClause, setClause);
     await CustomerNote.updateMany(whereClause, setClause);
+    await document.updateMany(whereClause, setClause);
   }
 }
 
