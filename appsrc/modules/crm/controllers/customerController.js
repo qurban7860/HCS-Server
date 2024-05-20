@@ -591,7 +591,7 @@ function getGUIDs(inputData) {
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { name, clientCode, ref, tradingName, type, mainSite, sites, contacts, website,
+  const { name, clientCode, ref, tradingName, groupCustomer, type, mainSite, sites, contacts, website,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, isTechnicalContactSameAsBillingContact,
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
@@ -623,6 +623,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("tradingName" in req.body) {
     doc.tradingName = tradingName;
+  }
+
+  if ("groupCustomer" in req.body) {
+    doc.groupCustomer = groupCustomer;
   }
 
   // if ("mainSite" in req.body){
