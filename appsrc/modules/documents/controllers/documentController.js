@@ -1741,7 +1741,7 @@ function getDocumentFromReq(req, reqType) {
 
 
 function getDocumentProductDocumentFromReq(req, reqType){
-  const { machine, documentCategory, documentType, documentId, isActive, isArchived, loginUser } = req.body;
+  const { machine, documentCategory, documentType, documentId, archivedByCustomer, isActive, isArchived, loginUser } = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductDrawing({});
@@ -1766,6 +1766,10 @@ function getDocumentProductDocumentFromReq(req, reqType){
 
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
+  }
+
+  if ("archivedByCustomer" in req.body){
+    doc.archivedByCustomer = archivedByCustomer;
   }
   
   if (reqType == "new" && "loginUser" in req.body ){
