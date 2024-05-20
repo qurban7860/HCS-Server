@@ -118,6 +118,9 @@ const docSchema = new Schema({
 
     installationDate: { type: Date },
     // installation date
+
+    decommissionedDate: { type: Date },
+    // decommissionedDate date
   
     customerTags: [{ type: String }],
     // list of tags used for reporting by customer

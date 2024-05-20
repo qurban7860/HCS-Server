@@ -776,8 +776,6 @@ exports.patchProductStatus = async (req, res, next) => {
       }
     }
 
-    console.log("productStatus", productStatus);
-
     if (productStatus?.slug === 'transferred') {
       return res.status(StatusCodes.BAD_REQUEST).send(`you can not change directly to transphred from here`);
     }
@@ -797,19 +795,28 @@ exports.patchProductStatus = async (req, res, next) => {
     };
 
     if (productStatus?.slug === 'assembly') {
-      updateClause.$set.purchaseDate = req.body.dated;
-    } else if (productStatus?.slug === 'readyforshipment' || productStatus?.slug === 'freight') {
+      updateClause.$set.manufactureDate = req.body.dated;
+    } else if (productStatus?.slug === 'freight') {
       updateClause.$set.shippingDate = req.body.dated;
     } else if (productStatus?.slug === 'decommissioned') {
-      // Handle Decommissioned status
+      updateClause.$set.decommissionedDate = req.body.dated;
     } else if (productStatus?.slug === 'commissioned') {
       updateClause.$set.installationDate = req.body.dated;
     }
 
-    console.log(productStatus?.slug, {updateClause});
-
-    const updatedProcess = await Product.updateOne(whereClause, updateClause);
-
+    const updatedProcess = await Product.updateOne(whereClause, updateClause); 
+    if(req.body?.updateConnectedMachines && (req.body?.updateConnectedMachines === true || req.body?.updateConnectedMachines == 'true')) {
+      const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
+      try {
+        const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine').lean();
+        const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine);
+        if(connectedMachineIds?.length > 0) {
+          const results_ = await Product.updateMany({_id: {$in: connectedMachineIds}, isActive: true, isArchived: false}, updateClause);
+        }
+      } catch (error) {
+        console.error("Error updating ProductConnection:", error);
+      }
+    }
     if (updatedProcess) {
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
     } else {
@@ -1657,7 +1664,7 @@ function getDocumentFromReq(req, reqType) {
   const { serialNo, name, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel,
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
-    tools, description, internalTags, customerTags, manufactureDate, purchaseDate, transferredDate, installationDate, shippingDate, supportExpireDate,
+    tools, description, internalTags, customerTags, manufactureDate, purchaseDate, transferredDate, installationDate, decommissionedDate, shippingDate, supportExpireDate,
     isActive, isArchived, loginUser, machineConnections, transferredFromMachine, alias } = req.body;
 
 
@@ -1727,6 +1734,10 @@ function getDocumentFromReq(req, reqType) {
   if ("installationDate" in req.body) {
     doc.installationDate = installationDate;
   }
+  if ("decommissionedDate" in req.body) {
+    doc.decommissionedDate = decommissionedDate;
+  }
+
   if ("shippingDate" in req.body) {
     doc.shippingDate = shippingDate;
   }
