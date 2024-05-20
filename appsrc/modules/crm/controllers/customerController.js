@@ -37,6 +37,8 @@ this.populate = [
   { path: 'accountManager', select: 'firstName lastName email' },
   { path: 'projectManager', select: 'firstName lastName email' },
   { path: 'supportManager', select: 'firstName lastName email' },
+  { path: 'groupCustomer', select: '_id name ref clientCode' },
+  
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
   { path: 'mainSite.primaryBillingContact', select: 'firstName lastName' },
