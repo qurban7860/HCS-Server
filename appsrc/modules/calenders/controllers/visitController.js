@@ -122,7 +122,7 @@ exports.postVisit = async (req, res, next) => {
 
 exports.sendEmailAlert = async (visitData) => {
   if (visitData) {
-    let emailSubject = "Calendar Events Alerts - HOWICK Portal";
+    let emailSubject = "Calendar Events Alerts";
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const primaryEmail = emailRegex.test(visitData.primaryTechnician.email) ? visitData.primaryTechnician.email : null;
     const notifyContacts = visitData.notifyContacts.filter(email => emailRegex.test(email));
@@ -151,14 +151,10 @@ exports.sendEmailAlert = async (visitData) => {
     const Site = visitData?.site?.name;
     const purposeOfVisit = visitData?.purposeOfVisit;
     const visitDate = formatDate(visitData?.visitDate);
-    const startTime = formatDate(visitData?.start);
-    const endTime = formatDate(visitData?.end);
+    const startTime = visitData?.start;
+    const endTime = visitData?.end;
     const createdBy = visitData?.createdBy?.name;
     const createdAt = visitData?.createdBy?.name;
-
-    console.log({visitDate});
-    console.log({endTime});
-    
 
     let hostName = 'portal.howickltd.com';
 
