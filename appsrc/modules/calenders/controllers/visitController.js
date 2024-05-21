@@ -154,9 +154,6 @@ exports.sendEmailAlert = async (visitData) => {
       timeZone: 'Pacific/Auckland', // New Zealand time zone
       hour12: false, // 24-hour format
       weekday: 'short', // Abbreviated weekday name (e.g., "Tue")
-      year: 'numeric',
-      month: 'short', // Abbreviated month name (e.g., "May")
-      day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
