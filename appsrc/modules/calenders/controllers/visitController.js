@@ -157,8 +157,10 @@ exports.sendEmailAlert = async (visitData) => {
       second: '2-digit'
     };
     
-    const startTime = visitData?.start.toLocaleString('en-NZ', options);
-    const endTime = visitData?.end.toLocaleString('en-NZ', options);
+
+    console.log("visitData?.end", visitData?.end);
+    const startTime = visitData?.start?.toLocaleString('en-NZ', options);
+    const endTime = visitData?.end?.toLocaleString('en-NZ', options);
 
 
     console.log({startTime});
