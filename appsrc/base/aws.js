@@ -170,6 +170,8 @@ async function sendEmail(params, ToAddresses) {
   if(ToAddresses && ToAddresses.length > 0)
     emailParams.Destination.ToAddresses = ToAddresses;
 
+  console.log("emailParams.Destination.ToAddresses", emailParams.Destination.ToAddresses);
+  
   if(params.html) {
     emailParams.Message.Body = {
       Html: {
