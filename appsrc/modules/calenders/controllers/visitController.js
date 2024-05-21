@@ -146,7 +146,15 @@ exports.sendEmailAlert = async (visitData) => {
       html: true
     };
 
-    let username = "TEST";
+    const customer = visitData?.customer;
+    const serialNo = visitData?.machine?.serialNo;
+    const Site = visitData?.site?.name;
+    const purposeOfVisit = visitData?.purposeOfVisit;
+    const visitDate = visitData?.visitDate;
+    const startTime = visitData?.startTime;
+    const endTime = visitData?.endTime;
+    const createdBy = visitData?.createdBy?.name;
+    const createdAt = visitData?.createdBy?.name;
 
     let hostName = 'portal.howickltd.com';
 
@@ -161,8 +169,8 @@ exports.sendEmailAlert = async (visitData) => {
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
       let footerContent = render(data, { username, emailSubject, emailContent, hostName, hostUrl })
 
-      fs.readFile(__dirname + '/../../email/templates/emailTemplate.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, username, footerContent })
+      fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
+        let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, username, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
         console.log(response);
