@@ -14,7 +14,7 @@ const docSchema = new Schema({
 
         site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' }, //if customer and machine is inserted then its installation site is there.
 
-        jiraTicket: { type: String, required: true },
+        jiraTicket: { type: String },
 
         primaryTechnician: { type: Schema.Types.ObjectId, ref: 'CustomerContact', required: true },     //Howick Technicians
 

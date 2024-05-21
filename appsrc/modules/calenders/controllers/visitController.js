@@ -65,7 +65,7 @@ exports.getVisits = async (req, res, next) => {
 };
 
 async function fetchVisitsDates(month = (new Date()).getMonth() + 1, year = (new Date()).getFullYear()) {
-  
+
   // Calculate the start and end dates for the month
   const startDate = new Date(year, month - 1, 1); // month is 0-based index in JavaScript
   const endDate = new Date(year, month, 0);
@@ -108,7 +108,7 @@ exports.postVisit = async (req, res, next) => {
   } else {
     try {
       const requestedObject = getDocumentFromReq(req, 'new');
-      const response = await this.dbservice.postObject(requestedObject);      
+      const response = await this.dbservice.postObject(requestedObject);
       const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, response._id, this.populate);
       res.status(StatusCodes.CREATED).json({ Visit: objectWithPopulate });
       exports.sendEmailAlert(objectWithPopulate);
@@ -120,42 +120,50 @@ exports.postVisit = async (req, res, next) => {
 };
 
 
-exports.sendEmailAlert = async (visitData) =>{
-  if(visitData) { 
+exports.sendEmailAlert = async (visitData) => {
+  if (visitData) {
     let emailSubject = "Calendar Events Alerts - HOWICK Portal";
 
     let emailContent = `Dear, <br><br>Dear Recipient,\n\nA visit has been scheduled for the following details:\n\nCustomer: ${visitData.customer}\nMachine: ${visitData.machine}\nVisit Date: ${visitData.visitDate}\n\nRegards,\nYour Company Name`;
-  
+
+    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
+    const primaryEmail = emailRegex.test(visitData.primaryTechnician.email) ? visitData.primaryTechnician.email : null;
+    const notifyContacts = visitData.notifyContacts.filter(email => emailRegex.test(email));
+    const supportTechnicians = visitData.supportingTechnicians.filter(email => emailRegex.test(email));
+    
+
+    let emalsToSend = notifyContacts.concat(supportTechnicians);
+    
+    let emalsToSend_ = emalsToSend.map(obj => obj.email);
+    emalsToSend_.push(primaryEmail);
     let params = {
-      to: `${visitData.primaryTechnician.email}`,
+      to: emalsToSend,
       subject: emailSubject,
       html: true
     };
-
-    console.log(visitData.primaryTechnician.email);
 
     let username = "TEST";
 
     let hostName = 'portal.howickltd.com';
 
-    if(process.env.CLIENT_HOST_NAME)
+    if (process.env.CLIENT_HOST_NAME)
       hostName = process.env.CLIENT_HOST_NAME;
-    
+
     let hostUrl = "https://portal.howickltd.com";
 
-    if(process.env.CLIENT_APP_URL)
+    if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
 
-      fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-        let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
+    fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
+      let footerContent = render(data, { username, emailSubject, emailContent, hostName, hostUrl })
 
-        fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-          let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
-          params.htmlData = htmlData;
-          let response = await awsService.sendEmail(params);
-          console.log(response);
-        })
+      fs.readFile(__dirname + '/../../email/templates/emailTemplate.html', 'utf8', async function (err, data) {
+        let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, username, footerContent })
+        params.htmlData = htmlData;
+        let response = await awsService.sendEmail(params);
+        console.log(response);
       })
+    })
   } else {
   }
 }
