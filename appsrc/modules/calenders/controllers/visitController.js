@@ -135,11 +135,6 @@ exports.sendEmailAlert = async (visitData) => {
       emalsToSend.push(visitData.primaryTechnician);
     
     let emalsToSend_ = emalsToSend.map(obj => obj.email);
-
-
-    console.log("---------------------------");
-    console.log(primaryEmail);
-    console.log("---------------------------");
     let params = {
       to: primaryEmail,
       subject: emailSubject,
@@ -212,6 +207,7 @@ exports.patchVisit = async (req, res, next) => {
       const result = await this.dbservice.patchObject(Visit, req.params.id, getDocumentFromReq(req));
       const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, req.params.id, this.populate);
       res.status(StatusCodes.ACCEPTED).json({ Visit: objectWithPopulate });
+      exports.sendEmailAlert(objectWithPopulate);
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
