@@ -170,7 +170,7 @@ exports.sendEmailAlert = async (visitData) => {
       let footerContent = render(data, { emailSubject, emailContent, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, username, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
+        let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params);
         console.log(response);
