@@ -123,9 +123,6 @@ exports.postVisit = async (req, res, next) => {
 exports.sendEmailAlert = async (visitData) => {
   if (visitData) {
     let emailSubject = "Calendar Events Alerts - HOWICK Portal";
-
-    let emailContent = `Dear, <br><br>Dear Recipient,\n\nA visit has been scheduled for the following details:\n\nCustomer: ${visitData.customer}\nMachine: ${visitData.machine}\nVisit Date: ${visitData.visitDate}\n\nRegards,\nYour Company Name`;
-
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const primaryEmail = emailRegex.test(visitData.primaryTechnician.email) ? visitData.primaryTechnician.email : null;
     const notifyContacts = visitData.notifyContacts.filter(email => emailRegex.test(email));
@@ -138,7 +135,6 @@ exports.sendEmailAlert = async (visitData) => {
       emalsToSend.push(visitData.primaryTechnician);
     
     let emalsToSend_ = emalsToSend.map(obj => obj.email);
-    let emailToSend____ = emalsToSend_.map(email => `"${email}"`).join(', ');
 
 
     console.log("---------------------------");
@@ -155,10 +151,14 @@ exports.sendEmailAlert = async (visitData) => {
     const Site = visitData?.site?.name;
     const purposeOfVisit = visitData?.purposeOfVisit;
     const visitDate = visitData?.visitDate;
-    const startTime = visitData?.startTime;
-    const endTime = visitData?.endTime;
+    const startTime = visitData?.start;
+    const endTime = visitData?.end;
     const createdBy = visitData?.createdBy?.name;
     const createdAt = visitData?.createdBy?.name;
+
+    console.log({startTime});
+    console.log({endTime});
+    
 
     let hostName = 'portal.howickltd.com';
 
@@ -171,10 +171,10 @@ exports.sendEmailAlert = async (visitData) => {
       hostUrl = process.env.CLIENT_APP_URL;
 
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
-      let footerContent = render(data, { emailSubject, emailContent, hostName, hostUrl })
+      let footerContent = render(data, { emailSubject, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params, emalsToSend_);
         console.log(response);
