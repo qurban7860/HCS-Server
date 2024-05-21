@@ -19,6 +19,8 @@ const docSchema = new Schema({
         // tradingName: { type: String },
         tradingName: [{ type: String  }],
 
+        groupCustomer: { type: Schema.Types.ObjectId, ref: 'Customer' },
+
         website: { type: String },
         // website address of organization / site . 
         

@@ -12,6 +12,9 @@ let customerDBService = require('../service/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
+
+const { Document } = require('../../documents/models');
+
 const applyUserFilter = require('../utils/userFilters');
 const { Product, ProductStatus } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
@@ -37,6 +40,8 @@ this.populate = [
   { path: 'accountManager', select: 'firstName lastName email' },
   { path: 'projectManager', select: 'firstName lastName email' },
   { path: 'supportManager', select: 'firstName lastName email' },
+  { path: 'groupCustomer', select: '_id name ref clientCode' },
+  
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
   { path: 'mainSite.primaryBillingContact', select: 'firstName lastName' },
@@ -426,6 +431,7 @@ async function updateArchivedStatus(req) {
     await CustomerSite.updateMany(whereClause, setClause);
     await CustomerContact.updateMany(whereClause, setClause);
     await CustomerNote.updateMany(whereClause, setClause);
+    await Document.updateMany(whereClause, setClause);
   }
 }
 
@@ -591,8 +597,8 @@ function getGUIDs(inputData) {
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { name, clientCode, ref, tradingName, type, mainSite, sites, contacts, website,
-    billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact,
+  const { name, clientCode, ref, tradingName, groupCustomer, type, mainSite, sites, contacts, website,
+    billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, isTechnicalContactSameAsBillingContact,
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
   let doc = {};
@@ -609,6 +615,10 @@ function getDocumentFromReq(req, reqType) {
     doc.name = name;
   }
 
+  if ("isTechnicalContactSameAsBillingContact" in req.body) {
+    doc.isTechnicalContactSameAsBillingContact = isTechnicalContactSameAsBillingContact;
+  }
+
   if ("clientCode" in req.body) {
     doc.clientCode = clientCode.trim();
   }
@@ -619,6 +629,10 @@ function getDocumentFromReq(req, reqType) {
 
   if ("tradingName" in req.body) {
     doc.tradingName = tradingName;
+  }
+
+  if ("groupCustomer" in req.body) {
+    doc.groupCustomer = groupCustomer;
   }
 
   // if ("mainSite" in req.body){
@@ -646,12 +660,14 @@ function getDocumentFromReq(req, reqType) {
       doc.mainSite.customer = doc._id;
     }
 
-    if (technicalContact != undefined && typeof technicalContact !== "string") {
-      var reqprimaryTechnicalContact = {};
-      reqprimaryTechnicalContact.body = technicalContact;
-      reqprimaryTechnicalContact.body.loginUser = req.body.loginUser;
-      doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
-      doc.technicalContact.customer = doc._id;
+    if(!isTechnicalContactSameAsBillingContact) {
+      if (technicalContact != undefined && typeof technicalContact !== "string") {
+        var reqprimaryTechnicalContact = {};
+        reqprimaryTechnicalContact.body = technicalContact;
+        reqprimaryTechnicalContact.body.loginUser = req.body.loginUser;
+        doc.technicalContact = customerContactController.getDocumentFromReq(reqprimaryTechnicalContact, 'new');
+        doc.technicalContact.customer = doc._id;
+      }
     }
 
     if (billingContact != undefined && typeof billingContact !== "string") {

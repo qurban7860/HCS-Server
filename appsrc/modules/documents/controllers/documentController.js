@@ -226,7 +226,26 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-    
+      const orCondition = [
+      ];
+  
+      if (this.query?.searchString) {
+        const regexCondition = { '$regex': escapeRegExp(this.query.searchString), '$options': 'i' };
+        orCondition.push({ name: regexCondition });
+        orCondition.push({ displayName: regexCondition });
+        orCondition.push({ referenceNumber: regexCondition });
+        orCondition.push({ stockNumber: regexCondition });
+        
+        delete this.query.searchString;
+
+        if(orCondition?.length > 0) {
+          this.query.$or = orCondition;
+        }
+      }
+
+
+
+      console.log("this.query.$or", this.query);
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
@@ -294,7 +313,7 @@ exports.getDocuments = async (req, res, next) => {
 
             if(isDrawing) {
               document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
-              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item.machine.serialNo).join(', ');
+              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item?.machine?.serialNo).join(', ');
             }
             document_.documentVersions = documentVersions;
           }
@@ -311,6 +330,10 @@ exports.getDocuments = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 
 // TODO: Improve funtionality and restructure.
@@ -1718,7 +1741,7 @@ function getDocumentFromReq(req, reqType) {
 
 
 function getDocumentProductDocumentFromReq(req, reqType){
-  const { machine, documentCategory, documentType, documentId, isActive, isArchived, loginUser } = req.body;
+  const { machine, documentCategory, documentType, documentId, archivedByCustomer, isActive, isArchived, loginUser } = req.body;
   let doc = {};
   if (reqType && reqType == "new"){
     doc = new ProductDrawing({});
@@ -1743,6 +1766,10 @@ function getDocumentProductDocumentFromReq(req, reqType){
 
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
+  }
+
+  if ("archivedByCustomer" in req.body){
+    doc.archivedByCustomer = archivedByCustomer;
   }
   
   if (reqType == "new" && "loginUser" in req.body ){

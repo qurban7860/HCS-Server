@@ -165,7 +165,7 @@ exports.postSecurityUser = async (req, res, next) => {
             }
           }  
         }else{
-          return res.status(StatusCodes.CONFLICT).json({message:'Email/Login already exists!',userStatus:response.isActive});
+          return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
         }
       }
     }
@@ -274,11 +274,11 @@ exports.patchSecurityUser = async (req, res, next) => {
                 if(response && response._id && response._id != req.params.id){
                   // return error message
                   if (req.body.login && req.body.email) {
-                    return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email/Login already exists!', true));
+                    return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
                   } else if (req.body.login) {
-                    return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Login already exists!', true));
+                    return res.status(StatusCodes.CONFLICT).send("Login already exists!");
                   } else if (req.body.email) {
-                    return res.status(StatusCodes.CONFLICT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.CONFLICT, 'Email already exists!', true));
+                    return res.status(StatusCodes.CONFLICT).send("Email already exists!");
                   } else {
                     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
                   }
