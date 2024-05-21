@@ -8,10 +8,12 @@ const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-
+const awsService = require('../../../../appsrc/base/aws');
 let calenderDBService = require('../service/calenderDBService')
 this.dbservice = new calenderDBService();
-
+const fs = require('fs');
+const { render } = require('template-file');
+const emailController = require('../../email/controllers/emailController');
 const { Visit } = require('../models');
 
 
@@ -24,12 +26,9 @@ this.populate = [
   { path: 'customer', select: 'name ref clientCode' },
   { path: 'site', select: 'name' },
   { path: 'contact', select: 'firstName lastName' },
-  { path: 'notifyContacts', select: 'firstName lastName' },
+  { path: 'notifyContacts', select: 'firstName lastName email' },
   { path: 'supportingTechnicians', select: 'firstName lastName' },
   { path: 'primaryTechnician', select: 'firstName lastName' },
-
-
-
   { path: 'machine', select: 'serialNo' },
   { path: 'technicians', select: 'name phone email' },
   { path: 'completedBy', select: 'name phone email' },
@@ -109,10 +108,55 @@ exports.postVisit = async (req, res, next) => {
   } else {
     try {
       const requestedObject = getDocumentFromReq(req, 'new');
-      const response = await this.dbservice.postObject(requestedObject);      
+      const response = await this.dbservice.postObject(requestedObject);     
       const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, response._id, this.populate);
-      res.status(StatusCodes.CREATED).json({ Visit: objectWithPopulate });
+      if (objectWithPopulate) {
+        const contactsEmailFiltered = objectWithPopulate?.notifyContacts?.map((el)=> el?.email)
+        let emailContent = `Event has been added against Customer ${objectWithPopulate?.customer || ''} and Jira ticket ${objectWithPopulate?.jiraTicket || '' }.<br>`;
 
+          let emailSubject = "Event created Successful";
+
+          let params = {
+          to: `${contactsEmailFiltered}`,
+          subject: emailSubject,
+          html: true,
+          };
+
+          let hostName = 'portal.howickltd.com';
+
+          if(process.env.CLIENT_HOST_NAME)
+          hostName = process.env.CLIENT_HOST_NAME;
+
+          let hostUrl = "https://portal.howickltd.com";
+
+          if(process.env.CLIENT_APP_URL)
+          hostUrl = process.env.CLIENT_APP_URL;
+
+          let username = 'Howickltd';
+          fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
+          let footerContent = render(data,{ emailSubject, emailContent, hostName, hostUrl, })
+          
+          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
+          let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
+          params.htmlData = htmlData;
+          let response = await awsService.sendEmail(params);
+          })
+          })
+
+          const emailResponse = await addEmail(params.subject, params.htmlData, '', params.to);
+
+          this.dbservice.postObject(emailResponse, callbackFunc);
+          function callbackFunc(error, response) {
+          if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          } else {
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Event Added successfully!', false));
+          }
+          }
+        console.log("contactsEmailFiltered : ", contactsEmailFiltered);
+      } 
+      res.status(StatusCodes.CREATED).json({ Visit: objectWithPopulate });
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -136,6 +180,42 @@ exports.patchVisit = async (req, res, next) => {
   }
 };
 
+async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
+  var email = {
+    subject,
+    body,
+    toEmails:emailAddresses,
+    fromEmail:process.env.AWS_SES_FROM_EMAIL,
+    customer:'',
+    toContacts:[],
+    toUsers:[],
+    ccEmails,
+    bccEmails,
+    isArchived: false,
+    isActive: true,
+    // loginIP: ip,
+    createdBy: '',
+    updatedBy: '',
+    createdIP: ''
+  };
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+    }
+  }
+  
+  var reqEmail = {};
+
+  reqEmail.body = email;
+  
+  const res = emailController.getDocumentFromReq(reqEmail, 'new');
+  return res;
+}
 function getDocumentFromReq(req, reqType) {
   const { customer, site, contact, machine, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
     purposeOfVisit, visitNote, isActive, isArchived, visitDate, start, end, loginUser } = req.body;
