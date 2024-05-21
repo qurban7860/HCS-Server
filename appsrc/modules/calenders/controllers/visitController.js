@@ -133,9 +133,10 @@ exports.sendEmailAlert = async (visitData) => {
     
 
     let emalsToSend = notifyContacts.concat(supportTechnicians);
-    
+    emalsToSend.push(primaryEmail);
     let emalsToSend_ = emalsToSend.map(obj => obj.email);
-    emalsToSend_.push(primaryEmail);
+
+    console.log({emalsToSend_});
     let params = {
       to: emalsToSend_,
       subject: emailSubject,
