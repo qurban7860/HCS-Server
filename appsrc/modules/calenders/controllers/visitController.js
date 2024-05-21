@@ -150,13 +150,13 @@ exports.sendEmailAlert = async (visitData) => {
     const serialNo = visitData?.machine?.serialNo;
     const Site = visitData?.site?.name;
     const purposeOfVisit = visitData?.purposeOfVisit;
-    const visitDate = visitData?.visitDate;
-    const startTime = visitData?.start;
-    const endTime = visitData?.end;
+    const visitDate = formatDate(visitData?.visitDate);
+    const startTime = formatDate(visitData?.start);
+    const endTime = formatDate(visitData?.end);
     const createdBy = visitData?.createdBy?.name;
     const createdAt = visitData?.createdBy?.name;
 
-    console.log({startTime});
+    console.log({visitDate});
     console.log({endTime});
     
 
@@ -181,6 +181,28 @@ exports.sendEmailAlert = async (visitData) => {
       })
     })
   } else {
+  }
+}
+
+function formatDate(date) {
+  if(date) {
+    const day = date.getDate();
+    const monthIndex = date.getMonth();
+    const year = date.getFullYear();
+  
+    // Array of month names
+    const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+  
+    // Suffix for day (st, nd, rd, th)
+    const suffixes = ["th", "st", "nd", "rd"];
+    const suffix = suffixes[(day - 1) % 10] || suffixes[0];
+  
+    return `${day}${suffix} ${months[monthIndex]} ${year}`;
+  } else {
+    return "";
   }
 }
 
