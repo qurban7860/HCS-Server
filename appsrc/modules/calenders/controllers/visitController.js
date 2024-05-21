@@ -146,10 +146,26 @@ exports.sendEmailAlert = async (visitData) => {
     const Site = visitData?.site?.name;
     const purposeOfVisit = visitData?.purposeOfVisit;
     const visitDate = formatDate(visitData?.visitDate);
-    const startTime = visitData?.start;
     const endTime = visitData?.end;
     const createdBy = visitData?.createdBy?.name;
     const createdAt = visitData?.createdBy?.name;
+
+    const options = {
+      timeZone: 'Pacific/Auckland', // New Zealand time zone
+      hour12: false, // 24-hour format
+      weekday: 'short', // Abbreviated weekday name (e.g., "Tue")
+      year: 'numeric',
+      month: 'short', // Abbreviated month name (e.g., "May")
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    };
+    
+    const startTime = visitData?.start.toLocaleString('en-NZ', options);
+
+    console.log({startTime});
+
 
     let hostName = 'portal.howickltd.com';
 
