@@ -137,7 +137,7 @@ exports.sendEmailAlert = async (visitData) => {
     let emalsToSend_ = emalsToSend.map(obj => obj.email);
     emalsToSend_.push(primaryEmail);
     let params = {
-      to: emalsToSend,
+      to: emalsToSend_,
       subject: emailSubject,
       html: true
     };
