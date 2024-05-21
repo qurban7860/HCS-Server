@@ -167,7 +167,7 @@ exports.sendEmailAlert = async (visitData) => {
       hostUrl = process.env.CLIENT_APP_URL;
 
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
-      let footerContent = render(data, { username, emailSubject, emailContent, hostName, hostUrl })
+      let footerContent = render(data, { emailSubject, emailContent, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, username, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
