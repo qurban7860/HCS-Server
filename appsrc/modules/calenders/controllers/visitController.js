@@ -146,7 +146,7 @@ exports.sendEmailAlert = async (visitData) => {
       html: true
     };
 
-    const customer = visitData?.customer;
+    const customer = visitData?.customer?.name;
     const serialNo = visitData?.machine?.serialNo;
     const Site = visitData?.site?.name;
     const purposeOfVisit = visitData?.purposeOfVisit;
@@ -172,7 +172,7 @@ exports.sendEmailAlert = async (visitData) => {
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, emailContent, hostName, hostUrl, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params);
+        let response = await awsService.sendEmail(params, emalsToSend_);
         console.log(response);
       })
     })
