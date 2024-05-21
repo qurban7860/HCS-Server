@@ -61,6 +61,8 @@ const docSchema = new Schema({
 
         installationDate: { type: Date },
         // installation date
+
+        archivedByCustomer: {type: Boolean, default: false},
 },
 {
         collection: 'Documents'
