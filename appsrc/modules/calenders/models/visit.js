@@ -12,7 +12,7 @@ const docSchema = new Schema({
 
         machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
 
-        site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' }, //if customer and machine is inserted then its installation site is there.
+        site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
 
         jiraTicket: { type: String },
 
