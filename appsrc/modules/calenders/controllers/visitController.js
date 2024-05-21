@@ -146,20 +146,20 @@ exports.sendEmailAlert = async (visitData) => {
     const Site = visitData?.site?.name;
     const purposeOfVisit = visitData?.purposeOfVisit;
     const visitDate = formatDate(visitData?.visitDate);
-    const endTime = visitData?.end;
     const createdBy = visitData?.createdBy?.name;
     const createdAt = visitData?.createdBy?.name;
 
     const options = {
       timeZone: 'Pacific/Auckland', // New Zealand time zone
-      hour12: false, // 24-hour format
-      weekday: 'short', // Abbreviated weekday name (e.g., "Tue")
+      hour12: true, // 24-hour format
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
     };
     
     const startTime = visitData?.start.toLocaleString('en-NZ', options);
+    const endTime = visitData?.end.toLocaleString('en-NZ', options);
+
 
     console.log({startTime});
 
