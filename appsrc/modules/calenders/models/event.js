@@ -29,20 +29,19 @@ const docSchema = new Schema({
         },
 
 
-        purposeOfVisit: { type: String, maxlength: 500 },
+        description: { type: String, maxlength: 500 },
 
-        visitNote: { type: String, maxlength: 200 },
+        note: { type: String, maxlength: 200 },
 
-        visitDate: { type: Date, required: true },
         start: { type: Date },
         end: { type: Date }
 },
         {
-                collection: 'Visits'
+                collection: 'Events'
         });
 
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
 
-module.exports = mongoose.model('Visit', docSchema);
+module.exports = mongoose.model('Event', docSchema);

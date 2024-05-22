@@ -14,14 +14,14 @@ const awsService = require('../../../base/aws');
 let calenderDBService = require('../service/calenderDBService')
 this.dbservice = new calenderDBService();
 
-const { Visit } = require('../models');
+const { Event } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
 this.query = {};
-this.orderBy = { visit_name: 1 };
+this.orderBy = { event_name: 1 };
 this.populate = [
   { path: 'customer', select: 'name ref clientCode' },
   { path: 'site', select: 'name' },
@@ -39,9 +39,9 @@ this.populate = [
   { path: 'updatedBy', select: 'name' },
 ];
 
-exports.getVisit = async (req, res, next) => {
+exports.getEvent = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Visit, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -49,14 +49,16 @@ exports.getVisit = async (req, res, next) => {
   }
 };
 
-exports.getVisits = async (req, res, next) => {
+exports.getEvents = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    const queryDates = await fetchVisitsDates(req.query?.month, req.query?.year);
-    this.query.visitDate = queryDates.visitDate;
+    const queryDates = await fetchEventsDates(req.query?.month, req.query?.year);
+    console.log('queryDates : ',queryDates)
+    this.query.eventDate = queryDates.eventDate;
     delete this.query.month;
     delete this.query.year;
-    const response = await this.dbservice.getObjectList(req, Visit, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(req, Event, this.fields, this.query, this.orderBy, this.populate);
+    console.log("response : ",response);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -64,7 +66,7 @@ exports.getVisits = async (req, res, next) => {
   }
 };
 
-async function fetchVisitsDates(month = (new Date()).getMonth() + 1, year = (new Date()).getFullYear()) {
+async function fetchEventsDates(month = (new Date()).getMonth() + 1, year = (new Date()).getFullYear()) {
 
   // Calculate the start and end dates for the month
   const startDate = new Date(year, month - 1, 1); // month is 0-based index in JavaScript
@@ -79,21 +81,21 @@ async function fetchVisitsDates(month = (new Date()).getMonth() + 1, year = (new
 
   try {
     return {
-      visitDate: {
+      start: {
         $gte: startDateBefore,
         $lte: endDateAfter
       }
     };
   } catch (error) {
-    console.error('Error fetching visits:', error);
+    console.error('Error fetching Events:', error);
     throw error;
   }
 }
 
 
-exports.deleteVisit = async (req, res, next) => {
+exports.deleteEvent = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Visit, req.params.id);
+    const result = await this.dbservice.deleteObject(Event, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -101,7 +103,7 @@ exports.deleteVisit = async (req, res, next) => {
   }
 };
 
-exports.postVisit = async (req, res, next) => {
+exports.postEvent = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -109,8 +111,8 @@ exports.postVisit = async (req, res, next) => {
     try {
       const requestedObject = getDocumentFromReq(req, 'new');
       const response = await this.dbservice.postObject(requestedObject);
-      const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, response._id, this.populate);
-      res.status(StatusCodes.CREATED).json({ Visit: objectWithPopulate });
+      const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, response._id, this.populate);
+      res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
       exports.sendEmailAlert(objectWithPopulate);
     } catch (error) {
       logger.error(new Error(error));
@@ -120,19 +122,19 @@ exports.postVisit = async (req, res, next) => {
 };
 
 
-exports.sendEmailAlert = async (visitData) => {
-  if (visitData) {
-    let emailSubject = "Calendar Events Alerts";
+exports.sendEmailAlert = async (eventData) => {
+  if (eventData) {
+    let emailSubject = "New Event Notification";
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
-    const primaryEmail = emailRegex.test(visitData.primaryTechnician.email) ? visitData.primaryTechnician.email : null;
-    const notifyContacts = visitData.notifyContacts.filter(email => emailRegex.test(email));
-    const supportTechnicians = visitData.supportingTechnicians.filter(email => emailRegex.test(email));
+    const primaryEmail = emailRegex.test(eventData.primaryTechnician.email) ? eventData.primaryTechnician.email : null;
+    const notifyContacts = eventData.notifyContacts.filter(email => emailRegex.test(email));
+    const supportTechnicians = eventData.supportingTechnicians.filter(email => emailRegex.test(email));
+    const technicians = eventData.supportingTechnicians.map( sp => `${firstName || '' } ${lastName || '' }` );
     
-
     let emalsToSend = notifyContacts.concat(supportTechnicians);
     
     if(primaryEmail)
-      emalsToSend.push(visitData.primaryTechnician);
+      emalsToSend.push(eventData.primaryTechnician);
     
     let emalsToSend_ = emalsToSend.map(obj => obj.email);
     let params = {
@@ -141,13 +143,13 @@ exports.sendEmailAlert = async (visitData) => {
       html: true
     };
 
-    const customer = visitData?.customer?.name;
-    const serialNo = visitData?.machine?.serialNo;
-    const Site = visitData?.site?.name;
-    const purposeOfVisit = visitData?.purposeOfVisit;
-    const visitDate = formatDate(visitData?.visitDate);
-    const createdBy = visitData?.createdBy?.name;
-    const createdAt = visitData?.createdBy?.name;
+    const customer = eventData?.customer?.name;
+    const serialNo = eventData?.machine?.serialNo;
+    const Site = eventData?.site?.name;
+    const description = eventData?.description;
+    // const visitDate = formatDate(eventData?.visitDate);
+    const createdBy = eventData?.createdBy?.name;
+    const createdAt = eventData?.createdBy?.name;
 
     const options = {
       timeZone: 'Pacific/Auckland', // New Zealand time zone
@@ -158,9 +160,9 @@ exports.sendEmailAlert = async (visitData) => {
     };
     
 
-    console.log("visitData?.end", visitData?.end);
-    const startTime = visitData?.start?.toLocaleString('en-NZ', options);
-    const endTime = visitData?.end?.toLocaleString('en-NZ', options);
+    console.log("eventData?.end", eventData?.end);
+    const startTime = eventData?.start?.toLocaleString('en-NZ', options);
+    const endTime = eventData?.end?.toLocaleString('en-NZ', options);
 
 
     console.log({startTime});
@@ -180,7 +182,7 @@ exports.sendEmailAlert = async (visitData) => {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, footerContent, customer, serialNo, Site, purposeOfVisit, visitDate, startTime, endTime, createdBy, createdAt })
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params, emalsToSend_);
         console.log(response);
@@ -213,15 +215,15 @@ function formatDate(date) {
 }
 
 
-exports.patchVisit = async (req, res, next) => {
+exports.patchEvent = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Visit, req.params.id, getDocumentFromReq(req));
-      const objectWithPopulate = await this.dbservice.getObjectById(Visit, this.fields, req.params.id, this.populate);
-      res.status(StatusCodes.ACCEPTED).json({ Visit: objectWithPopulate });
+      const result = await this.dbservice.patchObject(Event, req.params.id, getDocumentFromReq(req));
+      const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
+      res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
       exports.sendEmailAlert(objectWithPopulate);
     } catch (error) {
       logger.error(new Error(error));
@@ -232,11 +234,11 @@ exports.patchVisit = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType) {
   const { customer, site, contact, machine, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
-    purposeOfVisit, visitNote, isActive, isArchived, visitDate, start, end, loginUser } = req.body;
+    description, note, isActive, isArchived, start, end, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new Visit({});
+    doc = new Event({});
   }
 
   if ("customer" in req.body) {
@@ -272,14 +274,11 @@ function getDocumentFromReq(req, reqType) {
   if ("status" in req.body) {
     doc.status = status;
   }
-  if ("purposeOfVisit" in req.body) {
-    doc.purposeOfVisit = purposeOfVisit;
+  if ("description" in req.body) {
+    doc.description = description;
   }
-  if ("visitNote" in req.body) {
-    doc.visitNote = visitNote;
-  }
-  if ("visitDate" in req.body) {
-    doc.visitDate = visitDate;
+  if ("note" in req.body) {
+    doc.note = note;
   }
 
   if ("start" in req.body) {
