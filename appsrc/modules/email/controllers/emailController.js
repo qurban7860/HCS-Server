@@ -42,6 +42,11 @@ exports.getEmail = async (req, res, next) => {
 exports.getEmails = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
+    
+    if (this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
 
     let response = await this.dbservice.getObjectList(req, Email, this.fields, this.query, this.orderBy, this.populate);
     
