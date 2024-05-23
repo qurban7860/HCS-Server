@@ -320,7 +320,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     subject,
     body,
     toEmails:emailAddresses,
-    fromEmail: toUser,
+    fromEmail:process.env.AWS_SES_FROM_EMAIL,
     customer:'',
     toContacts:[],
     toUsers:[],
