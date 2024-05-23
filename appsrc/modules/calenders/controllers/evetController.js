@@ -10,11 +10,12 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 const awsService = require('../../../base/aws');
-
+const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
 this.dbservice = new calenderDBService();
 
 const { Event } = require('../models');
+const { SecurityUser } = require('../../security/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -112,8 +113,9 @@ exports.postEvent = async (req, res, next) => {
       const requestedObject = getDocumentFromReq(req, 'new');
       const response = await this.dbservice.postObject(requestedObject);
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, response._id, this.populate);
+      const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate);
+      exports.sendEmailAlert(objectWithPopulate, user?.name);
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -122,14 +124,14 @@ exports.postEvent = async (req, res, next) => {
 };
 
 
-exports.sendEmailAlert = async (eventData) => {
-  if (eventData) {
+exports.sendEmailAlert = async (eventData, securityUserName) => {
+  if (eventData && securityUserName) {
     let emailSubject = "New Event Notification";
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const primaryEmail = emailRegex.test(eventData.primaryTechnician.email) ? eventData.primaryTechnician.email : null;
     const notifyContacts = eventData.notifyContacts.filter(email => emailRegex.test(email));
     const supportTechnicians = eventData.supportingTechnicians.filter(email => emailRegex.test(email));
-    const technicians = eventData.supportingTechnicians.map( sp => `${firstName || '' } ${lastName || '' }` );
+    const technicians = eventData.supportingTechnicians.map( sp => `${sp?.firstName || '' } ${sp?.lastName || '' }` );
     
     let emalsToSend = notifyContacts.concat(supportTechnicians);
     
@@ -159,14 +161,8 @@ exports.sendEmailAlert = async (eventData) => {
       second: '2-digit'
     };
     
-
-    console.log("eventData?.end", eventData?.end);
     const startTime = eventData?.start?.toLocaleString('en-NZ', options);
     const endTime = eventData?.end?.toLocaleString('en-NZ', options);
-
-
-    console.log({startTime});
-
 
     let hostName = 'portal.howickltd.com';
 
@@ -182,12 +178,23 @@ exports.sendEmailAlert = async (eventData) => {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params, emalsToSend_);
         console.log(response);
       })
     })
+
+    const emailResponse = await addEmail(params.subject, params.htmlData, securityUserName, params.to);
+          
+    this.dbservice.postObject(emailResponse, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      }
+    }
+  
   } else {
   }
 }
@@ -223,8 +230,9 @@ exports.patchEvent = async (req, res, next) => {
     try {
       const result = await this.dbservice.patchObject(Event, req.params.id, getDocumentFromReq(req));
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
+      const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate);
+      exports.sendEmailAlert(objectWithPopulate, user?.name);
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -308,6 +316,43 @@ function getDocumentFromReq(req, reqType) {
     doc.updatedIP = loginUser.userIP;
   }
   return doc;
+}
+
+async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
+  var email = {
+    subject,
+    body,
+    toEmails:emailAddresses,
+    fromEmail:process.env.AWS_SES_FROM_EMAIL,
+    customer:'',
+    toContacts:[],
+    toUsers:[],
+    ccEmails,
+    bccEmails,
+    isArchived: false,
+    isActive: true,
+    // loginIP: ip,
+    createdBy: '',
+    updatedBy: '',
+    createdIP: ''
+  };
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+    }
+  }
+  
+  var reqEmail = {};
+
+  reqEmail.body = email;
+  
+  const res = emailController.getDocumentFromReq(reqEmail, 'new');
+  return res;
 }
 
 
