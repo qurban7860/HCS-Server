@@ -54,12 +54,10 @@ exports.getEvents = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     const queryDates = await fetchEventsDates(req.query?.month, req.query?.year);
-    console.log('queryDates : ',queryDates)
     this.query.eventDate = queryDates.eventDate;
     delete this.query.month;
     delete this.query.year;
     const response = await this.dbservice.getObjectList(req, Event, this.fields, this.query, this.orderBy, this.populate);
-    console.log("response : ",response);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -126,7 +124,7 @@ exports.postEvent = async (req, res, next) => {
 
 exports.sendEmailAlert = async (eventData, securityUserName) => {
   if (eventData && securityUserName) {
-    let emailSubject = "New Event Notification";
+    let emailSubject = "New event notification";
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const primaryEmail = emailRegex.test(eventData.primaryTechnician.email) ? eventData.primaryTechnician.email : null;
     const notifyContacts = eventData.notifyContacts.filter(email => emailRegex.test(email));
@@ -149,7 +147,7 @@ exports.sendEmailAlert = async (eventData, securityUserName) => {
     const serialNo = eventData?.machine?.serialNo;
     const Site = eventData?.site?.name;
     const description = eventData?.description;
-    // const visitDate = formatDate(eventData?.visitDate);
+    const date = formatDate(eventData?.start);
     const createdBy = eventData?.createdBy?.name;
     const createdAt = eventData?.createdBy?.name;
 
@@ -178,10 +176,9 @@ exports.sendEmailAlert = async (eventData, securityUserName) => {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, date, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         let response = await awsService.sendEmail(params, emalsToSend_);
-        console.log(response);
       })
     })
 
@@ -215,7 +212,7 @@ function formatDate(date) {
     const suffixes = ["th", "st", "nd", "rd"];
     const suffix = suffixes[(day - 1) % 10] || suffixes[0];
   
-    return `${day}${suffix} ${months[monthIndex]} ${year}`;
+    return `${day} ${months[monthIndex]} ${year}`;
   } else {
     return "";
   }
