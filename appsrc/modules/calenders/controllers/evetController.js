@@ -113,7 +113,7 @@ exports.postEvent = async (req, res, next) => {
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, response._id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user?.name);
+      exports.sendEmailAlert(objectWithPopulate, user);
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -122,7 +122,8 @@ exports.postEvent = async (req, res, next) => {
 };
 
 
-exports.sendEmailAlert = async (eventData, securityUserName) => {
+exports.sendEmailAlert = async (eventData, securityUser) => {
+  const securityUserName = securityUser?.name;
   if (eventData && securityUserName) {
     let emailSubject = "New event notification";
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
@@ -181,7 +182,7 @@ exports.sendEmailAlert = async (eventData, securityUserName) => {
       })
     })
 
-    const emailResponse = await addEmail(params.subject, params.htmlData, securityUserName, params.to);
+    const emailResponse = await addEmail(params.subject, params.htmlData, securityUser?.email, params.to);
           
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
@@ -228,7 +229,7 @@ exports.patchEvent = async (req, res, next) => {
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user?.name);
+      exports.sendEmailAlert(objectWithPopulate, user);
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -319,7 +320,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     subject,
     body,
     toEmails:emailAddresses,
-    fromEmail:process.env.AWS_SES_FROM_EMAIL,
+    fromEmail: toUser,
     customer:'',
     toContacts:[],
     toUsers:[],
@@ -332,16 +333,6 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
-  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
-    email.toUsers.push(toUser.id);
-    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
-      email.customer = toUser.customer.id;
-    }
-
-    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
-      email.toContacts.push(toUser.contact.id);
-    }
-  }
   
   var reqEmail = {};
 
