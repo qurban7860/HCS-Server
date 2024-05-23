@@ -156,7 +156,6 @@ exports.sendEmailAlert = async (eventData, securityUserName) => {
       hour12: true, // 24-hour format
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit'
     };
     
     const startTime = eventData?.start?.toLocaleString('en-NZ', options);
