@@ -14,7 +14,7 @@ this.dbservice = new customerDBService();
 
 const { CustomerSite, CustomerContact, Customer, CustomerNote } = require('../models');
 const { ProductServiceRecords } = require('../../products/models');
-const { Visit } = require('../../calenders/models');
+const { Event } = require('../../calenders/models');
 
 const { Document } = require('../../documents/models');
 
@@ -205,8 +205,8 @@ exports.patchCustomerSite = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Record"); 
       }
 
-      const visitRecord = await Visit.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(visitRecord) {
+      const eventRecord = await Event.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(eventRecord) {
         return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Record"); 
       }
     }

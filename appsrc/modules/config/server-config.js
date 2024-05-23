@@ -133,7 +133,7 @@ class App {
     documentRoute.registerDocumentRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
-    calenderRoute.registerVisitRoutes(this.app, apiPath);
+    calenderRoute.registerEventRoutes(this.app, apiPath);
     
     
 
