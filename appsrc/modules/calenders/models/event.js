@@ -10,7 +10,7 @@ const docSchema = new Schema({
 
         contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
 
-        machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
+        machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
 
         site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
 
@@ -33,7 +33,7 @@ const docSchema = new Schema({
 
         note: { type: String, maxlength: 200 },
 
-        start: { type: Date },
+        start: { type: Date, required: true },
         end: { type: Date }
 },
         {

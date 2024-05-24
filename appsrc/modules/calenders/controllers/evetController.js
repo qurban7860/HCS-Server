@@ -125,7 +125,7 @@ exports.postEvent = async (req, res, next) => {
 exports.sendEmailAlert = async (eventData, securityUser) => {
   const securityUserName = securityUser?.name;
   if (eventData && securityUserName) {
-    let emailSubject = "New event notification";
+    let emailSubject = "New Event Notification";
     const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const primaryEmail = emailRegex.test(eventData.primaryTechnician.email) ? eventData.primaryTechnician.email : null;
     const notifyContacts = eventData.notifyContacts.filter(email => emailRegex.test(email));
@@ -167,23 +167,12 @@ exports.sendEmailAlert = async (eventData, securityUser) => {
     if (process.env.CLIENT_HOST_NAME)
       hostName = process.env.CLIENT_HOST_NAME;
 
-    let hostUrl = "https://portal.howickltd.com";
+    let hostUrl = "https://portal.howickltd.com"; //env
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
-
-    fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
-      let footerContent = render(data, { emailSubject, hostName, hostUrl })
-
-      fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, date, startTime, endTime, createdBy, createdAt })
-        params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params, emalsToSend_);
-      })
-    })
-
-    const emailResponse = await addEmail(params.subject, params.htmlData, securityUser?.email, params.to);
-          
+    
+    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to);
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -191,6 +180,18 @@ exports.sendEmailAlert = async (eventData, securityUser) => {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       }
     }
+
+
+    fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
+      let footerContent = render(data, { emailSubject, hostName, hostUrl })
+
+      fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, date, startTime, endTime, createdBy, createdAt })
+        params.htmlData = htmlData;
+        let response = await awsService.sendEmail(params, emalsToSend_, "CALENDAR_ALERTS");
+      })
+    })
+
   
   } else {
   }
@@ -321,7 +322,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     body,
     toEmails:emailAddresses,
     fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer:'',
+    customer:null,
     toContacts:[],
     toUsers:[],
     ccEmails,

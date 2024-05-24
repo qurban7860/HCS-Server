@@ -56,12 +56,12 @@ class CalenderService {
   }
 
   async postObject(document){
-    console.log("ok..");
     try{
       const response = await this.db.postObject(document);
       return response;
     }
     catch(error){
+      console.log("error", error);
       return error;
     }
   }
