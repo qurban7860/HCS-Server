@@ -1,3 +1,3 @@
 module.exports = {
-    visitController: require('./visitController')
+    eventController: require('./evetController')
 }

@@ -191,7 +191,6 @@ class dbService {
   async patchObject(model, id, Object, callback) {
     if(callback) {
       model.updateOne({ _id: id }, Object).then(function (doc) {
-        //console.log("doc: "+JSON.stringify(doc) );
         callback(null, doc);
       }).catch(function (error) {
         console.error(error);

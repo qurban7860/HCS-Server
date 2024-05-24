@@ -709,9 +709,6 @@ exports.patchProduct = async (req, res, next) => {
           if (toBeConnected.length > 0)
             machine = await connectMachines(machine.id, toBeConnected);
 
-
-
-
           req.body.machineConnections = machine.machineConnections;
 
         }
@@ -777,7 +774,7 @@ exports.patchProductStatus = async (req, res, next) => {
     }
 
     if (productStatus?.slug === 'transferred') {
-      return res.status(StatusCodes.BAD_REQUEST).send(`you can not change directly to transphred from here`);
+      return res.status(StatusCodes.BAD_REQUEST).send(`you can not change directly to transferred from here`);
     }
 
     const whereClause = { _id: req.params.id, isActive: true, isArchived: false };

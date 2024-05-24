@@ -159,6 +159,7 @@ exports.sendEmailforBackup = async (req, res, next) => {
     databaseName,
     backupType,
     backupSize,
+    backupTime,
   } = req.body;
 
   let params = {
@@ -183,7 +184,7 @@ exports.sendEmailforBackup = async (req, res, next) => {
 
     fs.readFile(__dirname + '/../../email/templates/data-base-backup.html', 'utf8', async function (err, data) {
 
-      let htmlData = render(data, { hostName, hostUrl, username, footerContent, name, databaseName, backupSize, backupLocation })
+      let htmlData = render(data, { hostName, hostUrl, footerContent, name, databaseName, backupSize, backupTime, backupLocation })
       params.htmlData = htmlData;
       let response = await awsService.sendEmail(params);
     })
@@ -257,7 +258,7 @@ exports.backupMongoDB = async (req, res, next) => {
           const durationSeconds = (endTime - startTime) / 1000;
           let req = {};
           req.body = {};
-          console.log({ totalZipSizeInkb });
+          const backupsizeInGb = totalZipSizeInkb > 0 ? totalZipSizeInkb / (1024 * 1024) : 0
           req.body = {
             name: fileNameZip,
             backupDuration: durationSeconds,
@@ -267,7 +268,8 @@ exports.backupMongoDB = async (req, res, next) => {
             databaseVersion: '1',
             databaseName: process.env.MONGODB_USERNAME,
             backupType: 'SYSTEM',
-            backupSize: totalZipSizeInkb > 0 ? totalZipSizeInkb / (1024 * 1024) : 0
+            backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} MB`,
+            backupTime: endTime
           };
           if(process.env.ADMIN_EMAIL?.trim().length > 0)
             exports.sendEmailforBackup(req);

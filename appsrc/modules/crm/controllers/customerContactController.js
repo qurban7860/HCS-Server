@@ -7,7 +7,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const { Config } = require('../../config/models');
 const { ProductServiceRecords, Product } = require('../../products/models');
-const { Visit } = require('../../calenders/models');
+const { Event } = require('../../calenders/models');
 const { SecurityUser } = require('../../security/models');
 const { Document, DocumentVersion, DocumentFile } = require('../../documents/models');
 
@@ -460,9 +460,9 @@ async function checkIfContactIsAttached(req, res) {
         { supportingTechnicians: req.params.id },
         { notifyContacts: req.params.id }
       ];
-      const visitQuery_ = await Visit.findOne({ $or, isActive: true, isArchived: false }).select('_id').lean();
-      if (visitQuery_) {
-        return "Contact is attached in calender visit";
+      const eventQuery_ = await Event.findOne({ $or, isActive: true, isArchived: false }).select('_id').lean();
+      if (eventQuery_) {
+        return "Contact is attached in calender Event";
       }
 
       const docxQuery_ = await Document.findOne({ contact: req.params.id, isActive: true, isArchived: false }).select('_id').lean();

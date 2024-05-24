@@ -10,7 +10,7 @@ const docSchema = new Schema({
 
         contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
 
-        machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
+        machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
 
         site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
 
@@ -29,20 +29,19 @@ const docSchema = new Schema({
         },
 
 
-        purposeOfVisit: { type: String, maxlength: 500 },
+        description: { type: String, maxlength: 500 },
 
-        visitNote: { type: String, maxlength: 200 },
+        note: { type: String, maxlength: 200 },
 
-        visitDate: { type: Date, required: true },
-        start: { type: Date },
+        start: { type: Date, required: true },
         end: { type: Date }
 },
         {
-                collection: 'Visits'
+                collection: 'Events'
         });
 
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
 
-module.exports = mongoose.model('Visit', docSchema);
+module.exports = mongoose.model('Event', docSchema);

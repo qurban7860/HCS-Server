@@ -1,11 +1,11 @@
 //'use strict'
 
 const apiPath = process.env.API_ROOT;
-const visitRoute = require('./visitRoute');
+const eventRoute = require('./eventRoute');
 
 
-exports.registerVisitRoutes = (app, apiPath) => {
+exports.registerEventRoutes = (app, apiPath) => {
     const rootPathForModule = `${apiPath}/calender`
 
-    app.use(`${rootPathForModule}`, visitRoute);
+    app.use(`${rootPathForModule}`, eventRoute);
 }
