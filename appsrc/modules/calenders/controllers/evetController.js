@@ -161,6 +161,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         'muzna@terminustech.com',];
     }
     
+    
     let params = {
       to: primaryEmail,
       subject: emailSubject,
@@ -356,6 +357,17 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
+  
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+    }
+  }
   
   var reqEmail = {};
 
