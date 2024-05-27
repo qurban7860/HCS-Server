@@ -27,12 +27,9 @@ this.populate = [
   { path: 'customer', select: 'name ref clientCode' },
   { path: 'site', select: 'name' },
   { path: 'contact', select: 'firstName lastName email' },
-  { path: 'notifyContacts', select: 'firstName lastName email' },
-  { path: 'supportingTechnicians', select: 'firstName lastName email' },
+  { path: 'notifyContacts', select: 'firstName lastName email ' },
+  { path: 'supportingTechnicians', select: 'firstName lastName email ' },
   { path: 'primaryTechnician', select: 'firstName lastName email' },
-
-
-
   { path: 'machine', select: 'serialNo' },
   { path: 'technicians', select: 'name phone email' },
   { path: 'completedBy', select: 'name phone email' },
@@ -113,7 +110,7 @@ exports.postEvent = async (req, res, next) => {
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, response._id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user);
+      exports.sendEmailAlert(objectWithPopulate, user, "New Event Notification" );
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -122,22 +119,49 @@ exports.postEvent = async (req, res, next) => {
 };
 
 
-exports.sendEmailAlert = async (eventData, securityUser) => {
+exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
+
   const securityUserName = securityUser?.name;
+  const contacts = [ ...eventData.notifyContacts, ...eventData.supportingTechnicians ];
+  const uniqueTechnicians = new Set();
+  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
+
+  function filterAndDeduplicateEmails(data) {
+    const seen = new Set();
+    data.map(d => {
+      if (emailRegex.test(d?.email) && !seen.has(d?.email)) {
+        seen.add(d?.email);
+      }
+    });
+    return seen
+  }
   if (eventData && securityUserName) {
-    let emailSubject = "New Event Notification";
-    const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
     const primaryEmail = emailRegex.test(eventData.primaryTechnician.email) ? eventData.primaryTechnician.email : null;
-    const notifyContacts = eventData.notifyContacts.filter(email => emailRegex.test(email));
-    const supportTechnicians = eventData.supportingTechnicians.filter(email => emailRegex.test(email));
-    const technicians = eventData.supportingTechnicians.map( sp => `${sp?.firstName || '' } ${sp?.lastName || '' }` );
+    const ContactsEmailsSet = filterAndDeduplicateEmails(contacts);
+    const ContactsEmails = Array.from(ContactsEmailsSet);
+    // getting unique contact names
+
+    eventData.supportingTechnicians.forEach(sp => { uniqueTechnicians.add(`${sp?.firstName || ''} ${sp?.lastName || ''}`.trim()) });
+
+    const primaryTechnicianName = `${eventData.primaryTechnician.firstName || ''} ${eventData.primaryTechnician.lastName || ''}`.trim();
+    if (primaryTechnicianName) {
+      uniqueTechnicians.add(primaryTechnicianName);
+    }
+
+    const technicians = Array.from(uniqueTechnicians);
+
+    let emalsToSend
+
+    if(process.env.ENV.toLocaleUpperCase() === 'LIVE'){
+      emalsToSend = ContactsEmails;
+    } else {
+      emalsToSend = [
+        'a.hassan@terminustech.com',
+        'zeeshan@terminustech.com',	
+        'muzna@terminustech.com',];
+    }
     
-    let emalsToSend = notifyContacts.concat(supportTechnicians);
     
-    if(primaryEmail)
-      emalsToSend.push(eventData.primaryTechnician);
-    
-    let emalsToSend_ = emalsToSend.map(obj => obj.email);
     let params = {
       to: primaryEmail,
       subject: emailSubject,
@@ -181,14 +205,13 @@ exports.sendEmailAlert = async (eventData, securityUser) => {
       }
     }
 
-
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
 
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, date, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params, emalsToSend_, "CALENDAR_ALERTS");
+        let response = await awsService.sendEmail(params, emalsToSend, "CALENDAR_ALERTS");
       })
     })
 
@@ -230,7 +253,7 @@ exports.patchEvent = async (req, res, next) => {
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user);
+      exports.sendEmailAlert(objectWithPopulate, user, 'Event Update Notification');
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -334,6 +357,17 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
+  
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+    email.toUsers.push(toUser.id);
+    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+      email.customer = toUser.customer.id;
+    }
+
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+      email.toContacts.push(toUser.contact.id);
+    }
+  }
   
   var reqEmail = {};
 
