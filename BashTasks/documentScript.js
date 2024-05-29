@@ -27,6 +27,7 @@ var sessionId;
 var logging = [];
 const filePath_ = getFormattedDate();
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
+let index = 1
 
 function getFormattedDate() {
     const date = new Date();
@@ -76,7 +77,7 @@ async function main() {
     //     finalResults.push(loggingObj);
     // }
 
-    console.log(' csv Data: ',logging);
+    // console.log(' csv Data: ',logging);
 if(Array.isArray(logging) && logging.length > 0  ){
     const csv = parse(logging);
     await fs.writeFile(filePath_, csv, async (err) => {
@@ -120,29 +121,28 @@ if(Array.isArray(logging) && logging.length > 0  ){
                     reject(err); // If there's an error, reject the Promise
                     console.error('Error checking file stats:', err);
                 }
-                console.log('reading...');
+                console.log('Reading Folder...');
                 if (stats.isDirectory()) {
                     // Recursively read subfolders
                     await readFolders(filePath, allowedExtension, disallowedExtension);
                     resolve(stats);
                 } else  {
-                    console.log({filePath});
                     // Check if the file is allowed or disallowed
                     const ETAG = await generateEtag(filePath);
                     const fileName = path.basename(filePath);
                     if (fileName.includes(allowedExtension)) {
                         const folders = filePath.split(path.sep);
-
+                        
                         // Check if "Assembly Drawings" is part of the folder path
-                        const containsAssemblyDrawings = folders.includes('Assembly Drawings');
+                        const containsAssemblyDrawings = filePath.includes('Assembly Drawings');
                         if (!containsAssemblyDrawings) {
                             resolve(stats);
                             return;
                         }
-
+                        console.log(`${index} filePath : ${filePath}`);
+                        index += 1;
                         const parentFolder = folders[folders.length - (folders.length - 2)];
                         const childFolder = folders[folders.length - 2];
-
                         let docxCategory = await fetchDocxCategory(childFolder);
                         if (!docxCategory)
                             docxCategory = { name: childFolder };
