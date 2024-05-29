@@ -30,7 +30,7 @@ this.populate = [
   { path: 'notifyContacts', select: 'firstName lastName email ' },
   { path: 'supportingTechnicians', select: 'firstName lastName email ' },
   { path: 'primaryTechnician', select: 'firstName lastName email' },
-  { path: 'machine', select: 'serialNo' },
+  { path: 'machines', select: 'serialNo' },
   { path: 'technicians', select: 'name phone email' },
   { path: 'completedBy', select: 'name phone email' },
   { path: 'createdBy', select: 'name' },
@@ -169,7 +169,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     };
 
     const customer = eventData?.customer?.name;
-    const serialNo = eventData?.machine?.serialNo;
+    const serialNo = eventData?.machines?.map((m)=> m.serialNo);
     const Site = eventData?.site?.name;
     const description = eventData?.description;
     const date = formatDate(eventData?.start);
@@ -262,7 +262,7 @@ exports.patchEvent = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType) {
-  const { customer, site, contact, machine, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
+  const { customer, site, contact, machines, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
     description, note, isActive, isArchived, start, end, loginUser } = req.body;
 
   let doc = {};
@@ -280,8 +280,8 @@ function getDocumentFromReq(req, reqType) {
   if ("contact" in req.body) {
     doc.contact = contact;
   }
-  if ("machine" in req.body) {
-    doc.machine = machine;
+  if ("machines" in req.body) {
+    doc.machines = machines;
   }
 
   if ("jiraTicket" in req.body) {
