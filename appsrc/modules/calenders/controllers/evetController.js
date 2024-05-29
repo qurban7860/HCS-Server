@@ -30,7 +30,7 @@ this.populate = [
   { path: 'notifyContacts', select: 'firstName lastName email ' },
   { path: 'supportingTechnicians', select: 'firstName lastName email ' },
   { path: 'primaryTechnician', select: 'firstName lastName email' },
-  { path: 'machines', select: 'serialNo' },
+  { path: 'machines', select: 'serialNo name' },
   { path: 'technicians', select: 'name phone email' },
   { path: 'completedBy', select: 'name phone email' },
   { path: 'createdBy', select: 'name' },
