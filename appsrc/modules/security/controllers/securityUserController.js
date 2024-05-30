@@ -138,6 +138,7 @@ exports.postSecurityUser = async (req, res, next) => {
     
     if(!req.body.email) req.body.email = req.body.login;
     if(!req.body.login) req.body.login = req.body.email;
+    if(req.body.isInvite) req.body.isActive = false;
     
     var _this = this;
     let queryString = { 
