@@ -131,14 +131,16 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
   }
 
   if (eventData && securityUserName) {
-    const primaryEmail = verifyEmail(eventData.primaryTechnician.email);
-    const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData.notifyContacts);
-    const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData.supportingTechnicians);
+    const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
+    const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
+    const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
     const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
     const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
-
+    if(primaryEmail){
+      supportingContactsEmails?.push(primaryEmail);
+    }
     eventData.supportingTechnicians.forEach(sp => {
-      const technicianName = `${sp?.firstName.trim() || ''} ${sp?.lastName.trim() || ''}`;
+      const technicianName = ` ${sp?.firstName.trim() || ''} ${sp?.lastName.trim() || ''}`;
       if (!uniqueTechnicians.has(technicianName)) {
         uniqueTechnicians.add(technicianName);
       }
@@ -147,19 +149,19 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const technicians = Array.from(uniqueTechnicians);
     let emalsToSend
 
-    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
-      emalsToSend = supportingContactsEmails?.push(primaryEmail);
-    } else {
-      emalsToSend = [
-        'a.hassan@terminustech.com',
-        'zeeshan@terminustech.com',	
-        'muzna@terminustech.com',
-      ]
-    }
+    // if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
+      emalsToSend = supportingContactsEmails;
+    // } else {
+    //   emalsToSend = [
+    //     'a.hassan@terminustech.com',
+    //     'zeeshan@terminustech.com',	
+    //     'muzna@terminustech.com',
+    //   ]
+    // }
     
     let params = {
       to: primaryEmail,
-      CcAddresses: notifyContactsEmails,
+      ccAddresses: notifyContactsEmails,
       subject: emailSubject,
       html: true
     };
@@ -190,7 +192,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
-    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, '', params.CcAddresses );
+    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, '', params.ccAddresses );
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
