@@ -12,7 +12,7 @@ let rtnMsg = require('../../config/static/static')
 const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
-const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
+const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils/util');
 
 this.dbservice = new calenderDBService();
 

@@ -12,7 +12,7 @@ function filterAndDeduplicateEmails(data) {
 }
 
 function verifyEmail(email){
-    emailRegex.test(email) ? email : null;
+    return emailRegex.test(email) ? email : null;
 }
 
 module.exports = {
