@@ -125,7 +125,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
   const securityUserName = securityUser?.name;
   const uniqueTechnicians = new Set();
-  const primaryTechnicianName = `${eventData.primaryTechnician.firstName || ''} ${eventData.primaryTechnician.lastName || ''}`.trim();
+  const primaryTechnicianName = ` ${eventData.primaryTechnician.firstName.trim() || ''} ${eventData.primaryTechnician.lastName.trim() || ''}`;
   if (primaryTechnicianName) {
     uniqueTechnicians.add(primaryTechnicianName);
   }
@@ -136,13 +136,18 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData.supportingTechnicians);
     const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
     const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
-    // getting unique contact names
-    eventData.supportingTechnicians.forEach(sp => { uniqueTechnicians.add(` ${sp?.firstName.trim() || ''} ${sp?.lastName.trim() || ''}`) });
+
+    eventData.supportingTechnicians.forEach(sp => {
+      const technicianName = `${sp?.firstName.trim() || ''} ${sp?.lastName.trim() || ''}`;
+      if (!uniqueTechnicians.has(technicianName)) {
+        uniqueTechnicians.add(technicianName);
+      }
+    });
 
     const technicians = Array.from(uniqueTechnicians);
     let emalsToSend
 
-    if(process.env.ENV.toLocaleUpperCase() === 'LIVE'){
+    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
       emalsToSend = supportingContactsEmails?.push(primaryEmail);
     } else {
       emalsToSend = [
