@@ -134,15 +134,12 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
     const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
     const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
+    if(primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)){
+      supportingContactsEmailsSet.add(primaryEmail);
+    }
     const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
     const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
 
-    // console.log('supportingContactsEmails : ',supportingContactsEmails)
-    // console.log('notifyContactsEmails : ',notifyContactsEmails)
-
-    if(primaryEmail){
-      supportingContactsEmails?.push(primaryEmail);
-    }
     eventData.supportingTechnicians.forEach(sp => {
       const technicianName = ` ${sp?.firstName?.trim() || ''} ${sp?.lastName?.trim() || ''}`;
       if (!uniqueTechnicians.has(technicianName)) {
@@ -169,7 +166,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       subject: emailSubject,
       html: true
     };
-    // console.log('params : ',params,'emalsToSend : ',emalsToSend);
+
     const customer = eventData?.customer?.name;
     const serialNo = eventData?.machines?.map((m)=> m.serialNo);
     const Site = eventData?.site?.name;
