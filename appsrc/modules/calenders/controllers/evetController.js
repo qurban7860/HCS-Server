@@ -12,6 +12,8 @@ let rtnMsg = require('../../config/static/static')
 const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
+const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
+
 this.dbservice = new calenderDBService();
 
 const { Event } = require('../models');
@@ -122,48 +124,37 @@ exports.postEvent = async (req, res, next) => {
 exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
   const securityUserName = securityUser?.name;
-  const contacts = [ ...eventData.notifyContacts, ...eventData.supportingTechnicians ];
   const uniqueTechnicians = new Set();
-  const emailRegex = /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/;
-
-  function filterAndDeduplicateEmails(data) {
-    const seen = new Set();
-    data.map(d => {
-      if (emailRegex.test(d?.email) && !seen.has(d?.email)) {
-        seen.add(d?.email);
-      }
-    });
-    return seen
+  const primaryTechnicianName = `${eventData.primaryTechnician.firstName || ''} ${eventData.primaryTechnician.lastName || ''}`.trim();
+  if (primaryTechnicianName) {
+    uniqueTechnicians.add(primaryTechnicianName);
   }
+
   if (eventData && securityUserName) {
-    const primaryEmail = emailRegex.test(eventData.primaryTechnician.email) ? eventData.primaryTechnician.email : null;
-    const ContactsEmailsSet = filterAndDeduplicateEmails(contacts);
-    const ContactsEmails = Array.from(ContactsEmailsSet);
+    const primaryEmail = verifyEmail(eventData.primaryTechnician.email);
+    const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData.notifyContacts);
+    const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData.supportingTechnicians);
+    const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
+    const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
     // getting unique contact names
-
-    eventData.supportingTechnicians.forEach(sp => { uniqueTechnicians.add(`${sp?.firstName || ''} ${sp?.lastName || ''}`.trim()) });
-
-    const primaryTechnicianName = `${eventData.primaryTechnician.firstName || ''} ${eventData.primaryTechnician.lastName || ''}`.trim();
-    if (primaryTechnicianName) {
-      uniqueTechnicians.add(primaryTechnicianName);
-    }
+    eventData.supportingTechnicians.forEach(sp => { uniqueTechnicians.add(` ${sp?.firstName.trim() || ''} ${sp?.lastName.trim() || ''}`) });
 
     const technicians = Array.from(uniqueTechnicians);
-
     let emalsToSend
 
     if(process.env.ENV.toLocaleUpperCase() === 'LIVE'){
-      emalsToSend = ContactsEmails;
+      emalsToSend = supportingContactsEmails?.push(primaryEmail);
     } else {
       emalsToSend = [
         'a.hassan@terminustech.com',
         'zeeshan@terminustech.com',	
-        'muzna@terminustech.com',];
+        'muzna@terminustech.com',
+      ]
     }
-    
     
     let params = {
       to: primaryEmail,
+      CcAddresses: notifyContactsEmails,
       subject: emailSubject,
       html: true
     };
@@ -185,18 +176,16 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     
     const startTime = eventData?.start?.toLocaleString('en-NZ', options);
     const endTime = eventData?.end?.toLocaleString('en-NZ', options);
-
     let hostName = 'portal.howickltd.com';
 
     if (process.env.CLIENT_HOST_NAME)
       hostName = process.env.CLIENT_HOST_NAME;
 
-    let hostUrl = "https://portal.howickltd.com"; //env
+    let hostUrl = "https://portal.howickltd.com";
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
-    
-    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to);
+    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, '', params.CcAddresses );
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -207,16 +196,12 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
-
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, date, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
-        let response = await awsService.sendEmail(params, emalsToSend, "CALENDAR_ALERTS");
+        await awsService.sendEmail(params, emalsToSend );
       })
     })
-
-  
-  } else {
   }
 }
 
