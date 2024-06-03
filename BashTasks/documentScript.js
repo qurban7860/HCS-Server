@@ -134,8 +134,9 @@ if(Array.isArray(logging) && logging.length > 0  ){
                         const folders = filePath.split(path.sep);
                         
                         // Check if "Assembly Drawings" is part of the folder path
-                        const containsAssemblyDrawings = filePath.includes('Assembly Drawings');
-                        if (!containsAssemblyDrawings) {
+                        const containsAssemblyDrawings = filePath.toLowerCase().includes('assembly drawings');
+                        const containsArchiveAssemblyDrawings = filePath.toLowerCase().includes('archive');
+                        if (!containsAssemblyDrawings || containsArchiveAssemblyDrawings ){
                             resolve(stats);
                             return;
                         }
@@ -197,10 +198,17 @@ if(Array.isArray(logging) && logging.length > 0  ){
                         }
 
                         let regex_ = /^(\w+)\s([\w\s]+)/;
+                        let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
+                        // let regex_ = /^(\w+)\s([^\(]+?)\sV[\d.]+/;
                         let matches = fileName.match(regex_);
                         try{
                             referenceNumber = matches[1]; // "35634a"
+                            console.log('referenceNumber',referenceNumber)
                             docxType = matches[2].trim(); // "Hyd Pump"    
+                            if (pattern.test(docxType)) {
+                                docxType = docxType.replace(pattern, '');
+                            }
+                            console.log('docxType',docxType)
                         } catch (Exception){
                             referenceNumber = '';
                             docxType = '';        
@@ -216,7 +224,6 @@ if(Array.isArray(logging) && logging.length > 0  ){
                         const regex_VersionNo = /V(\d+)\.pdf$/;
                         const matches_Version = fileName.match(regex_VersionNo);
                         const versionNumber = matches_Version ? matches_Version[1] : 1;
-
                         const pdfData = fs.readFileSync(filePath);
                         isMachineDrawingAlreadyExists = isMachineDrawingAlreadyExists ? true : false;
                         const objectValues = {
@@ -229,7 +236,6 @@ if(Array.isArray(logging) && logging.length > 0  ){
 
                         // if (!data_log.isMachineDrawingAlreadyExists && !data_log.isMachineDrawingAttached) {
                         //     const propertiesNotFound = checkKeyValues(data_log);
-
                         //     if (!propertiesNotFound || propertiesNotFound?.length == 0) {
                         //         await uploadDocument(data_log)
                         //             .then(response => {
@@ -298,7 +304,7 @@ if(Array.isArray(logging) && logging.length > 0  ){
 
                 let logging = {
                     folderName: obj.childFolder,
-                    serialNo_DB: obj.productObject?.serialNo,
+                    serialNo: obj.productObject?.serialNo,
                     drawingMachine: obj.productObject?._id,
                     documentCategory: obj.docxCategory?._id,
                     documentCategoryName: obj.docxCategory?.name,
@@ -349,7 +355,7 @@ if(Array.isArray(logging) && logging.length > 0  ){
             }
 
             let recordValues = {
-                serialNo_DB: productObject?.serialNo,
+                serialNo: productObject?.serialNo,
                 stockNoValue: stockNoValue,
                 refNumber: refNumber,
                 versionNumber: versionNumber,
@@ -392,7 +398,7 @@ if(Array.isArray(logging) && logging.length > 0  ){
 
     async function uploadDocument(data) {
         try {
-            const { folderName, serialNo_DB, drawingMachine, documentCategory, documentCategoryName, documentType,
+            const { folderName, serialNo, drawingMachine, documentCategory, documentCategoryName, documentType,
                 documentTypeName, displayName, name, versionNo, referenceNumber, stockNumber,
                 customerAccess, isActive, imagePath, isMachineDrawingAlreadyExists, isMachineDrawingAttached } = data;
 
