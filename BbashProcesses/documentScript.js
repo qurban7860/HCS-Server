@@ -59,37 +59,32 @@ async function main() {
 
     await readFolders(targetDirectory, allowedExtension, disallowedExtension);
 
-    // var finalResults = [];
-    // for (const loggingObj of logging) {
-    //     if (!loggingObj.isMachineDrawingAlreadyExists && !loggingObj.isMachineDrawingAttached) {
-    //         if (!loggingObj.propertiesNotFound || loggingObj.propertiesNotFound?.length === 0) {
-    //             try {
-    //                 const response = await uploadDocument(loggingObj);
-    //                 loggingObj.uploadedSuccessfully = true;
-    //             } catch (error) {
-    //                 loggingObj.errorWhileUploading = true;
-    //                 console.error('Error:', error);
-    //             }
-    //         } else {
-    //             loggingObj.ignoredDueToInvalidData = true;
-    //         }
-    //     }
-    //     finalResults.push(loggingObj);
-    // }
 
-    // console.log(' csv Data: ',logging);
-if(Array.isArray(logging) && logging.length > 0  ){
+if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound )  ){
     const csv = parse(logging);
-    await fs.writeFile(filePath_, csv, async (err) => {
-        if (err) {
-            console.error('Error appending to CSV file:', err);
-            return;
+        await fs.writeFile(filePath_, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                return;
+                process.exit(0)
+            }
+            console.log(`Records appended to CSV file Name: ${filePath_} in project diractory successfully.`);
             process.exit(0)
-        }
-        console.log(`Records appended to CSV file Name: ${filePath_} in project diractory successfully.`);
-        process.exit(0)
-    });
-} else {
+        });
+} 
+else if(Array.isArray(logging) && logging.length > 0 && logging.some((log)=> log.propertiesNotFound ) ){
+        const csv = parse(logging);
+        await fs.writeFile(filePath_, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                return;
+                process.exit(0)
+            }
+            console.log(`Please resolve defined issues in CSV file Name: ${filePath_} in project diractory before upload!`);
+            process.exit(0)
+        });
+} 
+else {
     console.log('No data Available to create CSV.');
     process.exit(0)
 }
@@ -100,7 +95,7 @@ if(Array.isArray(logging) && logging.length > 0  ){
             for (const file of files) {
                 const filePath = path.join(targetDirectory, file);
                 try {
-                    const stats = await getFileStats(filePath);
+                    const stats = await getFileStats(filePath , true );
                 } catch (err) {
                     console.error('Error occurred:', err);
                 }
@@ -114,14 +109,14 @@ if(Array.isArray(logging) && logging.length > 0  ){
     }
 
 
-    async function getFileStats(filePath) {
+    async function getFileStats(filePath , isCheckBeforeUploade ) {
         return new Promise((resolve, reject) => {
             fs.stat(filePath, async (err, stats) => {
                 if (err) {
                     reject(err); // If there's an error, reject the Promise
                     console.error('Error checking file stats:', err);
                 }
-                console.log('Reading Folder...');
+                console.log( isCheckBeforeUploade ? 'Checking Files...' : 'Reading Folder...');
                 if (stats.isDirectory()) {
                     // Recursively read subfolders
                     await readFolders(filePath, allowedExtension, disallowedExtension);
@@ -199,16 +194,13 @@ if(Array.isArray(logging) && logging.length > 0  ){
 
                         let regex_ = /^(\w+)\s([\w\s]+)/;
                         let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
-                        // let regex_ = /^(\w+)\s([^\(]+?)\sV[\d.]+/;
                         let matches = fileName.match(regex_);
                         try{
-                            referenceNumber = matches[1]; // "35634a"
-                            console.log('referenceNumber',referenceNumber)
-                            docxType = matches[2].trim(); // "Hyd Pump"    
+                            referenceNumber = matches[1]; // Example: "35634a"
+                            docxType = matches[2].trim(); // Example: "Hyd Pump"    
                             if (pattern.test(docxType)) {
                                 docxType = docxType.replace(pattern, '');
                             }
-                            console.log('docxType',docxType)
                         } catch (Exception){
                             referenceNumber = '';
                             docxType = '';        
@@ -232,28 +224,10 @@ if(Array.isArray(logging) && logging.length > 0  ){
                         }
                         const data_log = await parsePDFAndLog(objectValues);
 
-
-
-                        // if (!data_log.isMachineDrawingAlreadyExists && !data_log.isMachineDrawingAttached) {
-                        //     const propertiesNotFound = checkKeyValues(data_log);
-                        //     if (!propertiesNotFound || propertiesNotFound?.length == 0) {
-                        //         await uploadDocument(data_log)
-                        //             .then(response => {
-                        //                 data_log.uploadedSuccessfull = true;
-                        //             })
-                        //             .catch(error => {
-                        //                 data_log.errorUploadeding = true;
-                        //                 console.error('Error:', error);
-                        //             });
-                        //     } else {
-                        //         data_log.propertiesNotFound = propertiesNotFound;
-                        //     }
-                        // }
-
                         const propertiesNotFound = await checkKeyValues(data_log);
                         if (propertiesNotFound && propertiesNotFound?.length != 0) {
                             data_log.propertiesNotFound = propertiesNotFound;
-                        } else {
+                        } else if(!isCheckBeforeUploade) {
                             if (!data_log.isMachineDrawingAlreadyExists && !data_log.isMachineDrawingAttached) {
                                 if (!data_log.propertiesNotFound || data_log.propertiesNotFound?.length === 0) {
                                     try {
