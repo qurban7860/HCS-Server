@@ -145,6 +145,9 @@ async function sendEmail(params, ToAddresses) {
     Destination: {
       ToAddresses: [
         params.to,
+      ],
+      CcAddresses: [
+        params.cc,
       ]
     },
     Message: {
