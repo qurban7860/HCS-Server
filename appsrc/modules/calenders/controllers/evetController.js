@@ -142,7 +142,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const technicians = Array.from(uniqueTechnicians);
     let emalsToSend
 
-    if(process.env.ENV.toLocaleUpperCase() === 'LIVE'){
+    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
       emalsToSend = supportingContactsEmails?.push(primaryEmail);
     } else {
       emalsToSend = [
