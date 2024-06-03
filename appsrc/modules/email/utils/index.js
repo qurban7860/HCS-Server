@@ -1,4 +1,8 @@
+// index.js
+
+const { filterAndDeduplicateEmails, verifyEmail } = require('./util');
+
 module.exports = {
-    filterAndDeduplicateEmails: require('./util'),
-    verifyEmail: require('./util')
+    filterAndDeduplicateEmails,
+    verifyEmail,
 };
