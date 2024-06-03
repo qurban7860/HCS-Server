@@ -146,9 +146,7 @@ async function sendEmail(params, toAddresses) {
       ToAddresses: [
         params.to,
       ],
-      CcAddresses: [
-        params.ccAddresses,
-      ]
+
     },
     Message: {
       Body: {
@@ -170,9 +168,13 @@ async function sendEmail(params, toAddresses) {
     ],
   };
 
-  if(toAddresses && toAddresses.length > 0)
+  if( toAddresses && toAddresses.length > 0 )
     emailParams.Destination.ToAddresses = toAddresses;
-  
+
+  if( params?.ccAddresses && params?.ccAddresses?.length > 0 ){
+    emailParams.Destination.CcAddresses = params.ccAddresses;
+  }
+
   if(params.html) {
     emailParams.Message.Body = {
       Html: {
@@ -181,6 +183,7 @@ async function sendEmail(params, toAddresses) {
       }
     }
   }
+  
   // Create the promise and SES service object
   let SES = new AWS.SES({region: process.env.AWS_REGION})
   SES.sendEmail(emailParams, function(err, data) {
