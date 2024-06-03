@@ -125,7 +125,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
   const securityUserName = securityUser?.name;
   const uniqueTechnicians = new Set();
-  const primaryTechnicianName = ` ${eventData.primaryTechnician.firstName.trim() || ''} ${eventData.primaryTechnician.lastName.trim() || ''}`;
+  const primaryTechnicianName = ` ${eventData?.primaryTechnician?.firstName?.trim() || ''} ${eventData?.primaryTechnician?.lastName?.trim() || ''}`;
   if (primaryTechnicianName) {
     uniqueTechnicians.add(primaryTechnicianName);
   }
@@ -136,11 +136,15 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
     const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
     const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
+
+    // console.log('supportingContactsEmails : ',supportingContactsEmails)
+    // console.log('notifyContactsEmails : ',notifyContactsEmails)
+
     if(primaryEmail){
       supportingContactsEmails?.push(primaryEmail);
     }
     eventData.supportingTechnicians.forEach(sp => {
-      const technicianName = ` ${sp?.firstName.trim() || ''} ${sp?.lastName.trim() || ''}`;
+      const technicianName = ` ${sp?.firstName?.trim() || ''} ${sp?.lastName?.trim() || ''}`;
       if (!uniqueTechnicians.has(technicianName)) {
         uniqueTechnicians.add(technicianName);
       }
@@ -165,7 +169,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       subject: emailSubject,
       html: true
     };
-
+    // console.log('params : ',params,'emalsToSend : ',emalsToSend);
     const customer = eventData?.customer?.name;
     const serialNo = eventData?.machines?.map((m)=> m.serialNo);
     const Site = eventData?.site?.name;
