@@ -847,12 +847,12 @@ exports.patchProductStatus = async (req, res, next) => {
         if(connectedMachineIds?.length > 0) {
           const results_ = await Product.updateMany({_id: {$in: connectedMachineIds}, isActive: true, isArchived: false}, updateClause);
         }
-        const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       } catch (error) {
         console.error("Error updating ProductConnection:", error);
       }
     }
     if (updatedProcess) {
+      const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       exports.sendEmailAlert( statusUpdateData, user, 'Machine Status update Notification');
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
     } else {
