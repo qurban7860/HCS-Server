@@ -132,11 +132,15 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
   if (eventData && securityUserName) {
     const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
-    const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
     const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
     if(primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)){
       supportingContactsEmailsSet.add(primaryEmail);
     }
+    const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
+    for (const email of supportingContactsEmailsSet) {
+      notifyContactsEmailsSet.delete(email);
+    }
+    
     const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
     const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
 
