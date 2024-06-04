@@ -135,7 +135,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
     if(primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)){
       const emailArray = Array.from(supportingContactsEmailsSet);
-      emailArray.splice(0, 0, element);
+      emailArray.splice(0, 0, primaryEmail);
       supportingContactsEmailsSet = new set(emailArray);
     }
     const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
@@ -156,15 +156,15 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const technicians = Array.from(uniqueTechnicians);
     let emalsToSend
 
-    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
+    // if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
       emalsToSend = supportingContactsEmails;
-    } else {
-      emalsToSend = [
-        'a.hassan@terminustech.com',
-        'zeeshan@terminustech.com',	
-        'muzna@terminustech.com',
-      ]
-    }
+    // } else {
+    //   emalsToSend = [
+    //     'a.hassan@terminustech.com',
+    //     'zeeshan@terminustech.com',	
+    //     'muzna@terminustech.com',
+    //   ]
+    // }
     
     let params = {
       to: primaryEmail,
