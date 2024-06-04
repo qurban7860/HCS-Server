@@ -136,7 +136,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     if(primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)){
       const emailArray = Array.from(supportingContactsEmailsSet);
       emailArray.splice(0, 0, primaryEmail);
-      supportingContactsEmailsSet = new set(emailArray);
+      supportingContactsEmailsSet = new Set(emailArray);
     }
     const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
     for (const email of supportingContactsEmailsSet) {
