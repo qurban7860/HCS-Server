@@ -4,7 +4,10 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const _ = require('lodash');
-
+const fs = require('fs');
+const { render } = require('template-file');
+const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
+const awsService = require('../../../base/aws');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -746,6 +749,7 @@ function isValidDate(dateString) {
 }
 
 exports.patchProductStatus = async (req, res, next) => {
+  let statusUpdateData ={};
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log("errors machine patch request", errors);
@@ -758,16 +762,40 @@ exports.patchProductStatus = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(`The validation parameter for the date is not valid.`);
     }
 
-    const productObj = await Product.findOne({ _id: productid }).select('_id status').lean();
+    const productObj = await Product.findOne({ _id: productid })
+            .select('_id serialNo status accountManager projectManager supportManager')
+            .populate({
+              path: 'status',
+              select: '_id name'
+            })
+            .populate({
+              path: 'accountManager',
+              select: '_id email'
+            })
+            .populate({
+              path: 'projectManager',
+              select: '_id email'
+            })
+            .populate({
+              path: 'supportManager',
+              select: '_id email'
+            }).lean();
+
+            statusUpdateData.machineSerialNo = productObj?.serialNo;
+            statusUpdateData.beforeStatus = productObj?.status?.name;
+            statusUpdateData.accountManager = productObj?.accountManager;
+            statusUpdateData.projectManager = productObj?.projectManager;
+            statusUpdateData.supportManager = productObj?.supportManager;
+
     if (!productObj) {
-      return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid product id to proceed!`);
+      return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid product Id to proceed!`);
     }
 
     const productStatus = await ProductStatus.findOne({ _id: statusid, isActive: true, isArchived: false }).select('_id slug name').lean();
+    statusUpdateData.newStatus = productStatus
     if (!productStatus) {
-      return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid status id to proceed!`);
+      return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid status Id to proceed!`);
     } else {
-      console.log(productStatus._id, statusid);
       if (productObj.status == statusid) {
         return res.status(StatusCodes.BAD_REQUEST).send(`Attempting to update the status(${productStatus?.name}) that the machine already possesses!`);
       }
@@ -793,28 +821,39 @@ exports.patchProductStatus = async (req, res, next) => {
 
     if (productStatus?.slug === 'assembly') {
       updateClause.$set.manufactureDate = req.body.dated;
+      statusUpdateData.manufactureDate = req.body.dated;
     } else if (productStatus?.slug === 'freight') {
       updateClause.$set.shippingDate = req.body.dated;
+      statusUpdateData.shippingDate = req.body.dated;
     } else if (productStatus?.slug === 'decommissioned') {
       updateClause.$set.decommissionedDate = req.body.dated;
+      statusUpdateData.decommissionedDate = req.body.dated;
     } else if (productStatus?.slug === 'commissioned') {
       updateClause.$set.installationDate = req.body.dated;
+      statusUpdateData.installationDate = req.body.dated;
     }
 
     const updatedProcess = await Product.updateOne(whereClause, updateClause); 
     if(req.body?.updateConnectedMachines && (req.body?.updateConnectedMachines === true || req.body?.updateConnectedMachines == 'true')) {
       const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
       try {
-        const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine').lean();
-        const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine);
+        const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine')
+        .populate([
+          { path: 'connectedMachine', select: 'serialNo' }
+        ]).lean();
+        
+        statusUpdateData.connectedMachines = await connectionsToUpdate?.map((el) => el.connectedMachine);
+        const connectedMachineIds = connectionsToUpdate.map(connection => connection._id);
         if(connectedMachineIds?.length > 0) {
           const results_ = await Product.updateMany({_id: {$in: connectedMachineIds}, isActive: true, isArchived: false}, updateClause);
         }
+        const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       } catch (error) {
         console.error("Error updating ProductConnection:", error);
       }
     }
     if (updatedProcess) {
+      exports.sendEmailAlert( statusUpdateData, user, 'Machine Status update Notification');
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
     } else {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -1641,6 +1680,89 @@ function getContactName(contacts) {
   }
 }
 
+exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
+  let serialNos = null;
+  const securityUserName = securityUser?.name;
+  const allManagers = [ ...statusData?.accountManager, ...statusData?.projectManager, ...statusData?.supportManager ];
+  const emailsSet = filterAndDeduplicateEmails( allManagers )
+  const emalsToSend = Array.from( emailsSet ) 
+  
+  if(statusData && securityUserName) {
+
+    let params = {
+      to: emalsToSend,
+      subject: emailSubject,
+      html: true
+    };
+
+    if(statusData?.connectedMachines){
+      const serialNosSet = new Set();
+      statusData?.connectedMachines.forEach( (m)=>{
+        if(!serialNosSet.has(m?.serialNo)){
+          serialNosSet.add(m?.serialNo)
+        }
+      })
+      serialNos = Array.from(serialNosSet)
+    }
+
+    const serialNo = statusData?.machineSerialNo;
+    const beforeStatus = statusData?.beforeStatus;
+    const afterStatus = statusData?.newStatus?.name;
+    const manufactureDate = statusData?.manufactureDate ? formatDate(statusData?.manufactureDate) : null;
+    const shippingDate = statusData?.shippingDate ? formatDate(statusData?.shippingDate) : null;
+    const decommissionedDate = statusData?.decommissionedDate ? formatDate(statusData?.decommissionedDate) : null;
+    const installationDate = statusData?.installationDate ? formatDate(statusData?.installationDate) : null;
+
+    let hostName = 'portal.howickltd.com';
+    if (process.env.CLIENT_HOST_NAME)
+      hostName = process.env.CLIENT_HOST_NAME;
+
+    let hostUrl = "https://portal.howickltd.com";
+
+    if (process.env.CLIENT_APP_URL)
+      hostUrl = process.env.CLIENT_APP_URL;
+    // const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, );
+    // dbservice.postObject(emailResponse, callbackFunc);
+    // function callbackFunc(error, response) {
+    //   if (error) {
+    //     logger.error(new Error(error));
+    //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    //   }
+    // }
+
+    fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
+      let footerContent = render(data, { emailSubject, hostName, hostUrl })
+      fs.readFile(__dirname + '/../../email/templates/MachineStatusChange.html', 'utf8', async function (err, data) {
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, serialNo, serialNos, beforeStatus, afterStatus,
+          manufactureDate, shippingDate, decommissionedDate, installationDate, footerContent })
+        params.htmlData = htmlData;
+        await awsService.sendEmail(params, emalsToSend );
+      })
+    })
+  }
+}
+
+function formatDate(date) {
+  if(date) {
+    const day = date.getDate();
+    const monthIndex = date.getMonth();
+    const year = date.getFullYear();
+  
+    // Array of month names
+    const months = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    ];
+  
+    // Suffix for day (st, nd, rd, th)
+    const suffixes = ["th", "st", "nd", "rd"];
+    const suffix = suffixes[(day - 1) % 10] || suffixes[0];
+  
+    return `${day} ${months[monthIndex]} ${year}`;
+  } else {
+    return "";
+  }
+}
 
 function fetchAddressCSV(address) {
   if (!address || typeof address !== 'object') {

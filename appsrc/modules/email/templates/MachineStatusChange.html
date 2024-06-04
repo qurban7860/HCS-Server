@@ -488,11 +488,15 @@
                               <table style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;background-position:left top" width="100%" cellspacing="0" cellpadding="0" bgcolor="transparent" role="presentation">
                                 <tr>
                                   <td align="left" style="padding:0;Margin:0">
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Machine status has been booked by {{ securityUserName }}.
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Machine status has been booked by {{ securityUserName }} from {{ beforeStatus }} to {{ afterStatus }}.
                                       <br>
                                       <br>
-                                      <strong>Machine:</strong> {{ serialNo }} - {{ machineName}}<br>
-                                      <strong>Status: </strong> {{ statusName }} <br>
+                                      <strong>Current Status: </strong> {{ afterStatus }} <br>
+                                      <strong>Machine:</strong> {{ serialNo }} <br>
+                                      {{#if serialNos}}
+                                        <strong>Connected Machine:</strong> {{ serialNos }} <br>
+                                      {{/if}}
+                                      
 
                                       {{#if manufactureDate}}
                                         <strong>Manufacture Date: </strong> {{ manufactureDate }} <br>
