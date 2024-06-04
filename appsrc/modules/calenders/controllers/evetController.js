@@ -132,7 +132,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
   if (eventData && securityUserName) {
     const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
-    const supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
+    let supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
     if(primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)){
       const emailArray = Array.from(supportingContactsEmailsSet);
       emailArray.splice(0, 0, primaryEmail);
