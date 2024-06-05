@@ -1712,15 +1712,15 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
       html: true
     };
 
-    if(Array.isArray(statusData?.connectedMachines) && statusData?.connectedMachines?.length > 0 ){
-      const serialNosSet = new Set();
-      statusData?.connectedMachines.forEach( (m)=>{
-        if(!serialNosSet.has(` ${m?.serialNo}`)){
-          serialNosSet.add(` ${m?.serialNo}`)
-        }
-      })
-      serialNos = Array.from(serialNosSet).join(', ');
-    }
+    // if(Array.isArray(statusData?.connectedMachines) && statusData?.connectedMachines?.length > 0 ){
+    //   const serialNosSet = new Set();
+    //   statusData?.connectedMachines?.forEach( (m)=>{
+    //     if(!serialNosSet.has(` ${m?.serialNo || '' }`)){
+    //       serialNosSet.add(` ${m?.serialNo || '' }`)
+    //     }
+    //   })
+    //   serialNos = Array.from(serialNosSet).join(', ');
+    // }
 
     const serialNo = statusData?.machineSerialNo;
     const beforeStatus = statusData?.beforeStatus;
@@ -1750,7 +1750,7 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
       fs.readFile(__dirname + '/../../email/templates/MachineStatusChange.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, serialNo, serialNos, beforeStatus, afterStatus,
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, serialNo, beforeStatus, afterStatus,
           manufactureDate, shippingDate, decommissionedDate, installationDate, machineCustomer, machineInstalationSite, footerContent })
         params.htmlData = htmlData;
         await awsService.sendEmail(params, emalsToSend );
