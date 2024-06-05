@@ -1697,7 +1697,7 @@ function getContactName(contacts) {
 
 exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
  
-  let serialNos = '';
+  let machineSerialNos = '';
   const securityUserName = securityUser?.name;
   const allManagers = [ ...statusData?.accountManager, ...statusData?.projectManager, ...statusData?.supportManager ];
   const emailsSet = filterAndDeduplicateEmails( allManagers )
@@ -1712,23 +1712,23 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
       html: true
     };
 
-    // if(Array.isArray(statusData?.connectedMachines) && statusData?.connectedMachines?.length > 0 ){
-    //   const serialNosSet = new Set();
-    //   statusData?.connectedMachines?.forEach( (m)=>{
-    //     if(!serialNosSet.has(` ${m?.serialNo || '' }`)){
-    //       serialNosSet.add(` ${m?.serialNo || '' }`)
-    //     }
-    //   })
-    //   serialNos = Array.from(serialNosSet).join(', ');
-    // }
+    if(Array.isArray(statusData?.connectedMachines) && statusData?.connectedMachines?.length > 0 ){
+      const serialNosSet = new Set();
+      statusData?.connectedMachines?.forEach( (m)=>{
+        if(!serialNosSet.has(` ${m?.serialNo || '' }`)){
+          serialNosSet.add(` ${m?.serialNo || '' }`)
+        }
+      })
+      machineSerialNos = Array.from(serialNosSet).join(', ');
+    }
 
     const serialNo = statusData?.machineSerialNo;
     const beforeStatus = statusData?.beforeStatus;
     const afterStatus = statusData?.newStatus?.name;
-    const manufactureDate = statusData?.manufactureDate ? formatDate( new Date(statusData?.manufactureDate)) : null;
-    const shippingDate = statusData?.shippingDate ? formatDate( new Date(statusData?.shippingDate)) : null;
-    const decommissionedDate = statusData?.decommissionedDate ? formatDate( new Date(statusData?.decommissionedDate)) : null;
-    const installationDate = statusData?.installationDate ? formatDate( new Date(statusData?.installationDate)) : null;
+    const manufactureDateVal = statusData?.manufactureDate ? formatDate( new Date(statusData?.manufactureDate)) : null;
+    const shippingDateVal = statusData?.shippingDate ? formatDate( new Date(statusData?.shippingDate)) : null;
+    const decommissionedDateVal = statusData?.decommissionedDate ? formatDate( new Date(statusData?.decommissionedDate)) : null;
+    const installationDateVal = statusData?.installationDate ? formatDate( new Date(statusData?.installationDate)) : null;
 
     let hostName = 'portal.howickltd.com';
     if (process.env.CLIENT_HOST_NAME)
@@ -1738,14 +1738,21 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
-    // const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, );
-    // dbservice.postObject(emailResponse, callbackFunc);
-    // function callbackFunc(error, response) {
-    //   if (error) {
-    //     logger.error(new Error(error));
-    //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
-    //   }
-    // }
+    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, );
+    dbservice.postObject(emailResponse, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      }
+    }
+
+    const serialNos = machineSerialNos ? `<strong>Connected Machines:</strong> ${machineSerialNos } <br>` : '';
+    const manufactureDate = manufactureDateVal ? `<strong>Manufacture Date: </strong> ${ manufactureDateVal } <br>` : '';
+    const shippingDate = shippingDateVal ? `<strong>Shipping Date: </strong> ${ shippingDateVal } <br>` : '';
+    const decommissionedDate = decommissionedDateVal ? `<strong>Decommissioned Date: </strong> ${ decommissionedDateVal } <br>` : '';
+    const installationDate = installationDateVal ? `<strong>Installation Date: </strong> ${ installationDateVal } <br>` : '';
+
 
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
