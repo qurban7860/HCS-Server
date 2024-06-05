@@ -1696,15 +1696,14 @@ function getContactName(contacts) {
 }
 
 exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
-  console.log('statusData : ',statusData)
+ 
   let serialNos = null;
   const securityUserName = securityUser?.name;
   const allManagers = [ ...statusData?.accountManager, ...statusData?.projectManager, ...statusData?.supportManager ];
   const emailsSet = filterAndDeduplicateEmails( allManagers )
   const emalsToSend = Array.from( emailsSet ) 
-  const machineCustomer = statusData?.machineCustomer?.name;
-  const machineInstalationSite = statusData?.machineInstalationSite?.name;
-  const machineBillingSite = statusData?.machineBillingSite?.name;
+  const machineCustomer = statusData?.machineCustomer;
+  const machineInstalationSite = statusData?.machineInstalationSite;
 
   if(statusData && securityUserName) {
 
@@ -1753,7 +1752,7 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
       fs.readFile(__dirname + '/../../email/templates/MachineStatusChange.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, serialNo, serialNos, beforeStatus, afterStatus,
-          manufactureDate, shippingDate, decommissionedDate, installationDate, machineCustomer, machineInstalationSite, machineBillingSite, footerContent })
+          manufactureDate, shippingDate, decommissionedDate, installationDate, machineCustomer, machineInstalationSite, footerContent })
         params.htmlData = htmlData;
         await awsService.sendEmail(params, emalsToSend );
       })

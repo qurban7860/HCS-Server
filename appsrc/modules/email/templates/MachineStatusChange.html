@@ -494,28 +494,24 @@
                                       <strong>Machine:</strong> {{ serialNo }} <br>
                                       <strong>Current Status: </strong> {{ afterStatus }} <br>
 
-                                      [if ( serialNos ) ]
+                                      IF serialNos 
                                         <strong>Connected Machines:</strong> {{ serialNos }} <br>
-                                      [ endif ]
 
-                                      [if ( manufactureDate ) ]
+                                      IF ( manufactureDate ) {
                                         <strong>Manufacture Date: </strong> {{ manufactureDate }} <br>
-                                      [ endif ]
+                                      }
 
-                                      [if ( shippingDate ) ]
+                                      <% if (shippingDate) { %>
                                         <strong>Shipping Date: </strong> {{ shippingDate }} <br>
-                                      [ endif ]
+                                      <% } %>
 
-                                      [if ( decommissionedDate ) ]
+                                      {if decommissionedDate }
                                         <strong>Decommissioned Date: </strong> {{ decommissionedDate }} <br>
-                                      [ endif ]
+                                      {/if}
 
-                                      [if ( installationDate ) ]
-                                        <strong>Installation Date: </strong> {{ installationDate }} <br>
-                                      [ endif ]
+                                      {!IF (NOT(ISBLANK(installationDate) <strong>Installation Date: </strong> {{ installationDate }} <br>))}
                                       <strong>Customer: </strong> {{ machineCustomer }} <br>
                                       <strong>Installation Site: </strong> {{ machineInstalationSite }} <br>
-                                      <strong>Billing Site: </strong> {{ machineBillingSite }} <br>
 
                                     </p>
                                   </td>
