@@ -493,6 +493,23 @@
                                       <br>
                                       <strong>Machine:</strong> {{ serialNo }} <br>
                                       <strong>Current Status: </strong> {{ afterStatus }} <br>
+
+                                      {{#manufactureDate }}
+                                        <strong>Manufacture Date: </strong> {{ manufactureDate }} <br>
+                                      {{/manufactureDate }}
+
+                                      {{#shippingDate }}
+                                        <strong>Shipping Date: </strong> {{ shippingDate }} <br>
+                                      {{/shippingDate }}
+
+                                      {{#decommissionedDate }}
+                                        <strong>Decommissioned Date: </strong> {{ decommissionedDate }} <br>
+                                      {{/decommissionedDate}}
+
+                                      {{#installationDate }}
+                                      <strong>Installation Date: </strong> {{ installationDate }} <br>
+                                      {{/installationDate }}
+
                                       <strong>Customer: </strong> {{ machineCustomer }} <br>
                                       <strong>Installation Site: </strong> {{ machineInstalationSite }} <br>
 
