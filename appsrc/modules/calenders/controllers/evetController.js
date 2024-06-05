@@ -252,7 +252,7 @@ exports.patchEvent = async (req, res, next) => {
       const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
       res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user, 'Event Update Notification');
+      exports.sendEmailAlert(objectWithPopulate, user, 'Event update notification');
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);

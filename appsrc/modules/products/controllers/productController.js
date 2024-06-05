@@ -769,6 +769,18 @@ exports.patchProductStatus = async (req, res, next) => {
               select: '_id name'
             })
             .populate({
+              path: 'customer',
+              select: '_id name'
+            })
+            .populate({
+              path: 'instalationSite',
+              select: '_id name'
+            })
+            .populate({
+              path: 'billingSite',
+              select: '_id name'
+            })
+            .populate({
               path: 'accountManager',
               select: '_id email'
             })
@@ -783,6 +795,9 @@ exports.patchProductStatus = async (req, res, next) => {
 
             statusUpdateData.machineSerialNo = productObj?.serialNo;
             statusUpdateData.beforeStatus = productObj?.status?.name;
+            statusUpdateData.machineCustomer = productObj?.customer?.name;
+            statusUpdateData.machineInstalationSite = productObj?.instalationSite?.name;
+            statusUpdateData.machineBillingSite = productObj?.billingSite?.name;
             statusUpdateData.accountManager = productObj?.accountManager;
             statusUpdateData.projectManager = productObj?.projectManager;
             statusUpdateData.supportManager = productObj?.supportManager;
@@ -853,7 +868,7 @@ exports.patchProductStatus = async (req, res, next) => {
     }
     if (updatedProcess) {
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
-      exports.sendEmailAlert( statusUpdateData, user, 'Machine Status update Notification');
+      exports.sendEmailAlert( statusUpdateData, user, 'Machine status update');
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
     } else {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -1681,12 +1696,16 @@ function getContactName(contacts) {
 }
 
 exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
+  console.log('statusData : ',statusData)
   let serialNos = null;
   const securityUserName = securityUser?.name;
   const allManagers = [ ...statusData?.accountManager, ...statusData?.projectManager, ...statusData?.supportManager ];
   const emailsSet = filterAndDeduplicateEmails( allManagers )
   const emalsToSend = Array.from( emailsSet ) 
-  
+  const machineCustomer = statusData?.machineCustomer?.name;
+  const machineInstalationSite = statusData?.machineInstalationSite?.name;
+  const machineBillingSite = statusData?.machineBillingSite?.name;
+
   if(statusData && securityUserName) {
 
     let params = {
@@ -1698,8 +1717,8 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
     if(statusData?.connectedMachines){
       const serialNosSet = new Set();
       statusData?.connectedMachines.forEach( (m)=>{
-        if(!serialNosSet.has(m?.serialNo)){
-          serialNosSet.add(m?.serialNo)
+        if(!serialNosSet.has(` ${m?.serialNo}`)){
+          serialNosSet.add(` ${m?.serialNo}`)
         }
       })
       serialNos = Array.from(serialNosSet)
@@ -1708,10 +1727,10 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
     const serialNo = statusData?.machineSerialNo;
     const beforeStatus = statusData?.beforeStatus;
     const afterStatus = statusData?.newStatus?.name;
-    const manufactureDate = statusData?.manufactureDate ? formatDate(statusData?.manufactureDate) : null;
-    const shippingDate = statusData?.shippingDate ? formatDate(statusData?.shippingDate) : null;
-    const decommissionedDate = statusData?.decommissionedDate ? formatDate(statusData?.decommissionedDate) : null;
-    const installationDate = statusData?.installationDate ? formatDate(statusData?.installationDate) : null;
+    const manufactureDate = statusData?.manufactureDate ? formatDate( new Date(statusData?.manufactureDate)) : null;
+    const shippingDate = statusData?.shippingDate ? formatDate( new Date(statusData?.shippingDate)) : null;
+    const decommissionedDate = statusData?.decommissionedDate ? formatDate( new Date(statusData?.decommissionedDate)) : null;
+    const installationDate = statusData?.installationDate ? formatDate( new Date(statusData?.installationDate)) : null;
 
     let hostName = 'portal.howickltd.com';
     if (process.env.CLIENT_HOST_NAME)
@@ -1734,7 +1753,7 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
       fs.readFile(__dirname + '/../../email/templates/MachineStatusChange.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, serialNo, serialNos, beforeStatus, afterStatus,
-          manufactureDate, shippingDate, decommissionedDate, installationDate, footerContent })
+          manufactureDate, shippingDate, decommissionedDate, installationDate, machineCustomer, machineInstalationSite, machineBillingSite, footerContent })
         params.htmlData = htmlData;
         await awsService.sendEmail(params, emalsToSend );
       })
