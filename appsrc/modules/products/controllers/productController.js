@@ -1697,7 +1697,7 @@ function getContactName(contacts) {
 
 exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
  
-  let serialNos = null;
+  let serialNos = '';
   const securityUserName = securityUser?.name;
   const allManagers = [ ...statusData?.accountManager, ...statusData?.projectManager, ...statusData?.supportManager ];
   const emailsSet = filterAndDeduplicateEmails( allManagers )
@@ -1713,14 +1713,14 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
       html: true
     };
 
-    if(statusData?.connectedMachines){
+    if(Array.isArray(statusData?.connectedMachines) && statusData?.connectedMachines?.length > 0 ){
       const serialNosSet = new Set();
       statusData?.connectedMachines.forEach( (m)=>{
         if(!serialNosSet.has(` ${m?.serialNo}`)){
           serialNosSet.add(` ${m?.serialNo}`)
         }
       })
-      serialNos = Array.from(serialNosSet)
+      serialNos = Array.from(serialNosSet).join(', ');
     }
 
     const serialNo = statusData?.machineSerialNo;
