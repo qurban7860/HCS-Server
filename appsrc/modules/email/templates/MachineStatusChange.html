@@ -6,7 +6,7 @@
     <meta name="x-apple-disable-message-reformatting">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="telephone=no" name="format-detection">
-    <title>Howick Machine Status Notification</title>
+    <title>Machine status update</title>
     <!--[if (mso 16)]>
 							<style type="text/css"> a {text-decoration: none;} </style>
 							<![endif]-->
@@ -488,28 +488,35 @@
                               <table style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;background-position:left top" width="100%" cellspacing="0" cellpadding="0" bgcolor="transparent" role="presentation">
                                 <tr>
                                   <td align="left" style="padding:0;Margin:0">
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Machine status has been changed by {{ securityUserName }} from {{ beforeStatus }} to {{ afterStatus }}.
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Machine status has been changed to {{ afterStatus }}.
                                       <br>
                                       <br>
-                                      <strong>Current Status: </strong> {{ afterStatus }} <br>
                                       <strong>Machine:</strong> {{ serialNo }} <br>
-                                      {{#if serialNos}}
-                                        <strong>Connected Machines:</strong> {{ serialNos }} <br>
-                                      {{/if}}
-                                      
+                                      <strong>Current Status: </strong> {{ afterStatus }} <br>
 
-                                      {{#if manufactureDate}}
+                                      [if ( serialNos ) ]
+                                        <strong>Connected Machines:</strong> {{ serialNos }} <br>
+                                      [ endif ]
+
+                                      [if ( manufactureDate ) ]
                                         <strong>Manufacture Date: </strong> {{ manufactureDate }} <br>
-                                      {{/if}}
-                                      {{#if shippingDate}}
+                                      [ endif ]
+
+                                      [if ( shippingDate ) ]
                                         <strong>Shipping Date: </strong> {{ shippingDate }} <br>
-                                      {{/if}}
-                                      {{#if decommissionedDate }}
+                                      [ endif ]
+
+                                      [if ( decommissionedDate ) ]
                                         <strong>Decommissioned Date: </strong> {{ decommissionedDate }} <br>
-                                      {{/if}}
-                                      {{#if installationDate}}
+                                      [ endif ]
+
+                                      [if ( installationDate ) ]
                                         <strong>Installation Date: </strong> {{ installationDate }} <br>
-                                      {{/if}}
+                                      [ endif ]
+                                      <strong>Customer: </strong> {{ machineCustomer }} <br>
+                                      <strong>Installation Site: </strong> {{ machineInstalationSite }} <br>
+                                      <strong>Billing Site: </strong> {{ machineBillingSite }} <br>
+
                                     </p>
                                   </td>
                                 </tr>
