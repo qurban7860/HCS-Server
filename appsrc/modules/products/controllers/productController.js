@@ -1706,7 +1706,6 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
   const machineInstalationSite = statusData?.machineInstalationSite;
 
   if(statusData && securityUserName) {
-
     let params = {
       to: emalsToSend,
       subject: emailSubject,
