@@ -103,6 +103,10 @@ exports.getTickets = async (req, res, next) => {
       JQL += ` AND Organizations = "${req.query.ref}" `;
     }
 
+    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
+      JQL += ` AND status = "${req.query.status}"`;
+    }
+
     console.log({JQL});
 
     
