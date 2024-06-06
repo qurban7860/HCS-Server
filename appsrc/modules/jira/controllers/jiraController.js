@@ -94,20 +94,7 @@ exports.getTickets = async (req, res, next) => {
 
     let JQL = `project = ${jiraProject}`;
 
-
-
-
-    // if(req?.query?.status?.trim() === 'Open'){
-    //   JQL +=` AND status = 'Open'`;
-    // } else if( req?.query?.status?.toLowerCase()?.trim() !== 'in progress'){
-    //   JQL +=` AND status ('IN Progress','Waiting for customer')`;  
-    // } else if( req?.query?.status?.toLowerCase()?.trim() !== 'done'){
-    //   JQL +=` AND status IN ('Resolved','Completed')`;  
-    // } else if( req?.query?.status?.toLowerCase()?.trim() !== 'all'){
-    //   JQL +=` AND status = '${req?.query?.status?.trim()}'`;  
-    // }
-
-    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
+    if (req?.query?.status?.trim().length > 0 ) {
       JQL += ` AND ("statusCategory" = '${req.query.status}')`;
     }
 
