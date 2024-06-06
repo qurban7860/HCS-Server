@@ -99,7 +99,7 @@ exports.getTickets = async (req, res, next) => {
     }
 
     if ( req?.query?.startDate ) {
-      JQL += ` AND "Start date[Date]" >= ${req?.query?.startDate} `;
+      JQL += ` AND ("Start date[Date]" >= ${req?.query?.startDate}) `;
     }
 
     if( req?.query?.serialNo?.trim().length > 0 ){
