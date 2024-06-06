@@ -94,15 +94,20 @@ exports.getTickets = async (req, res, next) => {
 
     let JQL = `project = ${jiraProject}`;
 
-    // if(req?.query?.status?.trim() === 'Open' && req?.query?.status?.toLowerCase()?.trim() !== 'all'){
-    //   JQL +=" AND status in ('To Do','In Progress')";
-    // }else if( req?.query?.status?.toLowerCase()?.trim() !== 'all') {
-    //   JQL +=` AND status = ${req?.query?.status?.trim()}`;  
-    // }
 
-    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
-      JQL += ` AND ("status" = '${req.query.status}')`;
+
+
+    if(req?.query?.status?.trim() === 'Open' && req?.query?.status?.toLowerCase()?.trim() !== 'all'){
+      JQL +=` AND ("status" or ('Open','In Progress', 'Waiting for customer'))`;
+    } else if( req?.query?.status?.toLowerCase()?.trim() !== 'done'){
+      JQL +=` AND ("status" or ('Resolved','Completed'))`;  
+    } else if( req?.query?.status?.toLowerCase()?.trim() !== 'all'){
+      JQL +=` AND ("status" = ${req?.query?.status?.trim()})`;  
     }
+
+    // if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
+    //   JQL += ` AND ("status" = '${req.query.status}')`;
+    // }
 
     if(req?.query?.serialNo?.trim().length > 0){
       JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
