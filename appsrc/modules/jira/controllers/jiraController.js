@@ -100,9 +100,9 @@ exports.getTickets = async (req, res, next) => {
       JQL +=` AND status = ${req?.query?.status?.trim()}`;  
     }
 
-    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
-      JQL += ` AND ("status" = '${req.query.status}')`;
-    }
+    // if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
+    //   JQL += ` AND ("status" = '${req.query.status}')`;
+    // }
 
     if(req?.query?.serialNo?.trim().length > 0){
       JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
