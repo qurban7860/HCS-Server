@@ -94,11 +94,15 @@ exports.getTickets = async (req, res, next) => {
 
     let JQL = `project = ${jiraProject}`;
 
-    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all' ) {
+    if ( req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all' ) {
       JQL += ` AND ("statusCategory" = '${req.query.status}')`;
     }
 
-    if(req?.query?.serialNo?.trim().length > 0){
+    if ( req?.query?.startDate ) {
+      JQL += ` AND "Start date[Date]" >= ${req?.query?.startDate} `;
+    }
+
+    if( req?.query?.serialNo?.trim().length > 0 ){
       JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
     }
 
