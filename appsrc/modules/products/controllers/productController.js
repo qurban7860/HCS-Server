@@ -853,12 +853,10 @@ exports.patchProductStatus = async (req, res, next) => {
       const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
       try {
         const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine')
-        .populate([
-          { path: 'connectedMachine', select: 'serialNo' }
-        ]).lean();
-        
+        .populate([{ path: 'connectedMachine', select: 'serialNo' }]).lean();
+
         statusUpdateData.connectedMachines = await connectionsToUpdate?.map((el) => el.connectedMachine);
-        const connectedMachineIds = connectionsToUpdate.map(connection => connection._id);
+        const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine._id);
         if(connectedMachineIds?.length > 0) {
           const results_ = await Product.updateMany({_id: {$in: connectedMachineIds}, isActive: true, isArchived: false}, updateClause);
         }
