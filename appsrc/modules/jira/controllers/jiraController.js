@@ -83,7 +83,6 @@ exports.getTickets = async (req, res, next) => {
     if (req?.query?.project) {
       jiraProject = req?.query?.project;
     }
-
     const URL = getURL("search");
     let HEADER = '';
     if(jiraProject === 'HWKSC') {
@@ -99,7 +98,7 @@ exports.getTickets = async (req, res, next) => {
     }
 
     if ( req?.query?.startDate ) {
-      JQL += ` AND ("Start date[Date]" >= ${req?.query?.startDate}) `;
+      JQL += ` AND createdDate >= ${req?.query?.startDate}`;
     }
 
     if( req?.query?.serialNo?.trim().length > 0 ){
