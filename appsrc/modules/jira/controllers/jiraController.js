@@ -104,7 +104,7 @@ exports.getTickets = async (req, res, next) => {
     }
 
     if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
-      JQL += ` AND ("status" in '${req.query.status}')`;
+      JQL += ` AND ("status" = '${req.query.status}')`;
     }
 
 
