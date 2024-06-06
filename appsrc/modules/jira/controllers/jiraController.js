@@ -97,12 +97,14 @@ exports.getTickets = async (req, res, next) => {
 
 
 
-    if(req?.query?.status?.trim() === 'Open' && req?.query?.status?.toLowerCase()?.trim() !== 'all'){
-      JQL +=` AND ("status" or ('Open','In Progress', 'Waiting for customer'))`;
+    if(req?.query?.status?.trim() === 'Open'){
+      JQL +=` AND ("status" = 'Open' )`;
+    } else if( req?.query?.status?.toLowerCase()?.trim() !== 'in progress'){
+      JQL +=` AND ("status" or ('In Progress','Waiting for customer'))`;  
     } else if( req?.query?.status?.toLowerCase()?.trim() !== 'done'){
       JQL +=` AND ("status" or ('Resolved','Completed'))`;  
     } else if( req?.query?.status?.toLowerCase()?.trim() !== 'all'){
-      JQL +=` AND ("status" = ${req?.query?.status?.trim()})`;  
+      JQL +=` AND ("status" = '${req?.query?.status?.trim()}')`;  
     }
 
     // if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
