@@ -93,6 +93,10 @@ exports.getTickets = async (req, res, next) => {
     }
 
     let JQL = `project = ${jiraProject}`;
+    
+    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
+      JQL += ` AND ("status" = '${req.query.status}')`;
+    }
 
     if(req?.query?.serialNo?.trim().length > 0){
       JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
@@ -101,10 +105,6 @@ exports.getTickets = async (req, res, next) => {
 
     if(req?.query?.ref?.trim().length > 0){
       JQL += ` AND Organizations = "${req.query.ref}" `;
-    }
-
-    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
-      JQL += ` AND ("status" = '${req.query.status}')`;
     }
 
 
