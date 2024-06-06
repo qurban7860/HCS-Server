@@ -138,9 +138,9 @@ exports.getTickets = async (req, res, next) => {
       config.params.startAt = req.query.startAt;
     }
 
-    if (req?.query?.maxResults && req?.query?.status?.toLowerCase()?.trim() === 'all') {
-      config.params.maxResults = req.query.maxResults;
-    }
+    // if (req?.query?.maxResults && req?.query?.status?.toLowerCase()?.trim() === 'all') {
+    //   config.params.maxResults = req.query.maxResults;
+    // }
 
     axios(config)
       .then(response => {
