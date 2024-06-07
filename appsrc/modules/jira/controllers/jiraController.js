@@ -29,7 +29,9 @@ exports.getReleases = async (req, res, next) => {
     let config = {
       url: getURL("project/HPS/version"),
       method: 'get',
-      params: { orderBy: '-name' },
+      params: { orderBy: '-name',
+                status: 'released',
+              },
       ...getHeader(),
     };
 
