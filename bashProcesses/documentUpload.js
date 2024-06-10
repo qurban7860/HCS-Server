@@ -15,7 +15,7 @@ const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
 const serverURL = 'http://localhost:5002/api/1.0.0';
-// const baseURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+// const serverURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
@@ -48,14 +48,14 @@ function getFormattedDate() {
 }
 async function main() {
     try {
-        const authData = await getToken(baseURL, email, password);
+        const authData = await getToken(serverURL, email, password);
         token = authData.token;
         userId = authData.userId;
         sessionId = authData.sessionId;
 
 
     } catch (error) {
-        const authData = await getToken(baseURL, email, password);
+        const authData = await getToken(serverURL, email, password);
         token = authData.token;
         userId = authData.userId;
         sessionId = authData.sessionId;
@@ -422,7 +422,7 @@ else {
             const config = {
                 headers: { Authorization: `Bearer ${token}` }
             };
-            const response = await axios.post(`${baseURL}/documents/document/`, formData, {
+            const response = await axios.post(`${serverURL}/documents/document/`, formData, {
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundarybBvDZ5x1fsIv303C',
@@ -472,9 +472,9 @@ else {
 
 }
 
-async function getToken(baseURL, email, password) {
+async function getToken(serverURL, email, password) {
     try {
-        const tokenResponse = await axios.post(`${baseURL}/security/getToken`, { email, password });
+        const tokenResponse = await axios.post(`${serverURL}/security/getToken`, { email, password });
         const { accessToken, userId, sessionId } = tokenResponse.data;
         return { token: accessToken, userId, sessionId };
     } catch (error) {
@@ -484,7 +484,7 @@ async function getToken(baseURL, email, password) {
 }
 
 async function checkFileExistenceByETag(etagValue) {
-    const url = `${baseURL}/documents/checkFileExistenceByETag`;
+    const url = `${serverURL}/documents/checkFileExistenceByETag`;
     try {
         const response = await axios.get(url, {
             params: {
@@ -506,7 +506,7 @@ async function checkFileExistenceByETag(etagValue) {
 }
 
 async function getMachineId(serialNo) {
-    const url = `${baseURL}/products/machines/searchProductId?serialNo=${serialNo}`;
+    const url = `${serverURL}/products/machines/searchProductId?serialNo=${serialNo}`;
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -533,7 +533,7 @@ async function getMachineId(serialNo) {
 
 
 async function attachDrawingToMachine(payLoad) {
-    const url = `${baseURL}/products/drawings`;
+    const url = `${serverURL}/products/drawings`;
     try {
         const response = await fetch(url, {
             method: 'POST',

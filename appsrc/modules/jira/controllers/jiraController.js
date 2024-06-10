@@ -121,7 +121,7 @@ exports.getTickets = async (req, res, next) => {
         jql: JQL,
         orderBy: '-created',
         startAt:0,
-        // maxResults:100
+        maxResults: 500
       },
       ...HEADER,
     };
