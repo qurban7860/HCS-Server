@@ -134,7 +134,7 @@ async function getSecretValue(secretName) {
   return secret;
 }
 
-async function sendEmail(params, ToAddresses) {
+async function sendEmail(params, toAddresses) {
   // Create sendEmail params 
   let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
   const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
@@ -145,7 +145,8 @@ async function sendEmail(params, ToAddresses) {
     Destination: {
       ToAddresses: [
         params.to,
-      ]
+      ],
+
     },
     Message: {
       Body: {
@@ -167,9 +168,13 @@ async function sendEmail(params, ToAddresses) {
     ],
   };
 
-  if(ToAddresses && ToAddresses.length > 0)
-    emailParams.Destination.ToAddresses = ToAddresses;
-  
+  if( toAddresses && toAddresses.length > 0 )
+    emailParams.Destination.ToAddresses = toAddresses;
+
+  if( params?.ccAddresses && params?.ccAddresses?.length > 0 ){
+    emailParams.Destination.CcAddresses = params.ccAddresses;
+  }
+
   if(params.html) {
     emailParams.Message.Body = {
       Html: {
@@ -178,6 +183,7 @@ async function sendEmail(params, ToAddresses) {
       }
     }
   }
+  
   // Create the promise and SES service object
   let SES = new AWS.SES({region: process.env.AWS_REGION})
   SES.sendEmail(emailParams, function(err, data) {

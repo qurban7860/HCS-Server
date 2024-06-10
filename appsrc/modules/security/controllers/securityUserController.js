@@ -134,10 +134,10 @@ exports.postSecurityUser = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } 
   else {
-    // check if email exists
-    
+
     if(!req.body.email) req.body.email = req.body.login;
     if(!req.body.login) req.body.login = req.body.email;
+    if(req.body.isInvite) req.body.isActive = false;
     
     var _this = this;
     let queryString = { 
@@ -164,7 +164,9 @@ exports.postSecurityUser = async (req, res, next) => {
               res.status(StatusCodes.CREATED).json({ user: response });
             }
           }  
-        }else{
+        }else if(response.invitationStatus){
+          res.status(StatusCodes.CREATED).json({ user: response });
+        }{
           return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
         }
       }
@@ -383,7 +385,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 async function getDocumentFromReq(req, reqType){
   const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, dataAccessibilityLevel, regions, machines,
-     password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
+    password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
 
 
   let doc = {};

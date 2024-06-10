@@ -14,10 +14,14 @@ const { Product } = require('../appsrc/modules/products/models');
 const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
-const baseURL = 'http://localhost:5002/api/1.0.0';
-const email = "awais@terminustech.com";
-const password = "123456";
-const targetDirectory = '../Drawings-Documents'; // Change this to the root folder you want to start from
+const serverURL = 'http://localhost:5002/api/1.0.0';
+// const serverURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+
+const email = "a.hassan@terminustech.com";
+const password = "24351172";
+const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
+const targetDirectories = [ 'Assembly Drawings'];
+const excludeDirectories = [ 'Archive' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
 const disallowedExtension = []; // Array of disallowed files
 
@@ -25,63 +29,89 @@ var token = null;
 var userId;
 var sessionId;
 var logging = [];
-const filePath_ = 'scriptFile.csv';
+const filePath_ = getFormattedDate();
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
+let index = 1
+
+function getFormattedDate() {
+    const date = new Date();
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so add 1
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+
+    // Concatenate parts without dots or dashes
+    return `${year}${month}${day}${hours}${minutes}${seconds}.csv`;
+}
 async function main() {
     try {
-        const authData = await getToken(baseURL, email, password);
+        const authData = await getToken(serverURL, email, password);
         token = authData.token;
         userId = authData.userId;
         sessionId = authData.sessionId;
 
 
     } catch (error) {
-        const authData = await getToken(baseURL, email, password);
+        const authData = await getToken(serverURL, email, password);
         token = authData.token;
         userId = authData.userId;
         sessionId = authData.sessionId;
     }
 
-    await readFolders(targetDirectory, allowedExtension, disallowedExtension);
+    await readFolders(machineDataDirectory, allowedExtension, disallowedExtension);
 
-    // var finalResults = [];
-    // for (const loggingObj of logging) {
-    //     if (!loggingObj.machineDrawingAlreadyExists && !loggingObj.machineDrawingAdded) {
-    //         if (!loggingObj.propertiesNotFound || loggingObj.propertiesNotFound?.length === 0) {
-    //             try {
-    //                 const response = await uploadDocument(loggingObj);
-    //                 loggingObj.uploadedSuccessfully = true;
-    //             } catch (error) {
-    //                 loggingObj.errorUploading = true;
-    //                 console.error('Error:', error);
-    //             }
-    //         } else {
-    //             loggingObj.ignoredDueToInvalidData = true;
-    //         }
-    //     }
-    //     finalResults.push(loggingObj);
-    // }
 
-    console.log(logging);
-
+if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound )  ){
     const csv = parse(logging);
-    await fs.writeFile(filePath_, csv, async (err) => {
-        if (err) {
-            console.error('Error appending to CSV file:', err);
-            return;
-        }
-        console.log('Records appended to CSV file successfully.');
-    });
+        await fs.writeFile(filePath_, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                return;
+                process.exit(0)
+            }
+            console.log(`Documents records appended to CSV file Name: ${filePath_} in project diractory successfully.`);
+            process.exit(0)
+        });
+} 
+else if(Array.isArray(logging) && logging.length > 0 && logging.some((log)=> log.propertiesNotFound ) ){
+        const csv = parse(logging);
+        await fs.writeFile(filePath_, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                return;
+                process.exit(0)
+            }
+            console.log(`Please resolve defined issues in CSV file Name: ${filePath_} in project diractory before upload!`);
+            process.exit(0)
+        });
+} 
+else {
+    console.log('No data Available to create CSV.');
+    process.exit(0)
+}
 
-    async function readFolders(targetDirectory) {
+    async function readFolders(machineDataDirectory) {
         try {
-            const files = await readdir(targetDirectory);
+            const files = await readdir(machineDataDirectory);
             for (const file of files) {
-                const filePath = path.join(targetDirectory, file);
+                const filePath = path.join(machineDataDirectory, file);
                 try {
-                    const stats = await getFileStats(filePath);
+                    const stats = await getFileStats(filePath , true );
                 } catch (err) {
                     console.error('Error occurred:', err);
+                }
+            }
+            if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound ) ){
+                for (const file of files) {
+                    const filePath = path.join(machineDataDirectory, file);
+                    try {
+                        const stats = await getFileStats(filePath , false );
+                    } catch (err) {
+                        console.error('Error occurred:', err);
+                    }
                 }
             }
         } catch (e) {
@@ -93,25 +123,41 @@ async function main() {
     }
 
 
-    async function getFileStats(filePath) {
+    async function getFileStats(filePath , isCheckBeforeUploade ) {
         return new Promise((resolve, reject) => {
             fs.stat(filePath, async (err, stats) => {
                 if (err) {
                     reject(err); // If there's an error, reject the Promise
                     console.error('Error checking file stats:', err);
                 }
-
+                console.log( isCheckBeforeUploade ? 'Checking Files...' : 'Reading Folder...');
                 if (stats.isDirectory()) {
                     // Recursively read subfolders
                     await readFolders(filePath, allowedExtension, disallowedExtension);
                     resolve(stats);
-                } else {
-                    console.log({filePath});
+                } else  {
                     // Check if the file is allowed or disallowed
                     const ETAG = await generateEtag(filePath);
                     const fileName = path.basename(filePath);
                     if (fileName.includes(allowedExtension)) {
                         const folders = filePath.split(path.sep);
+                        
+                        // Check if "Assembly Drawings" is part of the folder path
+                        // const containsAssemblyDrawings = filePath.toLowerCase().includes('assembly drawings');
+                        // const containsArchiveAssemblyDrawings = filePath.toLowerCase().includes('archive');
+                        // if (!containsAssemblyDrawings || containsArchiveAssemblyDrawings ){
+                        //     resolve(stats);
+                        //     return;
+                        // }
+
+                        const loweCaseFilePath = filePath.toLowerCase();
+                        if (!targetDirectories.some((el)=> loweCaseFilePath.includes(el.toLowerCase())) || excludeDirectories?.some((el)=> loweCaseFilePath.includes(el.toLowerCase())) ){
+                            resolve(stats);
+                            return;
+                        }
+
+                        console.log(`${index} filePath : ${filePath}`);
+                        index += 1;
                         const parentFolder = folders[folders.length - (folders.length - 2)];
                         const childFolder = folders[folders.length - 2];
                         let docxCategory = await fetchDocxCategory(childFolder);
@@ -132,9 +178,10 @@ async function main() {
                             fetchSerialNo = fetchSerialNo.replaceAll(",", "");
 
                             if (fetchSerialNo) {
+                                // productObject = await getMachineId(fetchSerialNo.trim())
                                 productObject = await Product.findOne({ serialNo: fetchSerialNo.trim() }).select('_id serialNo').lean();
+                                console.log("productObject : ",productObject)
                             }
-
                         } else {
                             console.log("Number not found before hyphen.");
                         }
@@ -143,20 +190,20 @@ async function main() {
                         let etags = [];
                         etags.push(ETAG);
                         const data_ = await checkFileExistenceByETag(etags);
-                        let fileETAGAlreadyExist = false;
+                        let isFileETAGAlreadyExist = false;
                         if (data_[0]?.documentFiles) {
-                            fileETAGAlreadyExist = true;
+                            isFileETAGAlreadyExist = true;
                             searchedObject = await data_.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === ETAG.toString());
                         }
 
-
+                        console.log("searchedObject : ",searchedObject)
                         let justDrawingInsertedThroughScript = false;
-                        let machineDrawingAlreadyExists = false;
+                        let isMachineDrawingAlreadyExists = false;
 
                         if (searchedObject) {
                             const query_Search_Drawing = { document: searchedObject.document, machine: productObject._id };
-                            machineDrawingAlreadyExists = await ProductDrawing.findOne(query_Search_Drawing);
-                            if (!machineDrawingAlreadyExists) {
+                            isMachineDrawingAlreadyExists = await ProductDrawing.findOne(query_Search_Drawing);
+                            if (!isMachineDrawingAlreadyExists) {
                                 const payload = {
                                     "machine": productObject._id,
                                     "documentId": searchedObject.document,
@@ -168,10 +215,14 @@ async function main() {
                         }
 
                         let regex_ = /^(\w+)\s([\w\s]+)/;
+                        let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
                         let matches = fileName.match(regex_);
                         try{
-                            referenceNumber = matches[1]; // "35634a"
-                            docxType = matches[2].trim(); // "Hyd Pump"    
+                            referenceNumber = matches[1]; // Example: "35634a"
+                            docxType = matches[2].trim(); // Example: "Hyd Pump"    
+                            if (pattern.test(docxType)) {
+                                docxType = docxType.replace(pattern, '');
+                            }
                         } catch (Exception){
                             referenceNumber = '';
                             docxType = '';        
@@ -187,45 +238,25 @@ async function main() {
                         const regex_VersionNo = /V(\d+)\.pdf$/;
                         const matches_Version = fileName.match(regex_VersionNo);
                         const versionNumber = matches_Version ? matches_Version[1] : 1;
-
                         const pdfData = fs.readFileSync(filePath);
-                        machineDrawingAlreadyExists = machineDrawingAlreadyExists ? true : false;
+                        isMachineDrawingAlreadyExists = isMachineDrawingAlreadyExists ? true : false;
                         const objectValues = {
                             pdfData, filePath_, referenceNumber, versionNumber, docxCategory, docxTypeDB,
-                            childFolder, productObject, fileName, filePath, machineDrawingAlreadyExists, justDrawingInsertedThroughScript, fileETAGAlreadyExist,
+                            childFolder, productObject, fileName, filePath, isMachineDrawingAlreadyExists, justDrawingInsertedThroughScript, isFileETAGAlreadyExist,
                         }
                         const data_log = await parsePDFAndLog(objectValues);
-
-
-
-                        // if (!data_log.machineDrawingAlreadyExists && !data_log.machineDrawingAdded) {
-                        //     const propertiesNotFound = checkKeyValues(data_log);
-
-                        //     if (!propertiesNotFound || propertiesNotFound?.length == 0) {
-                        //         await uploadDocument(data_log)
-                        //             .then(response => {
-                        //                 data_log.uploadedSuccessfull = true;
-                        //             })
-                        //             .catch(error => {
-                        //                 data_log.errorUploadeding = true;
-                        //                 console.error('Error:', error);
-                        //             });
-                        //     } else {
-                        //         data_log.propertiesNotFound = propertiesNotFound;
-                        //     }
-                        // }
 
                         const propertiesNotFound = await checkKeyValues(data_log);
                         if (propertiesNotFound && propertiesNotFound?.length != 0) {
                             data_log.propertiesNotFound = propertiesNotFound;
-                        } else {
-                            if (!data_log.machineDrawingAlreadyExists && !data_log.machineDrawingAdded) {
+                        } else if(!isCheckBeforeUploade) {
+                            if (!data_log.isMachineDrawingAlreadyExists && !data_log.isMachineDrawingAttached) {
                                 if (!data_log.propertiesNotFound || data_log.propertiesNotFound?.length === 0) {
                                     try {
-                                        // const response = await uploadDocument(data_log);
+                                        const response = await uploadDocument(data_log);
                                         data_log.uploadedSuccessfully = true;
                                     } catch (error) {
-                                        data_log.errorUploading = true;
+                                        data_log.errorWhileUploading = true;
                                         console.error('Error:', error);
                                     }
                                 } else {
@@ -269,11 +300,11 @@ async function main() {
 
                 let logging = {
                     folderName: obj.childFolder,
-                    serialNo_DB: obj.productObject?.serialNo,
-                    drawingMachine: obj.productObject?._id,
-                    documentCategory: obj.docxCategory?._id,
+                    machine_serialNo: obj.productObject?.serialNo,
+                    machine_Id: obj.productObject?._id,
+                    documentCategory_Id: obj.docxCategory?._id,
                     documentCategoryName: obj.docxCategory?.name,
-                    documentType: obj.docxTypeDB?._id,
+                    documentType_Id: obj.docxTypeDB?._id,
                     documentTypeName: obj.docxTypeDB?.name,
                     displayName: obj.fileName,
                     name: obj.fileName,
@@ -283,9 +314,9 @@ async function main() {
                     customerAccess: false,
                     isActive: true,
                     imagePath: obj.filePath,
-                    fileETAGAlreadyExist: obj.fileETAGAlreadyExist,
-                    machineDrawingAlreadyExists: obj.machineDrawingAlreadyExists ? true : false,
-                    machineDrawingAdded: obj.justDrawingInsertedThroughScript
+                    isFileETAGAlreadyExist: obj.isFileETAGAlreadyExist,
+                    isMachineDrawingAlreadyExists: obj.isMachineDrawingAlreadyExists ? true : false,
+                    isMachineDrawingAttached: obj.justDrawingInsertedThroughScript
                 };
                 resolve(logging);
             }).catch(function (error) {
@@ -320,7 +351,7 @@ async function main() {
             }
 
             let recordValues = {
-                serialNo_DB: productObject?.serialNo,
+                machine_serialNo: productObject?.serialNo,
                 stockNoValue: stockNoValue,
                 refNumber: refNumber,
                 versionNumber: versionNumber,
@@ -363,16 +394,16 @@ async function main() {
 
     async function uploadDocument(data) {
         try {
-            const { folderName, serialNo_DB, drawingMachine, documentCategory, documentCategoryName, documentType,
+            const { folderName, machine_serialNo, machine_Id, documentCategory_Id, documentCategoryName, documentType_Id,
                 documentTypeName, displayName, name, versionNo, referenceNumber, stockNumber,
-                customerAccess, isActive, imagePath, machineDrawingAlreadyExists, machineDrawingAdded } = data;
+                customerAccess, isActive, imagePath, isMachineDrawingAlreadyExists, isMachineDrawingAttached } = data;
 
             // Read the image file
             const imageData = fs.readFileSync(imagePath);
             // Create form data
             const formData = new FormData();
 
-            formData.append('drawingMachine', drawingMachine?.toString());
+            formData.append('drawingMachine', machine_Id?.toString());
 
             formData.append('customerAccess', customerAccess?.toString());
 
@@ -382,16 +413,16 @@ async function main() {
 
             formData.append('name', name);
 
-            formData.append('documentCategory', documentCategory?.toString());
-            formData.append('documentType', documentType?.toString());
+            formData.append('documentCategory', documentCategory_Id?.toString());
+            formData.append('documentType', documentType_Id?.toString());
 
-            formData.append('doctype', documentType?.toString());
+            formData.append('doctype', documentType_Id?.toString());
             formData.append('images', imageData, { filename: path.basename(imagePath) });
             // Send Axios request
             const config = {
                 headers: { Authorization: `Bearer ${token}` }
             };
-            const response = await axios.post(`${baseURL}/documents/document/`, formData, {
+            const response = await axios.post(`${serverURL}/documents/document/`, formData, {
                 headers: {
                     ...formData.getHeaders(),
                     'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundarybBvDZ5x1fsIv303C',
@@ -441,9 +472,9 @@ async function main() {
 
 }
 
-async function getToken(baseURL, email, password) {
+async function getToken(serverURL, email, password) {
     try {
-        const tokenResponse = await axios.post(`${baseURL}/security/getToken`, { email, password });
+        const tokenResponse = await axios.post(`${serverURL}/security/getToken`, { email, password });
         const { accessToken, userId, sessionId } = tokenResponse.data;
         return { token: accessToken, userId, sessionId };
     } catch (error) {
@@ -453,7 +484,7 @@ async function getToken(baseURL, email, password) {
 }
 
 async function checkFileExistenceByETag(etagValue) {
-    const url = `${baseURL}/documents/checkFileExistenceByETag`;
+    const url = `${serverURL}/documents/checkFileExistenceByETag`;
     try {
         const response = await axios.get(url, {
             params: {
@@ -474,9 +505,35 @@ async function checkFileExistenceByETag(etagValue) {
     }
 }
 
+async function getMachineId(serialNo) {
+    const url = `${serverURL}/products/machines/searchProductId?serialNo=${serialNo}`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            // body: JSON.stringify(payLoad)
+        });
+        console.log('response : ',response)
+        if (!response.ok) {
+            return response?.statusText
+        }
+
+        // Parse the response JSON
+        const responseData = await response.json();
+        return responseData;
+    } catch (error) {
+        // Handle errors
+        console.error('Error:', error.message);
+        throw error;
+    }
+}
+
 
 async function attachDrawingToMachine(payLoad) {
-    const url = `${baseURL}/products/drawings`;
+    const url = `${serverURL}/products/drawings`;
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -509,13 +566,13 @@ async function checkKeyValues(properties) {
     const keys_Values = { ...properties };
 
     // Remove specific keys from the copied object
-    delete keys_Values.machineDrawingAdded;
+    delete keys_Values.isMachineDrawingAttached;
     delete keys_Values.uploadedSuccessfull;
     delete keys_Values.customerAccess;
     delete keys_Values.documentTypeName;
-    delete keys_Values.machineDrawingAlreadyExists;
+    delete keys_Values.isMachineDrawingAlreadyExists;
     delete keys_Values.documentCategoryName;
-    delete keys_Values.fileETAGAlreadyExist;
+    delete keys_Values.isFileETAGAlreadyExist;
 
 
 

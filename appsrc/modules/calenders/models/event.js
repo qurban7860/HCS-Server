@@ -10,7 +10,7 @@ const docSchema = new Schema({
 
         contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
 
-        machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
+        machines: [{ type: Schema.Types.ObjectId, ref: 'Machine' }],
 
         site: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
 

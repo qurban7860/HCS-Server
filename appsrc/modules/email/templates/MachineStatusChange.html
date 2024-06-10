@@ -6,7 +6,7 @@
     <meta name="x-apple-disable-message-reformatting">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta content="telephone=no" name="format-detection">
-    <title>Howick Event Notification</title>
+    <title>Machine status update</title>
     <!--[if (mso 16)]>
 							<style type="text/css"> a {text-decoration: none;} </style>
 							<![endif]-->
@@ -488,15 +488,25 @@
                               <table style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px;background-color:transparent;background-position:left top" width="100%" cellspacing="0" cellpadding="0" bgcolor="transparent" role="presentation">
                                 <tr>
                                   <td align="left" style="padding:0;Margin:0">
-                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">An event has been booked by {{ securityUserName }}.
+                                    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">Machine status has been changed to {{ afterStatus }}.
                                       <br>
                                       <br>
-                                      <strong>Date/Time: </strong> {{ date }} {{ startTime }} - {{ endTime }}<br>
-                                      <strong>Customer:</strong> {{ customer }}<br>
-                                      <strong>Site:</strong> {{ Site }}<br>
-                                      <strong>Machine:</strong> {{ serialNo }}<br>
-                                      <strong>Technicians: </strong> {{ technicians }}<br>
-                                      <strong>Description:</strong> {{ description }}<br>
+                                      <strong>Machine:</strong> {{ serialNo }} <br>
+                                      <strong>Current Status: </strong> {{ afterStatus }} <br>
+
+                                      {{ serialNos }}
+
+                                      {{ manufactureDate }}
+
+                                      {{ shippingDate }}
+
+                                      {{ decommissionedDate }}
+
+                                      {{ installationDate }}
+
+                                      <strong>Customer: </strong> {{ machineCustomer }} <br>
+                                      <strong>Installation Site: </strong> {{ machineInstalationSite }} <br>
+
                                     </p>
                                   </td>
                                 </tr>

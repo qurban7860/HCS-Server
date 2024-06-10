@@ -50,6 +50,8 @@ this.populate = [
 
 
 this.populateList = [
+  
+  { path: 'groupCustomer', select: '_id name' },
   { path: 'mainSite', select: 'address name phoneNumbers email' },
   { path: 'accountManager', select: 'firstName lastName phoneNumbers' },
   { path: 'supportManager', select: 'firstName lastName phoneNumbers' },
