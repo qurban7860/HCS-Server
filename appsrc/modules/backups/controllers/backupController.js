@@ -8,7 +8,7 @@ const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-
+const { fDateTime } = require('../../../../utils/formatTime');
 let backupDBService = require('../service/backupDBService')
 this.dbservice = new backupDBService();
 
@@ -216,11 +216,11 @@ exports.backupMongoDB = async (req, res, next) => {
       archive.on('error', (err) => {
         console.error(`Error zipping backup folder: ${err.message}`);
       });
-      let totalZipSizeInkb = 0;
+      let totalZipSizeInBytes = 0;
       archive.on('data', (data) => {
-        totalZipSizeInkb += data.length;
+        totalZipSizeInBytes += data.length;
       });
-
+      const totalZipSizeInkb = totalZipSizeInBytes / 1024;
       archive.pipe(output);
       archive.directory(`${outputFolder}/`, false);
       archive.finalize();
@@ -255,6 +255,7 @@ exports.backupMongoDB = async (req, res, next) => {
               console.error('Upload failed:', err);
             });
           const endTime = performance.now();
+          const endDateTime =  fDateTime(new Date());
           const durationSeconds = (endTime - startTime) / 1000;
           let req = {};
           req.body = {};
@@ -268,8 +269,8 @@ exports.backupMongoDB = async (req, res, next) => {
             databaseVersion: '1',
             databaseName: process.env.MONGODB_USERNAME,
             backupType: 'SYSTEM',
-            backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} MB`,
-            backupTime: endTime
+            backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} GB`,
+            backupTime: endDateTime
           };
           if(process.env.ADMIN_EMAIL?.trim().length > 0)
             exports.sendEmailforBackup(req);
