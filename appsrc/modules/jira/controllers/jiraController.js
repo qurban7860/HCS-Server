@@ -121,7 +121,7 @@ exports.getTickets = async (req, res, next) => {
         jql: JQL,
         orderBy: '-created',
         startAt:0,
-        maxResults:100
+        // maxResults:100
       },
       ...HEADER,
     };
@@ -140,7 +140,7 @@ exports.getTickets = async (req, res, next) => {
       config.params.startAt = req.query.startAt;
     }
 
-    if (req?.query?.maxResults && req?.query?.status?.toLowerCase()?.trim() === 'all') {
+    if (req?.query?.maxResults ) {
       config.params.maxResults = req.query.maxResults;
     }
 
