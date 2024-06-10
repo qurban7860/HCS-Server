@@ -80,14 +80,16 @@ exports.getRelease = async (req, res, next) => {
 };
 
 exports.getTickets = async (req, res, next) => {
+  console.log('req?.query : ', req?.query);
   try {
-    let jiraProject =  'HWKSC';
+    let total;
+    let jiraProject = 'HWKSC';
     if (req?.query?.project) {
       jiraProject = req?.query?.project;
     }
     const URL = getURL("search");
     let HEADER = '';
-    if(jiraProject === 'HWKSC') {
+    if (jiraProject === 'HWKSC') {
       HEADER = await getHWKSCHeader();
     } else {
       HEADER = await getHeader();
@@ -95,66 +97,146 @@ exports.getTickets = async (req, res, next) => {
 
     let JQL = `project = ${jiraProject}`;
 
-    if ( req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all' ) {
+    if (req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all') {
       JQL += ` AND ("statusCategory" = '${req.query.status}')`;
     }
 
-    if ( req?.query?.startDate ) {
+    if (req?.query?.startDate) {
       JQL += ` AND createdDate >= ${req?.query?.startDate}`;
     }
 
-    if( req?.query?.serialNo?.trim().length > 0 ){
+    if (req?.query?.serialNo?.trim().length > 0) {
       JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
     }
 
-
-    if(req?.query?.ref?.trim().length > 0 ){
+    if (req?.query?.ref?.trim().length > 0) {
       JQL += ` AND Organizations = "${req.query.ref}" `;
     }
 
+    let allIssues = [];
+    let startAt = 0;
+    const maxResults = 100; // Set to a lower number to loop and collect up to 500 records
 
-    
-    let config = {
-      url: URL,
-      method: 'get',
-      params: {
-        jql: JQL,
-        orderBy: '-created',
-        startAt:0,
-        maxResults: 500
-      },
-      ...HEADER,
-    };
+    while (allIssues.length < 500) {
+      let config = {
+        url: URL,
+        method: 'get',
+        params: {
+          jql: JQL,
+          startAt: startAt,
+          maxResults: maxResults
+        },
+        ...HEADER,
+      };
 
-    
+      if (req?.query?.query) {
+        config.params.query = req.query.query;
+      }
 
-    if (req?.query?.query) {
-      config.params.query = req.query.query;
-    }
+      if (req?.query?.orderBy) {
+        config.params.orderBy = req.query.orderBy;
+      }
 
-    if (req?.query?.orderBy) {
-      config.params.orderBy = req.query.orderBy;
-    }
+      try {
+        const response = await axios(config);
+        allIssues = allIssues.concat(response.data.issues);
+        startAt += maxResults;
+        total = response.data.total;
 
-    if (req?.query?.startAt) {
-      config.params.startAt = req.query.startAt;
-    }
-
-    if (req?.query?.maxResults ) {
-      config.params.maxResults = req.query.maxResults;
-    }
-
-    axios(config)
-      .then(response => {
-        res.json(response.data);
-      })
-      .catch(error => {
+        // Break the loop if there are no more issues to fetch
+        if (response.data.issues.length < maxResults) {
+          break;
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Validation failed!");
-      });
+        return;
+      }
+    }
+
+    res.json({ maxResults: allIssues?.length , total: total, issues: allIssues?.slice(0, 500)}); // Return only the first 500 issues
   } catch (error) {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
+
+// exports.getTickets = async (req, res, next) => {
+//   console.log('req?.query : ',req?.query)
+//   try {
+//     let jiraProject =  'HWKSC';
+//     if (req?.query?.project) {
+//       jiraProject = req?.query?.project;
+//     }
+//     const URL = getURL("search");
+//     let HEADER = '';
+//     if(jiraProject === 'HWKSC') {
+//       HEADER = await getHWKSCHeader();
+//     } else {
+//       HEADER = await getHeader();
+//     }
+
+//     let JQL = `project = ${jiraProject}`;
+
+//     if ( req?.query?.status?.trim().length > 0 && req?.query?.status?.toLowerCase()?.trim() !== 'all' ) {
+//       JQL += ` AND ("statusCategory" = '${req.query.status}')`;
+//     }
+
+//     if ( req?.query?.startDate ) {
+//       JQL += ` AND createdDate >= ${req?.query?.startDate}`;
+//     }
+
+//     if( req?.query?.serialNo?.trim().length > 0 ){
+//       JQL += ` AND "Serial No[Short text]" ~ "${req?.query?.serialNo}"`;
+//     }
+
+
+//     if(req?.query?.ref?.trim().length > 0 ){
+//       JQL += ` AND Organizations = "${req.query.ref}" `;
+//     }
+
+
+    
+//     let config = {
+//       url: URL,
+//       method: 'get',
+//       params: {
+//         jql: JQL,
+//         orderBy: '-created',
+//         // startAt:0,
+//         maxResults: 1000
+//       },
+//       ...HEADER,
+//     };
+
+    
+
+//     if (req?.query?.query) {
+//       config.params.query = req.query.query;
+//     }
+
+//     if (req?.query?.orderBy) {
+//       config.params.orderBy = req.query.orderBy;
+//     }
+
+//     if (req?.query?.startAt) {
+//       config.params.startAt = req.query.startAt;
+//     }
+
+//     if (req?.query?.maxResults ) {
+//       config.params.maxResults = req.query.maxResults;
+//     }
+
+//     axios(config)
+//       .then(response => {
+//         res.json(response.data);
+//       })
+//       .catch(error => {
+//         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Validation failed!");
+//       });
+//   } catch (error) {
+//     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//   }
+// };
 
 
 function getHeader() {
