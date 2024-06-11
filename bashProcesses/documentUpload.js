@@ -60,8 +60,15 @@ async function main() {
         userId = authData.userId;
         sessionId = authData.sessionId;
     }
+    console.log("Document Checking Process Started!")
+    await readFolders(machineDataDirectory, false );
 
-    await readFolders(machineDataDirectory, allowedExtension, disallowedExtension);
+    if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound ) ){
+        console.log("Document upload Process Started!")
+    index = 1
+    logging = [];
+    await processFolders(machineDataDirectory , true);
+    }
 
 
 if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound )  ){
@@ -93,25 +100,15 @@ else {
     process.exit(0)
 }
 
-    async function readFolders(machineDataDirectory) {
+    async function readFolders(machineDataDirectory, isUpload) {
         try {
             const files = await readdir(machineDataDirectory);
             for (const file of files) {
                 const filePath = path.join(machineDataDirectory, file);
                 try {
-                    const stats = await getFileStats(filePath , true );
+                    const stats = await getFileStats(filePath, isUpload );
                 } catch (err) {
                     console.error('Error occurred:', err);
-                }
-            }
-            if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound ) ){
-                for (const file of files) {
-                    const filePath = path.join(machineDataDirectory, file);
-                    try {
-                        const stats = await getFileStats(filePath , false );
-                    } catch (err) {
-                        console.error('Error occurred:', err);
-                    }
                 }
             }
         } catch (e) {
@@ -122,41 +119,54 @@ else {
         }
     }
 
+    async function processFolders(machineDataDirectory, isUpload) {
+        try {
+            const files = await readdir(machineDataDirectory);
+            for (const file of files) {
+                const filePath = path.join(machineDataDirectory, file);
+                try {
+                    await getFileStats(filePath, isUpload );
+                } catch (err) {
+                    console.error('Error occurred:', err);
+                }
+            }
+        } catch (e) {
+            if (e) {
+                console.error('Error reading directory:', e);
+                return;
+            }
+        }
+    }
 
-    async function getFileStats(filePath , isCheckBeforeUploade ) {
+    async function getFileStats(filePath , isUploade ) {
         return new Promise((resolve, reject) => {
             fs.stat(filePath, async (err, stats) => {
                 if (err) {
                     reject(err); // If there's an error, reject the Promise
                     console.error('Error checking file stats:', err);
                 }
-                console.log( isCheckBeforeUploade ? 'Checking Files...' : 'Reading Folder...');
+                // console.log( isUploade ? 'Reading Folder...' : 'Checking Files...');
                 if (stats.isDirectory()) {
                     // Recursively read subfolders
-                    await readFolders(filePath, allowedExtension, disallowedExtension);
+                    if(isUploade){
+                        await processFolders(filePath, isUploade );
+                    } else {
+                        await readFolders(filePath, isUploade);
+                    }
                     resolve(stats);
                 } else  {
                     // Check if the file is allowed or disallowed
                     const ETAG = await generateEtag(filePath);
                     const fileName = path.basename(filePath);
-                    if (fileName.includes(allowedExtension)) {
+                    if ( allowedExtension.some(( ext )=> fileName?.toLowerCase()?.includes(ext.toLowerCase())) || !disallowedExtension.some(( ext )=> fileName?.toLowerCase()?.includes( ext.toLowerCase() )) ) {
                         const folders = filePath.split(path.sep);
                         
-                        // Check if "Assembly Drawings" is part of the folder path
-                        // const containsAssemblyDrawings = filePath.toLowerCase().includes('assembly drawings');
-                        // const containsArchiveAssemblyDrawings = filePath.toLowerCase().includes('archive');
-                        // if (!containsAssemblyDrawings || containsArchiveAssemblyDrawings ){
-                        //     resolve(stats);
-                        //     return;
-                        // }
-
                         const loweCaseFilePath = filePath.toLowerCase();
                         if (!targetDirectories.some((el)=> loweCaseFilePath.includes(el.toLowerCase())) || excludeDirectories?.some((el)=> loweCaseFilePath.includes(el.toLowerCase())) ){
                             resolve(stats);
                             return;
                         }
-
-                        console.log(`${index} filePath : ${filePath}`);
+                        console.log(`${index} - ${isUploade ? 'Uploading' : 'Checking' } - ${fileName}`);
                         index += 1;
                         const parentFolder = folders[folders.length - (folders.length - 2)];
                         const childFolder = folders[folders.length - 2];
@@ -180,10 +190,9 @@ else {
                             if (fetchSerialNo) {
                                 // productObject = await getMachineId(fetchSerialNo.trim())
                                 productObject = await Product.findOne({ serialNo: fetchSerialNo.trim() }).select('_id serialNo').lean();
-                                console.log("productObject : ",productObject)
                             }
                         } else {
-                            console.log("Number not found before hyphen.");
+                            console.log(`Machine with serialNo ${serialNumber__} not found! `);
                         }
 
                         let searchedObject = null;
@@ -193,10 +202,10 @@ else {
                         let isFileETAGAlreadyExist = false;
                         if (data_[0]?.documentFiles) {
                             isFileETAGAlreadyExist = true;
+                            console.log(`Document ETag already exists`)
                             searchedObject = await data_.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === ETAG.toString());
                         }
 
-                        console.log("searchedObject : ",searchedObject)
                         let justDrawingInsertedThroughScript = false;
                         let isMachineDrawingAlreadyExists = false;
 
@@ -249,12 +258,13 @@ else {
                         const propertiesNotFound = await checkKeyValues(data_log);
                         if (propertiesNotFound && propertiesNotFound?.length != 0) {
                             data_log.propertiesNotFound = propertiesNotFound;
-                        } else if(!isCheckBeforeUploade) {
+                        } else if(isUploade) {
                             if (!data_log.isMachineDrawingAlreadyExists && !data_log.isMachineDrawingAttached) {
                                 if (!data_log.propertiesNotFound || data_log.propertiesNotFound?.length === 0) {
                                     try {
                                         const response = await uploadDocument(data_log);
                                         data_log.uploadedSuccessfully = true;
+                                        console.log(`Document *** ${fileName} *** Uploaded successfully!`)
                                     } catch (error) {
                                         data_log.errorWhileUploading = true;
                                         console.error('Error:', error);
@@ -375,6 +385,7 @@ else {
                 drawing: true
             }).select('_id name').lean();
         } else {
+            console.log(`Document Category ${categoryName} not found!`);
             return null;
         }
     }
@@ -388,6 +399,7 @@ else {
                 docCategory: categoryID
             }).select('_id name').lean();
         } else {
+            console.log(`Document Type ${categoryName} not found!`);
             return null;
         }
     }
@@ -495,7 +507,6 @@ async function checkFileExistenceByETag(etagValue) {
                 'Authorization': `Bearer ${token}` // Add the Authorization header with the bearer token
             }
         });
-
         // Assuming the response contains relevant data about file existence
         return response.data;
     } catch (error) {
@@ -516,7 +527,6 @@ async function getMachineId(serialNo) {
             },
             // body: JSON.stringify(payLoad)
         });
-        console.log('response : ',response)
         if (!response.ok) {
             return response?.statusText
         }
