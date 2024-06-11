@@ -166,7 +166,6 @@ else {
                             resolve(stats);
                             return;
                         }
-
                         console.log(`${index} - ${isUploade ? 'Uploading' : 'Checking' } - ${fileName}`);
                         index += 1;
                         const parentFolder = folders[folders.length - (folders.length - 2)];
@@ -265,7 +264,7 @@ else {
                                     try {
                                         const response = await uploadDocument(data_log);
                                         data_log.uploadedSuccessfully = true;
-                                        console.log(`Document ${fileName} Uploaded successfully!`)
+                                        console.log(`Document *** ${fileName} *** Uploaded successfully!`)
                                     } catch (error) {
                                         data_log.errorWhileUploading = true;
                                         console.error('Error:', error);
