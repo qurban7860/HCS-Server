@@ -156,15 +156,15 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const technicians = Array.from(uniqueTechnicians);
     let emalsToSend
 
-    // if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
+    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
       emalsToSend = supportingContactsEmails;
-    // } else {
-    //   emalsToSend = [
-    //     'a.hassan@terminustech.com',
-    //     'zeeshan@terminustech.com',	
-    //     'muzna@terminustech.com',
-    //   ]
-    // }
+    } else {
+      emalsToSend = [
+        'a.hassan@terminustech.com',
+        'zeeshan@terminustech.com',	
+        'muzna@terminustech.com',
+      ]
+    }
     
     let params = {
       to: primaryEmail,
