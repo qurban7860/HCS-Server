@@ -53,7 +53,7 @@ function fDateTime(date, newFormat) {
 
 function fTimestamp(date) {
   if(isValid(date)){
-    return date ? getTime(new Date(date)) : getTime(new Date());
+    return date ? getTime(new Date(date)) : getTime(new Date(new Date()));
   }
   return date
 }

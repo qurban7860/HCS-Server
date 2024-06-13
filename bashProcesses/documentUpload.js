@@ -32,10 +32,10 @@ const disallowedExtension = []; // Array of disallowed files
 let token = null;
 let userId;
 let sessionId;
-let logging = [];
-const filePath_ = fTimestamp();
+let logs = [];
+const csvFileName = fTimestamp(new Date())?.toString();
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
-let index = 1
+let indexing = 1
 
 
 async function main() {
@@ -50,41 +50,30 @@ async function main() {
     await getMachinesSerialNo()
     if(machineDataList?.some( (m ) => m._id )){
         await getMachineSubFoldersData()
-        console.log("machineDataList with SubFoldersData : ",machineDataList)
+        // console.log("machineDataList with SubFoldersData : ",machineDataList)
+        await checkFilesProperties()
+        indexing = 1;
+        await uploadDocuments()
+        // console.log("logs : ",logs)
+
     } else {
         console.log('Machines does not exist! Please add them.');
         process.exit(0)
     }
 
-
-if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound )  ){
-    const csv = parse(logging);
-        await fs.writeFile(filePath_, csv, async (err) => {
-            if (err) {
-                console.error('Error appending to CSV file:', err);
-                return;
-                process.exit(0)
-            }
-            console.log(`Documents records appended to CSV file Name: ${filePath_} in project diractory successfully.`);
-            process.exit(0)
-        });
-} 
-else if(Array.isArray(logging) && logging.length > 0 && logging.some((log)=> log.propertiesNotFound ) ){
-        const csv = parse(logging);
-        await fs.writeFile(filePath_, csv, async (err) => {
-            if (err) {
-                console.error('Error appending to CSV file:', err);
-                return;
-                process.exit(0)
-            }
-            console.log(`Please resolve defined issues in CSV file Name: ${filePath_} in project diractory before upload!`);
-            process.exit(0)
-        });
-} 
-else {
-    console.log('No data Available to create CSV.');
-    process.exit(0)
 }
+
+async function getToken(serverURL, email, password) {
+    try {
+        const tokenResponse = await axios.post(`${serverURL}/security/getToken`, { email, password });
+        const { accessToken, userId, sessionId } = tokenResponse.data;
+        return { token: accessToken, userId, sessionId };
+    } catch (error) {
+        console.error('Login Error:', error);
+        throw error;
+    }
+}
+
 
 function fetchMachineSerialNo(inputString) {
     // Regular expression to match the number before the hyphen
@@ -115,10 +104,22 @@ async function getMachinesSerialNo() {
             }
         }
     } catch (e) {
-        if (e) {
             console.error('Error reading directory:', e);
-            return;
-        }
+    }
+}
+
+
+async function fetchDocxCategory(categoryName) {
+    if (categoryName && categoryName.trim().length > 0) {
+        return await DocumentCategory.findOne({
+            name: { $regex: new RegExp('^' + categoryName.trim(), 'i') },
+            isActive: true,
+            isArchived: false,
+            drawing: true
+        }).select('_id name').lean();
+    } else {
+        console.log(`Document Category ${categoryName} not found!`);
+        return null;
     }
 }
 
@@ -136,6 +137,19 @@ function fetchDocType(fileName) {
     return matches ? docxType : '';
 }
 
+async function fetchDocxType(categoryName, categoryID) {
+    if (categoryName && categoryName.trim().length > 0) {
+        return await DocumentType.findOne({
+            name: { $regex: new RegExp('^' + categoryName.trim(), 'i') },
+            isActive: true,
+            isArchived: false,
+            docCategory: categoryID
+        }).select('_id name').lean();
+    } else {
+        console.log(`Document Type ${categoryName} not found!`);
+        return null;
+    }
+}
 function fetchReferenceNumber(fileName) {
     let regex_ = /^(\w+)\s([\w\s]+)/;
     let matches = fileName.match(regex_);
@@ -181,8 +195,50 @@ async function fetchVersionNumber(fileName) {
     return versionNumber ? versionNumber : '' ;
 }
 
+
+
+async function generateEtag(data) {
+    const crypto = require('crypto');
+    const md5sum = crypto.createHash('md5');
+    let stream;
+    if (typeof data === 'string') {
+        stream = fs.createReadStream(data);
+    } else if (Buffer.isBuffer(data)) {
+        stream = require('stream').Readable.from(data);
+    } else {
+        return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
+    }
+    return new Promise((resolve, reject) => {
+        stream.on('data', (chunk) => { md5sum.update(chunk) });
+        stream.on('end', () => {
+            let etag = `"${md5sum.digest('hex')}"`;
+            etag = etag.replace(/ /g, "").replace(/"/g, "");
+            resolve(etag);
+        });
+        stream.on('error', (error) => { reject(error) });
+    });
+}
+
+async function checkFileExistenceByETag(etagValue) {
+    const url = `${serverURL}/documents/checkFileExistenceByETag`;
+    try {
+        const response = await axios.get(url, {
+            params: { eTags: etagValue }, // etagValue is an array
+            headers: { 'Content-Type': 'application/json',  'Authorization': `Bearer ${token}` }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error while checking E-Tag :', error);
+    }
+}
+
+
 async function getMachineSubFoldersData( ) {
     try {
+        if(Array.isArray(specificMchinesOnly) && specificMchinesOnly?.length > 0 ){
+            machineDataList = machineDataList?.filter(md => 
+                specificMchinesOnly.some(sM =>  sM?.trim()?.toLowerCase() === md?.serialNo?.trim()?.toLowerCase()))
+        }
         for (const [index, mData] of machineDataList.entries()) {
             await processMachineData( index, mData );
         }
@@ -193,7 +249,7 @@ async function getMachineSubFoldersData( ) {
 
 async function processMachineData( index, mData) {
     let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
-    subFolders = filterSubFolders( subFolders );
+    subFolders = await filterSubFolders( subFolders );
 
     if (!machineDataList[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
         machineDataList[index].filesToUpload = [];
@@ -216,7 +272,7 @@ async function processSubFolders( index, mData, subFolders ) {
             const files = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`);
             const docCategory = await fetchDocxCategory(subFolder);
             await processFiles( files, filesToUpload, mData, subFolder, docCategory );
-            // console.log('filesToUpload : ', JSON.stringify(filesToUpload, null, 2));
+            // console.log('filesToUpload : ',filesToUpload);
             machineDataList[index].filesToUpload = filesToUpload;
         } catch (err) {
             console.error('Error while fetching machine Sub Folder:', err);
@@ -240,298 +296,222 @@ function isFileAllowed( fileExtension ) {
 }
 
 async function createFileData(file, mData, subFolder, docCategory) {
+    console.log(`${indexing} fetching data from ### ${file}`);   
+    indexing += 1;
+    const extension = path.extname(file);
     const filePath = `${machineDataDirectory}/${mData?.mainFolder}/${subFolder}/${file}`;
+    const fileName = file?.slice(0, -extension.length);
     const docEtag = await generateEtag(filePath);
+    let isDocumentId = null;
     const isETagExist = await checkFileExistenceByETag([docEtag]);
+    if (isETagExist[0]?.documentFiles) {
+        searchedObject = await isETagExist.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === docEtag.toString());
+        isDocumentId = searchedObject?.document;
+    }
     const docxType = await fetchDocType(file);
     const docType = await fetchDocxType(docxType, docCategory?._id);
-
-    return {
-        fileName: file,
-        extension: path.extname(file),
+    const data = {
+        filePath: filePath,
+        fileName: fileName,
+        extension: extension,
         category: subFolder,
         docCategoryId: docCategory?._id || '',
-        docCategoryName: docCategory?.name || '',
+        docCategoryName: docCategory?.name || ( subFolder || '' ),
         docTypeId: docType?._id || '',
-        docTypeName: docType?.name || '',
-        versionNo: await fetchVersionNumber(file),
-        Ref: await fetchReferenceNumber(file),
-        StockNo: await extractStockNo(filePath),
+        docTypeName: docType?.name || ( docxType || ''),
+        versionNumber: await fetchVersionNumber(file),
+        referenceNumber: await fetchReferenceNumber(file),
+        stockNo: await extractStockNo(filePath),
         eTag: docEtag,
-        isETagExist: isETagExist[0]?.documentFiles ? true : false,
+        isETagExist: isDocumentId ? true : false,
     };
-}
 
-
-    async function parsePDFAndLog(obj) {
-        return new Promise((resolve, reject) => {
-            PDFParser(obj.pdfData).then(async function (data) {
-                // Extract text from PDF
-                const pdfText = data.text;
-                // Split text by newline character
-                const lines = pdfText.split('\n');
-                // Search for "STOCK NO" column
-                let stockNoValue = null;
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('STOCK NO.')) {
-                        stockNoValue = lines[i - 3].trim();
-                        if (stockNoValue === 'DRAWN BY') {
-                            stockNoValue = lines[i - 2].trim();
-                        }
-                        break;
-                    }
-                }
-
-                let logging = {
-                    folderName: obj.childFolder,
-                    machine_serialNo: obj.productObject?.serialNo,
-                    machine_Id: obj.productObject?._id,
-                    documentCategory_Id: obj.docxCategory?._id,
-                    documentCategoryName: obj.docxCategory?.name,
-                    documentType_Id: obj.docxTypeDB?._id,
-                    documentTypeName: obj.docxTypeDB?.name,
-                    displayName: obj.fileName,
-                    name: obj.fileName,
-                    versionNo: obj.versionNumber,
-                    referenceNumber: obj.referenceNumber,
-                    stockNumber: stockNoValue,
-                    customerAccess: false,
-                    isActive: true,
-                    imagePath: obj.filePath,
-                    isFileETAGAlreadyExist: obj.isFileETAGAlreadyExist,
-                    isMachineDrawingAlreadyExists: obj.isMachineDrawingAlreadyExists ? true : false,
-                    isMachineDrawingAttached: obj.justDrawingInsertedThroughScript
-                };
-                resolve(logging);
-            }).catch(function (error) {
-                console.log(error);
-                reject(error);
-            });
-        });
+    if (isDocumentId) {
+        data.documentId = isDocumentId;
     }
 
+    return data;
+}
 
+async function checkFilesProperties(){
+    for (const machineData of machineDataList) {
+        if(Array.isArray( machineData?.filesToUpload ) && machineData?.filesToUpload?.length > 0 ){
+        for (const docData of machineData?.filesToUpload) {
+            try{
+                const data_log = await parsePDFAndLog(docData, machineData?.serialNo, machineData?._id);
+                const propertiesNotFound = await checkKeyValues(data_log);
+                // console.log("propertiesNotFound : ",propertiesNotFound)
+                if (propertiesNotFound && propertiesNotFound?.length != 0) {
+                    data_log.propertiesNotFound = propertiesNotFound;
+                }
+                logs.push(data_log);
+            } catch(e){
+                console.error('Error while checking file properties:', e);
+            }
+        }
+        }
+    }
+}
 
-    async function parsePDFAndLogData(pdfData) {
-        try {
-            const data = await PDFParser(pdfData);
+//----------------------------------------------------------------
 
-            // Extract text from PDF
-            const pdfText = data.text;
-
-            // Split text by newline character
-            const lines = pdfText.split('\n');
-
-            // Search for "STOCK NO" column
-            let stockNoValue = null;
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('STOCK NO.')) {
-                    stockNoValue = lines[i - 3].trim();
-                    if (stockNoValue === 'DRAWN BY') {
-                        stockNoValue = lines[i - 2].trim();
+async function parsePDFAndLog(obj, serialNo, machineId ) {
+    let log = {
+        folderName: obj?.category || '',
+        serialNo: serialNo || '',
+        machineId: machineId || null,
+        documentCategoryName: obj?.docCategoryName || '',
+        documentCategoryId: obj?.docCategoryId || null,
+        documentTypeName: obj?.docTypeName || '',
+        documentTypeId: obj?.docTypeId || null,
+        displayName: obj?.fileName || '',
+        versionNumber: obj?.versionNumber || '',
+        referenceNumber: obj?.referenceNumber || '',
+        stockNumber: obj?.stockNo || '',
+        customerAccess: false,
+        isActive: true,
+        filePath: obj?.filePath || '',
+        isETagExist: obj?.isETagExist || false,
+        isMachineDrawingExist: obj?.isETagExist || false,
+        isMachineDrawingAttached: false,
+    };
+    if(obj?.documentId){
+        log.documentId = obj?.documentId
+    }
+    return log;
+}
+async function uploadDocuments() {
+    try {
+        for (const log of logs) {
+            log.isUploaded = false;
+            if(!log?.propertiesNotFound){
+                if(!log?.isETagExist){
+                    console.log(`${indexing} uploading file ### ${log?.displayName || '' }`);   
+                    const response = await uploadDocument(log);
+                    log.documentId = response?.Document?._id || null;
+                    log.isUploaded = true;
+                } else {
+                    const payload = {
+                        "machine": log?.machineId,
+                        "documentId": log?.documentId,
+                        "isActive": true
                     }
-                    break;
+                    console.log("payload : ",payload)
+                    const response = await attachDrawingToMachine(payload);
+                    console.log("attachDrawingToMachine : ",response)
+                    if(response){
+                        log.isMachineDrawingAttached = true;
+                    }
                 }
             }
-
-            let recordValues = {
-                machine_serialNo: productObject?.serialNo,
-                stockNoValue: stockNoValue,
-                refNumber: refNumber,
-                versionNumber: versionNumber,
-                docxCategory: docxCategory?.name,
-                docxType_DB: docxTypeDB?.name,
-                childFolder: childFolder,
-            };
-
-            logging.push(recordValues);
-        } catch (error) {
-            console.log(error);
+            indexing += 1;
         }
-    }
-
-    async function fetchDocxCategory(categoryName) {
-        if (categoryName && categoryName.trim().length > 0) {
-            return await DocumentCategory.findOne({
-                name: { $regex: new RegExp('^' + categoryName.trim(), 'i') },
-                isActive: true,
-                isArchived: false,
-                drawing: true
-            }).select('_id name').lean();
-        } else {
-            console.log(`Document Category ${categoryName} not found!`);
-            return null;
-        }
-    }
-
-    async function fetchDocxType(categoryName, categoryID) {
-        if (categoryName && categoryName.trim().length > 0) {
-            return await DocumentType.findOne({
-                name: { $regex: new RegExp('^' + categoryName.trim(), 'i') },
-                isActive: true,
-                isArchived: false,
-                docCategory: categoryID
-            }).select('_id name').lean();
-        } else {
-            console.log(`Document Type ${categoryName} not found!`);
-            return null;
-        }
-    }
-
-    async function uploadDocument(data) {
-        try {
-            const { folderName, machine_serialNo, machine_Id, documentCategory_Id, documentCategoryName, documentType_Id,
-                documentTypeName, displayName, name, versionNo, referenceNumber, stockNumber,
-                customerAccess, isActive, imagePath, isMachineDrawingAlreadyExists, isMachineDrawingAttached } = data;
-
-            // Read the image file
-            const imageData = fs.readFileSync(imagePath);
-            // Create form data
-            const formData = new FormData();
-
-            formData.append('drawingMachine', machine_Id?.toString());
-
-            formData.append('customerAccess', customerAccess?.toString());
-
-            formData.append('isActive', isActive?.toString());
-
-            formData.append('displayName', displayName);
-
-            formData.append('name', name);
-
-            formData.append('documentCategory', documentCategory_Id?.toString());
-            formData.append('documentType', documentType_Id?.toString());
-
-            formData.append('doctype', documentType_Id?.toString());
-            formData.append('images', imageData, { filename: path.basename(imagePath) });
-            // Send Axios request
-            const config = {
-                headers: { Authorization: `Bearer ${token}` }
-            };
-            const response = await axios.post(`${serverURL}/documents/document/`, formData, {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Content-Type': 'multipart/form-data; boundary=----WebKitFormBoundarybBvDZ5x1fsIv303C',
-                    'Authorization': `Bearer ${token}` // Add the Authorization header with the bearer token
-                }
-            });
-
-            return response.data;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async function generateEtag(data) {
-        const crypto = require('crypto');
-        const md5sum = crypto.createHash('md5');
-
-        let stream;
-        if (typeof data === 'string') {
-            // If data is a string, assume it's a file path
-            stream = fs.createReadStream(data);
-        } else if (Buffer.isBuffer(data)) {
-            // If data is a buffer, create a readable stream from the buffer
-            stream = require('stream').Readable.from(data);
-        } else {
-            // If the input is neither a string nor a buffer, reject with an error
-            return Promise.reject(new Error('Invalid input. Please provide a file path or a buffer.'));
-        }
-
-        return new Promise((resolve, reject) => {
-            stream.on('data', (chunk) => {
-                md5sum.update(chunk);
-            });
-
-            stream.on('end', () => {
-                let etag = `"${md5sum.digest('hex')}"`;
-                etag = etag.replace(/ /g, "").replace(/"/g, "");
-                resolve(etag);
-            });
-
-            stream.on('error', (error) => {
-                reject(error);
-            });
+        const csv = parse(logs);
+        await fs.writeFile(`${csvFileName}.csv`, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                return;
+                process.exit(0)
+            }
+            console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
+            process.exit(0)
         });
-    }
-
-}
-
-async function getToken(serverURL, email, password) {
-    try {
-        const tokenResponse = await axios.post(`${serverURL}/security/getToken`, { email, password });
-        const { accessToken, userId, sessionId } = tokenResponse.data;
-        return { token: accessToken, userId, sessionId };
     } catch (error) {
-        console.error('Login Error:', error);
-        throw error;
+        console.error('Error uploading documents:', error);
     }
 }
 
-async function checkFileExistenceByETag(etagValue) {
-    const url = `${serverURL}/documents/checkFileExistenceByETag`;
+//----------------------------------------------------------------
+
+async function uploadDocument(data) {
     try {
-        const response = await axios.get(url, {
-            params: {
-                eTags: etagValue // Assuming etagValue is an array
-            },
+        const { 
+            machineId, 
+            documentCategoryId,  
+            documentTypeId, 
+            displayName, 
+            versionNumber, 
+            referenceNumber, 
+            stockNumber,
+            customerAccess, 
+            isActive, 
+            filePath
+        } = data;
+        // Read the image file
+        const imageData = fs.readFileSync(filePath);
+        // Create form data
+        const formData = new FormData();
+        formData.append('drawingMachine', machineId?.toString());
+        formData.append('customerAccess', customerAccess?.toString());
+        formData.append('isActive', isActive?.toString());
+        formData.append('displayName', displayName);
+        formData.append('name', displayName);
+        formData.append('documentCategory', documentCategoryId?.toString());
+        formData.append('documentType', documentTypeId?.toString());
+        formData.append('doctype', documentTypeId?.toString());
+        formData.append('images', imageData, { filename: path.basename(filePath) } );
+        if(referenceNumber){
+            formData.append('referenceNumber', referenceNumber?.toString());
+        }
+        if(stockNumber){
+            formData.append('stockNumber', stockNumber?.toString());
+        }
+        if(versionNumber){
+            formData.append('versionNo', versionNumber?.toString());
+        }
+
+
+        const response = await axios.post(`${serverURL}/documents/document/`, formData, {
             headers: {
-                'Content-Type': 'application/json', // Assuming the endpoint expects JSON content type
-                'Authorization': `Bearer ${token}` // Add the Authorization header with the bearer token
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${token}`
             }
         });
-        // Assuming the response contains relevant data about file existence
-        return response.data;
+        return response
+        
     } catch (error) {
-        // Handle errors, e.g., network errors, server errors
-        console.error('Error:', error.message);
-        throw error;
+        console.error(`Error uploading document ${ data?.displayName || '' } :`, error);
     }
 }
 
+//----------------------------------------------------------------
 
 async function attachDrawingToMachine(payLoad) {
     const url = `${serverURL}/products/drawings`;
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payLoad)
         });
-
-        if (!response.ok) {
-            // Handle non-200 status codes
-            throw new Error(`HTTP error! Status: ${response.status}`);
+        console.log(response)
+        if(response.statusCode === 200) {
+            return response?.data;
         }
-
-        // Parse the response JSON
-        const responseData = await response.json();
-        return responseData;
     } catch (error) {
-        // Handle errors
-        console.error('Error:', error.message);
-        throw error;
+        console.error('Error while Attaching Machine Drawing :', error);
+        return error
     }
 }
+
+//----------------------------------------------------------------
 
 async function checkKeyValues(properties) {
     let emptyProperties = [];
     let result;
-
     const keys_Values = { ...properties };
-
-    // Remove specific keys from the copied object
+    // Remove specific keys to Ignore
     delete keys_Values.isMachineDrawingAttached;
     delete keys_Values.uploadedSuccessfull;
     delete keys_Values.customerAccess;
     delete keys_Values.documentTypeName;
-    delete keys_Values.isMachineDrawingAlreadyExists;
+    delete keys_Values.isMachineDrawingExist;
     delete keys_Values.documentCategoryName;
-    delete keys_Values.isFileETAGAlreadyExist;
-
+    delete keys_Values.isETagExist;
+    delete keys_Values.versionNumber;
+    delete keys_Values.referenceNumber;
+    delete keys_Values.stockNumber;
+    delete keys_Values.documentId
     // Check if there are any properties left in the object
     if (keys_Values && Object.keys(keys_Values).length > 0) {
         result = Object.entries(keys_Values).map(([key, value]) => {
