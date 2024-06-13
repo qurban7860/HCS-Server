@@ -11,6 +11,8 @@ const { parse } = require('json2csv');
 const { DocumentCategory, DocumentType } = require('../appsrc/modules/documents/models');
 const { ProductDrawing } = require('../appsrc/modules/products/models');
 const { Product } = require('../appsrc/modules/products/models');
+const { fTimestamp } = require('../utils/formatTime');
+
 const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
@@ -20,55 +22,49 @@ const serverURL = 'http://localhost:5002/api/1.0.0';
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
+const specificMchinesOnly = [ ];
+const machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
 const disallowedExtension = []; // Array of disallowed files
 
-var token = null;
-var userId;
-var sessionId;
-var logging = [];
-const filePath_ = getFormattedDate();
+let token = null;
+let userId;
+let sessionId;
+let logging = [];
+const filePath_ = fTimestamp();
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
 let index = 1
 
-function getFormattedDate() {
-    const date = new Date();
 
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based, so add 1
-    const day = String(date.getDate()).padStart(2, '0');
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    const seconds = String(date.getSeconds()).padStart(2, '0');
-
-    // Concatenate parts without dots or dashes
-    return `${year}${month}${day}${hours}${minutes}${seconds}.csv`;
-}
 async function main() {
     try {
         const authData = await getToken(serverURL, email, password);
         token = authData.token;
         userId = authData.userId;
         sessionId = authData.sessionId;
-
-
     } catch (error) {
-        const authData = await getToken(serverURL, email, password);
-        token = authData.token;
-        userId = authData.userId;
-        sessionId = authData.sessionId;
+        console.log(error);
     }
-    console.log("Document Checking Process Started!")
-    await readFolders(machineDataDirectory, false );
+    await getMachinesSerialNo()
+    if(machineDataList?.some( (m ) => m._id )){
+        await getMachineSubFoldersData()
+        console.log("machineDataList with SubFoldersData : ",machineDataList)
+    } else {
+        console.log('Machines does not exist! Please add them.');
+        process.exit(0)
+    }
+    // console.log('machineDataList : ',machineDataList)
+    // console.log("Document Checking Process Started!")
+    // await readFolders(machineDataDirectory, false );
 
-    if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound ) ){
-        console.log("Document upload Process Started!")
-    index = 1
-    logging = [];
-    await processFolders(machineDataDirectory , true);
-    }
+    // if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound ) ){
+    //     console.log("Document upload Process Started!")
+    // index = 1
+    // logging = [];
+    // await processFolders(machineDataDirectory , true);
+    // }
 
 
 if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound )  ){
@@ -99,6 +95,184 @@ else {
     console.log('No data Available to create CSV.');
     process.exit(0)
 }
+
+function fetchMachineSerialNo(inputString) {
+    // Regular expression to match the number before the hyphen
+    const machineSerialNoRegex = /^(\d+)\s-\s/;  
+    const match = inputString.match(machineSerialNoRegex);
+    return match ? match[1] : '';
+}
+
+async function getMachinesSerialNo() {
+    try {
+        const folders = await readdir(machineDataDirectory);
+        for (const folder of folders) {
+            try {
+                let productObject = null;
+                let machineObject
+                const serialNumber = await fetchMachineSerialNo(folder)
+                if (serialNumber?.trim()) {
+                    productObject = await Product.findOne({ serialNo: serialNumber.trim() }).select('_id serialNo').lean();
+                    machineObject = {
+                        _id: productObject?._id || null,
+                        serialNo: serialNumber || '',
+                        mainFolder: folder || '',
+                    }
+                    machineDataList.push( machineObject )
+                }
+            } catch (err) {
+                console.error('Error while feching machine SerialNo :', err);
+            }
+        }
+    } catch (e) {
+        if (e) {
+            console.error('Error reading directory:', e);
+            return;
+        }
+    }
+}
+
+function fetchDocType(fileName) {
+    let regex_ = /^(\w+)\s([\w\s]+)/;
+    let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
+    let matches = fileName.match(regex_);
+    let docxType
+    if(matches){
+        docxType = matches[2].trim(); 
+        if (pattern.test(docxType)) {
+            docxType = docxType.replace(pattern, '');
+        }
+    }
+    return matches ? docxType : '';
+}
+
+function fetchReferenceNumber(fileName) {
+    let regex_ = /^(\w+)\s([\w\s]+)/;
+    let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
+    let matches = fileName.match(regex_);
+    let referenceNumber
+    if(matches){
+        referenceNumber = matches[1].trim(); 
+    }
+    return matches ? referenceNumber : '';
+}
+
+async function extractStockNo(pdfPath) {
+    try {
+        const fileExtension = path.extname(pdfPath);
+        if( fileExtension?.toLowerCase() === '.pdf' ) {
+            const dataBuffer = await fs.promises.readFile(pdfPath);
+            const data = await PDFParser(dataBuffer);
+            const pdfText = data.text;
+            const lines = pdfText.split('\n');
+            let stockNoValue = null;
+            for (let i = 0; i < lines.length; i++) {
+                if (lines[i].includes('STOCK NO.')) {
+                    stockNoValue = lines[i - 3].trim();
+                    if (stockNoValue === 'DRAWN BY') {
+                        stockNoValue = lines[i - 2].trim();
+                    }
+                    break;
+                }
+            }
+            return stockNoValue ? stockNoValue : '';
+        } else {
+            return '';
+        }
+    } catch (err) {
+        console.error('Error extracting stock number from PDF:', err);
+        return "";
+    }
+}
+
+async function fetchVersionNumber(fileName) {
+    const regex_VersionNo = /V(\d+)\.pdf$/;
+    const matches_Version = fileName.match(regex_VersionNo);
+    const versionNumber = matches_Version ? matches_Version[1] : 1;
+    return versionNumber ? versionNumber : '' ;
+}
+
+async function getMachineSubFoldersData( ) {
+    try {
+        for (const [index, mData] of machineDataList.entries()) {
+            await processMachineData( index, mData );
+        }
+    } catch (e) {
+        console.error('Error reading directory:', e);
+    }
+}
+
+async function processMachineData( index, mData) {
+    let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
+    subFolders = filterSubFolders( subFolders );
+
+    if (!machineDataList[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
+        machineDataList[index].filesToUpload = [];
+        await processSubFolders( index, mData, subFolders );
+    }
+}
+
+function filterSubFolders( subFolders ) {
+    return subFolders.filter(sb => {
+        const includesTarget = targetDirectories.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
+        const excludesTarget = excludeDirectories.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
+        return includesTarget && !excludesTarget;
+    });
+}
+
+async function processSubFolders( index, mData, subFolders ) {
+    for (const subFolder of subFolders) {
+        try {
+            const filesToUpload = [];
+            const files = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`);
+            const docCategory = await fetchDocxCategory(subFolder);
+            await processFiles( files, filesToUpload, mData, subFolder, docCategory );
+            // console.log('filesToUpload : ', JSON.stringify(filesToUpload, null, 2));
+            machineDataList[index].filesToUpload = filesToUpload;
+        } catch (err) {
+            console.error('Error while fetching machine Sub Folder:', err);
+        }
+    }
+}
+
+async function processFiles(files, filesToUpload, mData, subFolder, docCategory ) {
+    for (const file of files) {
+        const fileExtension = path.extname(file);
+        if (isFileAllowed(fileExtension)) {
+            const fileData = await createFileData(file, mData, subFolder, docCategory);
+            filesToUpload.push(fileData);
+        }
+    }
+}
+
+function isFileAllowed( fileExtension ) {
+    return allowedExtension.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase())) &&
+            !disallowedExtension.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
+}
+
+async function createFileData(file, mData, subFolder, docCategory) {
+    const filePath = `${machineDataDirectory}/${mData?.mainFolder}/${subFolder}/${file}`;
+    const docEtag = await generateEtag(filePath);
+    const isETagExist = await checkFileExistenceByETag([docEtag]);
+    const docxType = await fetchDocType(file);
+    const docType = await fetchDocxType(docxType, docCategory?._id);
+
+    return {
+        fileName: file,
+        extension: path.extname(file),
+        category: subFolder,
+        docCategoryId: docCategory?._id || '',
+        docCategoryName: docCategory?.name || '',
+        docTypeId: docType?._id || '',
+        docTypeName: docType?.name || '',
+        versionNo: await fetchVersionNumber(file),
+        Ref: await fetchReferenceNumber(file),
+        StockNo: await extractStockNo(filePath),
+        eTag: docEtag,
+        isETagExist: isETagExist[0]?.documentFiles ? true : false,
+    };
+}
+
 
     async function readFolders(machineDataDirectory, isUpload) {
         try {
@@ -175,11 +349,7 @@ else {
                             docxCategory = { name: childFolder };
 
                         const fetchSerialNo = null;
-                        // Regular expression to match the number before the hyphen
-                        const regex = /^(\d+)\s-\s/;
 
-                        // Extracting the number
-                        const serialNumber__ = parentFolder.match(regex);
 
                         // If a match is found, extract the number
                         productObject = null;
@@ -490,7 +660,7 @@ async function getToken(serverURL, email, password) {
         const { accessToken, userId, sessionId } = tokenResponse.data;
         return { token: accessToken, userId, sessionId };
     } catch (error) {
-        console.error('Error fetching token:', error);
+        console.error('Login Error:', error);
         throw error;
     }
 }
