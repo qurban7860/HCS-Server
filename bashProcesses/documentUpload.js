@@ -55,16 +55,6 @@ async function main() {
         console.log('Machines does not exist! Please add them.');
         process.exit(0)
     }
-    // console.log('machineDataList : ',machineDataList)
-    // console.log("Document Checking Process Started!")
-    // await readFolders(machineDataDirectory, false );
-
-    // if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound ) ){
-    //     console.log("Document upload Process Started!")
-    // index = 1
-    // logging = [];
-    // await processFolders(machineDataDirectory , true);
-    // }
 
 
 if(Array.isArray(logging) && logging.length > 0 && !logging.some((log)=> log.propertiesNotFound )  ){
@@ -148,7 +138,6 @@ function fetchDocType(fileName) {
 
 function fetchReferenceNumber(fileName) {
     let regex_ = /^(\w+)\s([\w\s]+)/;
-    let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
     let matches = fileName.match(regex_);
     let referenceNumber
     if(matches){
@@ -274,198 +263,13 @@ async function createFileData(file, mData, subFolder, docCategory) {
 }
 
 
-    async function readFolders(machineDataDirectory, isUpload) {
-        try {
-            const files = await readdir(machineDataDirectory);
-            for (const file of files) {
-                const filePath = path.join(machineDataDirectory, file);
-                try {
-                    const stats = await getFileStats(filePath, isUpload );
-                } catch (err) {
-                    console.error('Error occurred:', err);
-                }
-            }
-        } catch (e) {
-            if (e) {
-                console.error('Error reading directory:', e);
-                return;
-            }
-        }
-    }
-
-    async function processFolders(machineDataDirectory, isUpload) {
-        try {
-            const files = await readdir(machineDataDirectory);
-            for (const file of files) {
-                const filePath = path.join(machineDataDirectory, file);
-                try {
-                    await getFileStats(filePath, isUpload );
-                } catch (err) {
-                    console.error('Error occurred:', err);
-                }
-            }
-        } catch (e) {
-            if (e) {
-                console.error('Error reading directory:', e);
-                return;
-            }
-        }
-    }
-
-    async function getFileStats(filePath , isUploade ) {
-        return new Promise((resolve, reject) => {
-            fs.stat(filePath, async (err, stats) => {
-                if (err) {
-                    reject(err); // If there's an error, reject the Promise
-                    console.error('Error checking file stats:', err);
-                }
-                // console.log( isUploade ? 'Reading Folder...' : 'Checking Files...');
-                if (stats.isDirectory()) {
-                    // Recursively read subfolders
-                    if(isUploade){
-                        await processFolders(filePath, isUploade );
-                    } else {
-                        await readFolders(filePath, isUploade);
-                    }
-                    resolve(stats);
-                } else  {
-                    // Check if the file is allowed or disallowed
-                    const ETAG = await generateEtag(filePath);
-                    const fileName = path.basename(filePath);
-                    if ( allowedExtension.some(( ext )=> fileName?.toLowerCase()?.includes(ext.toLowerCase())) || !disallowedExtension.some(( ext )=> fileName?.toLowerCase()?.includes( ext.toLowerCase() )) ) {
-                        const folders = filePath.split(path.sep);
-                        
-                        const loweCaseFilePath = filePath.toLowerCase();
-                        if (!targetDirectories.some((el)=> loweCaseFilePath.includes(el.toLowerCase())) || excludeDirectories?.some((el)=> loweCaseFilePath.includes(el.toLowerCase())) ){
-                            resolve(stats);
-                            return;
-                        }
-                        console.log(`${index} - ${isUploade ? 'Uploading' : 'Checking' } - ${fileName}`);
-                        index += 1;
-                        const parentFolder = folders[folders.length - (folders.length - 2)];
-                        const childFolder = folders[folders.length - 2];
-                        let docxCategory = await fetchDocxCategory(childFolder);
-                        if (!docxCategory)
-                            docxCategory = { name: childFolder };
-
-                        const fetchSerialNo = null;
-
-
-                        // If a match is found, extract the number
-                        productObject = null;
-                        if (serialNumber__ && serialNumber__[1]) {
-                            let fetchSerialNo = serialNumber__[1].trim();
-                            fetchSerialNo = fetchSerialNo.replaceAll(",", "");
-
-                            if (fetchSerialNo) {
-                                // productObject = await getMachineId(fetchSerialNo.trim())
-                                productObject = await Product.findOne({ serialNo: fetchSerialNo.trim() }).select('_id serialNo').lean();
-                            }
-                        } else {
-                            console.log(`Machine with serialNo ${serialNumber__} not found! `);
-                        }
-
-                        let searchedObject = null;
-                        let etags = [];
-                        etags.push(ETAG);
-                        const data_ = await checkFileExistenceByETag(etags);
-                        let isFileETAGAlreadyExist = false;
-                        if (data_[0]?.documentFiles) {
-                            isFileETAGAlreadyExist = true;
-                            console.log(`Document ETag already exists`)
-                            searchedObject = await data_.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === ETAG.toString());
-                        }
-
-                        let justDrawingInsertedThroughScript = false;
-                        let isMachineDrawingAlreadyExists = false;
-
-                        if (searchedObject) {
-                            const query_Search_Drawing = { document: searchedObject.document, machine: productObject._id };
-                            isMachineDrawingAlreadyExists = await ProductDrawing.findOne(query_Search_Drawing);
-                            if (!isMachineDrawingAlreadyExists) {
-                                const payload = {
-                                    "machine": productObject._id,
-                                    "documentId": searchedObject.document,
-                                    "isActive": true
-                                }
-                                const drawingAttached__ = await attachDrawingToMachine(payload);
-                                justDrawingInsertedThroughScript = true;
-                            }
-                        }
-
-                        let regex_ = /^(\w+)\s([\w\s]+)/;
-                        let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
-                        let matches = fileName.match(regex_);
-                        try{
-                            referenceNumber = matches[1]; // Example: "35634a"
-                            docxType = matches[2].trim(); // Example: "Hyd Pump"    
-                            if (pattern.test(docxType)) {
-                                docxType = docxType.replace(pattern, '');
-                            }
-                        } catch (Exception){
-                            referenceNumber = '';
-                            docxType = '';        
-                        }
-                        
-                        let docxTypeDB;
-                        if(docxCategory?._id)
-                            docxTypeDB = await fetchDocxType(docxType, docxCategory?._id);
-
-                        if (!docxTypeDB)
-                            docxTypeDB = { name: docxType };
-
-                        const regex_VersionNo = /V(\d+)\.pdf$/;
-                        const matches_Version = fileName.match(regex_VersionNo);
-                        const versionNumber = matches_Version ? matches_Version[1] : 1;
-                        const pdfData = fs.readFileSync(filePath);
-                        isMachineDrawingAlreadyExists = isMachineDrawingAlreadyExists ? true : false;
-                        const objectValues = {
-                            pdfData, filePath_, referenceNumber, versionNumber, docxCategory, docxTypeDB,
-                            childFolder, productObject, fileName, filePath, isMachineDrawingAlreadyExists, justDrawingInsertedThroughScript, isFileETAGAlreadyExist,
-                        }
-                        const data_log = await parsePDFAndLog(objectValues);
-
-                        const propertiesNotFound = await checkKeyValues(data_log);
-                        if (propertiesNotFound && propertiesNotFound?.length != 0) {
-                            data_log.propertiesNotFound = propertiesNotFound;
-                        } else if(isUploade) {
-                            if (!data_log.isMachineDrawingAlreadyExists && !data_log.isMachineDrawingAttached) {
-                                if (!data_log.propertiesNotFound || data_log.propertiesNotFound?.length === 0) {
-                                    try {
-                                        const response = await uploadDocument(data_log);
-                                        data_log.uploadedSuccessfully = true;
-                                        console.log(`Document *** ${fileName} *** Uploaded successfully!`)
-                                    } catch (error) {
-                                        data_log.errorWhileUploading = true;
-                                        console.error('Error:', error);
-                                    }
-                                } else {
-                                    data_log.ignoredDueToInvalidData = true;
-                                }
-                            }
-                        }
-
-                        logging.push(data_log);
-
-                        resolve(stats);
-
-                    } else {
-                        resolve(stats);
-                    }
-                }
-            });
-        });
-    }
-
     async function parsePDFAndLog(obj) {
         return new Promise((resolve, reject) => {
             PDFParser(obj.pdfData).then(async function (data) {
                 // Extract text from PDF
                 const pdfText = data.text;
-
                 // Split text by newline character
                 const lines = pdfText.split('\n');
-
                 // Search for "STOCK NO" column
                 let stockNoValue = null;
                 for (let i = 0; i < lines.length; i++) {
@@ -612,7 +416,6 @@ async function createFileData(file, mData, subFolder, docCategory) {
                 }
             });
 
-
             return response.data;
         } catch (error) {
             throw error;
@@ -686,31 +489,6 @@ async function checkFileExistenceByETag(etagValue) {
     }
 }
 
-async function getMachineId(serialNo) {
-    const url = `${serverURL}/products/machines/searchProductId?serialNo=${serialNo}`;
-    try {
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            // body: JSON.stringify(payLoad)
-        });
-        if (!response.ok) {
-            return response?.statusText
-        }
-
-        // Parse the response JSON
-        const responseData = await response.json();
-        return responseData;
-    } catch (error) {
-        // Handle errors
-        console.error('Error:', error.message);
-        throw error;
-    }
-}
-
 
 async function attachDrawingToMachine(payLoad) {
     const url = `${serverURL}/products/drawings`;
@@ -754,11 +532,6 @@ async function checkKeyValues(properties) {
     delete keys_Values.documentCategoryName;
     delete keys_Values.isFileETAGAlreadyExist;
 
-
-
-
-
-
     // Check if there are any properties left in the object
     if (keys_Values && Object.keys(keys_Values).length > 0) {
         result = Object.entries(keys_Values).map(([key, value]) => {
@@ -767,8 +540,6 @@ async function checkKeyValues(properties) {
                 return `${key}: [EMPTY]`;
             }
         });
-
-
         // Add information about empty properties
         if (emptyProperties.length > 0) {
             result = `${emptyProperties.join(', ')}`;
@@ -780,7 +551,6 @@ async function checkKeyValues(properties) {
     } else {
         return result = null;
     }
-
 }
 
 
