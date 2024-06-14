@@ -91,7 +91,7 @@ async function getMachinesSerialNo() {
                 let machineObject
                 const serialNumber = await fetchMachineSerialNo(folder)
                 if (serialNumber?.trim()) {
-                    productObject = await Product.findOne({ serialNo: serialNumber.trim() }).select('_id serialNo').lean();
+                    productObject = await Product.findOne({ serialNo: serialNumber.trim() }).select('_id serialNo status').populate(this.populate).lean();
                     machineObject = {
                         _id: productObject?._id || null,
                         serialNo: serialNumber || '',
@@ -237,7 +237,7 @@ async function getMachineSubFoldersData( ) {
     try {
         if(Array.isArray(specificMchinesOnly) && specificMchinesOnly?.length > 0 ){
             machineDataList = machineDataList?.filter(md => 
-                specificMchinesOnly.some(sM =>  sM?.trim()?.toLowerCase() === md?.serialNo?.trim()?.toLowerCase()))
+                specificMchinesOnly?.some(sM =>  sM?.trim()?.toLowerCase() === md?.serialNo?.trim()?.toLowerCase()))
         }
         for (const [index, mData] of machineDataList.entries()) {
             await processMachineData( index, mData );
@@ -258,9 +258,9 @@ async function processMachineData( index, mData) {
 }
 
 function filterSubFolders( subFolders ) {
-    return subFolders.filter(sb => {
-        const includesTarget = targetDirectories.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
-        const excludesTarget = excludeDirectories.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
+    return subFolders?.filter(sb => {
+        const includesTarget = targetDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
+        const excludesTarget = excludeDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
         return includesTarget && !excludesTarget;
     });
 }
@@ -291,8 +291,8 @@ async function processFiles(files, filesToUpload, mData, subFolder, docCategory 
 }
 
 function isFileAllowed( fileExtension ) {
-    return allowedExtension.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase())) &&
-            !disallowedExtension.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
+    return allowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase())) &&
+            !disallowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
 }
 
 async function createFileData(file, mData, subFolder, docCategory) {
@@ -531,7 +531,7 @@ async function checkKeyValues(properties) {
             result = `${emptyProperties.join(', ')}`;
         }
         if (Array.isArray(result)) {
-            result = await result.filter(Boolean);
+            result = await result?.filter(Boolean);
         }
         return result;
     } else {
