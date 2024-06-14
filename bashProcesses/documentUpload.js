@@ -23,7 +23,7 @@ const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
 const specificMchinesOnly = [ ];
-const machineDataList = [];
+let machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
@@ -384,7 +384,7 @@ async function uploadDocuments() {
     try {
         for (const log of logs) {
             log.isUploaded = false;
-            if(!log?.propertiesNotFound){
+            if(!log?.propertiesNotFound || log?.isETagExist){
                 if(!log?.isETagExist){
                     console.log(`${indexing} uploading file ### ${log?.displayName || '' }`);   
                     const response = await uploadDocument(log);
@@ -396,21 +396,23 @@ async function uploadDocuments() {
                         "documentId": log?.documentId,
                         "isActive": true
                     }
-                    console.log("payload : ",payload)
                     const response = await attachDrawingToMachine(payload);
-                    console.log("attachDrawingToMachine : ",response)
+                    console.log(`${indexing} Attaching file ### ${log?.displayName || '' }`); 
+                    console.log(response)
                     if(response){
-                        log.isMachineDrawingAttached = true;
+                        log.isMachineDrawingAttached = response;
                     }
                 }
+            } else {
+                console.log(`${indexing} Document file ### ${log?.displayName || '' } Properties ### ${log?.propertiesNotFound || ''} required!`);   
             }
             indexing += 1;
         }
         const csv = parse(logs);
-        await fs.writeFile(`${csvFileName}.csv`, csv, async (err) => {
+        const fullPath = path.join('../', `${csvFileName}.csv`);
+        await fs.writeFile(fullPath, csv, async (err) => {
             if (err) {
                 console.error('Error appending to CSV file:', err);
-                return;
                 process.exit(0)
             }
             console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
@@ -484,9 +486,13 @@ async function attachDrawingToMachine(payLoad) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payLoad)
         });
-        console.log(response)
-        if(response.statusCode === 200) {
-            return response?.data;
+        
+        if(response?.status === 400 ) {
+            return "Already Exists!";
+        } else if(response?.status === 201 ){
+            return "Yes";
+        } else {
+            return "No";
         }
     } catch (error) {
         console.error('Error while Attaching Machine Drawing :', error);
