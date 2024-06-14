@@ -409,10 +409,10 @@ async function uploadDocuments() {
             indexing += 1;
         }
         const csv = parse(logs);
-        await fs.writeFile(`${csvFileName}.csv`, csv, async (err) => {
+        const fullPath = path.join('../', `${csvFileName}.csv`);
+        await fs.writeFile(fullPath, csv, async (err) => {
             if (err) {
                 console.error('Error appending to CSV file:', err);
-                return;
                 process.exit(0)
             }
             console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
