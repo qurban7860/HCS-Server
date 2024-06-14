@@ -13,7 +13,7 @@ const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
 const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
-const { fDateTime } = require('../../../../utils/formatTime');
+const { fDateTime, fDate } = require('../../../../utils/formatTime');
 
 
 this.dbservice = new calenderDBService();
@@ -189,8 +189,8 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       minute: '2-digit',
     };
     
-    const startTime = fDateTime(eventData?.start);
-    const endTime = fDateTime(eventData?.end);
+    const startTime = `${fDate(eventData?.start )} ${fDateTime(eventData?.start)}`;
+    const endTime = `${fDate(eventData?.end )} ${fDateTime(eventData?.end)}`;
     let hostName = 'portal.howickltd.com';
 
     if (process.env.CLIENT_HOST_NAME)
