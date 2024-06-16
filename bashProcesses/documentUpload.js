@@ -16,16 +16,16 @@ const { fTimestamp } = require('../utils/formatTime');
 const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
-const serverURL = 'http://localhost:5002/api/1.0.0';
-// const serverURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+//const serverURL = 'http://localhost:5002/api/1.0.0';
+const serverURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
-const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
-const specificMchinesOnly = [ ];
+const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
+const specificMchinesOnly = [];
 const machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
-const excludeDirectories = [ 'Archive' ];
+const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
 const disallowedExtension = []; // Array of disallowed files
 
@@ -53,7 +53,7 @@ async function main() {
         // console.log("machineDataList with SubFoldersData : ",machineDataList)
         await checkFilesProperties()
         indexing = 1;
-        await uploadDocuments()
+        // await uploadDocuments()
         // console.log("logs : ",logs)
 
     } else {
@@ -169,15 +169,79 @@ async function extractStockNo(pdfPath) {
             const pdfText = data.text;
             const lines = pdfText.split('\n');
             let stockNoValue = null;
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('STOCK NO.')) {
-                    stockNoValue = lines[i - 3].trim();
-                    if (stockNoValue === 'DRAWN BY') {
-                        stockNoValue = lines[i - 2].trim();
+            //console.log(pdfPath);
+            if (pdfPath == '/Users/naveed/software/howick/jobs-data/16282 - 7600 - (120,250x50Section)(1.6Max) - RUCO/Assembly Drawings/35603f Pre Punch (7600)(Ø5.0(3)TabTool(2))(1.4Mat).pdf')
+               console.log(lines.toString());
+            let firstIndex = lines.indexOf('STOCK NO.');
+            let lIndex = lines.lastIndexOf('STOCK NO.');
+            
+            
+            if (firstIndex >= 0){
+                stockNoValue = lines[firstIndex - 1]?.trim();
+                console.log('STOCK NO. -->', firstIndex, lIndex, stockNoValue);
+                if (stockNoValue === 'REVISION') {
+                    stockNoValue = lines[firstIndex - 2]?.trim();
+                } else if (stockNoValue === 'NOTES') {
+                    stockNoValue = lines[firstIndex - 2]?.trim();
+                } else if (stockNoValue === 'APPROVED') {
+                    stockNoValue = lines[firstIndex + 1]?.trim();
+                } else if (stockNoValue === 'Mass') {
+                    stockNoValue = lines[firstIndex + 1]?.trim();
+                }else if (stockNoValue.includes('info@howick.co.nz')) {
+                    
+                    
+                    let lastIndex = lines.lastIndexOf('STOCK NO.');
+                    stockNoValue = lines[lastIndex + 1]?.trim();
+                    console.log('lastIndex -->', lastIndex, ':', stockNoValue);
+                    if (stockNoValue == ('A3')) {
+                        stockNoValue = lines[lastIndex + 10]?.trim();
+                        console.log('lastIndex -->', lastIndex, ':', stockNoValue);
+                    }else if (stockNoValue.includes('Mass')) {
+                        stockNoValue = lines[firstIndex + 1]?.trim();
+                        console.log('firstIndex -->', stockNoValue);
                     }
-                    break;
+                
+                }else if (stockNoValue.includes('Dwg. No.')) {
+                    //stockNoValue = lines[firstIndex - 3]?.trim();
+                    let lastIndex = lines.lastIndexOf('STOCK NO.');
+                    stockNoValue = lines[lastIndex - 2]?.trim();
+                    console.log('lastIndex -->', lastIndex, ':', stockNoValue);
+
+                    if (stockNoValue.startsWith('Ph:')) {
+                        stockNoValue = lines[lastIndex + 1].trim();
+                        console.log('lastIndex -->', stockNoValue);
+                    }
+
+                }else if (stockNoValue === 'DRAWN BY') {
+                    stockNoValue = lines[firstIndex - 2].trim();
+                }else if (stockNoValue.startsWith('1:')) {
+                    stockNoValue = lines[firstIndex + 3].trim();
+                    console.log('firstIndex -->', stockNoValue);
+                }
+
+                if (stockNoValue.length ==0 ){
+                    let lastIndex = lines.lastIndexOf('STOCK NO.');
+                    stockNoValue = lines[lastIndex + 11]?.trim();
+                    console.log('lastIndex -->', lastIndex, ':', stockNoValue);
+                }
+                
+            }
+            /*
+            if (!stockNoValue){
+                for (let i = 0; i < lines.length; i++) {
+                    if (lines[i].includes('STOCK NO.')) {
+                        stockNoValue = lines[i + 1]?.trim();
+    
+                        // stockNoValue = lines[i - 3]?.trim();
+    
+                        if (stockNoValue === 'DRAWN BY') {
+                            stockNoValue = lines[i - 2].trim();
+                        }
+                        break;
+                    }
                 }
             }
+            */
             return stockNoValue ? stockNoValue : '';
         } else {
             return '';
@@ -296,7 +360,7 @@ function isFileAllowed( fileExtension ) {
 }
 
 async function createFileData(file, mData, subFolder, docCategory) {
-    console.log(`${indexing} fetching data from ### ${file}`);   
+    console.log(`${indexing} ${mData.serialNo}:: subFolder: ${subFolder} --> ${file}`);   
     indexing += 1;
     const extension = path.extname(file);
     const filePath = `${machineDataDirectory}/${mData?.mainFolder}/${subFolder}/${file}`;
@@ -308,7 +372,19 @@ async function createFileData(file, mData, subFolder, docCategory) {
         searchedObject = await isETagExist.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === docEtag.toString());
         isDocumentId = searchedObject?.document;
     }
-    const docxType = await fetchDocType(file);
+    let docxType = await fetchDocType(file);
+    if (docxType == 'FRAMA') docxType = "Assembly Drawings";
+    if (docxType == 'Covers') docxType = "Cover";
+    if (docxType == 'Lip Roller Assembly') docxType = "Lip Roller";
+    if (docxType == 'Swage Hole Punch Assembly') docxType = "Swage Hole Punch";
+    if (docxType == 'Cut Off Assembly') docxType = "Cut Off";
+    if (docxType == 'Full Pre Punch Assembly') docxType = "Full Pre Punch";
+    if (docxType == 'Swage Assembly') docxType = "Swage";
+    if (docxType == 'H600RollerAssembly') docxType = "Roller";
+    
+
+    
+
     const docType = await fetchDocxType(docxType, docCategory?._id);
     const data = {
         filePath: filePath,
@@ -329,6 +405,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
     if (isDocumentId) {
         data.documentId = isDocumentId;
     }
+    console.log(`   docType ${data.docCategoryName}/${data.docTypeName}/${docxType} - ${data.docTypeId} --> versionN0: ${data.versionNumber} referenceNo: ${data.referenceNumber} stockNo: ${data.stockNo} eTag: ${data.eTag} ${data.isETagExist} \n`);  
 
     return data;
 }
