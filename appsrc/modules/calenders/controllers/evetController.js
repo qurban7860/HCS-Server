@@ -13,6 +13,8 @@ const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
 const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
+const { fDateTime, fDate } = require('../../../../utils/formatTime');
+
 
 this.dbservice = new calenderDBService();
 
@@ -177,7 +179,6 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const serialNo = eventData?.machines?.map((m)=> m.serialNo);
     const Site = eventData?.site?.name;
     const description = eventData?.description;
-    const date = formatDate(eventData?.start);
     const createdBy = eventData?.createdBy?.name;
     const createdAt = eventData?.createdBy?.name;
 
@@ -188,8 +189,10 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       minute: '2-digit',
     };
     
-    const startTime = eventData?.start?.toLocaleString('en-NZ', options);
-    const endTime = eventData?.end?.toLocaleString('en-NZ', options);
+    const startTime = `${ eventData?.start ? fDateTime(eventData?.start) : '' }`?.toString();
+    const endTime = `${ eventData?.end ? fDateTime(eventData?.end) : ''}`?.toString();
+
+    console.log(startTime, endTime )
     let hostName = 'portal.howickltd.com';
 
     if (process.env.CLIENT_HOST_NAME)
@@ -211,33 +214,11 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
       let footerContent = render(data, { emailSubject, hostName, hostUrl })
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, date, startTime, endTime, createdBy, createdAt })
+        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
         await awsService.sendEmail(params, emalsToSend );
       })
     })
-  }
-}
-
-function formatDate(date) {
-  if(date) {
-    const day = date.getDate();
-    const monthIndex = date.getMonth();
-    const year = date.getFullYear();
-  
-    // Array of month names
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
-  
-    // Suffix for day (st, nd, rd, th)
-    const suffixes = ["th", "st", "nd", "rd"];
-    const suffix = suffixes[(day - 1) % 10] || suffixes[0];
-  
-    return `${day} ${months[monthIndex]} ${year}`;
-  } else {
-    return "";
   }
 }
 

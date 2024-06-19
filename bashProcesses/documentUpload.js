@@ -17,17 +17,19 @@ const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
 //const serverURL = 'http://localhost:5002/api/1.0.0';
-const serverURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
-const specificMchinesOnly = [];
-const machineDataList = [];
+const specificMchinesOnly = [ ];
+let machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
 const disallowedExtension = []; // Array of disallowed files
+
+const consoleLog = false;
 
 let token = null;
 let userId;
@@ -55,6 +57,7 @@ async function main() {
         indexing = 1;
         // await uploadDocuments()
         // console.log("logs : ",logs)
+        await process. exit()
 
     } else {
         console.log('Machines does not exist! Please add them.');
@@ -160,6 +163,27 @@ function fetchReferenceNumber(fileName) {
     return matches ? referenceNumber : '';
 }
 
+function validateStockNoValue(stockNoValue){
+    
+    // /[^A-Z][^a-z][^0-9]/;
+    //[a-zA-Z0-9]+
+    //\w, \W: ANY ONE word/non-word character. For ASCII, word characters are [a-zA-Z0-9_]
+    const regex_ = /\W+/ ;
+
+    
+    if (stockNoValue){
+        if (stockNoValue.length <= 2)
+            return false;
+        let matches = stockNoValue.match(regex_);
+        if (matches){
+            return false;
+        }
+        return true;
+    }
+    return false;
+    
+}
+
 async function extractStockNo(pdfPath) {
     try {
         const fileExtension = path.extname(pdfPath);
@@ -170,79 +194,124 @@ async function extractStockNo(pdfPath) {
             const lines = pdfText.split('\n');
             let stockNoValue = null;
             //console.log(pdfPath);
-            if (pdfPath == '/Users/naveed/software/howick/jobs-data/16282 - 7600 - (120,250x50Section)(1.6Max) - RUCO/Assembly Drawings/35603f Pre Punch (7600)(Ø5.0(3)TabTool(2))(1.4Mat).pdf')
-               console.log(lines.toString());
-            let firstIndex = lines.indexOf('STOCK NO.');
-            let lIndex = lines.lastIndexOf('STOCK NO.');
-            
-            
-            if (firstIndex >= 0){
-                stockNoValue = lines[firstIndex - 1]?.trim();
-                console.log('STOCK NO. -->', firstIndex, lIndex, stockNoValue);
-                if (stockNoValue === 'REVISION') {
-                    stockNoValue = lines[firstIndex - 2]?.trim();
-                } else if (stockNoValue === 'NOTES') {
-                    stockNoValue = lines[firstIndex - 2]?.trim();
-                } else if (stockNoValue === 'APPROVED') {
-                    stockNoValue = lines[firstIndex + 1]?.trim();
-                } else if (stockNoValue === 'Mass') {
-                    stockNoValue = lines[firstIndex + 1]?.trim();
-                }else if (stockNoValue.includes('info@howick.co.nz')) {
-                    
-                    
-                    let lastIndex = lines.lastIndexOf('STOCK NO.');
-                    stockNoValue = lines[lastIndex + 1]?.trim();
-                    console.log('lastIndex -->', lastIndex, ':', stockNoValue);
-                    if (stockNoValue == ('A3')) {
-                        stockNoValue = lines[lastIndex + 10]?.trim();
-                        console.log('lastIndex -->', lastIndex, ':', stockNoValue);
-                    }else if (stockNoValue.includes('Mass')) {
-                        stockNoValue = lines[firstIndex + 1]?.trim();
-                        console.log('firstIndex -->', stockNoValue);
-                    }
-                
-                }else if (stockNoValue.includes('Dwg. No.')) {
-                    //stockNoValue = lines[firstIndex - 3]?.trim();
-                    let lastIndex = lines.lastIndexOf('STOCK NO.');
-                    stockNoValue = lines[lastIndex - 2]?.trim();
-                    console.log('lastIndex -->', lastIndex, ':', stockNoValue);
+            //if (pdfPath == '/Users/naveed/software/howick/jobs-data/14734 - H600 - JG King - 300x46,50 (2.4Max)/Assembly Drawings/32504a Swage Assembly (300x50Section)(2.4Max)V1.2.pdf')
+            //   console.log(lines.toString());
 
+            //if (pdfPath == '/Users/naveed/software/howick/jobs-data/14734 - H600 - JG King - 300x46,50 (2.4Max)/Assembly Drawings/32506b Tab Tool (FJ300)(Ø4.5Punches)(1.8Mat)(i).pdf')
+            //    console.log(lines.toString());
+            
+
+            let firstIndex = lines.indexOf('STOCK NO.');
+            let lastIndex = lines.lastIndexOf('STOCK NO.');
+            let stocknoFound = false;
+            if (lastIndex >= 0){
+                stockNoValue = lines[lastIndex + 1]?.trim();
+                if (consoleLog) console.log('   lastIndex -->', lastIndex, ':', stockNoValue);
+
+                if (stockNoValue == ('A3')) {
+                    stockNoValue = lines[lastIndex + 10]?.trim();
+                    if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
+                }
+
+                
+                
+                if (stockNoValue.includes('info@howick.co.nz')) {
+                    stockNoValue = lines[lastIndex - 2]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 2 -->', lastIndex, stockNoValue);
+                }
+                if (stockNoValue == ('A3')) {
+                    stockNoValue = lines[lastIndex - 3]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 3 -->', lastIndex, ':', stockNoValue);
+
+                    if (!validateStockNoValue(stockNoValue)){
+                        stockNoValue = lines[lastIndex + 10]?.trim();
+                        if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
+                    }
+
+                }
+                if (stockNoValue.includes('Mass')) {
+                    stockNoValue = lines[firstIndex + 1]?.trim();
+                    if (consoleLog) console.log('   firstIndex + 1 -->', stockNoValue);
+                }
+                if (stockNoValue.includes('APPROVED')) {
+                    stockNoValue = lines[firstIndex - 2]?.trim();
+                    if (consoleLog) console.log('   firstIndex - 2 -->', firstIndex, stockNoValue);
+                }
+                if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                    stockNoValue = lines[lastIndex - 1]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 1  -->', stockNoValue);
+                    if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                        stockNoValue = lines[firstIndex - 1]?.trim();
+                        if (consoleLog) console.log('   firstIndex - 1  -->', stockNoValue);
+                    }
+                }
+                if (stockNoValue.includes('Dwg. No.')) {
+                    stockNoValue = lines[lastIndex - 2]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 2 -->', lastIndex, ':', stockNoValue);
                     if (stockNoValue.startsWith('Ph:')) {
                         stockNoValue = lines[lastIndex + 1].trim();
-                        console.log('lastIndex -->', stockNoValue);
+                        if (consoleLog) console.log('   lastIndex + 1 -->', stockNoValue);
                     }
-
-                }else if (stockNoValue === 'DRAWN BY') {
-                    stockNoValue = lines[firstIndex - 2].trim();
-                }else if (stockNoValue.startsWith('1:')) {
-                    stockNoValue = lines[firstIndex + 3].trim();
-                    console.log('firstIndex -->', stockNoValue);
                 }
-
-                if (stockNoValue.length ==0 ){
-                    let lastIndex = lines.lastIndexOf('STOCK NO.');
-                    stockNoValue = lines[lastIndex + 11]?.trim();
-                    console.log('lastIndex -->', lastIndex, ':', stockNoValue);
+                if (stockNoValue === 'DRAWN BY') {
+                    stockNoValue = lines[firstIndex - 2].trim();
+                }
+                if (stockNoValue.startsWith('1:')) {
+                    stockNoValue = lines[firstIndex + 3].trim();
+                    if (consoleLog) console.log('   firstIndex + 3 -->', stockNoValue);
                 }
                 
-            }
-            /*
-            if (!stockNoValue){
-                for (let i = 0; i < lines.length; i++) {
-                    if (lines[i].includes('STOCK NO.')) {
-                        stockNoValue = lines[i + 1]?.trim();
-    
-                        // stockNoValue = lines[i - 3]?.trim();
-    
-                        if (stockNoValue === 'DRAWN BY') {
-                            stockNoValue = lines[i - 2].trim();
-                        }
-                        break;
+                if (stockNoValue.length == 0 ||  stockNoValue.length > 10){
+                    stockNoValue = lines[lastIndex + 11]?.trim();
+                    if (consoleLog) console.log('   lastIndex + 11 -->', lastIndex, ':', stockNoValue);
+                }
+                if (stockNoValue.indexOf("/") >= 0){
+                    stockNoValue = lines[lastIndex + 8]?.trim();
+                    if (consoleLog) console.log('   lastIndex + 8 -->', lastIndex, ':', stockNoValue);
+                }
+
+                if (stockNoValue.indexOf("No. OFF") >= 0){
+                    stockNoValue = lines[lastIndex - 12]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 12 -->', lastIndex, ':', stockNoValue);
+                }
+
+                if (stockNoValue == ('FINISH')) {
+                    stockNoValue = lines[lastIndex - 1]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 1 -->', lastIndex, ':', stockNoValue);
+                    if (!validateStockNoValue(stockNoValue)){
+                        stockNoValue = lines[lastIndex - 3]?.trim();
+                        if (consoleLog) console.log('   lastIndex - 3 -->', lastIndex, ':', stockNoValue);
                     }
                 }
+
+                if (!validateStockNoValue(stockNoValue)){
+                    stockNoValue = lines[lastIndex - 3].trim();
+                    if (consoleLog) console.log('   lastIndex - 3 -->', stockNoValue);
+                }
+
+
+                if (!validateStockNoValue(stockNoValue)){
+                    stockNoValue = lines[firstIndex + 1].trim();
+                    if (consoleLog) console.log('   firstIndex + 1 -->', stockNoValue);
+                    if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                        stockNoValue = lines[firstIndex - 1]?.trim();
+                        if (consoleLog) console.log('   firstIndex - 1  -->', stockNoValue);
+                    }
+                }
+
+                if (!validateStockNoValue(stockNoValue)){
+                    stockNoValue = lines[lastIndex - 12].trim();
+                    if (consoleLog) console.log('   lastIndex - 12 -->', stockNoValue);
+                }
+
+                //if (validateStockNoValue(stockNoValue) )
+                //    stockNoValue = '';
+
+                if (consoleLog) console.log('   -----', stockNoValue, validateStockNoValue(stockNoValue));
+
             }
-            */
-            return stockNoValue ? stockNoValue : '';
+    
+            return validateStockNoValue(stockNoValue) ? stockNoValue : '';
         } else {
             return '';
         }
@@ -360,7 +429,7 @@ function isFileAllowed( fileExtension ) {
 }
 
 async function createFileData(file, mData, subFolder, docCategory) {
-    console.log(`${indexing} ${mData.serialNo}:: subFolder: ${subFolder} --> ${file}`);   
+    console.log(`${indexing} ${mData.serialNo}:: ${subFolder}/${file}`);   
     indexing += 1;
     const extension = path.extname(file);
     const filePath = `${machineDataDirectory}/${mData?.mainFolder}/${subFolder}/${file}`;
@@ -405,7 +474,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
     if (isDocumentId) {
         data.documentId = isDocumentId;
     }
-    console.log(`   docType ${data.docCategoryName}/${data.docTypeName}/${docxType} - ${data.docTypeId} --> versionN0: ${data.versionNumber} referenceNo: ${data.referenceNumber} stockNo: ${data.stockNo} eTag: ${data.eTag} ${data.isETagExist} \n`);  
+    console.log(`   docCat: ${data.docCategoryName} docType: ${docxType} --> ${data.docTypeName} - ${data.docTypeId} refNo: ${data.referenceNumber} stockNo: ${data.stockNo} eTag: ${data.eTag} ${data.isETagExist} \n`);  
 
     return data;
 }
@@ -461,7 +530,7 @@ async function uploadDocuments() {
     try {
         for (const log of logs) {
             log.isUploaded = false;
-            if(!log?.propertiesNotFound){
+            if(!log?.propertiesNotFound || log?.isETagExist){
                 if(!log?.isETagExist){
                     console.log(`${indexing} uploading file ### ${log?.displayName || '' }`);   
                     const response = await uploadDocument(log);
@@ -473,21 +542,23 @@ async function uploadDocuments() {
                         "documentId": log?.documentId,
                         "isActive": true
                     }
-                    console.log("payload : ",payload)
                     const response = await attachDrawingToMachine(payload);
-                    console.log("attachDrawingToMachine : ",response)
+                    console.log(`${indexing} Attaching file ### ${log?.displayName || '' }`); 
+                    console.log(response)
                     if(response){
-                        log.isMachineDrawingAttached = true;
+                        log.isMachineDrawingAttached = response;
                     }
                 }
+            } else {
+                console.log(`${indexing} Document file ### ${log?.displayName || '' } Properties ### ${log?.propertiesNotFound || ''} required!`);   
             }
             indexing += 1;
         }
         const csv = parse(logs);
-        await fs.writeFile(`${csvFileName}.csv`, csv, async (err) => {
+        const fullPath = path.join('../', `${csvFileName}.csv`);
+        await fs.writeFile(fullPath, csv, async (err) => {
             if (err) {
                 console.error('Error appending to CSV file:', err);
-                return;
                 process.exit(0)
             }
             console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
@@ -561,9 +632,13 @@ async function attachDrawingToMachine(payLoad) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payLoad)
         });
-        console.log(response)
-        if(response.statusCode === 200) {
-            return response?.data;
+        
+        if(response?.status === 400 ) {
+            return "Already Exists!";
+        } else if(response?.status === 201 ){
+            return "Yes";
+        } else {
+            return "No";
         }
     } catch (error) {
         console.error('Error while Attaching Machine Drawing :', error);
