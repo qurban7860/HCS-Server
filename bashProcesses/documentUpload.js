@@ -22,7 +22,7 @@ const serverURL = 'http://localhost:5002/api/1.0.0';
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
-const specificMchinesOnly = [ ];
+const specificMchinesOnly = [];
 let machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive' ];
@@ -91,7 +91,11 @@ async function getMachinesSerialNo() {
                 let machineObject
                 const serialNumber = await fetchMachineSerialNo(folder)
                 if (serialNumber?.trim()) {
-                    productObject = await Product.findOne({ serialNo: serialNumber.trim() }).select('_id serialNo status').populate(this.populate).lean();
+                    productObject = await Product.findOne({ 
+                        serialNo: serialNumber.trim(), 
+                        'status.slug': { $not: { $regex: /^transferred$/i } }
+                    }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
+                    console.log("productObject : ",productObject)
                     machineObject = {
                         _id: productObject?._id || null,
                         serialNo: serialNumber || '',
