@@ -21,13 +21,8 @@ const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV En
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
-<<<<<<< HEAD
 const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
 const specificMchinesOnly = [ ];
-=======
-const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
-const specificMchinesOnly = [];
->>>>>>> f29fbb15a5ce51e3ddde2f04397e6c710233cd56
 let machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
