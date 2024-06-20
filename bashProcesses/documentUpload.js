@@ -55,13 +55,13 @@ async function main() {
         indexing = 1;
         await uploadDocuments()
         // console.log("logs : ",logs)
-
     } else {
         console.log('Machines does not exist! Please add them.');
         process.exit(0)
     }
-
 }
+
+//----------------------------------------------------------------
 
 async function getToken(serverURL, email, password) {
     try {
@@ -74,6 +74,7 @@ async function getToken(serverURL, email, password) {
     }
 }
 
+//----------------------------------------------------------------
 
 function fetchMachineSerialNo(inputString) {
     // Regular expression to match the number before the hyphen
@@ -81,6 +82,8 @@ function fetchMachineSerialNo(inputString) {
     const match = inputString.match(machineSerialNoRegex);
     return match ? match[1] : '';
 }
+
+//----------------------------------------------------------------
 
 async function getMachinesSerialNo() {
     try {
@@ -112,6 +115,7 @@ async function getMachinesSerialNo() {
     }
 }
 
+//----------------------------------------------------------------
 
 async function fetchDocxCategory(categoryName) {
     if (categoryName && categoryName.trim().length > 0) {
@@ -127,6 +131,8 @@ async function fetchDocxCategory(categoryName) {
     }
 }
 
+//----------------------------------------------------------------
+
 function fetchDocType(fileName) {
     let regex_ = /^(\w+)\s([\w\s]+)/;
     let pattern = /\s*[vV]\s*\d+(\.\d+)?\s*$/;
@@ -141,6 +147,8 @@ function fetchDocType(fileName) {
     return matches ? docxType : '';
 }
 
+//----------------------------------------------------------------
+
 async function fetchDocxType(categoryName, categoryID) {
     if (categoryName && categoryName.trim().length > 0) {
         return await DocumentType.findOne({
@@ -154,6 +162,9 @@ async function fetchDocxType(categoryName, categoryID) {
         return null;
     }
 }
+
+//----------------------------------------------------------------
+
 function fetchReferenceNumber(fileName) {
     let regex_ = /^(\w+)\s([\w\s]+)/;
     let matches = fileName.match(regex_);
@@ -163,6 +174,8 @@ function fetchReferenceNumber(fileName) {
     }
     return matches ? referenceNumber : '';
 }
+
+//----------------------------------------------------------------
 
 async function extractStockNo(pdfPath) {
     try {
@@ -192,6 +205,8 @@ async function extractStockNo(pdfPath) {
     }
 }
 
+//----------------------------------------------------------------
+
 async function fetchVersionNumber(fileName) {
     const regex_VersionNo = /V(\d+)\.pdf$/;
     const matches_Version = fileName.match(regex_VersionNo);
@@ -199,7 +214,7 @@ async function fetchVersionNumber(fileName) {
     return versionNumber ? versionNumber : '' ;
 }
 
-
+//----------------------------------------------------------------
 
 async function generateEtag(data) {
     const crypto = require('crypto');
@@ -223,6 +238,8 @@ async function generateEtag(data) {
     });
 }
 
+//----------------------------------------------------------------
+
 async function checkFileExistenceByETag(etagValue) {
     const url = `${serverURL}/documents/checkFileExistenceByETag`;
     try {
@@ -236,6 +253,7 @@ async function checkFileExistenceByETag(etagValue) {
     }
 }
 
+//----------------------------------------------------------------
 
 async function getMachineSubFoldersData( ) {
     try {
@@ -251,6 +269,8 @@ async function getMachineSubFoldersData( ) {
     }
 }
 
+//----------------------------------------------------------------
+
 async function processMachineData( index, mData) {
     let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
     subFolders = await filterSubFolders( subFolders );
@@ -261,6 +281,8 @@ async function processMachineData( index, mData) {
     }
 }
 
+//----------------------------------------------------------------
+
 function filterSubFolders( subFolders ) {
     return subFolders?.filter(sb => {
         const includesTarget = targetDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
@@ -268,6 +290,8 @@ function filterSubFolders( subFolders ) {
         return includesTarget && !excludesTarget;
     });
 }
+
+//----------------------------------------------------------------
 
 async function processSubFolders( index, mData, subFolders ) {
     for (const subFolder of subFolders) {
@@ -284,6 +308,8 @@ async function processSubFolders( index, mData, subFolders ) {
     }
 }
 
+//----------------------------------------------------------------
+
 async function processFiles(files, filesToUpload, mData, subFolder, docCategory ) {
     for (const file of files) {
         const fileExtension = path.extname(file);
@@ -294,10 +320,14 @@ async function processFiles(files, filesToUpload, mData, subFolder, docCategory 
     }
 }
 
+//----------------------------------------------------------------
+
 function isFileAllowed( fileExtension ) {
     return allowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase())) &&
             !disallowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
 }
+
+//----------------------------------------------------------------
 
 async function createFileData(file, mData, subFolder, docCategory) {
     console.log(`${indexing} fetching data from ### ${file}`);   
@@ -315,7 +345,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
     const docxType = await fetchDocType(file);
     const docType = await fetchDocxType(docxType, docCategory?._id);
     const data = {
-        filePath: filePath,
+        filePath: `${mData?.mainFolder}/${subFolder}/${file}`,
         fileName: fileName,
         extension: extension,
         category: subFolder,
@@ -337,16 +367,18 @@ async function createFileData(file, mData, subFolder, docCategory) {
     return data;
 }
 
+//----------------------------------------------------------------
+
 async function checkFilesProperties(){
     for (const machineData of machineDataList) {
         if(Array.isArray( machineData?.filesToUpload ) && machineData?.filesToUpload?.length > 0 ){
         for (const docData of machineData?.filesToUpload) {
             try{
                 const data_log = await parsePDFAndLog(docData, machineData?.serialNo, machineData?._id);
-                const propertiesNotFound = await checkKeyValues(data_log);
-                // console.log("propertiesNotFound : ",propertiesNotFound)
-                if (propertiesNotFound && propertiesNotFound?.length != 0) {
-                    data_log.propertiesNotFound = propertiesNotFound;
+                const messages = await checkKeyValues(data_log);
+                // console.log("messages : ",messages)
+                if (messages && messages?.length != 0) {
+                    data_log.messages = messages;
                 }
                 logs.push(data_log);
             } catch(e){
@@ -384,11 +416,14 @@ async function parsePDFAndLog(obj, serialNo, machineId ) {
     }
     return log;
 }
+
+//----------------------------------------------------------------
+
 async function uploadDocuments() {
     try {
         for (const log of logs) {
             log.isUploaded = false;
-            if(!log?.propertiesNotFound || log?.isETagExist){
+            if(!log?.messages || log?.isETagExist){
                 if(!log?.isETagExist){
                     console.log(`${indexing} uploading file ### ${log?.displayName || '' }`);   
                     const response = await uploadDocument(log);
@@ -402,26 +437,16 @@ async function uploadDocuments() {
                     }
                     const response = await attachDrawingToMachine(payload);
                     console.log(`${indexing} Attaching file ### ${log?.displayName || '' }`); 
-                    console.log(response)
                     if(response){
                         log.isMachineDrawingAttached = response;
                     }
                 }
             } else {
-                console.log(`${indexing} Document file ### ${log?.displayName || '' } Properties ### ${log?.propertiesNotFound || ''} required!`);   
+                console.log(`${indexing} Document file ### ${log?.displayName || '' } Properties ### ${log?.messages || ''} required!`);   
             }
             indexing += 1;
         }
-        const csv = parse(logs);
-        const fullPath = path.join('../', `${csvFileName}.csv`);
-        await fs.writeFile(fullPath, csv, async (err) => {
-            if (err) {
-                console.error('Error appending to CSV file:', err);
-                process.exit(0)
-            }
-            console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
-            process.exit(0)
-        });
+        await generateCSVonSuccess();
     } catch (error) {
         console.error('Error uploading documents:', error);
     }
@@ -444,7 +469,7 @@ async function uploadDocument(data) {
             filePath
         } = data;
         // Read the image file
-        const imageData = fs.readFileSync(filePath);
+        const imageData = fs.readFileSync(`${machineDataDirectory}/${filePath}`);
         // Create form data
         const formData = new FormData();
         formData.append('drawingMachine', machineId?.toString());
@@ -455,7 +480,7 @@ async function uploadDocument(data) {
         formData.append('documentCategory', documentCategoryId?.toString());
         formData.append('documentType', documentTypeId?.toString());
         formData.append('doctype', documentTypeId?.toString());
-        formData.append('images', imageData, { filename: path.basename(filePath) } );
+        formData.append('images', imageData, { filename: path.basename(`${machineDataDirectory}/${filePath}`) } );
         if(referenceNumber){
             formData.append('referenceNumber', referenceNumber?.toString());
         }
@@ -466,12 +491,8 @@ async function uploadDocument(data) {
             formData.append('versionNo', versionNumber?.toString());
         }
 
-
         const response = await axios.post(`${serverURL}/documents/document/`, formData, {
-            headers: {
-                ...formData.getHeaders(),
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { ...formData.getHeaders(), 'Authorization': `Bearer ${token}` }
         });
         return response
         
@@ -490,7 +511,6 @@ async function attachDrawingToMachine(payLoad) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payLoad)
         });
-        
         if(response?.status === 400 ) {
             return "Already Exists!";
         } else if(response?.status === 201 ){
@@ -502,6 +522,26 @@ async function attachDrawingToMachine(payLoad) {
         console.error('Error while Attaching Machine Drawing :', error);
         return error
     }
+}
+
+// --------------------------------------------------------------
+
+async function generateCSVonSuccess(){ 
+    
+    const reviseCSV = logs.map(log => {
+        delete log.displayName;
+        return log;
+    });
+    const csv = parse(reviseCSV);
+    const fullPath = path.join('../', `${csvFileName}.csv`);
+    await fs.writeFile(fullPath, csv, async (err) => {
+        if (err) {
+            console.error('Error appending to CSV file:', err);
+            process.exit(0)
+        }
+        console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
+        process.exit(0)
+    });
 }
 
 //----------------------------------------------------------------
