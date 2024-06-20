@@ -16,18 +16,23 @@ const { fTimestamp } = require('../utils/formatTime');
 const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
-const serverURL = 'http://localhost:5002/api/1.0.0';
-// const serverURL = 'http://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+const serverURL = 'http://localhost:5002/api/1.0.0'; // Localhost Environment
+// const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
-const machineDataDirectory = '../Jobs Data'; // Change this to the root folder you want to start from
-const specificMchinesOnly = [];
+const whereToGenerateCSV = "../"; // where to generate CSV files!
+// const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
+const machineDataDirectory = '../Jobs Data';
+
+const specificMchinesOnly = [ '21034', '20732' ];
 let machineDataList = [];
 const targetDirectories = [ 'Assembly Drawings'];
-const excludeDirectories = [ 'Archive' ];
+const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
 const disallowedExtension = []; // Array of disallowed files
+
+const consoleLog = false;
 
 let token = null;
 let userId;
@@ -37,6 +42,7 @@ const csvFileName = fTimestamp(new Date())?.toString();
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
 let indexing = 1
 
+// ----------------------------------------------------------------
 
 async function main() {
     try {
@@ -54,6 +60,7 @@ async function main() {
         await checkFilesProperties()
         indexing = 1;
         await uploadDocuments()
+        await generateCSVonSuccess();
         // console.log("logs : ",logs)
     } else {
         console.log('Machines does not exist! Please add them.');
@@ -61,7 +68,7 @@ async function main() {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function getToken(serverURL, email, password) {
     try {
@@ -74,7 +81,7 @@ async function getToken(serverURL, email, password) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 function fetchMachineSerialNo(inputString) {
     // Regular expression to match the number before the hyphen
@@ -83,7 +90,7 @@ function fetchMachineSerialNo(inputString) {
     return match ? match[1] : '';
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function getMachinesSerialNo() {
     try {
@@ -98,7 +105,6 @@ async function getMachinesSerialNo() {
                         serialNo: serialNumber.trim(), 
                         'status.slug': { $not: { $regex: /^transferred$/i } }
                     }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
-                    console.log("productObject : ",productObject)
                     machineObject = {
                         _id: productObject?._id || null,
                         serialNo: serialNumber || '',
@@ -115,7 +121,7 @@ async function getMachinesSerialNo() {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function fetchDocxCategory(categoryName) {
     if (categoryName && categoryName.trim().length > 0) {
@@ -131,7 +137,7 @@ async function fetchDocxCategory(categoryName) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 function fetchDocType(fileName) {
     let regex_ = /^(\w+)\s([\w\s]+)/;
@@ -147,23 +153,48 @@ function fetchDocType(fileName) {
     return matches ? docxType : '';
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
+async function postDocumentType(categoryID, docTypeName ){
+    try{
+        const url = `${serverURL}/documents/documentType`;
+        const params = { 
+            docCategory: categoryID,
+            name: docTypeName,
+            isActive: true,
+            isArchived: false,
+            customerAccess: true,
+        }
+        const newDocType = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify(params)
+        });
+        return newDocType;
+    } catch(e){
+        console.log("Error while creating document type : ",e);
+    }
+}
 
-async function fetchDocxType(categoryName, categoryID) {
+async function fetchDocxType( categoryName, categoryID  ) {
     if (categoryName && categoryName.trim().length > 0) {
-        return await DocumentType.findOne({
+        const response = await DocumentType.findOne({
             name: { $regex: new RegExp('^' + categoryName.trim(), 'i') },
             isActive: true,
             isArchived: false,
             docCategory: categoryID
         }).select('_id name').lean();
+        if(response?._id){
+            return response;
+        } else {
+            return null;
+        }
     } else {
         console.log(`Document Type ${categoryName} not found!`);
         return null;
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 function fetchReferenceNumber(fileName) {
     let regex_ = /^(\w+)\s([\w\s]+)/;
@@ -175,7 +206,28 @@ function fetchReferenceNumber(fileName) {
     return matches ? referenceNumber : '';
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
+
+function validateStockNoValue(stockNoValue){
+    
+    // /[^A-Z][^a-z][^0-9]/;
+    //[a-zA-Z0-9]+
+    //\w, \W: ANY ONE word/non-word character. For ASCII, word characters are [a-zA-Z0-9_]
+    const regex_ = /\W+/ ;
+    if (stockNoValue){
+        if (stockNoValue.length <= 2)
+            return false;
+        let matches = stockNoValue.match(regex_);
+        if (matches){
+            return false;
+        }
+        return true;
+    }
+    return false;
+    
+}
+
+// ----------------------------------------------------------------
 
 async function extractStockNo(pdfPath) {
     try {
@@ -186,16 +238,111 @@ async function extractStockNo(pdfPath) {
             const pdfText = data.text;
             const lines = pdfText.split('\n');
             let stockNoValue = null;
-            for (let i = 0; i < lines.length; i++) {
-                if (lines[i].includes('STOCK NO.')) {
-                    stockNoValue = lines[i - 3].trim();
-                    if (stockNoValue === 'DRAWN BY') {
-                        stockNoValue = lines[i - 2].trim();
-                    }
-                    break;
+            //console.log(pdfPath);
+            let firstIndex = lines.indexOf('STOCK NO.');
+            let lastIndex = lines.lastIndexOf('STOCK NO.');
+            let stocknoFound = false;
+            if (lastIndex >= 0){
+                stockNoValue = lines[lastIndex + 1]?.trim();
+                if (consoleLog) console.log('   lastIndex -->', lastIndex, ':', stockNoValue);
+
+                if (stockNoValue == ('A3')) {
+                    stockNoValue = lines[lastIndex + 10]?.trim();
+                    if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
                 }
+
+                
+                if (stockNoValue.includes('info@howick.co.nz')) {
+                    stockNoValue = lines[lastIndex - 2]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 2 -->', lastIndex, stockNoValue);
+                }
+                if (stockNoValue == ('A3')) {
+                    stockNoValue = lines[lastIndex - 3]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 3 -->', lastIndex, ':', stockNoValue);
+
+                    if (!validateStockNoValue(stockNoValue)){
+                        stockNoValue = lines[lastIndex + 10]?.trim();
+                        if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
+                    }
+                }
+                if (stockNoValue.includes('Mass')) {
+                    stockNoValue = lines[firstIndex + 1]?.trim();
+                    if (consoleLog) console.log('   firstIndex + 1 -->', stockNoValue);
+                }
+                if (stockNoValue.includes('APPROVED')) {
+                    stockNoValue = lines[firstIndex - 2]?.trim();
+                    if (consoleLog) console.log('   firstIndex - 2 -->', firstIndex, stockNoValue);
+                }
+                if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                    stockNoValue = lines[lastIndex - 1]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 1  -->', stockNoValue);
+                    if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                        stockNoValue = lines[firstIndex - 1]?.trim();
+                        if (consoleLog) console.log('   firstIndex - 1  -->', stockNoValue);
+                    }
+                }
+                if (stockNoValue.includes('Dwg. No.')) {
+                    stockNoValue = lines[lastIndex - 2]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 2 -->', lastIndex, ':', stockNoValue);
+                    if (stockNoValue.startsWith('Ph:')) {
+                        stockNoValue = lines[lastIndex + 1].trim();
+                        if (consoleLog) console.log('   lastIndex + 1 -->', stockNoValue);
+                    }
+                }
+                if (stockNoValue === 'DRAWN BY') {
+                    stockNoValue = lines[firstIndex - 2].trim();
+                }
+                if (stockNoValue.startsWith('1:')) {
+                    stockNoValue = lines[firstIndex + 3].trim();
+                    if (consoleLog) console.log('   firstIndex + 3 -->', stockNoValue);
+                }
+                
+                if (stockNoValue.length == 0 ||  stockNoValue.length > 10){
+                    stockNoValue = lines[lastIndex + 11]?.trim();
+                    if (consoleLog) console.log('   lastIndex + 11 -->', lastIndex, ':', stockNoValue);
+                }
+                if (stockNoValue.indexOf("/") >= 0){
+                    stockNoValue = lines[lastIndex + 8]?.trim();
+                    if (consoleLog) console.log('   lastIndex + 8 -->', lastIndex, ':', stockNoValue);
+                }
+
+                if (stockNoValue.indexOf("No. OFF") >= 0){
+                    stockNoValue = lines[lastIndex - 12]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 12 -->', lastIndex, ':', stockNoValue);
+                }
+
+                if (stockNoValue == ('FINISH')) {
+                    stockNoValue = lines[lastIndex - 1]?.trim();
+                    if (consoleLog) console.log('   lastIndex - 1 -->', lastIndex, ':', stockNoValue);
+                    if (!validateStockNoValue(stockNoValue)){
+                        stockNoValue = lines[lastIndex - 3]?.trim();
+                        if (consoleLog) console.log('   lastIndex - 3 -->', lastIndex, ':', stockNoValue);
+                    }
+                }
+
+                if (!validateStockNoValue(stockNoValue)){
+                    stockNoValue = lines[lastIndex - 3].trim();
+                    if (consoleLog) console.log('   lastIndex - 3 -->', stockNoValue);
+                }
+
+                if (!validateStockNoValue(stockNoValue)){
+                    stockNoValue = lines[firstIndex + 1].trim();
+                    if (consoleLog) console.log('   firstIndex + 1 -->', stockNoValue);
+                    if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                        stockNoValue = lines[firstIndex - 1]?.trim();
+                        if (consoleLog) console.log('   firstIndex - 1  -->', stockNoValue);
+                    }
+                }
+
+                if (!validateStockNoValue(stockNoValue)){
+                    stockNoValue = lines[lastIndex - 12].trim();
+                    if (consoleLog) console.log('   lastIndex - 12 -->', stockNoValue);
+                }
+
+                if (consoleLog) console.log('   -----', stockNoValue, validateStockNoValue(stockNoValue));
             }
-            return stockNoValue ? stockNoValue : '';
+    
+            return validateStockNoValue(stockNoValue) ? stockNoValue : '';
         } else {
             return '';
         }
@@ -205,7 +352,7 @@ async function extractStockNo(pdfPath) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function fetchVersionNumber(fileName) {
     const regex_VersionNo = /V(\d+)\.pdf$/;
@@ -214,7 +361,7 @@ async function fetchVersionNumber(fileName) {
     return versionNumber ? versionNumber : '' ;
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function generateEtag(data) {
     const crypto = require('crypto');
@@ -238,7 +385,7 @@ async function generateEtag(data) {
     });
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function checkFileExistenceByETag(etagValue) {
     const url = `${serverURL}/documents/checkFileExistenceByETag`;
@@ -253,7 +400,7 @@ async function checkFileExistenceByETag(etagValue) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function getMachineSubFoldersData( ) {
     try {
@@ -269,7 +416,7 @@ async function getMachineSubFoldersData( ) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function processMachineData( index, mData) {
     let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
@@ -281,7 +428,7 @@ async function processMachineData( index, mData) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 function filterSubFolders( subFolders ) {
     return subFolders?.filter(sb => {
@@ -291,7 +438,7 @@ function filterSubFolders( subFolders ) {
     });
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function processSubFolders( index, mData, subFolders ) {
     for (const subFolder of subFolders) {
@@ -308,7 +455,7 @@ async function processSubFolders( index, mData, subFolders ) {
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function processFiles(files, filesToUpload, mData, subFolder, docCategory ) {
     for (const file of files) {
@@ -320,32 +467,49 @@ async function processFiles(files, filesToUpload, mData, subFolder, docCategory 
     }
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 function isFileAllowed( fileExtension ) {
     return allowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase())) &&
             !disallowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function createFileData(file, mData, subFolder, docCategory) {
-    console.log(`${indexing} fetching data from ### ${file}`);   
+    console.log(`${indexing} ${mData.serialNo}:: ${subFolder}/${file}`);   
     indexing += 1;
     const extension = path.extname(file);
-    const filePath = `${machineDataDirectory}/${mData?.mainFolder}/${subFolder}/${file}`;
+    const filePath = `${mData?.mainFolder}/${subFolder}/${file}`;
     const fileName = file?.slice(0, -extension.length);
-    const docEtag = await generateEtag(filePath);
+    const docEtag = await generateEtag(`${machineDataDirectory}/${filePath}`);
     let isDocumentId = null;
     const isETagExist = await checkFileExistenceByETag([docEtag]);
     if (isETagExist[0]?.documentFiles) {
         searchedObject = await isETagExist.flatMap(item => item.documentFiles).find(file => file?.eTag?.toString() === docEtag.toString());
         isDocumentId = searchedObject?.document;
     }
-    const docxType = await fetchDocType(file);
-    const docType = await fetchDocxType(docxType, docCategory?._id);
+    let docxType = await fetchDocType(file);
+    if (docxType == 'FRAMA') docxType = "Assembly Drawings";
+    if (docxType == 'Covers') docxType = "Cover";
+    if (docxType == 'Lip Roller Assembly') docxType = "Lip Roller";
+    if (docxType == 'Swage Hole Punch Assembly') docxType = "Swage Hole Punch";
+    if (docxType == 'Cut Off Assembly') docxType = "Cut Off";
+    if (docxType == 'Full Pre Punch Assembly') docxType = "Full Pre Punch";
+    if (docxType == 'Swage Assembly') docxType = "Swage";
+    if (docxType == 'H600RollerAssembly') docxType = "Roller";
+    
+    let docType = await fetchDocxType(docxType, docCategory?._id, );
+    if(!docType){
+        const newdocxType = await postDocumentType(docCategory?._id, docxType )
+
+        console.log("newdocxType : ",newdocxType?.data);
+        if(newdocxType?.status === 201 ){
+            docType = await fetchDocxType(docxType, docCategory?._id, docxType);
+        }
+    }
     const data = {
-        filePath: `${mData?.mainFolder}/${subFolder}/${file}`,
+        filePath: filePath,
         fileName: fileName,
         extension: extension,
         category: subFolder,
@@ -355,7 +519,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
         docTypeName: docType?.name || ( docxType || ''),
         versionNumber: await fetchVersionNumber(file),
         referenceNumber: await fetchReferenceNumber(file),
-        stockNo: await extractStockNo(filePath),
+        stockNo: await extractStockNo(`${machineDataDirectory}/${filePath}`),
         eTag: docEtag,
         isETagExist: isDocumentId ? true : false,
     };
@@ -363,11 +527,12 @@ async function createFileData(file, mData, subFolder, docCategory) {
     if (isDocumentId) {
         data.documentId = isDocumentId;
     }
+    console.log(`   docCat: ${data.docCategoryName} docType: ${docxType} --> ${data.docTypeName} - ${data.docTypeId} refNo: ${data.referenceNumber} stockNo: ${data.stockNo} eTag: ${data.eTag} ${data.isETagExist} \n`);  
 
     return data;
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function checkFilesProperties(){
     for (const machineData of machineDataList) {
@@ -417,7 +582,7 @@ async function parsePDFAndLog(obj, serialNo, machineId ) {
     return log;
 }
 
-//----------------------------------------------------------------
+// ----------------------------------------------------------------
 
 async function uploadDocuments() {
     try {
@@ -427,7 +592,7 @@ async function uploadDocuments() {
                 if(!log?.isETagExist){
                     console.log(`${indexing} uploading file ### ${log?.displayName || '' }`);   
                     const response = await uploadDocument(log);
-                    log.documentId = response?.Document?._id || null;
+                    log.documentId = response?.data?.Document?._id;
                     log.isUploaded = true;
                 } else {
                     const payload = {
@@ -437,6 +602,7 @@ async function uploadDocuments() {
                     }
                     const response = await attachDrawingToMachine(payload);
                     console.log(`${indexing} Attaching file ### ${log?.displayName || '' }`); 
+                    console.log(response)
                     if(response){
                         log.isMachineDrawingAttached = response;
                     }
@@ -446,7 +612,6 @@ async function uploadDocuments() {
             }
             indexing += 1;
         }
-        await generateCSVonSuccess();
     } catch (error) {
         console.error('Error uploading documents:', error);
     }
@@ -492,7 +657,10 @@ async function uploadDocument(data) {
         }
 
         const response = await axios.post(`${serverURL}/documents/document/`, formData, {
-            headers: { ...formData.getHeaders(), 'Authorization': `Bearer ${token}` }
+            headers: {
+                ...formData.getHeaders(),
+                'Authorization': `Bearer ${token}`
+            }
         });
         return response
         
@@ -511,8 +679,9 @@ async function attachDrawingToMachine(payLoad) {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(payLoad)
         });
+        
         if(response?.status === 400 ) {
-            return "Already Exists!";
+            return "Already Attached!";
         } else if(response?.status === 201 ){
             return "Yes";
         } else {
@@ -520,30 +689,27 @@ async function attachDrawingToMachine(payLoad) {
         }
     } catch (error) {
         console.error('Error while Attaching Machine Drawing :', error);
-        return error
     }
 }
 
 // --------------------------------------------------------------
 
 async function generateCSVonSuccess(){ 
-    
-    const reviseCSV = logs.map(log => {
+    const reviseCSV = await logs?.map(log => {
         delete log.displayName;
         return log;
     });
-    const csv = parse(reviseCSV);
-    const fullPath = path.join('../', `${csvFileName}.csv`);
+    const csv = await parse(reviseCSV);
+    const fullPath = path.join(`${whereToGenerateCSV || '../' }${csvFileName}.csv`);
     await fs.writeFile(fullPath, csv, async (err) => {
         if (err) {
             console.error('Error appending to CSV file:', err);
             process.exit(0)
         }
-        console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv in project diractory successfully.`);
+        console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv successfully.`);
         process.exit(0)
     });
 }
-
 //----------------------------------------------------------------
 
 async function checkKeyValues(properties) {
@@ -583,5 +749,6 @@ async function checkKeyValues(properties) {
     }
 }
 
+// ----------------------------------------------------------------
 
 main();
