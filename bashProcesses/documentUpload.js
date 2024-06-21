@@ -25,8 +25,7 @@ const whereToGenerateCSV = "../"; // where to generate CSV files!
 // const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
 const machineDataDirectory = '../Jobs Data';
 
-const specificMchinesOnly = [ '21034', '20732' ];
-let machineDataList = [];
+const specificMchinesOnly = [ ];
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
@@ -37,7 +36,8 @@ const consoleLog = false;
 let token = null;
 let userId;
 let sessionId;
-let logs = [];
+let machineDirectoriesData = [];
+let filesData = [];
 const csvFileName = fTimestamp(new Date())?.toString();
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
 let indexing = 1
@@ -54,14 +54,14 @@ async function main() {
         console.log(error);
     }
     await getMachinesSerialNo()
-    if(machineDataList?.some( (m ) => m._id )){
+    if(machineDirectoriesData?.some( (m ) => m._id )){
         await getMachineSubFoldersData()
-        // console.log("machineDataList with SubFoldersData : ",machineDataList)
+        // console.log("machineDirectoriesData with SubFoldersData : ",machineDirectoriesData)
         await checkFilesProperties()
         indexing = 1;
         await uploadDocuments()
         await generateCSVonSuccess();
-        // console.log("logs : ",logs)
+        // console.log("filesData : ",filesData)
     } else {
         console.log('Machines does not exist! Please add them.');
         process.exit(0)
@@ -110,7 +110,7 @@ async function getMachinesSerialNo() {
                             serialNo: serialNumber || '',
                             mainFolder: folder || '',
                         }
-                        machineDataList.push( machineObject )
+                        machineDirectoriesData.push( machineObject )
                     }
                 }
             } catch (err) {
@@ -176,10 +176,10 @@ async function postDocumentType(categoryID, docTypeName ){
     }
 }
 
-async function fetchDocxType( categoryName, categoryID  ) {
-    if (categoryName && categoryName.trim().length > 0) {
+async function fetchDocxType( docTypeName, categoryID  ) {
+    if (docTypeName && docTypeName.trim().length > 0) {
         const response = await DocumentType.findOne({
-            name: { $regex: new RegExp('^' + categoryName.trim(), 'i') },
+            name: { $regex: new RegExp( docTypeName.trim(), 'i') },
             isActive: true,
             isArchived: false,
             docCategory: categoryID
@@ -190,7 +190,7 @@ async function fetchDocxType( categoryName, categoryID  ) {
             return null;
         }
     } else {
-        console.log(`Document Type ${categoryName} not found!`);
+        console.log(`Document Type ${docTypeName} not found!`);
         return null;
     }
 }
@@ -251,7 +251,6 @@ async function extractStockNo(pdfPath) {
                     stockNoValue = lines[lastIndex + 10]?.trim();
                     if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
                 }
-
                 
                 if (stockNoValue.includes('info@howick.co.nz')) {
                     stockNoValue = lines[lastIndex - 2]?.trim();
@@ -348,7 +347,7 @@ async function extractStockNo(pdfPath) {
             return '';
         }
     } catch (err) {
-        console.error('Error extracting stock number from PDF:', err);
+        console.error('Error extracting stock number from PDF : ', err);
         return "";
     }
 }
@@ -406,10 +405,10 @@ async function checkFileExistenceByETag(etagValue) {
 async function getMachineSubFoldersData( ) {
     try {
         if(Array.isArray(specificMchinesOnly) && specificMchinesOnly?.length > 0 ){
-            machineDataList = machineDataList?.filter(md => 
+            machineDirectoriesData = machineDirectoriesData?.filter(md => 
                 specificMchinesOnly?.some(sM =>  sM?.trim()?.toLowerCase() === md?.serialNo?.trim()?.toLowerCase()))
         }
-        for (const [index, mData] of machineDataList.entries()) {
+        for (const [index, mData] of machineDirectoriesData.entries()) {
             await processMachineData( index, mData );
         }
     } catch (e) {
@@ -423,8 +422,8 @@ async function processMachineData( index, mData) {
     let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
     subFolders = await filterSubFolders( subFolders );
 
-    if (!machineDataList[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
-        machineDataList[index].filesToUpload = [];
+    if (!machineDirectoriesData[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
+        machineDirectoriesData[index].filesToUpload = [];
         await processSubFolders( index, mData, subFolders );
     }
 }
@@ -449,7 +448,7 @@ async function processSubFolders( index, mData, subFolders ) {
             const docCategory = await fetchDocxCategory(subFolder);
             await processFiles( files, filesToUpload, mData, subFolder, docCategory );
             // console.log('filesToUpload : ',filesToUpload);
-            machineDataList[index].filesToUpload = filesToUpload;
+            machineDirectoriesData[index].filesToUpload = filesToUpload;
         } catch (err) {
             console.error('Error while fetching machine Sub Folder:', err);
         }
@@ -504,7 +503,6 @@ async function createFileData(file, mData, subFolder, docCategory) {
     if(!docType){
         const newdocxType = await postDocumentType(docCategory?._id, docxType )
 
-        console.log("newdocxType : ",newdocxType?.data);
         if(newdocxType?.status === 201 ){
             docType = await fetchDocxType(docxType, docCategory?._id, docxType);
         }
@@ -536,7 +534,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
 // ----------------------------------------------------------------
 
 async function checkFilesProperties(){
-    for (const machineData of machineDataList) {
+    for (const machineData of machineDirectoriesData) {
         if(Array.isArray( machineData?.filesToUpload ) && machineData?.filesToUpload?.length > 0 ){
         for (const docData of machineData?.filesToUpload) {
             try{
@@ -546,7 +544,7 @@ async function checkFilesProperties(){
                 if (messages && messages?.length != 0) {
                     data_log.messages = messages;
                 }
-                logs.push(data_log);
+                filesData.push(data_log);
             } catch(e){
                 console.error('Error while checking file properties:', e);
             }
@@ -561,6 +559,7 @@ async function parsePDFAndLog(obj, serialNo, machineId ) {
     let log = {
         folderName: obj?.category || '',
         serialNo: serialNo || '',
+        eTag: obj?.eTag || '',
         machineId: machineId || null,
         documentCategoryName: obj?.docCategoryName || '',
         documentCategoryId: obj?.docCategoryId || null,
@@ -587,11 +586,12 @@ async function parsePDFAndLog(obj, serialNo, machineId ) {
 
 async function uploadDocuments() {
     try {
-        for (const log of logs) {
+        for (const log of filesData) {
             log.isUploaded = false;
             if(!log?.messages || log?.isETagExist){
                 if(!log?.isETagExist){
-                    console.log(`${indexing} uploading file ### ${log?.displayName || '' }`);   
+                    console.log(`${indexing} uploading ${log?.serialNo || '' }:: ${ log?.folderName || '' }/${log?.displayName || '' } `)
+                    console.log(`   docCat: ${log?.documentCategoryName || '' } docType: ${log?.documentTypeName || '' } - ${log?.documentTypeId || '' } refNo: ${log?.referenceNumber || '' } stockNo: ${log?.stockNumber || '' } eTag: ${log?.eTag || '' } eTag Exist ? ${log?.isETagExist || '' }\n`); 
                     const response = await uploadDocument(log);
                     log.documentId = response?.data?.Document?._id;
                     log.isUploaded = true;
@@ -602,14 +602,15 @@ async function uploadDocuments() {
                         "isActive": true
                     }
                     const response = await attachDrawingToMachine(payload);
-                    console.log(`${indexing} Attaching file ### ${log?.displayName || '' }`); 
-                    console.log(response)
+                    console.log(`${indexing} Attaching ${log?.serialNo || '' }:: ${ log?.folderName || '' }/${log?.displayName || '' }`)
+                    console.log(`   docCat: ${log?.documentCategoryName || '' } docType: ${log?.documentTypeName || '' } - ${log?.documentTypeId || '' } refNo: ${log?.referenceNumber || '' } stockNo: ${log?.stockNumber || '' } eTag: ${log?.eTag || '' } eTag Exist ? ${log?.isETagExist || '' } Attach --> ${response}\n`);
                     if(response){
                         log.isMachineDrawingAttached = response;
                     }
                 }
             } else {
-                console.log(`${indexing} Document file ### ${log?.displayName || '' } Properties ### ${log?.messages || ''} required!`);   
+                console.log(`${indexing} ${log?.serialNo || '' }:: ${ log?.folderName || '' }/${log?.displayName || '' }`)
+                console.log(`   docCat: ${log?.documentCategoryName || '' } docType: ${log?.documentTypeName || '' } - ${log?.documentTypeId || '' } refNo: ${log?.referenceNumber || '' } stockNo: ${log?.stockNumber || '' } eTag: ${log?.eTag || '' } ${log?.isETagExist || '' } --> Properties ### ${log?.messages || ''} required!\n`);
             }
             indexing += 1;
         }
@@ -696,8 +697,9 @@ async function attachDrawingToMachine(payLoad) {
 // --------------------------------------------------------------
 
 async function generateCSVonSuccess(){ 
-    const reviseCSV = await logs?.map(log => {
-        delete log.displayName;
+    const reviseCSV = await filesData?.map(log => {
+        delete log?.displayName;
+        delete log?.eTag;
         return log;
     });
     const csv = await parse(reviseCSV);
