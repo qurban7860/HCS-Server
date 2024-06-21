@@ -103,14 +103,15 @@ async function getMachinesSerialNo() {
                 if (serialNumber?.trim()) {
                     productObject = await Product.findOne({ 
                         serialNo: serialNumber.trim(), 
-                        'status.slug': { $not: { $regex: /^transferred$/i } }
                     }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
-                    machineObject = {
-                        _id: productObject?._id || null,
-                        serialNo: serialNumber || '',
-                        mainFolder: folder || '',
+                    if( productObject?.status?.slug !== "transferred" ){
+                        machineObject = {
+                            _id: productObject?._id || null,
+                            serialNo: serialNumber || '',
+                            mainFolder: folder || '',
+                        }
+                        machineDataList.push( machineObject )
                     }
-                    machineDataList.push( machineObject )
                 }
             } catch (err) {
                 console.error('Error while feching machine SerialNo :', err);
