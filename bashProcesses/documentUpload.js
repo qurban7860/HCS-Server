@@ -16,14 +16,14 @@ const { fTimestamp } = require('../utils/formatTime');
 const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
-const serverURL = 'http://localhost:5002/api/1.0.0'; // Localhost Environment
-// const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+//const serverURL = 'http://localhost:5002/api/1.0.0'; // Localhost Environment
+const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const whereToGenerateCSV = "../"; // where to generate CSV files!
-// const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
-const machineDataDirectory = '../Jobs Data';
+const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
+//const machineDataDirectory = '../Jobs Data';
 
 const specificMchinesOnly = [ ];
 const targetDirectories = [ 'Assembly Drawings'];
@@ -57,9 +57,12 @@ async function main() {
     if(machineDirectoriesData?.some( (m ) => m._id )){
         await getMachineSubFoldersData()
         // console.log("machineDirectoriesData with SubFoldersData : ",machineDirectoriesData)
+        
         await checkFilesProperties()
         indexing = 1;
+        console.log('\n---------------------- uploading docs -------------------------\n');
         await uploadDocuments()
+        console.log('\n---------------------- generating CSV -------------------------\n');
         await generateCSVonSuccess();
         // console.log("filesData : ",filesData)
     } else {
