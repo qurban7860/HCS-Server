@@ -16,20 +16,23 @@ const { fTimestamp } = require('../utils/formatTime');
 const util = require('util');
 const readdir = util.promisify(fs.readdir);
 
-const serverURL = 'http://localhost:5002/api/1.0.0'; // Localhost Environment
-// const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
+//const serverURL = 'http://localhost:5002/api/1.0.0'; // Localhost Environment
+const serverURL = 'https://dev.portal.server.howickltd.com/api/1.0.0'; // DEV Environment
 
 const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const whereToGenerateCSV = "../"; // where to generate CSV files!
-// const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
-const machineDataDirectory = '../Jobs Data';
+//const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
+const machineDataDirectory = 'N:/Documentation/Job Data';
+//const machineDataDirectory = '../Jobs Data';
 
 const specificMchinesOnly = [ ];
+const fromSerialNo = 20001;
+const toSerialNo = 0;
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
-const disallowedExtension = []; // Array of disallowed files
+const disallowedExtension = ['.zip']; // Array of disallowed files
 
 const consoleLog = false;
 
@@ -57,9 +60,12 @@ async function main() {
     if(machineDirectoriesData?.some( (m ) => m._id )){
         await getMachineSubFoldersData()
         // console.log("machineDirectoriesData with SubFoldersData : ",machineDirectoriesData)
+        
         await checkFilesProperties()
         indexing = 1;
-        await uploadDocuments()
+        
+        //await uploadDocuments()
+        
         await generateCSVonSuccess();
         // console.log("filesData : ",filesData)
     } else {
@@ -94,24 +100,32 @@ function fetchMachineSerialNo(inputString) {
 
 async function getMachinesSerialNo() {
     try {
+        console.log('\n---------------------- getMachinesSerialNo -------------------------\n');
         const folders = await readdir(machineDataDirectory);
+        let count = 0;
         for (const folder of folders) {
+
             try {
                 let productObject = null;
                 let machineObject
                 const serialNumber = await fetchMachineSerialNo(folder)
                 if (serialNumber?.trim()) {
-                    productObject = await Product.findOne({ 
-                        serialNo: serialNumber.trim(), 
-                    }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
-                    if( productObject?.status?.slug !== "transferred" ){
-                        machineObject = {
-                            _id: productObject?._id || null,
-                            serialNo: serialNumber || '',
-                            mainFolder: folder || '',
+                    if ((fromSerialNo == 0 || parseInt(serialNumber) >=  fromSerialNo ) && (toSerialNo == 0 || parseInt(serialNumber) <=  toSerialNo )){
+                        productObject = await Product.findOne({ 
+                            serialNo: serialNumber.trim(), 
+                        }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
+                        if( productObject?.status?.slug !== "transferred" ){
+                            machineObject = {
+                                _id: productObject?._id || null,
+                                serialNo: serialNumber || '',
+                                mainFolder: folder || '',
+                            }
+                            machineDirectoriesData.push( machineObject )
                         }
-                        machineDirectoriesData.push( machineObject )
+                    }else{
+                        // console.log(`   SerialNo: ${serialNumber} not in range ${fromSerialNo} - ${toSerialNo}`);
                     }
+                    
                 }
             } catch (err) {
                 console.error('Error while feching machine SerialNo :', err);
@@ -155,7 +169,7 @@ function fetchDocType(fileName) {
 }
 
 // ----------------------------------------------------------------
-async function postDocumentType(categoryID, docTypeName ){
+async function postDocumentType(categoryID, categoryName, docTypeName ){
     try{
         const url = `${serverURL}/documents/documentType`;
         const params = { 
@@ -165,6 +179,7 @@ async function postDocumentType(categoryID, docTypeName ){
             isArchived: false,
             customerAccess: true,
         }
+        console.log(`   Creating new document type: ${categoryName} --> ${docTypeName} `)
         const newDocType = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -179,7 +194,9 @@ async function postDocumentType(categoryID, docTypeName ){
 async function fetchDocxType( docTypeName, categoryID  ) {
     if (docTypeName && docTypeName.trim().length > 0) {
         const response = await DocumentType.findOne({
-            name: { $regex: new RegExp( docTypeName.trim(), 'i') },
+            // name: { $regex: new RegExp( docTypeName.trim(), 'i') },
+            // new RegExp(`^${emailVariable}$`, 'i') 
+            name: { $regex: new RegExp( `^${docTypeName.trim()}$`, 'i') },
             isActive: true,
             isArchived: false,
             docCategory: categoryID
@@ -190,7 +207,7 @@ async function fetchDocxType( docTypeName, categoryID  ) {
             return null;
         }
     } else {
-        console.log(`Document Type ${docTypeName} not found!`);
+        console.log(`   Document Type ${docTypeName} not found!`);
         return null;
     }
 }
@@ -214,9 +231,10 @@ function validateStockNoValue(stockNoValue){
     // /[^A-Z][^a-z][^0-9]/;
     //[a-zA-Z0-9]+
     //\w, \W: ANY ONE word/non-word character. For ASCII, word characters are [a-zA-Z0-9_]
+    let ignoreList = ['REVISION', 'NOTES', 'FINISH', 'DRAWN BY', 'DRAWN', 'APPROVED', 'Mass', 'Dwg. No.', 'info@howick.co.nz', 'Hermanus'];
     const regex_ = /\W+/ ;
     if (stockNoValue){
-        if (stockNoValue.length <= 2)
+        if (stockNoValue.length <= 2 || ignoreList.indexOf(stockNoValue) >= 0)
             return false;
         let matches = stockNoValue.match(regex_);
         if (matches){
@@ -252,7 +270,7 @@ async function extractStockNo(pdfPath) {
                     if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
                 }
                 
-                if (stockNoValue.includes('info@howick.co.nz')) {
+                if (stockNoValue?.includes('info@howick.co.nz')) {
                     stockNoValue = lines[lastIndex - 2]?.trim();
                     if (consoleLog) console.log('   lastIndex - 2 -->', lastIndex, stockNoValue);
                 }
@@ -265,53 +283,53 @@ async function extractStockNo(pdfPath) {
                         if (consoleLog) console.log('   lastIndex + 10 -->', lastIndex, ':', stockNoValue);
                     }
                 }
-                if (stockNoValue.includes('Mass')) {
+                if (stockNoValue?.includes('Mass')) {
                     stockNoValue = lines[firstIndex + 1]?.trim();
                     if (consoleLog) console.log('   firstIndex + 1 -->', stockNoValue);
                 }
-                if (stockNoValue.includes('APPROVED')) {
+                if (stockNoValue?.includes('APPROVED')) {
                     stockNoValue = lines[firstIndex - 2]?.trim();
                     if (consoleLog) console.log('   firstIndex - 2 -->', firstIndex, stockNoValue);
                 }
-                if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                if (stockNoValue?.includes('REVISION') || stockNoValue?.includes('NOTES') ) {
                     stockNoValue = lines[lastIndex - 1]?.trim();
                     if (consoleLog) console.log('   lastIndex - 1  -->', stockNoValue);
-                    if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                    if (stockNoValue?.includes('REVISION') || stockNoValue?.includes('NOTES') ) {
                         stockNoValue = lines[firstIndex - 1]?.trim();
                         if (consoleLog) console.log('   firstIndex - 1  -->', stockNoValue);
                     }
                 }
-                if (stockNoValue.includes('Dwg. No.')) {
+                if (stockNoValue?.includes('Dwg. No.')) {
                     stockNoValue = lines[lastIndex - 2]?.trim();
                     if (consoleLog) console.log('   lastIndex - 2 -->', lastIndex, ':', stockNoValue);
-                    if (stockNoValue.startsWith('Ph:')) {
-                        stockNoValue = lines[lastIndex + 1].trim();
+                    if (stockNoValue?.startsWith('Ph:')) {
+                        stockNoValue = lines[lastIndex + 1]?.trim();
                         if (consoleLog) console.log('   lastIndex + 1 -->', stockNoValue);
                     }
                 }
-                if (stockNoValue === 'DRAWN BY') {
-                    stockNoValue = lines[firstIndex - 2].trim();
+                if (stockNoValue.startsWith('DRAWN') ) {
+                    stockNoValue = lines[firstIndex - 2]?.trim();
                 }
-                if (stockNoValue.startsWith('1:')) {
-                    stockNoValue = lines[firstIndex + 3].trim();
+                if (stockNoValue?.startsWith('1:')) {
+                    stockNoValue = lines[firstIndex + 3]?.trim();
                     if (consoleLog) console.log('   firstIndex + 3 -->', stockNoValue);
                 }
                 
-                if (stockNoValue.length == 0 ||  stockNoValue.length > 10){
+                if (stockNoValue?.length == 0 ||  stockNoValue?.length > 10){
                     stockNoValue = lines[lastIndex + 11]?.trim();
                     if (consoleLog) console.log('   lastIndex + 11 -->', lastIndex, ':', stockNoValue);
                 }
-                if (stockNoValue.indexOf("/") >= 0){
+                if (stockNoValue?.indexOf("/") >= 0){
                     stockNoValue = lines[lastIndex + 8]?.trim();
                     if (consoleLog) console.log('   lastIndex + 8 -->', lastIndex, ':', stockNoValue);
                 }
 
-                if (stockNoValue.indexOf("No. OFF") >= 0){
+                if (stockNoValue?.indexOf("No. OFF") >= 0){
                     stockNoValue = lines[lastIndex - 12]?.trim();
                     if (consoleLog) console.log('   lastIndex - 12 -->', lastIndex, ':', stockNoValue);
                 }
 
-                if (stockNoValue == ('FINISH')) {
+                if (stockNoValue == 'FINISH') {
                     stockNoValue = lines[lastIndex - 1]?.trim();
                     if (consoleLog) console.log('   lastIndex - 1 -->', lastIndex, ':', stockNoValue);
                     if (!validateStockNoValue(stockNoValue)){
@@ -321,21 +339,21 @@ async function extractStockNo(pdfPath) {
                 }
 
                 if (!validateStockNoValue(stockNoValue)){
-                    stockNoValue = lines[lastIndex - 3].trim();
+                    stockNoValue = lines[lastIndex - 3]?.trim();
                     if (consoleLog) console.log('   lastIndex - 3 -->', stockNoValue);
                 }
 
                 if (!validateStockNoValue(stockNoValue)){
-                    stockNoValue = lines[firstIndex + 1].trim();
+                    stockNoValue = lines[firstIndex + 1]?.trim();
                     if (consoleLog) console.log('   firstIndex + 1 -->', stockNoValue);
-                    if (stockNoValue.includes('REVISION') || stockNoValue.includes('NOTES') ) {
+                    if (stockNoValue?.includes('REVISION') || stockNoValue?.includes('NOTES') ) {
                         stockNoValue = lines[firstIndex - 1]?.trim();
                         if (consoleLog) console.log('   firstIndex - 1  -->', stockNoValue);
                     }
                 }
 
                 if (!validateStockNoValue(stockNoValue)){
-                    stockNoValue = lines[lastIndex - 12].trim();
+                    stockNoValue = lines[lastIndex - 12]?.trim();
                     if (consoleLog) console.log('   lastIndex - 12 -->', stockNoValue);
                 }
 
@@ -404,6 +422,7 @@ async function checkFileExistenceByETag(etagValue) {
 
 async function getMachineSubFoldersData( ) {
     try {
+        console.log('------------ getMachineSubFoldersData -------------------------\n');
         if(Array.isArray(specificMchinesOnly) && specificMchinesOnly?.length > 0 ){
             machineDirectoriesData = machineDirectoriesData?.filter(md => 
                 specificMchinesOnly?.some(sM =>  sM?.trim()?.toLowerCase() === md?.serialNo?.trim()?.toLowerCase()))
@@ -443,12 +462,18 @@ function filterSubFolders( subFolders ) {
 async function processSubFolders( index, mData, subFolders ) {
     for (const subFolder of subFolders) {
         try {
-            const filesToUpload = [];
-            const files = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`);
-            const docCategory = await fetchDocxCategory(subFolder);
-            await processFiles( files, filesToUpload, mData, subFolder, docCategory );
-            // console.log('filesToUpload : ',filesToUpload);
-            machineDirectoriesData[index].filesToUpload = filesToUpload;
+            
+            const fileExtension = path.extname(subFolder);
+            if (fileExtension.length == 0 || isFileAllowed(fileExtension)) {
+                const filesToUpload = [];
+                const files = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`);
+                const docCategory = await fetchDocxCategory(subFolder);
+                await processFiles( files, filesToUpload, mData, subFolder, docCategory );
+                // console.log('filesToUpload : ',filesToUpload);
+                machineDirectoriesData[index].filesToUpload = filesToUpload;
+            }else{
+                console.log(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder} -- ignored`);
+            }
         } catch (err) {
             console.error('Error while fetching machine Sub Folder:', err);
         }
@@ -490,6 +515,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
         isDocumentId = searchedObject?.document;
     }
     let docxType = await fetchDocType(file);
+    if (docxType) docxType = docxType.trim(); 
     if (docxType == 'FRAMA') docxType = "Assembly Drawings";
     if (docxType == 'Covers') docxType = "Cover";
     if (docxType == 'Lip Roller Assembly') docxType = "Lip Roller";
@@ -498,10 +524,17 @@ async function createFileData(file, mData, subFolder, docCategory) {
     if (docxType == 'Full Pre Punch Assembly') docxType = "Full Pre Punch";
     if (docxType == 'Swage Assembly') docxType = "Swage";
     if (docxType == 'H600RollerAssembly') docxType = "Roller";
+    if (docxType == 'RollerAssembly') docxType = "Roller";
+    if (docxType == 'Roller Assembly') docxType = "Roller";
     
+    
+    // console.log(`   document type: ${docxType}`);
+    if (docxType.length == 0) docxType='Misc';
+    // console.log(`   document type: ${docxType}`);
+
     let docType = await fetchDocxType(docxType, docCategory?._id, );
-    if(!docType){
-        const newdocxType = await postDocumentType(docCategory?._id, docxType )
+    if(!docType && docxType.length > 0){
+        const newdocxType = await postDocumentType(docCategory?._id, docCategory?.name, docxType )
 
         if(newdocxType?.status === 201 ){
             docType = await fetchDocxType(docxType, docCategory?._id, docxType);
@@ -534,6 +567,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
 // ----------------------------------------------------------------
 
 async function checkFilesProperties(){
+    console.log('------------ checkFilesProperties -------------------------\n');
     for (const machineData of machineDirectoriesData) {
         if(Array.isArray( machineData?.filesToUpload ) && machineData?.filesToUpload?.length > 0 ){
         for (const docData of machineData?.filesToUpload) {
@@ -586,6 +620,7 @@ async function parsePDFAndLog(obj, serialNo, machineId ) {
 
 async function uploadDocuments() {
     try {
+        console.log('\n---------------------- uploadDocuments -------------------------\n');
         for (const log of filesData) {
             log.isUploaded = false;
             if(!log?.messages || log?.isETagExist){
@@ -697,6 +732,7 @@ async function attachDrawingToMachine(payLoad) {
 // --------------------------------------------------------------
 
 async function generateCSVonSuccess(){ 
+    console.log('\n---------------------- generating CSV -------------------------\n');
     const reviseCSV = await filesData?.map(log => {
         delete log?.displayName;
         delete log?.eTag;
