@@ -27,12 +27,12 @@ const machineDataDirectory = 'N:/Documentation/Job Data';
 //const machineDataDirectory = '../Jobs Data';
 
 const specificMchinesOnly = [ ];
-const fromSerialNo = 15011;
-const toSerialNo = 15015;
+const fromSerialNo = 20001;
+const toSerialNo = 0;
 const targetDirectories = [ 'Assembly Drawings'];
 const excludeDirectories = [ 'Archive', 'Fabricated Parts' ];
 const allowedExtension = ['.pdf']; // Array of allowed files
-const disallowedExtension = []; // Array of disallowed files
+const disallowedExtension = ['.zip']; // Array of disallowed files
 
 const consoleLog = false;
 
@@ -110,7 +110,7 @@ async function getMachinesSerialNo() {
                 let machineObject
                 const serialNumber = await fetchMachineSerialNo(folder)
                 if (serialNumber?.trim()) {
-                    if ((fromSerialNo == 0 || serialNumber >=  fromSerialNo ) && (toSerialNo == 0 || serialNumber <=  toSerialNo )){
+                    if ((fromSerialNo == 0 || parseInt(serialNumber) >=  fromSerialNo ) && (toSerialNo == 0 || parseInt(serialNumber) <=  toSerialNo )){
                         productObject = await Product.findOne({ 
                             serialNo: serialNumber.trim(), 
                         }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
