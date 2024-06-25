@@ -189,8 +189,8 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       minute: '2-digit',
     };
     
-    const startTime = `${ eventData?.start ? fDateTime(eventData?.start?.toLocaleString('en-NZ', options)) : '' }`?.toString();
-    const endTime = `${ eventData?.end ? fDateTime(eventData?.end?.toLocaleString('en-NZ', options)) : ''}`?.toString();
+    const startTime = `${ eventData?.start ? fDateTime(eventData?.start) : '' }`?.toString();
+    const endTime = `${ eventData?.end ? fDateTime(eventData?.end) : ''}`?.toString();
 
     console.log(startTime, endTime )
     let hostName = 'portal.howickltd.com';
