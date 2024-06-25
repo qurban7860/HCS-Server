@@ -23,8 +23,8 @@ const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const whereToGenerateCSV = "../"; // where to generate CSV files!
 //const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
-const machineDataDirectory = 'N:/Documentation/Job Data';
-//const machineDataDirectory = '../Jobs Data';
+// const machineDataDirectory = 'N:/Documentation/Job Data';
+const machineDataDirectory = '../Jobs Data';
 
 const specificMchinesOnly = [ ];
 const fromSerialNo = 20001;
@@ -101,7 +101,13 @@ function fetchMachineSerialNo(inputString) {
 async function getMachinesSerialNo() {
     try {
         console.log('\n---------------------- getMachinesSerialNo -------------------------\n');
-        const folders = await readdir(machineDataDirectory);
+        let folders
+        if(await isValidDirectory(machineDataDirectory)){
+            folders = await readdir(machineDataDirectory);
+        } else {
+            console.log('Please Provide Valid Directory!');
+            process.exit(0)
+        }
         let count = 0;
         for (const folder of folders) {
             try {
@@ -132,7 +138,8 @@ async function getMachinesSerialNo() {
             }
         }
     } catch (e) {
-            console.error('Error reading directory:', e);
+            console.error('Error reading provided directory:!',e);
+            process.exit(0)
     }
 }
 
@@ -437,11 +444,15 @@ async function getMachineSubFoldersData( ) {
 
 async function processMachineData( index, mData) {
     try{
-        let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
-        subFolders = await filterSubFolders( subFolders );
-        if (!machineDirectoriesData[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
-            machineDirectoriesData[index].filesToUpload = [];
-            await processSubFolders( index, mData, subFolders );
+        if(await isValidDirectory(`${machineDataDirectory}/${mData?.mainFolder || ''}`)){
+            let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
+            subFolders = await filterSubFolders( subFolders );
+            if (!machineDirectoriesData[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
+                machineDirectoriesData[index].filesToUpload = [];
+                await processSubFolders( index, mData, subFolders );
+            }
+        } else {
+            console.log(`found ${machineDataDirectory}/${mData?.mainFolder || ''} invalid directory!`);
         }
     } catch (e) {
         console.error('Error while processing machine data:', e);
@@ -468,7 +479,7 @@ function filterSubFolders( subFolders ) {
 async function processSubFolders( index, mData, subFolders ) {
     for (const subFolder of subFolders) {
         try {
-            if ( isValidFolder(subFolder)) {
+            if ( isValidFolder(subFolder) && await isValidDirectory(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`)) {
                 const filesToUpload = [];
                 const files = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`);
                 const docCategory = await fetchDocxCategory(subFolder);
@@ -512,10 +523,10 @@ function isValidFolder( fileExtension ) {
 
 async function isValidDirectory( path ) {
     try {
-        const stats = await fs.stat(path);
+        const stats = await fs.promises.lstat(path);
         return stats.isDirectory();
     } catch (err) {
-        console.error('Error:', err);
+        // console.error('Error:', err);
         return false;
     }
 }
@@ -754,21 +765,26 @@ async function attachDrawingToMachine(payLoad) {
 
 async function generateCSVonSuccess(){ 
     console.log('\n---------------------- generating CSV -------------------------\n');
-    const reviseCSV = await filesData?.map(log => {
-        delete log?.displayName;
-        delete log?.eTag;
-        return log;
-    });
-    const csv = await parse(reviseCSV);
-    const fullPath = path.join(`${whereToGenerateCSV || '../' }${csvFileName}.csv`);
-    await fs.writeFile(fullPath, csv, async (err) => {
-        if (err) {
-            console.error('Error appending to CSV file:', err);
+    if(Array.isArray(filesData) && filesData?.length > 0){
+        const reviseCSV = await filesData?.map(log => {
+            delete log?.displayName;
+            delete log?.eTag;
+            return log;
+        });
+        const csv = await parse(reviseCSV);
+        const fullPath = path.join(`${whereToGenerateCSV || '../' }${csvFileName}.csv`);
+        await fs.writeFile(fullPath, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                process.exit(0)
+            }
+            console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv successfully.`);
             process.exit(0)
-        }
-        console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv successfully.`);
+        });
+    } else {
+        console.log(`No Data available to generate CSV!`);
         process.exit(0)
-    });
+    }
 }
 //----------------------------------------------------------------
 
