@@ -345,6 +345,7 @@ async function validateAndLoginUser(req, res, existingUser) {
               email: existingUser.email,
               displayName: existingUser.name,
               customer: existingUser?.customer?._id,
+              contact: existingUser?.contact?._id,
               roles: existingUser.roles,
               dataAccessibilityLevel: existingUser.dataAccessibilityLevel
             }
@@ -633,13 +634,13 @@ exports.forgetPassword = async (req, res, next) => {
               logger.error(new Error(error));
               res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
+              res.status(StatusCodes.OK).send( 'Email sent successfully!');
             }
           }
         }
       }
     } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Unable to locate the system user', true));
+      res.status(StatusCodes.BAD_REQUEST).send('Unable to locate the system user');
     }
   }
 };
