@@ -23,8 +23,8 @@ const email = "a.hassan@terminustech.com";
 const password = "24351172";
 const whereToGenerateCSV = "../"; // where to generate CSV files!
 //const machineDataDirectory = '/Users/naveed/software/howick/jobs-data'; // Change this to the root folder you want to start from
-const machineDataDirectory = 'N:/Documentation/Job Data';
-//const machineDataDirectory = '../Jobs Data';
+// const machineDataDirectory = 'N:/Documentation/Job Data';
+const machineDataDirectory = '../Jobs Data';
 
 const specificMchinesOnly = [ ];
 const fromSerialNo = 20001;
@@ -101,38 +101,45 @@ function fetchMachineSerialNo(inputString) {
 async function getMachinesSerialNo() {
     try {
         console.log('\n---------------------- getMachinesSerialNo -------------------------\n');
-        const folders = await readdir(machineDataDirectory);
+        let folders
+        if(await isValidDirectory(machineDataDirectory)){
+            folders = await readdir(machineDataDirectory);
+        } else {
+            console.log('Please Provide Valid Directory!');
+            process.exit(0)
+        }
         let count = 0;
         for (const folder of folders) {
-
             try {
-                let productObject = null;
-                let machineObject
-                const serialNumber = await fetchMachineSerialNo(folder)
-                if (serialNumber?.trim()) {
-                    if ((fromSerialNo == 0 || parseInt(serialNumber) >=  fromSerialNo ) && (toSerialNo == 0 || parseInt(serialNumber) <=  toSerialNo )){
-                        productObject = await Product.findOne({ 
-                            serialNo: serialNumber.trim(), 
-                        }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
-                        if( productObject?.status?.slug !== "transferred" ){
-                            machineObject = {
-                                _id: productObject?._id || null,
-                                serialNo: serialNumber || '',
-                                mainFolder: folder || '',
+                if(isValidFolder(folder)){
+                    let productObject = null;
+                    let machineObject
+                    const serialNumber = await fetchMachineSerialNo(folder)
+                    if (serialNumber?.trim()) {
+                        if ((fromSerialNo == 0 || parseInt(serialNumber) >=  fromSerialNo ) && (toSerialNo == 0 || parseInt(serialNumber) <=  toSerialNo )){
+                            productObject = await Product.findOne({ 
+                                serialNo: serialNumber.trim(), 
+                            }).select('_id serialNo status').populate([ {path: 'status', select: '_id name slug'} ]).lean();
+                            if( productObject?.status?.slug !== "transferred" ){
+                                machineObject = {
+                                    _id: productObject?._id || null,
+                                    serialNo: serialNumber || '',
+                                    mainFolder: folder || '',
+                                }
+                                machineDirectoriesData.push( machineObject )
                             }
-                            machineDirectoriesData.push( machineObject )
+                        }else{
+                            // console.log(`   SerialNo: ${serialNumber} not in range ${fromSerialNo} - ${toSerialNo}`);
                         }
-                    }else{
-                        // console.log(`   SerialNo: ${serialNumber} not in range ${fromSerialNo} - ${toSerialNo}`);
                     }
-                    
                 }
             } catch (err) {
                 console.error('Error while feching machine SerialNo :', err);
             }
         }
     } catch (e) {
-            console.error('Error reading directory:', e);
+            console.error('Error reading provided directory:!',e);
+            process.exit(0)
     }
 }
 
@@ -194,9 +201,7 @@ async function postDocumentType(categoryID, categoryName, docTypeName ){
 async function fetchDocxType( docTypeName, categoryID  ) {
     if (docTypeName && docTypeName.trim().length > 0) {
         const response = await DocumentType.findOne({
-            // name: { $regex: new RegExp( docTypeName.trim(), 'i') },
-            // new RegExp(`^${emailVariable}$`, 'i') 
-            name: { $regex: new RegExp( `^${docTypeName.trim()}$`, 'i') },
+            name: { $regex: new RegExp( `^${docTypeName.trim()}`, 'i') },
             isActive: true,
             isArchived: false,
             docCategory: categoryID
@@ -438,23 +443,35 @@ async function getMachineSubFoldersData( ) {
 // ----------------------------------------------------------------
 
 async function processMachineData( index, mData) {
-    let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
-    subFolders = await filterSubFolders( subFolders );
-
-    if (!machineDirectoriesData[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
-        machineDirectoriesData[index].filesToUpload = [];
-        await processSubFolders( index, mData, subFolders );
+    try{
+        if(await isValidDirectory(`${machineDataDirectory}/${mData?.mainFolder || ''}`)){
+            let subFolders = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder || ''}`);
+            subFolders = await filterSubFolders( subFolders );
+            if (!machineDirectoriesData[index].filesToUpload && Array.isArray(subFolders) && subFolders.length > 0) {
+                machineDirectoriesData[index].filesToUpload = [];
+                await processSubFolders( index, mData, subFolders );
+            }
+        } else {
+            console.log(`found ${machineDataDirectory}/${mData?.mainFolder || ''} invalid directory!`);
+        }
+    } catch (e) {
+        console.error('Error while processing machine data:', e);
     }
 }
 
 // ----------------------------------------------------------------
 
 function filterSubFolders( subFolders ) {
-    return subFolders?.filter(sb => {
-        const includesTarget = targetDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
-        const excludesTarget = excludeDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
-        return includesTarget && !excludesTarget;
-    });
+    try{
+        return subFolders?.filter(sb => {
+            const includesTarget = targetDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
+            const excludesTarget = excludeDirectories?.some(el => sb?.toLowerCase()?.includes(el?.trim()?.toLowerCase()));
+            const disallowedExtensionSubFolders = disallowedExtension?.some(ext => sb?.toLowerCase()?.includes(ext.toLowerCase()));
+            return includesTarget && !excludesTarget && !disallowedExtensionSubFolders;
+        });
+    }catch(err){
+        console.error('Error while filtering subFolders :', err);
+    }
 }
 
 // ----------------------------------------------------------------
@@ -462,14 +479,11 @@ function filterSubFolders( subFolders ) {
 async function processSubFolders( index, mData, subFolders ) {
     for (const subFolder of subFolders) {
         try {
-            
-            const fileExtension = path.extname(subFolder);
-            if (fileExtension.length == 0 || isFileAllowed(fileExtension)) {
+            if ( isValidFolder(subFolder) && await isValidDirectory(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`)) {
                 const filesToUpload = [];
                 const files = await fs.promises.readdir(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder}`);
                 const docCategory = await fetchDocxCategory(subFolder);
                 await processFiles( files, filesToUpload, mData, subFolder, docCategory );
-                // console.log('filesToUpload : ',filesToUpload);
                 machineDirectoriesData[index].filesToUpload = filesToUpload;
             }else{
                 console.log(`${machineDataDirectory}/${mData?.mainFolder}/${subFolder} -- ignored`);
@@ -497,6 +511,24 @@ async function processFiles(files, filesToUpload, mData, subFolder, docCategory 
 function isFileAllowed( fileExtension ) {
     return allowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase())) &&
             !disallowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
+}
+
+// ----------------------------------------------------------------
+
+function isValidFolder( fileExtension ) {
+    return !disallowedExtension?.some(ext => fileExtension?.toLowerCase()?.includes(ext.toLowerCase()));
+}
+
+// ----------------------------------------------------------------
+
+async function isValidDirectory( path ) {
+    try {
+        const stats = await fs.promises.lstat(path);
+        return stats.isDirectory();
+    } catch (err) {
+        // console.error('Error:', err);
+        return false;
+    }
 }
 
 // ----------------------------------------------------------------
@@ -548,7 +580,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
         docCategoryId: docCategory?._id || '',
         docCategoryName: docCategory?.name || ( subFolder || '' ),
         docTypeId: docType?._id || '',
-        docTypeName: docType?.name || ( docxType || ''),
+        docTypeName: docType?.name ? docType?.name : ( docxType || ''),
         versionNumber: await fetchVersionNumber(file),
         referenceNumber: await fetchReferenceNumber(file),
         stockNo: await extractStockNo(`${machineDataDirectory}/${filePath}`),
@@ -567,7 +599,7 @@ async function createFileData(file, mData, subFolder, docCategory) {
 // ----------------------------------------------------------------
 
 async function checkFilesProperties(){
-    console.log('------------ checkFilesProperties -------------------------\n');
+    console.log('------------ checking Files Properties -------------------------\n');
     for (const machineData of machineDirectoriesData) {
         if(Array.isArray( machineData?.filesToUpload ) && machineData?.filesToUpload?.length > 0 ){
         for (const docData of machineData?.filesToUpload) {
@@ -733,21 +765,26 @@ async function attachDrawingToMachine(payLoad) {
 
 async function generateCSVonSuccess(){ 
     console.log('\n---------------------- generating CSV -------------------------\n');
-    const reviseCSV = await filesData?.map(log => {
-        delete log?.displayName;
-        delete log?.eTag;
-        return log;
-    });
-    const csv = await parse(reviseCSV);
-    const fullPath = path.join(`${whereToGenerateCSV || '../' }${csvFileName}.csv`);
-    await fs.writeFile(fullPath, csv, async (err) => {
-        if (err) {
-            console.error('Error appending to CSV file:', err);
+    if(Array.isArray(filesData) && filesData?.length > 0){
+        const reviseCSV = await filesData?.map(log => {
+            delete log?.displayName;
+            delete log?.eTag;
+            return log;
+        });
+        const csv = await parse(reviseCSV);
+        const fullPath = path.join(`${whereToGenerateCSV || '../' }${csvFileName}.csv`);
+        await fs.writeFile(fullPath, csv, async (err) => {
+            if (err) {
+                console.error('Error appending to CSV file:', err);
+                process.exit(0)
+            }
+            console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv successfully.`);
             process.exit(0)
-        }
-        console.log(`Documents records appended to CSV file Name: ${csvFileName}.csv successfully.`);
+        });
+    } else {
+        console.log(`No Data available to generate CSV!`);
         process.exit(0)
-    });
+    }
 }
 //----------------------------------------------------------------
 
