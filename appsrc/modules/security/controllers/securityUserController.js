@@ -166,7 +166,7 @@ exports.postSecurityUser = async (req, res, next) => {
           }  
         }else if(response.invitationStatus){
           res.status(StatusCodes.CREATED).json({ user: response });
-        }{
+        } else {
           return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
         }
       }
