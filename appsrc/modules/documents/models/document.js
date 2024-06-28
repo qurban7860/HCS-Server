@@ -63,6 +63,8 @@ const docSchema = new Schema({
         // installation date
 
         archivedByCustomer: {type: Boolean, default: false},
+
+        previousDocType: { type: Schema.Types.ObjectId , ref: 'DocumentType' },
 },
 {
         collection: 'Documents'

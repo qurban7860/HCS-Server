@@ -36,6 +36,9 @@ router.post(`${baseRoute}/`,controller.postDocumentType);
 // - /api/1.0.0/documents/documentType/:id
 router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchDocumentType);
 
+// - /api/1.0.0/documents/documentType/:id/merge
+router.post(`${baseRoute}/:id/merge`,controller.mergeDocumentType);
+
 // - /api/1.0.0/documents/documentType/:id
 router.delete(`${baseRoute}/:id`, controller.deleteDocumentType);
 

@@ -196,6 +196,7 @@ exports.getDocuments = async (req, res, next) => {
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
       { path: 'docType', select: 'name' },
+      { path: 'previousDocType', select: 'name' },
       { path: 'docCategory', select: 'name drawing' },
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }

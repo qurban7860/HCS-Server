@@ -182,6 +182,45 @@ exports.patchDocumentType = async (req, res, next) => {
 };
 
 
+exports.mergeDocumentType = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      console.log('req.params.id  : ',req.params.id )
+      if( Array.isArray(req.body.docTypes) && req.body.docTypes?.length > 0 && req.params.id ) {
+          await Document.updateMany(
+            { docType: { $in: req.body.docTypes } },
+            [ { $set: { previousDocType: '$docType', docType: req.params.id  } } ],
+            function(err, result) {
+              if (err) {
+                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Documents type update failed!');
+              } else {
+                console.log('Documents updates : ',result)
+              }
+            }
+          );
+          
+          await DocumentType.updateMany({_id: {$in: req.body.docTypes}}, { $set: { isActive: false, isArchived: true } }, 
+          function(err, result) {
+            if (err) {
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Archive merge types failed!');
+            } else {
+              console.log('Doctypes updated : ',result)
+            }
+          });
+      } else {
+        res.status(StatusCodes.BAD_REQUEST).send("Please provide document types to update");
+      }
+      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    }
+  }
+};
+
 function getDocumentFromReq(req, reqType) {
   const { name, description, customerAccess, isDefault, isActive, isArchived, loginUser, docCategory } = req.body;
 
