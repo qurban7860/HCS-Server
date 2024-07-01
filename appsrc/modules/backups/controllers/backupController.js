@@ -122,8 +122,8 @@ exports.patchBackup = async (req, res, next) => {
 };
 
 const cronJobConfiguration = process.env.DB_CRON_JOB && process.env.DB_CRON_JOB.trim().length > 0 ? process.env.DB_CRON_JOB : null;
-const s3BackupFolderName = process.env.S3_DB_BACKUP_DIRECTORY && process.env.S3_DB_BACKUP_DIRECTORY.trim().length > 0 ? process.env.S3_DB_BACKUP_DIRECTORY : null;
-const shouldRunCronJob = process.env.RUN_CRON_JOB === 'true';
+const s3BackupFolderName = process.env.DB_BACKUP_S3_BUCKET && process.env.DB_BACKUP_S3_BUCKET.trim().length > 0 ? process.env.DB_BACKUP_S3_BUCKET : null;
+const shouldRunCronJob = process.env.DB_CRON_JOB === 'true';
 
 
 if (cronJobConfiguration && shouldRunCronJob && s3BackupFolderName ) {
@@ -136,13 +136,13 @@ if (cronJobConfiguration && shouldRunCronJob && s3BackupFolderName ) {
   });
   console.log(`Cron job scheduled with configuration: ${cronJobConfiguration}`);
 } else {
-  console.log('Cron job not scheduled. Either DB_CRON_JOB or RUN_CRON_JOB parameter is missing or incorrect');
+  console.log('Cron job not scheduled. Either DB_CRON_JOB or DB_CRON_JOB parameter is missing or incorrect');
 }
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
  
-  const emailToSend = process.env.ADMIN_EMAIL_FOR_DB_BACKUP_NOTIFICATION; 
+  const emailToSend = process.env.DB_BACKUP_NOTIFY_TO; 
   let emailSubject = "Database BACKUP";
 
   const {
@@ -192,7 +192,7 @@ exports.dbBackup = async (req, res, next) => {
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const outputFolder = process.env.S3_BACKUP_DIRECTORY?.trim().length > 0 ? process.env.S3_BACKUP_DIRECTORY : "db-backups";
 
-  const collectionToImport = process.env.BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.BACKUP_COLLECTIONS}` : ''; 
+  const collectionToImport = process.env.DB_DB_BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.DB_BACKUP_COLLECTIONS}` : ''; 
   const cmdToExecute = `mongodump --out ${outputFolder} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
   exec(cmdToExecute,
     (error, stdout, stderr) => {
@@ -268,7 +268,7 @@ exports.dbBackup = async (req, res, next) => {
             backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} GB`,
             backupTime: endDateTime
           };
-          if( process.env.DB_BACKUP_EMAIL_NOTIFICATION?.trim()?.length > 0 && process.env.ADMIN_EMAIL_FOR_DB_BACKUP_NOTIFICATION?.trim()?.length > 0)
+          if( process.env.DB_BACKUP_S3_BUCKET?.trim()?.length > 0 && process.env.DB_BACKUP_EMAIL_NOTIFICATION === 'true' && process.env.DB_BACKUP_NOTIFY_TO?.trim()?.length > 0)
             exports.sendEmailforBackup(req);
           else {
             console.error("ADMIN EMAIL for db backup is missing in .env");
