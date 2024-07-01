@@ -1,8 +1,6 @@
 const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const { ReasonPhrases, StatusCodes, getReasonPhrase } = require('http-status-codes');
 
 const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
@@ -11,7 +9,6 @@ let rtnMsg = require('../../config/static/static')
 const { fDateTime } = require('../../../../utils/formatTime');
 let backupDBService = require('../service/backupDBService')
 this.dbservice = new backupDBService();
-
 const { Backup } = require('../models');
 const { render } = require('template-file');
 const awsService = require('../../../../appsrc/base/aws');
@@ -38,16 +35,7 @@ this.populate = [
 exports.getBackup = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(Backup, this.fields, req.params.id, this.populate);
-    let updatedResponse = response;
-    if (response.countries.length > 0) {
-      const updatedCountries = response.countries.map((country) => ({
-        ...country.toObject(),
-        name: country.country_name,
-      }));
-      updatedResponse = { ...response.toObject(), countries: updatedCountries };
-    }
-
-    res.json(updatedResponse);
+    res.json(response);
 
   } catch (error) {
     logger.error(new Error(error));
@@ -133,21 +121,29 @@ exports.patchBackup = async (req, res, next) => {
   }
 };
 
-const cronJobConfiguration = process.env.DB_CRON_JOB && process.env.DB_CRON_JOB?.trim().length > 0 ? process.env.DB_CRON_JOB : '0 23 * * *';
-cron.schedule(cronJobConfiguration, () => {
-  try {
-    console.log('Cron job from .env or default', cronJobConfiguration);
-    exports.backupMongoDB();
-  } catch (error) {
-    console.error('Error occurred while running backupMongoDB:', error);
-  }
-});
+const cronJobConfiguration = process.env.DB_CRON_JOB && process.env.DB_CRON_JOB.trim().length > 0 ? process.env.DB_CRON_JOB : null;
+const s3BackupFolderName = process.env.S3_DB_BACKUP_DIRECTORY && process.env.S3_DB_BACKUP_DIRECTORY.trim().length > 0 ? process.env.S3_DB_BACKUP_DIRECTORY : null;
+const shouldRunCronJob = process.env.RUN_CRON_JOB === 'true';
+
+
+if (cronJobConfiguration && shouldRunCronJob && s3BackupFolderName ) {
+  cron.schedule(cronJobConfiguration, async () => {
+    try {
+      await exports.dbBackup();
+    } catch (error) {
+      console.error('Error occurred while running DB backup:', error);
+    }
+  });
+  console.log(`Cron job scheduled with configuration: ${cronJobConfiguration}`);
+} else {
+  console.log('Cron job not scheduled. Either DB_CRON_JOB or RUN_CRON_JOB parameter is missing or incorrect');
+}
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
  
-  const emailToSend = process.env.ADMIN_EMAIL; 
-  let emailSubject = "MONGO DB BACKUP";
+  const emailToSend = process.env.ADMIN_EMAIL_FOR_DB_BACKUP_NOTIFICATION; 
+  let emailSubject = "Database BACKUP";
 
   const {
     name,
@@ -191,10 +187,10 @@ exports.sendEmailforBackup = async (req, res, next) => {
   });
 };
 
-exports.backupMongoDB = async (req, res, next) => {
+exports.dbBackup = async (req, res, next) => {
   const startTime = performance.now();
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
-  const outputFolder = "db-backups";
+  const outputFolder = process.env.S3_BACKUP_DIRECTORY?.trim().length > 0 ? process.env.S3_BACKUP_DIRECTORY : "db-backups";
 
   const collectionToImport = process.env.BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.BACKUP_COLLECTIONS}` : ''; 
   const cmdToExecute = `mongodump --out ${outputFolder} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
@@ -272,10 +268,10 @@ exports.backupMongoDB = async (req, res, next) => {
             backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} GB`,
             backupTime: endDateTime
           };
-          if(process.env.ADMIN_EMAIL?.trim().length > 0)
+          if( process.env.DB_BACKUP_EMAIL_NOTIFICATION?.trim()?.length > 0 && process.env.ADMIN_EMAIL_FOR_DB_BACKUP_NOTIFICATION?.trim()?.length > 0)
             exports.sendEmailforBackup(req);
           else {
-            console.error("ADMIN_EMAIL Configuration is missing in .env");
+            console.error("ADMIN EMAIL for db backup is missing in .env");
           }
           exports.postBackup(req, res, next);
         } else {
