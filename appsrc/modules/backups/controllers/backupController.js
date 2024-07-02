@@ -187,10 +187,10 @@ exports.sendEmailforBackup = async (req, res, next) => {
 };
 
 exports.dbBackup = async (req, res, next) => {
+  
   const startTime = performance.now();
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const s3Bucket = process.env.DB_BACKUP_S3_BUCKET?.trim().length > 0 ? process.env.DB_BACKUP_S3_BUCKET : "db-backups";
-  const backupNotify = process.env.DB_BACKUP_EMAIL_NOTIFICATION === 'true' || process.env.DB_BACKUP_EMAIL_NOTIFICATION === true
   const backupNotifyTo = process.env.DB_BACKUP_NOTIFY_TO?.trim()?.length > 0
   const collectionToImport = process.env.DB_DB_BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.DB_BACKUP_COLLECTIONS}` : ''; 
   const cmdToExecute = `mongodump --out ${s3Bucket} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
@@ -268,7 +268,7 @@ exports.dbBackup = async (req, res, next) => {
             backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} GB`,
             backupTime: endDateTime
           };
-          if( s3Bucket && backupNotify && backupNotifyTo )
+          if( s3Bucket && backupNotifyTo )
             exports.sendEmailforBackup(req);
           else {
             console.error("ADMIN EMAIL for db backup is missing in .env");
