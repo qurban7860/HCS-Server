@@ -10,11 +10,14 @@ let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 const { render } = require('template-file');
 const fs = require('fs');
+const awsService = require('../../../../appsrc/base/aws');
+const { Config } = require('../../config/models');
+
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
-const { ProductServiceRecords, ProductServiceRecordValue, Product, ProductModel, ProductCheckItem } = require('../models');
+const { ProductServiceRecords, ProductServiceRecordFiles , ProductServiceRecordValue, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
 const util = require('util');
 
@@ -34,7 +37,6 @@ this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
-//this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
 
 exports.getProductServiceRecord = async (req, res, next) => {
@@ -55,7 +57,6 @@ exports.getProductServiceRecord = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-
       response = JSON.parse(JSON.stringify(response));     
       const queryToFindCurrentVer = {serviceId: response.serviceId, isActive: true, isArchived: false, isHistory: false};
       const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate').sort({_id: -1}).lean();
@@ -135,7 +136,11 @@ exports.getProductServiceRecord = async (req, res, next) => {
           index++;
         }
       }
-
+        const serviceRecordFileQuery = { machineServiceRecord:{ $in: req.params.id }, isArchived: false };
+        let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name displayName path extension fileType thumbnail');
+        if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
+          response.files = serviceRecordFiles;
+        }
       res.json(response);
     }
   }
@@ -306,18 +311,190 @@ exports.postProductServiceRecord = async (req, res, next) => {
               let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
               if (error) {
                 console.error(error);
-              } else {
-
               }
             });
           }
         }
       }
 
+      const machine = req.params.machineId;
+      const machineServiceRecord = response._id;
+
+      let files = [];
+            
+      if(req?.files?.images){
+        files[0] = req.files.images;
+      }
+      for(let file of files) {
+
+        if(!file || !file.originalname) {
+          console.log('No File present for uploading')
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+      const processedFile = await processFile(file, req.body.loginUser.userId);
+      req.body.path = processedFile.s3FilePath;
+      req.body.fileType =req.body.type = processedFile.type
+      req.body.extension = processedFile.fileExt;
+      req.body.awsETag = processedFile.awsETag;
+      req.body.eTag = processedFile.eTag;
+      req.body.machine = machine;
+      req.body.machineServiceRecord = machineServiceRecord;
+      req.body.name = processedFile.name;
+      
+      if(processedFile.base64thumbNailData){
+        req.body.thumbNail = processedFile.base64thumbNailData;
+        req.body.name = processedFile.name;
+      }
+      
+      const serviveRecordFileObject = getServiceRecordFileFromReq(req, 'new');
+        
+      this.dbservice.postObject(serviveRecordFileObject, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'File uploaded successfully!', false));
+        }
+      }
+    }
+
       res.status(StatusCodes.CREATED).json({ serviceRecord: response });
     }
   }
 }
+
+
+exports.postServiceRecordFile = async (req, res, next) => {
+  try{
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors);
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+
+      const machine = req.params.machineId;
+      const machineServiceRecord = req.params.id;
+
+      let files = [];
+            
+      if(req?.files?.images){
+        files[0] = req.files.images;
+      }
+      for(let file of files) {
+
+        if(!file || !file.originalname) {
+          console.log('No File present for uploading')
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+      const processedFile = await processFile(file, req.body.loginUser.userId);
+      req.body.path = processedFile.s3FilePath;
+      req.body.fileType =req.body.type = processedFile.type
+      req.body.extension = processedFile.fileExt;
+      req.body.awsETag = processedFile.awsETag;
+      req.body.eTag = processedFile.eTag;
+      req.body.machine = machine;
+      req.body.machineServiceRecord = machineServiceRecord;
+      req.body.name = processedFile.name;
+      
+      if(processedFile.base64thumbNailData){
+        req.body.thumbNail = processedFile.base64thumbNailData;
+        req.body.name = processedFile.name;
+      }
+      
+      const serviveRecordFileObject = getServiceRecordFileFromReq(req, 'new');
+        
+      this.dbservice.postObject(serviveRecordFileObject, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        } else {
+          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'File uploaded successfully!', false));
+        }
+      }
+    }
+    }
+  }catch(e) {
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+  }
+};
+
+exports.downloadServiceRecordFile = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+      console.log(errors)
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+      try {
+          const file = await dbservice.getObjectById( ProductServiceRecordFiles, this.fields, req.params.id);
+          if (file) {
+              if (file.path && file.path !== '') {
+                  const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+                  
+                  const allowedMimeTypes = [
+                    'image/jpeg',
+                    'image/jpg',
+                    'image/png',
+                    'image/webp',
+                    'image/tiff',
+                    'image/gif',
+                    'image/svg'
+                  ];
+                
+                  const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
+                  const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); 
+                  let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+                  const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
+                  console.log("fileSizeInMegabytes", fileSizeInMegabytes);
+                  if (isImage && configObject && fileSizeInMegabytes > 2) {
+                    console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
+                    const fileBase64 = await awsService.processAWSFile(data);
+                    return res.status(StatusCodes.ACCEPTED).send(fileBase64);
+                  } else {
+                    return res.status(StatusCodes.ACCEPTED).send(data.Body);                    
+                  }
+              } else {
+                  res.status(StatusCodes.NOT_FOUND).send(rtnMsg.recordCustomMessageJSON(StatusCodes.NOT_FOUND, 'Invalid file path', true));
+              }
+          } else {
+              res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
+          }
+      } catch (err) {
+          if(data.Body){
+            return res.status(StatusCodes.ACCEPTED).send(data.Body);
+          } else {
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+          }
+      }
+  }
+};
+
+
+exports.deleteServiceRecordFile = async (req, res, next) => {
+  try {
+    this.dbservice.deleteObject(ProductServiceRecordFiles, req.params.id, res, callbackFunc);
+    function callbackFunc(error, result){
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+      }
+    }
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
 
 exports.sendServiceRecordEmail = async (req, res, next) => {
   const errors = validationResult(req);
@@ -408,7 +585,6 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
         fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
           let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy, footerContent })
           params.htmlData = htmlData;
-          const awsService = require('../../../../appsrc/base/aws');
           let response = await awsService.sendEmailWithRawData(params, file_);
         })
       })
@@ -555,20 +731,87 @@ async function getToken(req){
   }
 }
 
+async function processFile(file, userId) {
+  const { name, ext } = path.parse(file.originalname);
+  const fileExt = ext.slice(1);
+  let thumbnailPath;
+  let base64thumbNailData;
+  let base64fileData = null;
+
+  if(file.buffer){
+    base64fileData = file.buffer;
+  } else {
+    base64fileData = await readFileAsBase64(file.path);
+  } 
+
+  if(file.mimetype.includes('image')){
+    thumbnailPath = await generateThumbnail(file.path);
+    if(thumbnailPath)
+      base64thumbNailData = await readFileAsBase64(thumbnailPath);
+  }
+  const fileName = userId+"-"+new Date().getTime();
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
+  fs.unlinkSync(file.path);
+  if(thumbnailPath){
+    fs.unlinkSync(thumbnailPath);
+  }
+  if (!s3Data || s3Data === '') {
+    throw new Error('AWS file saving failed');
+  } else {
+    return {
+      fileName,
+      name,
+      fileExt,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
+      type: file.mimetype,
+      physicalPath: file.path,
+      base64thumbNailData
+    };
+  }
+}
+
+async function readFileAsBase64(filePath) {
+  try {
+    const fileData = await fs.promises.readFile(filePath);
+    const base64Data = fileData.toString('base64');
+    return base64Data;
+  } catch (error) {
+    console.log('Error reading file as base64:', error);
+    throw error;
+  }
+}
+
+async function generateThumbnail(filePath) {
+  try {
+    const thumbnailSize = 80;
+    const thumbnailPath = getThumbnailPath(filePath);     
+    await sharp(filePath)
+      .resize(thumbnailSize, null)
+      .toFile(thumbnailPath);
+
+    return thumbnailPath;
+    
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 function getDocumentFromReq(req, reqType){
   const { 
     serviceRecordConfig, serviceId, serviceDate, versionNo, customer, site, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
-    technicianNotes, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
+    technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
   } = req.body;
-    
-  let { decoilers } = req.body;
+  
   let doc = {};
+
   if (reqType && reqType == "new"){
     doc = new ProductServiceRecords({});
   }
-
 
   if ("serviceRecordConfig" in req.body){
     doc.serviceRecordConfig = serviceRecordConfig;
@@ -680,9 +923,69 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
 
+}
+
+function getServiceRecordFileFromReq(req, reqType) {
+
+  const { machineServiceRecord, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+
+  let doc = {};
+
+  if (reqType && reqType == "new") {
+    doc = new ProductServiceRecordFiles({});
+  }
+
+  if ("machineServiceRecord" in req.body) {
+    doc.machineServiceRecord = machineServiceRecord;
+  }
+
+  if ("name" in req.body) {
+    doc.name = name;
+  }
+
+  if ("fileType" in req.body) {
+    doc.fileType = fileType;
+  }
+
+  if ("awsETag" in req.body) {
+    doc.awsETag = awsETag;
+  }
+
+  if ("eTag" in req.body) {
+    doc.eTag = eTag;
+  }
+  if ("thumbnail" in req.body) {
+    doc.thumbnail = thumbnail;
+  }
+  
+  if ("isActive" in req.body) {
+    doc.isActive = isActive;
+  }
+
+  if ("user" in req.body) {
+    doc.user = user;
+  }
+
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body) {
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  }
+  return doc;
 }
 
 

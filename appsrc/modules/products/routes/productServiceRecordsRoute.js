@@ -17,11 +17,18 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
+
 const baseRouteForObject = `/machines/:machineId/serviceRecords`; 
 
 router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/:id`, controller.getProductServiceRecord);
+
+router.post(`${baseRouteForObject}/:id/upload`, controller.postServiceRecordFile);
+
+router.get(`${baseRouteForObject}/:id/files/:fileId/download`, controller.downloadServiceRecordFile);
+
+router.patch(`${baseRouteForObject}/:id/files/:fileId/delete`, controller.deleteServiceRecordFile);
 
 router.get(`${baseRouteForObject}/:id/values`, controller.getProductServiceRecordWithIndividualDetails);
 
