@@ -23,9 +23,11 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productCheckItemsRoute'));
     app.use(`${ rootPathForModule }`, require('./productServiceRecordsConfigRoute'));
     app.use(`${ rootPathForModule }`, require('./productServiceRecordsRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceRecordsFileRoute'));
     app.use(`${ rootPathForModule }`, require('./productCheckItemCategoryRoute'));
     app.use(`${ rootPathForModule }`, require('./productProfileRoute'));
     app.use(`${ rootPathForModule }`, require('./productServiceRecordValueRoute'));
     app.use(`${ rootPathForModule }`, require('./categoryGroupRoute'));
+    
 }
 
