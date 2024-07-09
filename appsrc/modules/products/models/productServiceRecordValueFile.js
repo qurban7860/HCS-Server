@@ -7,11 +7,20 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
+        machine: { type: Schema.Types.ObjectId , ref: 'Machine', required: true },
         // machine information.
 
-        machineServiceRecord: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true }],
-        // machine service record
+        serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true},
+        // service record id.
+        
+        serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord' , required: true},
+        // purpose is to maintain parent service record config uuid
+        
+        machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},
+        //checkitem reference id
+        
+        checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig.checkItemLists', required: true}, 
+        //this will refer to the list to which checkitem is belong to,
 
         name: { type: String },
         // name/title of field
@@ -36,7 +45,7 @@ const docSchema = new Schema({
 
 },
 {
-        collection: 'MachineServiceRecordsFiles'
+        collection: 'MachineServiceRecordValueFiles'
 });
 
 docSchema.set('timestamps', true);
@@ -51,4 +60,4 @@ docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineServiceRecordFile', docSchema);
+module.exports = mongoose.model('MachineServiceRecordValueFile', docSchema);

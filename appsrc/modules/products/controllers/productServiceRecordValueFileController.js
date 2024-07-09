@@ -15,13 +15,11 @@ const sharp = require('sharp');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-const emailController = require('../../email/controllers/emailController');
-const { ProductServiceRecords, ProductServiceRecordFiles , ProductServiceRecordValue, Product, ProductModel, ProductCheckItem } = require('../models');
-const { CustomerContact } = require('../../crm/models');
+const { ProductServiceRecordValueFile } = require('../models');
 const util = require('util');
 
 
-exports.getProductServiceRecordFiles = async (req, res, next) => {
+exports.getProductServiceRecordValueFiles = async (req, res, next) => {
   const machineServiceRecord = req?.machineServiceRecord || req.params.id;
 
   this.query = req.query != "undefined" ? req.query : { machineServiceRecord: machineServiceRecord, isArchived: false, isActive: true };  
@@ -29,7 +27,7 @@ exports.getProductServiceRecordFiles = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
   this.query.machine = req.params.machineId;
-  this.dbservice.getObjectList(req, ProductServiceRecordFiles, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductServiceRecordValueFile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       console.log("error", error);
@@ -45,7 +43,7 @@ exports.getProductServiceRecordFiles = async (req, res, next) => {
 };
 
 
-exports.postServiceRecordFiles = async (req, res, next) => {
+exports.postServiceRecordValueFiles = async (req, res, next) => {
   try{
 
     const errors = validationResult(req);
@@ -87,7 +85,7 @@ exports.postServiceRecordFiles = async (req, res, next) => {
           req.body.name = processedFile.name;
         }
 
-        const serviveRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
+        const serviveRecordFileObject = await getServiceRecordValueFileFromReq(req, 'new');
         
         await this.dbservice.postObject(serviveRecordFileObject, callbackFunc);
         function callbackFunc(error, response) {
@@ -105,14 +103,14 @@ exports.postServiceRecordFiles = async (req, res, next) => {
   }
 };
 
-exports.downloadServiceRecordFile = async (req, res, next) => {
+exports.downloadServiceRecordValueFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
       console.log(errors)
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
       try {
-          const file = await ProductServiceRecordFiles.findOne({_id: req.params.fileId}).select('path');
+          const file = await ProductServiceRecordValueFile.findOne({_id: req.params.id}).select('path');
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
@@ -153,10 +151,10 @@ exports.downloadServiceRecordFile = async (req, res, next) => {
 };
 
 
-exports.deleteServiceRecordFile = async (req, res, next) => {
+exports.deleteServiceRecordValueFile = async (req, res, next) => {
   try {
 
-    await this.dbservice.patchObject(ProductServiceRecordFiles, req.params.fileId, getServiceRecordFileFromReq(req), callbackFunc);
+    await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getServiceRecordValueFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
       if (error) {
         console.log(error);
@@ -260,18 +258,30 @@ async function getToken(req){
 }
 
 
-function getServiceRecordFileFromReq(req, reqType) {
+function getServiceRecordValueFileFromReq(req, reqType) {
 
-  const { machineServiceRecord, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
   if (reqType && reqType == "new") {
-    doc = new ProductServiceRecordFiles({});
+    doc = new ProductServiceRecordValueFile({});
   }
 
-  if ("machineServiceRecord" in req.body) {
-    doc.machineServiceRecord = machineServiceRecord;
+  if ("serviceRecord" in req.body) {
+    doc.serviceRecord = serviceRecord;
+  }
+
+  if ("serviceId" in req.body) {
+    doc.serviceId = serviceId;
+  }
+
+  if ("machineCheckItem" in req.body) {
+    doc.machineCheckItem = machineCheckItem;
+  }
+
+  if ("checkItemListId" in req.body) {
+    doc.checkItemListId = checkItemListId;
   }
 
   if ("name" in req.body) {

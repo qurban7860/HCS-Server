@@ -205,9 +205,6 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
                 psrval.checkItemListId.toString() == checkParam._id
               );
 
-
-
-
               if(PSRV) {
                 productCheckItemObject.recordValue = {
                   serviceRecord : PSRV.serviceRecord,
@@ -240,29 +237,53 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
   }
 };
 
-exports.getProductServiceRecordFiles = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : { machineServiceRecord: req.params.id, isArchived: false, isActive: true };  
+exports.getNewProductServiceRecord = async (req, res, next) => { 
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-
   this.query.machine = req.params.machineId;
-  this.dbservice.getObjectList(req, ProductServiceRecordFiles, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  if( !req?.body?.isNew && !req?.body?.versionNo && !req?.body?.serviceId ){
+    return res.status(StatusCodes.BAD_REQUEST).send("Service Id/Version is Required!");
+  }
+
+  let newProductServiceRecord = getDocumentFromReq(req, 'new' );
+  if( req?.body?.isNew ){
+    newProductServiceRecord.versionNo = 1;
+    newProductServiceRecord.isDraft = true;
+    newProductServiceRecord.isActive = true;
+    newProductServiceRecord.isArchived = false;
+    newProductServiceRecord.machine = req.params.machineId;
+    newProductServiceRecord.serviceId = newProductServiceRecord._id;
+  } else {
+    let parentProductServiceRecord = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
+    console.log("parentProductServiceRecord : ",parentProductServiceRecord)
+    newProductServiceRecord.versionNo = parentProductServiceRecord?.versionNo + 1;
+    newProductServiceRecord.machine = req.params.machineId;
+  }
+
+  this.dbservice.postObject(newProductServiceRecord, callbackFunc);
+
   async function callbackFunc(error, response) {
     if (error) {
-      console.log("error", error);
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error._message );
     } else {
-      res.json(response);
+      // let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  response?._id.toString()} };
+      // await ProductServiceRecords.updateMany(
+      //   queryToUpdateRecords, 
+      //   { $set: { isHistory: true } } 
+      // );
+      res.json(response)
+      // res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
     }
   }
+  
 };
+
 
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-
   this.query.machine = req.params.machineId;
   this.dbservice.getObjectList(req, ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
@@ -341,7 +362,6 @@ exports.postProductServiceRecord = async (req, res, next) => {
       req.machineId = req.params.machineId;
 
       // Pass control to the next middleware for file upload processing
-      console.log('req.files : ',req.files)
       if (req.files && req.files.images) {
         return next(); 
       }
@@ -515,16 +535,22 @@ exports.patchProductServiceRecord = async (req, res, next) => {
     if(!req.body.loginUser)
       req.body.loginUser = await getToken(req);
 
-    if(req.body.isArchived == true) {
+    if(req.body.isArchived == true || req.body.isDraft == true ) {
       const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } else {
-      let parentProductServiceRecordObject = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
-      let productServiceRecordObject = getDocumentFromReq(req, 'new');
-      productServiceRecordObject.versionNo = parentProductServiceRecordObject.versionNo + 1; //what will be the version.
-      productServiceRecordObject.serviceId = parentProductServiceRecordObject.serviceId;
+      let productServiceRecordObject 
+      if(req.body.isPublish){
+        productServiceRecordObject = getDocumentFromReq(req);
+        await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc );
+      }else {
+        productServiceRecordObject = getDocumentFromReq(req, 'new');
+        let parentProductServiceRecordObject = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
+        productServiceRecordObject.versionNo = parentProductServiceRecordObject.versionNo + 1; //what will be the version.
+        productServiceRecordObject.serviceId = parentProductServiceRecordObject.serviceId;
+        await this.dbservice.postObject(productServiceRecordObject, callbackFunc);
+      }
       
-      this.dbservice.postObject(productServiceRecordObject, callbackFunc);
       async function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));
@@ -533,7 +559,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
         } else {
-          let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()} };
+          let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()}, isDraft: false };
           await ProductServiceRecords.updateMany(
             queryToUpdateRecords, 
             { $set: { isHistory: true } } 
@@ -590,7 +616,7 @@ function getDocumentFromReq(req, reqType){
     serviceRecordConfig, serviceId, serviceDate, versionNo, customer, site, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
-    technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
+    technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived, isDraft
   } = req.body;
   
   let doc = {};
@@ -698,6 +724,11 @@ function getDocumentFromReq(req, reqType){
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
   }
+
+  if ("isDraft" in req.body){
+    doc.isDraft = isDraft;
+  }
+  
 
   if (reqType == "new" && "loginUser" in req.body ){
     doc.createdBy = loginUser.userId;

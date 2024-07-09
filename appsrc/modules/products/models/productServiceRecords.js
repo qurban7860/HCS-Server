@@ -75,6 +75,9 @@ const docSchema = new Schema({
   isHistory: { type: Boolean, default: false },
   // just indication of current active record.
 
+  isDraft: { type: Boolean, default: false },
+  //indication of current active record status.
+
   archivedByMachine: {type: Boolean, default: false},
 },
 {
