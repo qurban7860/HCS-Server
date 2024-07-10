@@ -409,6 +409,19 @@ const processAWSFile = async (data) => {
   });
 };
 
+const deleteFile = async ( fileName ) => {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: fileName,
+  };
+
+  try {
+    await s3.deleteObject( params ).promise();
+  } catch (err) {
+    console.error(`Error deleting file:`, err);
+  }
+};
+
 module.exports = {
   sendEmail,
   sendEmailWithRawData,
@@ -421,5 +434,6 @@ module.exports = {
   generateEtag,
   processImageFile,
   processAWSFile,
+  deleteFile,
   s3
 };

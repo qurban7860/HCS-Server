@@ -37,6 +37,13 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
   // technician information who performed service process.
   
+
+  serviceRecordUid: { type: String, required: true  },
+  //indication of current active record status.
+
+  status: { type: String, enum: ['DRAFT','SUBMITTED', 'APPROVED'], default: 'DRAFT' },
+  //indication of current active record status.
+
   technicianNotes: { type: String },
   // operator comments against this record.
 
@@ -74,9 +81,6 @@ const docSchema = new Schema({
 
   isHistory: { type: Boolean, default: false },
   // just indication of current active record.
-
-  isDraft: { type: Boolean, default: false },
-  //indication of current active record status.
 
   archivedByMachine: {type: Boolean, default: false},
 },

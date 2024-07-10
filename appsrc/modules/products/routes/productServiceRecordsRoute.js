@@ -27,8 +27,6 @@ const baseRouteForObject = `/machines/:machineId/serviceRecords`;
 
 router.use(checkAuth, checkCustomer);
 
-router.post(`${baseRouteForObject}/new`, controller.getNewProductServiceRecord);
-
 router.get(`${baseRouteForObject}/:id`, controller.getProductServiceRecord);
 
 router.get(`${baseRouteForObject}/:id/values`, controller.getProductServiceRecordWithIndividualDetails);
