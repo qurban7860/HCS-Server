@@ -19,7 +19,7 @@ const docSchema = new Schema({
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
 
-  versionNo: { type: Number,  required: true,  default: '1'},
+  versionNo: { type: Number, },
   // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
@@ -37,7 +37,6 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
   // technician information who performed service process.
   
-
   serviceRecordUid: { type: String, required: true  },
   //indication of current active record status.
 

@@ -297,7 +297,7 @@ exports.getProductServiceRecords = async (req, res, next) => {
 exports.deleteProductServiceRecord = async (req, res, next) => {
   try{
     req.body.isArchived = true;
-    const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id }).select('isDraft')
+    const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id }).select('status')
     if( serviceRecObj?.status?.toLowerCase() === 'draft'){
       await ProductServiceRecordValueFile.updateMany( { serviceRecord: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceRecordFiles.updateMany( { machineServiceRecord: req.params.id }, { $set: { isArchived: true } } );
@@ -345,11 +345,10 @@ exports.postProductServiceRecord = async (req, res, next) => {
   
   const machine = await Product.findById(req.params.machineId)
   
-  let productServiceRecordObject = getDocumentFromReq(req, 'new');
-  productServiceRecordObject.versionNo = 1;
+  let productServiceRecordObject = await getDocumentFromReq(req, 'new');
   productServiceRecordObject.status = 'DRAFT';
   productServiceRecordObject.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
-  productServiceRecordObject.serviceId = productServiceRecordObject._id;
+  productServiceRecordObject.serviceId = productServiceRecordObject?._id;
 
   this.dbservice.postObject(productServiceRecordObject, callbackFunc);
 
@@ -529,7 +528,6 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
   };
   if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
     email.toUsers.push(toUser.id);
-
     if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
       email.customer = toUser.customer.id;
     } else {
@@ -553,84 +551,95 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
 
 exports.patchProductServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    
-    if(!req.body.loginUser)
-      req.body.loginUser = await getToken(req);
+  if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id) ) {
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  }
 
-    if(req.body.isArchived == true ) {
+  if (!req.body.loginUser) {
+    req.body.loginUser = await getToken(req);
+  }
+
+  if (req.body.isArchived === true) {
+    try {
       const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-    } else if( req.body?.status?.toLowerCase() === 'draft' ){
-      const findServiceRecord = ProductServiceRecords.findById(req.params?.id )
-      const findServiceRecords = ProductServiceRecords.find({ serviceId: serviceRecordData?.serviceId } )
-      if(Array.isArray(findServiceRecords) &&  findServiceRecords?.length < 2 && findServiceRecords?.length > 0 && findServiceRecords[0]?._id !== findServiceRecord?._id  ) {
-        return res.status(400).send('Service Record already in Draft!');
-      } else {
-        await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-        return res.status(400).send('Draft Service Record updated!');
-      }
-    } else {
-      let productServiceRecordObject 
-      let parentProductServiceRecordObject = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
-      
-      productServiceRecordObject.versionNo = parentProductServiceRecordObject.versionNo + 1;
-      productServiceRecordObject.serviceId = parentProductServiceRecordObject.serviceId;
-      const serviceRecordStatus = req.body?.status?.toLowerCase();
-      if(serviceRecordStatus === 'submitted' || serviceRecordStatus === 'approved' ){
-        productServiceRecordObject = getDocumentFromReq(req);
-        await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc );
-      }else {
-        productServiceRecordObject = getDocumentFromReq(req, 'new');
-        await this.dbservice.postObject(productServiceRecordObject, callbackFunc);
-      }
-      
-      async function callbackFunc(error, result) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-            error._message
-            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-        } else {
-          let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  result._id.toString()}, isDraft: false };
-          await ProductServiceRecords.updateMany(
-            queryToUpdateRecords, 
-            { $set: { isHistory: true } } 
-          );
-  
-          if(req.body.serviceRecordConfig && 
-            Array.isArray(req.body.checkItemRecordValues) &&
-            req.body.checkItemRecordValues.length>0) {
-            if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-            for(let recordValue of req.body.checkItemRecordValues) {
-                recordValue.loginUser = req.body.loginUser;
-                recordValue.serviceRecord = productServiceRecordObject._id;
-                recordValue.serviceId = req.body.serviceId;
-                let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-                
-                await ProductServiceRecordValue.updateMany({machineCheckItem: recordValue.machineCheckItem, 
-                checkItemListId: recordValue.checkItemListId},{$set: {isHistory: true}});
-               
+      return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+    } catch (error) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
+    }
+  }
 
-                  let serviceRecordValues = await serviceRecordValue.save((error, data) => {
-                  if (error) {
-                    console.error(error);
-                  }
-                });
-              }
-            }
+  const findServiceRecord = await ProductServiceRecords.findById(req.params.id);
+  if (req.body.status?.toLowerCase() === 'draft' ) {
+    delete req.body.versionNo;
+    const findServiceRecords = await ProductServiceRecords.find({
+      serviceId: findServiceRecord?.serviceId,
+      status: 'DRAFT'
+    }).sort({ _id: -1 });
+
+    if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 || !findServiceRecords?.some((fsr)=>fsr?._id == req.params.id ) )) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Service Record already in Draft!');
+    } else {
+      try{
+        await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+        return res.status(StatusCodes.OK).send('Draft Service Record updated!');
+      } catch(e){
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
+      }
+    }
+  } else {
+    let productServiceRecordObject = {};
+    const parentProductServiceRecordObject = await ProductServiceRecords.findOne({
+      serviceId: req.body.serviceId,
+      isActive: true,
+      isArchived: false
+    }).sort({ _id: -1 });
+
+    productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo ?? 0) + 1;
+    productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
+
+    if (req.body.update) {
+      productServiceRecordObject = await getDocumentFromReq(req);
+      await this.dbservice.patchObject(ProductServiceRecords, req.params.id, productServiceRecordObject, callbackFunc);
+    } else {
+      productServiceRecordObject = getDocumentFromReq(req, 'new');
+      await this.dbservice.postObject(ProductServiceRecords, productServiceRecordObject, callbackFunc);
+    }
+  }
+
+  async function callbackFunc(error, result) {
+    if (error) {
+      logger.error(new Error(error));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    } else {
+      try {
+        const queryToUpdateRecords = {
+          serviceId: req.body.serviceId,
+          _id: { $ne: result?._id ? result._id.toString() : req.params.id },
+          isDraft: false
+        };
+        await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
+
+        if (req.body.serviceRecordConfig && Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length > 0) {
+          for (let recordValue of req.body.checkItemRecordValues) {
+            recordValue.loginUser = req.body.loginUser;
+            recordValue.serviceRecord = productServiceRecordObject._id;
+            recordValue.serviceId = req.body.serviceId;
+            let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+
+            await ProductServiceRecordValue.updateMany({
+              machineCheckItem: recordValue.machineCheckItem,
+              checkItemListId: recordValue.checkItemListId
+            }, { $set: { isHistory: true } });
+
+            await serviceRecordValue.save();
           }
-          // let query__ = {serviceId: result.serviceId,   $nor: [
-          //   { serviceRecord: result._id }
-          // ]};
-          // console.log("query__", query__);
-          // await ProductServiceRecordValue.updateMany(query__,{$set: {isHistory: false}});
-          res.status(StatusCodes.CREATED).json({ serviceRecord: result });
         }
-      }  
+
+        return res.status(StatusCodes.CREATED).json({ serviceRecord: result });
+      } catch (updateError) {
+        logger.error(new Error(updateError));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(updateError._message);
+      }
     }
   }
 };
@@ -673,7 +682,7 @@ function getDocumentFromReq(req, reqType){
     doc.serviceId = serviceId;
   }
   
-  if ("versionNo" in req.body){
+  if ("versionNo" in req.body && reqType != "new"){
     doc.versionNo = versionNo;
   }
   
