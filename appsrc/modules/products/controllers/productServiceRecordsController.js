@@ -58,7 +58,8 @@ exports.getProductServiceRecord = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      response = JSON.parse(JSON.stringify(response));     
+      response = JSON.parse(JSON.stringify(response));  
+
       const queryToFindCurrentVer = {serviceId: response.serviceId, isActive: true, isArchived: false, isHistory: false};
       const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate').sort({_id: -1}).lean();
       response.currentVersion = currentVersion;
@@ -74,69 +75,6 @@ exports.getProductServiceRecord = async (req, res, next) => {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
 
-      // fetching active values.
-      let listProductServiceRecordValues = await ProductServiceRecordValue.find({
-        serviceId: response.serviceId,
-        isHistory: false, isActive: true, isArchived: false
-      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
-      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
-
-      // fetching history values.
-      let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
-        serviceId: response.serviceId,
-        isHistory: true, isActive: true, isArchived: false
-      }, {serviceRecord:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]).sort({createdAt: -1});
-      listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
-
-    
-      if(response.serviceRecordConfig && 
-        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
-        response.serviceRecordConfig.checkItemLists.length>0) {
-        let index = 0;
-        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
-          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-            let indexP = 0;
-            let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}});
-            productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
-
-            for(let paramListId of checkParam.checkItems) { 
-              // let productCheckItemObject = await ProductCheckItem.findById(paramListId);
-              let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
-              
-              if(!productCheckItemObject)
-                continue;
-              
-              let PSRV = listProductServiceRecordValues.find((psrval)=>              
-                psrval.machineCheckItem.toString() == paramListId && 
-                psrval.checkItemListId.toString() == checkParam._id
-              );
-
-              let matchedHistoryVal = listProductServiceRecordHistoryValues.filter((psrval) => {
-                return (
-                  psrval.machineCheckItem.toString() === paramListId &&
-                  psrval.checkItemListId.toString() === checkParam._id
-                );
-              });
-
-              if(PSRV) {
-                productCheckItemObject.recordValue = {
-                  serviceRecord : PSRV.serviceRecord,
-                  checkItemValue : PSRV.checkItemValue,
-                  comments : PSRV.comments,
-                  createdBy : PSRV.createdBy,
-                  createdAt : PSRV.createdAt
-                }
-              }
-              if(matchedHistoryVal)
-                productCheckItemObject.historicalData = matchedHistoryVal;
-
-              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
-              indexP++;
-            }
-          }
-          index++;
-        }
-      }
         const serviceRecordFileQuery = { machineServiceRecord:{ $in: req.params.id }, isArchived: false };
         let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
         if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
@@ -569,12 +507,16 @@ exports.patchProductServiceRecord = async (req, res, next) => {
   }
 
   const findServiceRecord = await ProductServiceRecords.findById(req.params.id);
+  
   if (req.body.status?.toLowerCase() === 'draft' ) {
     delete req.body.versionNo;
     const findServiceRecords = await ProductServiceRecords.find({
       serviceId: findServiceRecord?.serviceId,
       status: 'DRAFT'
     }).sort({ _id: -1 });
+
+    console.log('findServiceRecord : ',findServiceRecord);
+    console.log('findServiceRecords : ',findServiceRecords);
 
     if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 || !findServiceRecords?.some((fsr)=>fsr?._id == req.params.id ) )) {
       return res.status(StatusCodes.BAD_REQUEST).send('Service Record already in Draft!');
@@ -587,6 +529,7 @@ exports.patchProductServiceRecord = async (req, res, next) => {
       }
     }
   } else {
+
     let productServiceRecordObject = {};
     const parentProductServiceRecordObject = await ProductServiceRecords.findOne({
       serviceId: req.body.serviceId,
@@ -594,13 +537,13 @@ exports.patchProductServiceRecord = async (req, res, next) => {
       isArchived: false
     }).sort({ _id: -1 });
 
-    productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo ?? 0) + 1;
     productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
-
-    if (req.body.update) {
+    
+    if (req.body?.update) {
       productServiceRecordObject = await getDocumentFromReq(req);
       await this.dbservice.patchObject(ProductServiceRecords, req.params.id, productServiceRecordObject, callbackFunc);
     } else {
+      productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo ?? 0) + 1;
       productServiceRecordObject = getDocumentFromReq(req, 'new');
       await this.dbservice.postObject(ProductServiceRecords, productServiceRecordObject, callbackFunc);
     }

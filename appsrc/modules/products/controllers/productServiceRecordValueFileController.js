@@ -232,7 +232,6 @@ async function generateThumbnail(filePath) {
     await sharp(filePath)
       .resize(thumbnailSize, null)
       .toFile(thumbnailPath);
-
     return thumbnailPath;
     
   } catch (error) {
@@ -256,7 +255,6 @@ async function getToken(req){
     throw new Error('Token verification failed');
   }
 }
-
 
 function getServiceRecordValueFileFromReq(req, reqType) {
 
@@ -339,3 +337,4 @@ function getServiceRecordValueFileFromReq(req, reqType) {
   }
   return doc;
 }
+
