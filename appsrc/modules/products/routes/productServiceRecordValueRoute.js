@@ -27,7 +27,7 @@ router.get(`${baseRouteForObject}/`, controller.getProductServiceRecordValues);
 
 router.get(`${baseRouteForObject}/:serviceId/checkItems`, controller.getProductServiceRecordCheckItems);
 
-router.post(`${baseRouteForObject}/`,uploadHandler, checkMaxCount, imageOptimization, controller.postProductServiceRecordValue,  );
+router.post(`${baseRouteForObject}/`,uploadHandler, checkMaxCount, imageOptimization, controller.postProductServiceRecordValue );
 
 router.patch(`${baseRouteForObject}/:id`, verifyDelete, uploadHandler, checkMaxCount, imageOptimization, controller.patchProductServiceRecordValue, );
 

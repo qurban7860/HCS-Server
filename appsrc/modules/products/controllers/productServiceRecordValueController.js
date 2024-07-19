@@ -156,6 +156,7 @@ exports.deleteProductServiceRecordValue = async (req, res, next) => {
 
 exports.postProductServiceRecordValue = async (req, res, next) => {
   try{
+    // console.log('req.body : ',req)
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -176,7 +177,6 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
           );
         } else {
           response.machineId = req.params.machineId;
-
           const checkItemFiles = await handleServiceRecordValueFiles(response)
           await ProductServiceRecordValue.updateOne({_id: response._id},{ $set: { files: checkItemFiles } } )
           res.status(StatusCodes.CREATED).json({ ProductServiceRecordValue: response });
@@ -203,40 +203,15 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
     }
 
-    let file = {};
-        
-    if(req.files && req.files.document)
-      file = req.files.document[0];
-
-    if(req.file && req.file.document)
-      file = req.file.document;
-
-    if(file && file.originalname) {
-        
-      const processedFile = await processFile(file, req.body.loginUser.userId);
-      file.path = processedFile.s3FilePath;
-      file.fileType  = processedFile.type
-      file.extension = processedFile.fileExt;
-      req.body.awsETag = processedFile.awsETag;
-      req.body.eTag = processedFile.eTag;
-
-      if(processedFile.base64thumbNailData)
-        file.thumbnail = processedFile.base64thumbNailData;
-
-      file.name = processedFile.name;
-      req.body.files = [file];
-    }
-
     
     this.dbservice.patchObject(ProductServiceRecordValue, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
+    async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
+        await handleServiceRecordValueFiles(result)
+        await ProductServiceRecordValue.updateOne({_id: result._id},{ $set: { files: checkItemFiles } } )
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }

@@ -34,9 +34,6 @@ exports.getProductServiceRecordValueFiles = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if( req?.machineServiceRecord ){
-        res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Service Record saved with Files successfully!', false));
-      }
       res.json(response);
     }
   }
@@ -77,7 +74,7 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
-        req.body.machineServiceRecord = machineServiceRecord;
+        req.body.serviceRecord = machineServiceRecord;
         req.body.name = processedFile.name;
         
         if(processedFile.base64thumbNailData){
