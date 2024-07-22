@@ -12,7 +12,7 @@ const awsService = require('../../../../appsrc/base/aws');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordValue } = require('../models');
+const { ProductServiceRecords, ProductCheckItem, ProductServiceRecordValue, ProductServiceRecordValueFile } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -53,6 +53,92 @@ exports.getProductServiceRecordValues = async (req, res, next) => {
       res.json(response);
     }
   }
+}
+
+exports.getProductServiceRecordCheckItems = async (req, res, next) => {
+
+  let populateObject = [
+    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists '},
+    {path: 'createdBy', select: 'name'},
+    {path: 'updatedBy', select: 'name'}
+  ];
+  try{
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.serviceId, populateObject, callbackFunc);
+
+  async function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+
+      // fetching active values.
+      let listProductServiceRecordValues = await ProductServiceRecordValue.find({
+        serviceId: response.serviceId,
+        isHistory: false, isActive: true, isArchived: false
+      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
+      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
+
+      // fetching history values.
+      let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
+        serviceId: response.serviceId,
+        isHistory: true, isActive: true, isArchived: false
+      }, {serviceRecord:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]).sort({createdAt: -1});
+      listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
+
+    
+      if(response.serviceRecordConfig && 
+        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
+        response.serviceRecordConfig.checkItemLists.length>0) {
+        let index = 0;
+        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
+          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
+            let indexP = 0;
+            let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}});
+            productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
+
+            for(let paramListId of checkParam.checkItems) { 
+              let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
+              
+              if(!productCheckItemObject)
+                continue;
+              
+              let PSRV = listProductServiceRecordValues.find((psrval)=>              
+                psrval.machineCheckItem.toString() == paramListId && 
+                psrval.checkItemListId.toString() == checkParam._id
+              );
+
+              let matchedHistoryVal = listProductServiceRecordHistoryValues.filter((psrval) => {
+                return (
+                  psrval.machineCheckItem.toString() === paramListId &&
+                  psrval.checkItemListId.toString() === checkParam._id
+                );
+              });
+
+              if(PSRV) {
+                productCheckItemObject.recordValue = {
+                  serviceRecord : PSRV.serviceRecord,
+                  checkItemValue : PSRV.checkItemValue,
+                  comments : PSRV.comments,
+                  createdBy : PSRV.createdBy,
+                  createdAt : PSRV.createdAt
+                }
+              }
+              if(matchedHistoryVal)
+                productCheckItemObject.historicalData = matchedHistoryVal;
+
+              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
+              indexP++;
+            }
+          }
+          index++;
+        }
+      }
+      res.json(response?.serviceRecordConfig);
+    }
+  }
+} catch(e){
+  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+}
 };
 
 exports.deleteProductServiceRecordValue = async (req, res, next) => {
@@ -69,56 +155,36 @@ exports.deleteProductServiceRecordValue = async (req, res, next) => {
 };
 
 exports.postProductServiceRecordValue = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    // let alreadyExists = await ProductServiceRecordValue.findOne({name:req.body.name});
-    // if(alreadyExists) {
-    //   return res.status(StatusCodes.BAD_REQUEST).send('Product Service Record with this name already Exists!');
-    // }
+  try{
+    // console.log('req.body : ',req)
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+      req.body.machineId = req.params.machineId;
+      req.body.id = req.params.id;
 
-    if(!req.body.loginUser){
-      req.body.loginUser = await getToken(req);
-    }
-
-    let file = {};
-        
-    if(req.files && req.files.document)
-      file = req.files.document[0];
-
-    if(req.file && req.file.document)
-      file = req.file.document;
-
-    if(file && file.originalname) {
-        
-      const processedFile = await processFile(file, req.body.loginUser.userId);
-      file.path = processedFile.s3FilePath;
-      file.fileType  = processedFile.type
-      file.extension = processedFile.fileExt;
-      req.body.awsETag = processedFile.awsETag;
-      req.body.eTag = processedFile.eTag;
-      
-      
-      if(processedFile.base64thumbNailData)
-        file.thumbnail = processedFile.base64thumbNailData;
-
-      file.name = processedFile.name;
-      req.body.files = [file];
-    }
-    
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.CREATED).json({ ProductServiceRecordValue: response });
+      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
+      async function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          response.machineId = req.params.machineId;
+          const checkItemFiles = await handleServiceRecordValueFiles(response)
+          await ProductServiceRecordValue.updateOne({_id: response._id},{ $set: { files: checkItemFiles } } )
+          res.status(StatusCodes.CREATED).json({ ProductServiceRecordValue: response });
+        }
       }
     }
+  } catch (e) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
@@ -137,46 +203,71 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
     }
 
-    let file = {};
-        
-    if(req.files && req.files.document)
-      file = req.files.document[0];
-
-    if(req.file && req.file.document)
-      file = req.file.document;
-
-    if(file && file.originalname) {
-        
-      const processedFile = await processFile(file, req.body.loginUser.userId);
-      file.path = processedFile.s3FilePath;
-      file.fileType  = processedFile.type
-      file.extension = processedFile.fileExt;
-      req.body.awsETag = processedFile.awsETag;
-      req.body.eTag = processedFile.eTag;
-
-      if(processedFile.base64thumbNailData)
-        file.thumbnail = processedFile.base64thumbNailData;
-
-      file.name = processedFile.name;
-      req.body.files = [file];
-    }
-
     
     this.dbservice.patchObject(ProductServiceRecordValue, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
+    async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
+        await handleServiceRecordValueFiles(result)
+        await ProductServiceRecordValue.updateOne({_id: result._id},{ $set: { files: checkItemFiles } } )
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
   }
 };
 
+async function handleServiceRecordValueFiles( checkitem ){
+  try{
+      const machine = checkitem.machineId;
+      const machineServiceRecord = checkitem.id;
+
+      let files = [];
+      let savedFiles = [];
+
+      if(req?.files?.images){
+        files = req.files.images;
+      }
+      for(let file of files) {
+        if(!file || !file.originalname) {
+          console.log('No File present for uploading')
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+        const processedFile = await processFile(file, req.body.loginUser.userId);
+        req.body.path = processedFile.s3FilePath;
+        req.body.fileType =req.body.type = processedFile.type
+        req.body.extension = processedFile.fileExt;
+        req.body.awsETag = processedFile.awsETag;
+        req.body.eTag = processedFile.eTag;
+        req.body.machine = machine;
+        req.body.machineServiceRecord = machineServiceRecord;
+        req.body.name = processedFile.name;
+
+        if(processedFile.base64thumbNailData){
+          req.body.thumbnail = processedFile.base64thumbNailData;
+          req.body.name = processedFile.name;
+        }
+
+        const serviveRecordCheckItemFileObject = await getServiceRecordValueFileFromReq(req, 'new');
+
+        await this.dbservice.postObject(serviveRecordCheckItemFileObject, callbackFunc);
+        function callbackFunc(error, response) {
+          if (error) {
+            logger.error(new Error(error));
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          } else {
+            savedFiles.push(response?._id);
+          }
+        }
+      }
+      return savedFiles;
+  }catch(e) {
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+  }
+}
 
 async function readFileAsBase64(filePath) {
   try {
@@ -327,4 +418,87 @@ function getDocumentFromReq(req, reqType){
   //console.log("doc in http req: ", doc);
   return doc;
 
+}
+
+
+function getServiceRecordValueFileFromReq(req, reqType) {
+
+  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+
+  let doc = {};
+
+  if (reqType && reqType == "new") {
+    doc = new ProductServiceRecordValueFile({});
+  }
+
+  if ("serviceRecord" in req.body) {
+    doc.serviceRecord = serviceRecord;
+  }
+
+  if ("serviceId" in req.body) {
+    doc.serviceId = serviceId;
+  }
+
+  if ("machineCheckItem" in req.body) {
+    doc.machineCheckItem = machineCheckItem;
+  }
+
+  if ("checkItemListId" in req.body) {
+    doc.checkItemListId = checkItemListId;
+  }
+
+  if ("name" in req.body) {
+    doc.name = name;
+  }
+
+  if ("path" in req.body) {
+    doc.path = path;
+  }
+
+  if ("extension" in req.body) {
+    doc.extension = extension;
+  }
+
+  if ("thumbnail" in req.body) {
+    doc.thumbnail = thumbnail;
+  }
+
+  if ("fileType" in req.body) {
+    doc.fileType = fileType;
+  }
+
+  if ("awsETag" in req.body) {
+    doc.awsETag = awsETag;
+  }
+
+  if ("eTag" in req.body) {
+    doc.eTag = eTag;
+  }
+  
+  if ("isActive" in req.body) {
+    doc.isActive = isActive;
+  }
+
+  if ("user" in req.body) {
+    doc.user = user;
+  }
+
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body) {
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  }
+  return doc;
 }

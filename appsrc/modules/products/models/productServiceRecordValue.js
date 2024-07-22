@@ -28,7 +28,7 @@ const docSchema = new Schema({
   comments: {type: String}, 
   // comments against this checkitem
   
-  files : [],
+  files : [{ type: Schema.Types.ObjectId , ref: 'MachineServiceRecordValueFile'}],
   // list of documents/images related to this checkitem
 
   isHistory: {type: Boolean, default: false},

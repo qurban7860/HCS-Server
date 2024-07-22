@@ -28,6 +28,7 @@ const { SecurityUser } = require('../../security/models')
 const { Region } = require('../../regions/models')
 const { Country } = require('../../config/models')
 const ObjectId = require('mongoose').Types.ObjectId;
+const { fDateTime, fDate } = require('../../../../utils/formatTime');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -1013,6 +1014,7 @@ exports.transferOwnership = async (req, res, next) => {
 
               if (parentMachineUpdated) {
                 let machineAuditLog = createMachineAuditLogRequest(parentMachine, 'Transfer', req.body.loginUser.userId);
+                
                 //await postProductAuditLog(machineAuditLog);
                 res.status(StatusCodes.CREATED).json({ Machine: newMachineAfterTranspher });
               }
@@ -1699,13 +1701,13 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
   const securityUserName = securityUser?.name;
   const allManagers = [ ...statusData?.accountManager, ...statusData?.projectManager, ...statusData?.supportManager ];
   const emailsSet = filterAndDeduplicateEmails( allManagers )
-  const emalsToSend = Array.from( emailsSet ) 
+  const emailsToSend = Array.from( emailsSet ) 
   const machineCustomer = statusData?.machineCustomer;
   const machineInstalationSite = statusData?.machineInstalationSite;
 
   if(statusData && securityUserName) {
     let params = {
-      to: emalsToSend,
+      to: emailsToSend,
       subject: emailSubject,
       html: true
     };
@@ -1723,10 +1725,10 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
     const serialNo = statusData?.machineSerialNo;
     const beforeStatus = statusData?.beforeStatus;
     const afterStatus = statusData?.newStatus?.name;
-    const manufactureDateVal = statusData?.manufactureDate ? formatDate( new Date(statusData?.manufactureDate)) : null;
-    const shippingDateVal = statusData?.shippingDate ? formatDate( new Date(statusData?.shippingDate)) : null;
-    const decommissionedDateVal = statusData?.decommissionedDate ? formatDate( new Date(statusData?.decommissionedDate)) : null;
-    const installationDateVal = statusData?.installationDate ? formatDate( new Date(statusData?.installationDate)) : null;
+    const manufactureDateVal = statusData?.manufactureDate ? fDate( new Date(statusData?.manufactureDate)) : null;
+    const shippingDateVal = statusData?.shippingDate ? fDate( new Date(statusData?.shippingDate)) : null;
+    const decommissionedDateVal = statusData?.decommissionedDate ? fDate( new Date(statusData?.decommissionedDate)) : null;
+    const installationDateVal = statusData?.installationDate ? fDate( new Date(statusData?.installationDate)) : null;
 
     let hostName = 'portal.howickltd.com';
     if (process.env.CLIENT_HOST_NAME)
@@ -1758,33 +1760,12 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
         let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, serialNo, serialNos, beforeStatus, afterStatus,
           manufactureDate, shippingDate, decommissionedDate, installationDate, machineCustomer, machineInstalationSite, footerContent })
         params.htmlData = htmlData;
-        await awsService.sendEmail(params, emalsToSend );
+        await awsService.sendEmail(params, emailsToSend );
       })
     })
   }
 }
 
-function formatDate(date) {
-  if(date) {
-    const day = date.getDate();
-    const monthIndex = date.getMonth();
-    const year = date.getFullYear();
-  
-    // Array of month names
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
-  
-    // Suffix for day (st, nd, rd, th)
-    const suffixes = ["th", "st", "nd", "rd"];
-    const suffix = suffixes[(day - 1) % 10] || suffixes[0];
-  
-    return `${day} ${months[monthIndex]} ${year}`;
-  } else {
-    return "";
-  }
-}
 
 function fetchAddressCSV(address) {
   if (!address || typeof address !== 'object') {

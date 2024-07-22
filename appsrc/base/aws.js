@@ -389,14 +389,7 @@ const processAWSFile = async (data) => {
   const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
   const imageBuffer = Buffer.from(base64Data, 'base64');
   const ImageResolution = await getImageResolution(imageBuffer);
-  console.log("ImageResolution", ImageResolution);
   const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
-  console.log("desiredQuality", desiredQuality);
-
-  // const logoPath = 'logo.svg';
-  // const logoBuffer = fs.readFileSync(logoPath);
-  // console.log("logoBuffer", logoBuffer);
-  // .composite([{ input: logoBuffer, gravity: 'southeast' }])
 
   return new Promise((resolve, reject) => {
     sharp(imageBuffer)
@@ -409,12 +402,24 @@ const processAWSFile = async (data) => {
           console.error('Error resizing image:', resizeErr);
           reject(resizeErr);
         } else {
-          console.log("outputBuffer", outputBuffer);
           const outputBuffer__ = outputBuffer.toString('base64');
           resolve(outputBuffer__);
         }
       });
   });
+};
+
+const deleteFile = async ( fileName ) => {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: fileName,
+  };
+
+  try {
+    await s3.deleteObject( params ).promise();
+  } catch (err) {
+    console.error(`Error deleting file:`, err);
+  }
 };
 
 module.exports = {
@@ -429,5 +434,6 @@ module.exports = {
   generateEtag,
   processImageFile,
   processAWSFile,
+  deleteFile,
   s3
 };

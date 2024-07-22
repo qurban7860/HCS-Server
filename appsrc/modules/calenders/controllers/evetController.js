@@ -180,7 +180,17 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const Site = eventData?.site?.name;
     const description = eventData?.description;
     const createdBy = eventData?.createdBy?.name;
-    const createdAt = eventData?.createdBy?.name;
+    const createdAt = new Date();
+
+    const emailLogParams = {
+      subject: emailSubject,
+      toUser: securityUser,
+      toEmails: primaryEmail,
+      customer: eventData?.customer?._id || null,
+      createdBy: securityUser?._id,
+      updatedBy: securityUser?._id,
+      ccEmails: notifyContactsEmails,
+    }
 
     const options = {
       timeZone: 'Pacific/Auckland', // New Zealand time zone
@@ -192,7 +202,6 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const startTime = `${ eventData?.start ? fDateTime(eventData?.start) : '' }`?.toString();
     const endTime = `${ eventData?.end ? fDateTime(eventData?.end) : ''}`?.toString();
 
-    console.log(startTime, endTime )
     let hostName = 'portal.howickltd.com';
 
     if (process.env.CLIENT_HOST_NAME)
@@ -202,7 +211,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
-    const emailResponse = await addEmail(params.subject, "abbc", securityUser?.email, params.to, '', params.ccAddresses );
+    const emailResponse = await addEmail( emailLogParams );
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -319,33 +328,35 @@ function getDocumentFromReq(req, reqType) {
   return doc;
 }
 
-async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
+async function addEmail(emailParams) {
+  const { subject, toUser, toEmails, customer, createdBy, updatedBy, ccEmails = [],bccEmails = [] } = emailParams
+  const toUsers = [];
   var email = {
     subject,
-    body,
-    toEmails:emailAddresses,
+    body: '' ,
+    toEmails,
     fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer:null,
+    customer,
     toContacts:[],
-    toUsers:[],
+    toUsers,
     ccEmails,
     bccEmails,
     isArchived: false,
     isActive: true,
     // loginIP: ip,
-    createdBy: '',
-    updatedBy: '',
+    createdBy,
+    updatedBy,
     createdIP: ''
   };
   
-  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
-    email.toUsers.push(toUser.id);
-    if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
-      email.customer = toUser.customer.id;
-    }
+  if(toUser && mongoose.Types.ObjectId.isValid(toUser._id)) {
+    email.toUsers.push(toUser._id);
+    // if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer)) {
+    //   email.customer = toUser.customer;
+    // }
 
-    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
-      email.toContacts.push(toUser.contact.id);
+    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact)) {
+      email.toContacts.push(toUser.contact);
     }
   }
   
