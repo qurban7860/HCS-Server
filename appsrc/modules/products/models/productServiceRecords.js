@@ -51,7 +51,6 @@ const docSchema = new Schema({
   
   textAfterCheckItems: { type: String },
   // display this text before fields
-
   
   serviceNote: { type: String },
   //some notes regarding service/installation/training,
