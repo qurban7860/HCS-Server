@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const fs = require('fs');
+const path = require('path');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
