@@ -218,7 +218,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
   }
 };
 
-async function handleServiceRecordValueFiles( checkitem, res ){
+async function handleServiceRecordValueFiles( checkitem, req, res ){
   try{
       const machine = checkitem.machineId;
       const machineServiceRecord = checkitem.id;
