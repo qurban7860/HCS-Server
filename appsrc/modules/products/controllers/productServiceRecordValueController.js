@@ -177,7 +177,7 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
           );
         } else {
           response.machineId = req.params.machineId;
-          const checkItemFiles = await handleServiceRecordValueFiles(response)
+          const checkItemFiles = await handleServiceRecordValueFiles( response, res )
           await ProductServiceRecordValue.updateOne({_id: response._id},{ $set: { files: checkItemFiles } } )
           res.status(StatusCodes.CREATED).json({ ProductServiceRecordValue: response });
         }
@@ -210,7 +210,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
-        await handleServiceRecordValueFiles(result)
+        await handleServiceRecordValueFiles(result, res)
         await ProductServiceRecordValue.updateOne({_id: result._id},{ $set: { files: checkItemFiles } } )
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -218,7 +218,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
   }
 };
 
-async function handleServiceRecordValueFiles( checkitem ){
+async function handleServiceRecordValueFiles( checkitem, res ){
   try{
       const machine = checkitem.machineId;
       const machineServiceRecord = checkitem.id;
