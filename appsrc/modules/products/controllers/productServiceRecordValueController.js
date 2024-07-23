@@ -22,13 +22,10 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
-//this.populate = {path: '<field name>', model: '<model name>', select: '<space separated field names>'};
-
 
 exports.getProductServiceRecordValue = async (req, res, next) => {
   this.dbservice.getObjectById(ProductServiceRecordValue, this.fields, req.params.id, this.populate, callbackFunc);
@@ -74,19 +71,22 @@ exports.getProductServiceRecordCheckItems = async (req, res, next) => {
     } else {
 
       // fetching active values.
-      let listProductServiceRecordValues = await ProductServiceRecordValue.find({
-        serviceId: response.serviceId,
-        isHistory: false, isActive: true, isArchived: false
-      }, {checkItemValue: 1, comments: 1, serviceRecord: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]);
+      let listProductServiceRecordValues = await ProductServiceRecordValue.find(
+      { serviceId: response.serviceId, isHistory: false, isActive: true, isArchived: false }, 
+      {checkItemValue: 1, comments: 1, serviceRecord: 1, files:1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}
+      ).populate([{path: 'createdBy', select: 'name'}, {path: 'files', select: 'name path thumbnail extension fileType awsETag eTag'}, {path: 'serviceRecord', select: 'versionNo'}])
+      .sort({createdAt: -1});
       listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
-
+console.log('listProductServiceRecordValues : ',listProductServiceRecordValues);
       // fetching history values.
-      let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find({
-        serviceId: response.serviceId,
-        isHistory: true, isActive: true, isArchived: false
-      }, {serviceRecord:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}]).sort({createdAt: -1});
+      let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find(
+      {  serviceId: response.serviceId, isHistory: true, isActive: true, isArchived: false }, 
+      {serviceRecord:1, checkItemListId:1, machineCheckItem:1, files:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1}
+      ).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}])
+      .sort({createdAt: -1});
       listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
 
+console.log('listProductServiceRecordHistoryValues', listProductServiceRecordHistoryValues);
     
       if(response.serviceRecordConfig && 
         Array.isArray(response.serviceRecordConfig.checkItemLists) &&
@@ -97,7 +97,7 @@ exports.getProductServiceRecordCheckItems = async (req, res, next) => {
             let indexP = 0;
             let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}});
             productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
-
+console.log("productCheckItemObjects : ",productCheckItemObjects);
             for(let paramListId of checkParam.checkItems) { 
               let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
               
@@ -120,6 +120,7 @@ exports.getProductServiceRecordCheckItems = async (req, res, next) => {
                 productCheckItemObject.recordValue = {
                   serviceRecord : PSRV.serviceRecord,
                   checkItemValue : PSRV.checkItemValue,
+                  files: PSRV.files,
                   comments : PSRV.comments,
                   createdBy : PSRV.createdBy,
                   createdAt : PSRV.createdAt
@@ -178,9 +179,12 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
           );
         } else {
+          console.log("response : ", response)
           response.machineId = req.params.machineId;
-          const checkItemFiles = await handleServiceRecordValueFiles( response, req, res )
-          await ProductServiceRecordValue.updateOne({_id: response._id},{ $set: { files: checkItemFiles } } )
+          const checkItemFiles = await handleServiceRecordValueFiles( response, req, res, this.dbservice )
+          console.log("checkItemFiles : ",checkItemFiles)
+          const updatedObject = await ProductServiceRecordValue.updateOne({_id: response._id},{ $set: { files: checkItemFiles } } )
+          console.log("updatedObject : ",updatedObject)
           res.status(StatusCodes.CREATED).json({ ProductServiceRecordValue: response });
         }
       }
@@ -212,7 +216,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
-        await handleServiceRecordValueFiles(result, req, res)
+        await handleServiceRecordValueFiles(result, req, res, this.dbservice )
         await ProductServiceRecordValue.updateOne({_id: result._id},{ $set: { files: checkItemFiles } } )
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -220,7 +224,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
   }
 };
 
-async function handleServiceRecordValueFiles( checkitem, req, res ){
+async function handleServiceRecordValueFiles( checkitem, req, res, dbServices ){
   try{
       const machine = checkitem.machineId;
       const machineServiceRecord = checkitem.id;
@@ -253,17 +257,20 @@ async function handleServiceRecordValueFiles( checkitem, req, res ){
         }
 
         const serviveRecordCheckItemFileObject = await getServiceRecordValueFileFromReq(req, 'new');
-
-        await this.dbservice.postObject(serviveRecordCheckItemFileObject, callbackFunc);
-        function callbackFunc(error, response) {
-          if (error) {
-            logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-          } else {
-            savedFiles.push(response?._id);
-          }
-        }
+        serviveRecordCheckItemFileObject.save();
+        savedFiles.push(serviveRecordCheckItemFileObject?._id);
+        // console.log('serviveRecordCheckItemFileObject : ',serviveRecordCheckItemFileObject);
+        // await dbServices.postObject(getServiceRecordValueFileFromReq(req, 'new'), callbackFunc);
+        // function callbackFunc(error, response) {
+        //   if (error) {
+        //     logger.error(new Error(error));
+        //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+        //   } else {
+        //     savedFiles.push(response?._id);
+        //   }
+        // }
       }
+      console.log("savedFiles : ",savedFiles);
       return savedFiles;
   }catch(e) {
     console.log(e);

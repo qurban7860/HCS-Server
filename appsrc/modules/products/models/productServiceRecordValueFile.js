@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        machine: { type: Schema.Types.ObjectId , ref: 'Machine', required: true },
+        machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
         // machine information.
 
         serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true},
@@ -28,7 +28,7 @@ const docSchema = new Schema({
         path: { type: String },
         // file path 
 
-        fileType: {type: String, required: true},
+        fileType: {type: String },
         // image, video, text, word, excel, pdf , etc. 
 
         extension: {type: String},
