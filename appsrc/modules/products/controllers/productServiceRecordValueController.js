@@ -118,7 +118,7 @@ exports.getProductServiceRecordCheckItems = async (req, res, next) => {
                       machineCheckItem: PSRV?.machineCheckItem, 
                       checkItemListId: PSRV?.checkItemListId, 
                       isActive: true, isArchived: false }
-                    ).select('_id name extension fileType thumbnail ').lean()
+                    ).select('_id name extension fileType thumbnail path').lean()
 
                 productCheckItemObject.recordValue = {
                   serviceRecord : PSRV.serviceRecord,
