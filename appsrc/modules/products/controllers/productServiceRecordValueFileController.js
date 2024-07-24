@@ -147,7 +147,7 @@ exports.patchServiceRecordValueFile = async (req, res, next) => {
           req.body.name = processedFile.name;
         }
 
-        await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getDocumentFromReq(req), callbackFunc);
+        await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getServiceRecordValueFileFromReq(req), callbackFunc);
         function callbackFunc(error, response) {
           if (error) {
             logger.error(new Error(error));
@@ -215,7 +215,6 @@ exports.deleteServiceRecordValueFile = async (req, res, next) => {
   try {
     req.body.isActive = false;
     req.body.isArchived = true;
-
     await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getServiceRecordValueFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
       if (error) {
@@ -223,7 +222,8 @@ exports.deleteServiceRecordValueFile = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        console.log('result : ',result)
+        res.status(StatusCodes.OK).send("File Deleted successfully!");
       }
     }
   } catch (error) {
