@@ -142,12 +142,14 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     }
     const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
     for (const email of supportingContactsEmailsSet) {
-      notifyContactsEmailsSet.delete(email);
+      if(notifyContactsEmailsSet.has(email)){
+        notifyContactsEmailsSet.delete(email);
+      }
     }
 
     const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
     const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
-
+    // supportingContactsEmails.concat(notifyContactsEmails)
     eventData.supportingTechnicians.forEach(sp => {
       const technicianName = ` ${sp?.firstName?.trim() || ''} ${sp?.lastName?.trim() || ''}`;
       if (!uniqueTechnicians.has(technicianName)) {
@@ -158,22 +160,12 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const technicians = Array.from(uniqueTechnicians);
     let emalsToSend
 
-    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
-      emalsToSend = supportingContactsEmails;
-    } else {
-      emalsToSend = [
-        'a.hassan@terminustech.com',
-        'zeeshan@terminustech.com',	
-        'muzna@terminustech.com',
-      ]
-    }
-    
+
     let params = {
-      to: primaryEmail,
-      ccAddresses: notifyContactsEmails,
       subject: emailSubject,
       html: true
     };
+    
 
     const customer = eventData?.customer?.name;
     const serialNo = eventData?.machines?.map((m)=> m.serialNo);
@@ -185,12 +177,24 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
     const emailLogParams = {
       subject: emailSubject,
       toUser: securityUser,
-      toEmails: primaryEmail,
       customer: eventData?.customer?._id || null,
       createdBy: securityUser?._id,
       updatedBy: securityUser?._id,
-      ccEmails: notifyContactsEmails,
     }
+
+    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' ){
+      emalsToSend = supportingContactsEmails;
+      params.ccAddresses = notifyContactsEmails;
+      params.to= primaryEmail;
+      emailLogParams.ccEmails = notifyContactsEmails;
+    } else {
+      emalsToSend = [
+        'a.hassan@terminustech.com',
+        'zeeshan@terminustech.com',	
+        'muzna@terminustech.com',
+      ]
+    }
+    emailLogParams.toEmails = emalsToSend;
 
     const options = {
       timeZone: 'Pacific/Auckland', // New Zealand time zone
@@ -211,6 +215,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
+    console.log('emailLogParams : ',emailLogParams,"params : ", params,"emalsToSend : ",emalsToSend)
     const emailResponse = await addEmail( emailLogParams );
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
@@ -225,6 +230,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
         let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
         params.htmlData = htmlData;
+        
         await awsService.sendEmail(params, emalsToSend );
       })
     })
