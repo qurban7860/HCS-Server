@@ -15,8 +15,11 @@ router.post(`${baseRouteForObject}/upload`, uploadHandler, checkMaxCount, imageO
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceRecordValueFiles);
 
-router.get(`${baseRouteForObject}/file/:id/download`, controller.downloadServiceRecordValueFile);
+router.get(`${baseRouteForObject}/:id/download`, controller.downloadServiceRecordValueFile);
 
-router.patch(`${baseRouteForObject}/file/:id/delete`, controller.deleteServiceRecordValueFile);
+router.patch(`${baseRouteForObject}/:id/`, uploadHandler, checkMaxCount, imageOptimization, controller.patchServiceRecordValueFile );
+
+router.delete(`${baseRouteForObject}/:id/`, controller.deleteServiceRecordValueFile);
+
 
 module.exports = router;

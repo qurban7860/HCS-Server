@@ -48,13 +48,15 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
       console.log(errors);
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-
+      if (!req.body.serviceRecord) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Service Record is missing!");
+      }
       if(!req.body.loginUser){
         req.body.loginUser = await getToken(req);
       }
 
       const machine = req.params.machineId;
-      const machineServiceRecord = req.params.id;
+      // const machineServiceRecord = req.params.id;
 
       let files = [];
             
@@ -74,7 +76,7 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
-        req.body.serviceRecord = machineServiceRecord;
+        // req.body.serviceRecord = machineServiceRecord;
         req.body.name = processedFile.name;
         
         if(processedFile.base64thumbNailData){
@@ -85,6 +87,67 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
         const serviveRecordFileObject = await getServiceRecordValueFileFromReq(req, 'new');
         
         await this.dbservice.postObject(serviveRecordFileObject, callbackFunc);
+        function callbackFunc(error, response) {
+          if (error) {
+            logger.error(new Error(error));
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          }
+        }
+      }
+      res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Files uploaded successfully!', false));
+    }
+  }catch(e) {
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+  }
+};
+
+
+exports.patchServiceRecordValueFile = async (req, res, next) => {
+  try{
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log(errors);
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      if (!req.body.serviceRecord) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Service Record is missing!");
+      }
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+
+      const machine = req.params.machineId;
+      // const machineServiceRecord = req.params.id;
+
+      let files = [];
+            
+      if(req?.files?.images){
+        files = req.files.images;
+      }
+      for(let file of files) {
+        if(!file || !file.originalname) {
+          console.log('No File present for uploading')
+          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        }
+
+        const processedFile = await processFile(file, req.body.loginUser.userId);
+        req.body.path = processedFile.s3FilePath;
+        req.body.fileType =req.body.type = processedFile.type
+        req.body.extension = processedFile.fileExt;
+        req.body.awsETag = processedFile.awsETag;
+        req.body.eTag = processedFile.eTag;
+        req.body.machine = machine;
+        // req.body.serviceRecord = machineServiceRecord;
+        req.body.name = processedFile.name;
+        
+        if(processedFile.base64thumbNailData){
+          req.body.thumbnail = processedFile.base64thumbNailData;
+          req.body.name = processedFile.name;
+        }
+
+        await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getDocumentFromReq(req), callbackFunc);
         function callbackFunc(error, response) {
           if (error) {
             logger.error(new Error(error));
