@@ -215,7 +215,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
 
     if (process.env.CLIENT_APP_URL)
       hostUrl = process.env.CLIENT_APP_URL;
-    console.log('emailLogParams : ',emailLogParams,"params : ", params,"emalsToSend : ",emalsToSend)
+    
     const emailResponse = await addEmail( emailLogParams );
     this.dbservice.postObject(emailResponse, callbackFunc);
     function callbackFunc(error, response) {
