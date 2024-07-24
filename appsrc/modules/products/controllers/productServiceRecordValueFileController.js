@@ -213,6 +213,8 @@ exports.downloadServiceRecordValueFile = async (req, res, next) => {
 
 exports.deleteServiceRecordValueFile = async (req, res, next) => {
   try {
+    req.body.isActive = false;
+    req.body.isArchived = true;
 
     await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getServiceRecordValueFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
