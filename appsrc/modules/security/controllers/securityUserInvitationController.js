@@ -12,8 +12,8 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 const { Config } = require('../../config/models');
 const { renderEmail } = require('../../email/utils');
-this.dbservice = new securityDBService();
 const path = require('path');
+this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
 const { Customer, CustomerContact } = require('../../crm/models');
@@ -121,7 +121,7 @@ this.populate = [
         await awsService.sendEmail(params);
         res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully!' });
       }catch(e){
-        res.status(StatusCodes.OK).json({ message: 'Invitation Send Fails!' });
+        res.status(StatusCodes.OK).send('Invitation Send Fails!');
       }
 
     } else {

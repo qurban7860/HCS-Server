@@ -355,7 +355,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       try{
         await awsService.sendEmailWithRawData(params, file_);
       }catch(e){
-        res.status(StatusCodes.OK).json({ message: 'Email Send Fails!' });
+        res.status(StatusCodes.OK).send('Email Send Fails!');
       }
 
       const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
@@ -447,9 +447,6 @@ exports.patchProductServiceRecord = async (req, res, next) => {
       serviceId: findServiceRecord?.serviceId,
       status: 'DRAFT'
     }).sort({ _id: -1 });
-
-    console.log('findServiceRecord : ',findServiceRecord);
-    console.log('findServiceRecords : ',findServiceRecords);
 
     if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 || !findServiceRecords?.some((fsr)=>fsr?._id == req.params.id ) )) {
       return res.status(StatusCodes.BAD_REQUEST).send('Service Record already in Draft!');

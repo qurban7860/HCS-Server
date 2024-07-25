@@ -156,7 +156,7 @@ exports.login = async (req, res, next) => {
                     try{
                       await awsService.sendEmail(params);
                     }catch(e){
-                      res.status(StatusCodes.OK).json({ message: 'MFA Code Send Fails!' });
+                      res.status(StatusCodes.OK).send('MFA Code Send Fails!');
                     }
 
                     const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
@@ -289,9 +289,7 @@ async function validateAndLoginUser(req, res, existingUser) {
       await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
         if (err) {
           console.error(err);
-        } else {
-          // console.log(result);
-        }
+        } 
       });
 
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
@@ -346,7 +344,7 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
-
+    console.log('req, userId : ',req, userId)
     // console.log("req.session",req.session);
     if(req.session) {
 
@@ -526,14 +524,6 @@ exports.logout = async (req, res, next) => {
     ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
   });
 
-  // const userIds = ws.map((ws)=> ws.userId);
-  // ws.map((ws)=> {
-  //   ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
-  // });
-
-
-
-
   
   if(req.session) {
     req.session.isLoggedIn = false;
@@ -570,8 +560,8 @@ exports.forgetPassword = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
 
-          
-          let emailSubject = "Reset Password";
+          const emailSubject = "Reset Password";
+          const username = existingUser.name;
 
           let params = {
             to: `${existingUser.email}`,
@@ -579,31 +569,16 @@ exports.forgetPassword = async (req, res, next) => {
             html: true
           };
 
-          let username = existingUser.name;
-          let hostName = 'portal.howickltd.com';
+            const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/forgetPassword.html'), 'utf8');
+            const content = render(contentHTML, { username, link });
+            const htmlData =  await renderEmail(emailSubject, content )
+            params.htmlData = htmlData;
+            try{
+              await awsService.sendEmail(params);
+            }catch(e){
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Forget Password email fails!');
+            }
 
-          if(process.env.CLIENT_HOST_NAME)
-            hostName = process.env.CLIENT_HOST_NAME;
-          
-          let hostUrl = "https://portal.howickltd.com";
-
-          if(process.env.CLIENT_APP_URL)
-            hostUrl = process.env.CLIENT_APP_URL;
-          
-
-          fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-            let footerContent = render(data,{ hostName, hostUrl, username, link })
-            
-            fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
-  
-              let htmlData = render(data,{ hostName, hostUrl, username, link, footerContent })
-              params.htmlData = htmlData;
-              let response = await awsService.sendEmail(params);
-            })
-          });
-
-          // let response = await awsService.sendEmail(params);
-          
           const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           
           _this.dbservice.postObject(emailResponse, callbackFunc);
@@ -642,8 +617,14 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
 
-              let emailContent = `Your password has been updated successfully.<br>
-                              <br>Please sign in to access your account<br>`;
+              const contentHTML = `
+              <tr>
+                <td align="left" style="padding:0;Margin:0">Your password has been updated successfully.<br>
+                  <br>
+                  Please sign in to access your account
+                  <br>
+                </td>
+              </tr>`;
                               
               let emailSubject = "Password Reset Successful";
 
@@ -653,30 +634,15 @@ exports.verifyForgottenPassword = async (req, res, next) => {
                 html: true,
               };
               
-
-              let hostName = 'portal.howickltd.com';
-
-              if(process.env.CLIENT_HOST_NAME)
-                hostName = process.env.CLIENT_HOST_NAME;
               
-              let hostUrl = "https://portal.howickltd.com";
-
-              if(process.env.CLIENT_APP_URL)
-                hostUrl = process.env.CLIENT_APP_URL;
-
-              let username = existingUser.name;
-              fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-                let footerContent = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
-      
-                fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                  let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
-                  params.htmlData = htmlData;
-                  let response = await awsService.sendEmail(params);
-                })
-              })
-
-
-              // let response = await awsService.sendEmail(params);
+              const content = render(contentHTML, { username, link });
+              const htmlData =  await renderEmail(emailSubject, content )
+              params.htmlData = htmlData;
+              try{
+                await awsService.sendEmail(params);
+              }catch(e){
+                console.log(e);
+              }
 
               const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           

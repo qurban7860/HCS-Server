@@ -164,7 +164,7 @@ exports.deleteServiceRecordFile = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.OK).send('Service Record file Deleted Successfully!');
       }
     }
   } catch (error) {
