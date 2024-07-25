@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { render } = require('template-file');
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -188,7 +189,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       const endTime = eventData?.end ? fDateTime(eventData?.end).toString() : '';
 
 
-      await addEmail(emailLogParams);
+      const emailResponse = await addEmail(emailLogParams);
       this.dbservice.postObject(emailResponse, callbackFunc);
       function callbackFunc(error, response) {
         if (error) {
@@ -197,11 +198,10 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         }
       }
 
-      const contentHTML = fs.readFile(path.join(__dirname, '../../email/templates/eventAlert.html'), 'utf8');
+      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/eventAlert.html'), 'utf8');
 
       const content = render(contentHTML, {
         securityUserName,
-        footerContent: footer,
         customer,
         serialNo,
         site,
@@ -219,8 +219,8 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       await awsService.sendEmail(params, emailsToSend);
     }
   } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+    console.log(error);
+    throw `Failed to send email: ${error.message}`;
   }
 };
 

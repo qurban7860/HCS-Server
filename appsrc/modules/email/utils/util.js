@@ -20,10 +20,10 @@ function verifyEmail(email){
 
 async function loadTemplates() {
     try {
-        const [headerHTML, footerHTML, emailHTML] = await Promise.all([
+        const [ headerHTML, footerHTML, emailHTML ] = await Promise.all([
             fs.readFile(path.join(__dirname, '../templates/header.html'), 'utf8'),
-            fs.readFile(path.join(__dirname, '../email/templates/footer.html'), 'utf8'),
-            fs.readFile(path.join(__dirname, '../email/templates/emailTemplate.html'), 'utf8')
+            fs.readFile(path.join(__dirname, '../templates/footer.html'), 'utf8'),
+            fs.readFile(path.join(__dirname, '../templates/emailTemplate.html'), 'utf8')
         ]);
         return { headerHTML, footerHTML, emailHTML };
     } catch (error) {
@@ -36,7 +36,7 @@ async function renderEmail(subject, content ) {
             let hostUrl = process.env.CLIENT_APP_URL || 'https://portal.howickltd.com';
 
             const { headerHTML, footerHTML, emailHTML } = await loadTemplates();
-            
+
             const header = render(headerHTML, { hostUrl });
             const footer = render(footerHTML, { hostUrl });
 
