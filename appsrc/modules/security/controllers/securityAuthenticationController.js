@@ -11,6 +11,7 @@ let rtnMsg = require('../../config/static/static');
 const awsService = require('../../../../appsrc/base/aws');
 const { render } = require('template-file');
 const fs = require('fs');
+const { renderEmail } = require('../../email/utils');
 
 let securityDBService = require('../service/securityDBService');
 const dbService = this.dbservice = new securityDBService();
@@ -137,46 +138,26 @@ exports.login = async (req, res, next) => {
                   }
   
                   if (existingUser.multiFactorAuthentication) {
-  
-                    // User has enabled MFA, so redirect them to the MFA page
-                    // Generate a one time code and send it to the user's email address
+                    const emailSubject = "Multi-Factor Authentication Code";
                     const code = Math.floor(100000 + Math.random() * 900000);
-                    
-                    let emailContent = `We detected an unusual 
-                    sign-in from a device or location you don't usually use. If this was you, 
-                    enter the code below to sign in. <br>
-                    <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
-                    The code will expire in <b>10</b> minutes.`;
-                    let emailSubject = "Multi-Factor Authentication Code";
-  
+                    const username = existingUser.name;
                     let params = {
                       to: `${existingUser.email}`,
                       subject: emailSubject,
                       html: true
                     };
-  
-                    
-                    let username = existingUser.name;
-  
-                    let hostName = 'portal.howickltd.com';
-  
-                    if(process.env.CLIENT_HOST_NAME)
-                      hostName = process.env.CLIENT_HOST_NAME;
-                    
-                    let hostUrl = "https://portal.howickltd.com";
-  
-                    if(process.env.CLIENT_APP_URL)
-                      hostUrl = process.env.CLIENT_APP_URL;
-                    
-                    fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-                      let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
-        
-                      fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                        let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl, footerContent})
-                        params.htmlData = htmlData;
-                        let response = await awsService.sendEmail(params);
-                      })
-                    })
+                          
+                    const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/MFA.html'), 'utf8');
+                    const content = render(contentHTML, { username, code });
+                    const htmlData =  await renderEmail(emailSubject, content )
+                    params.htmlData = htmlData;
+
+                    try{
+                      await awsService.sendEmail(params);
+                    }catch(e){
+                      res.status(StatusCodes.OK).json({ message: 'MFA Code Send Fails!' });
+                    }
+
                     const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
                     _this.dbservice.postObject(emailResponse, callbackFunc);
                     function callbackFunc(error, response) {
@@ -188,11 +169,7 @@ exports.login = async (req, res, next) => {
                         userMFAData.multiFactorAuthenticationCode = code;
                         const currentDate = new Date();
                         userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-                        
-
-
                         _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
-                        
                         function callbackPatchFunc(error, response) {
                           return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
                         }

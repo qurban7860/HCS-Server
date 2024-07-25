@@ -14,6 +14,7 @@ const { Config } = require('../../config/models');
 const path = require('path');
 const sharp = require('sharp');
 const { fTimestamp } = require('../../../../utils/formatTime');
+const { renderEmail } = require('../../email/utils');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
@@ -175,45 +176,6 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
   }
 };
 
-// exports.getNewProductServiceRecord = async (req, res, next) => { 
-//   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
-//     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-//   this.query.machine = req.params.machineId;
-//   if( !req?.body?.isNew && !req?.body?.versionNo && !req?.body?.serviceId ){
-//     return res.status(StatusCodes.BAD_REQUEST).send("Service Id/Version is Required!");
-//   }
-
-//   let newProductServiceRecord = getDocumentFromReq(req, 'new' );
-//   if( req?.body?.isNew ){
-//     newProductServiceRecord.isDraft = true;
-//     newProductServiceRecord.isActive = true;
-//     newProductServiceRecord.isArchived = false;
-//     newProductServiceRecord.machine = req.params.machineId;
-//     newProductServiceRecord.serviceId = newProductServiceRecord._id;
-//   } else {
-//     let parentProductServiceRecord = await ProductServiceRecords.findOne({serviceId: req.body.serviceId, isActive:true,isArchived:false}).sort({_id: -1});
-//     newProductServiceRecord.machine = req.params.machineId;
-//   }
-
-//   this.dbservice.postObject(newProductServiceRecord, callbackFunc);
-
-//   async function callbackFunc(error, response) {
-//     if (error) {
-//       logger.error(new Error(error));
-//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error._message );
-//     } else {
-//       // let queryToUpdateRecords = { serviceId: req.body.serviceId, _id: { $ne:  response?._id.toString()} };
-//       // await ProductServiceRecords.updateMany(
-//       //   queryToUpdateRecords, 
-//       //   { $set: { isHistory: true } } 
-//       // );
-//       res.json(response)
-//       // res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
-//     }
-//   }
-  
-// };
-
 
 exports.getProductServiceRecords = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
@@ -359,22 +321,8 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
         subject: emailSubject,
         html: true,
       };
-
-      // fs.readFile(file_.path, (err, data) => {
-      //   if (err) {
-      //     console.error('Error reading file:', err);
-      //     return;
-      //   }
-
-      //   // Use the file content as a buffer
-      //   console.log("data file buffer",data.length)
-      //   file_.buffer = data;
-
-      //   // Now you can work with the file buffer as needed
-      //   console.log(file_.buffer);
-      // });
-
-
+      
+      
       const readFileAsync = util.promisify(fs.readFile);
       try {
         const data = await readFileAsync(file_.path);
@@ -382,30 +330,16 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       } catch (err) {
         console.error('Error reading file:', err);
       }
-
-      let username = serviceRecObj.name;
-      let hostName = 'portal.howickltd.com';
-
-      if (process.env.CLIENT_HOST_NAME)
-        hostName = process.env.CLIENT_HOST_NAME;
-
-      let hostUrl = "https://portal.howickltd.com";
-
-      if (process.env.CLIENT_APP_URL)
-        hostUrl = process.env.CLIENT_APP_URL;
-
-      let serviceDate=serviceRecObj.serviceDate;
-      const SDdateObject = new Date(serviceDate);
-      const SDyear = SDdateObject.getFullYear();
+      
+      const username = serviceRecObj.name;
+      const SDdateObject = new Date( serviceRecObj.serviceDate );
       const SDmonth = SDdateObject.getMonth() + 1;
       const SDday = SDdateObject.getDate();
-      serviceDate = `${SDyear}-${SDmonth < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
-
+      const serviceDate = `${SDdateObject.getFullYear()}-${(SDmonth) < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
       const versionNo=serviceRecObj.versionNo;
       const serialNo=serviceRecObj.machine?.serialNo;
       const customer=serviceRecObj.customer?.name;
       const createdBy=serviceRecObj.createdBy?.name;
-
 
       let createdAt=serviceRecObj.createdAt;
       const dateObject = new Date(createdAt);
@@ -414,16 +348,15 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       const day = dateObject.getDate();
       createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
       
-      let link = "";
-      fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-        let footerContent = render(data,{ hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy })
-
-        fs.readFile(__dirname + '/../../email/templates/service-record.html', 'utf8', async function (err, data) {
-          let htmlData = render(data, { hostName, hostUrl, username, link, serviceDate, versionNo, serialNo, customer, createdAt, createdBy, footerContent })
-          params.htmlData = htmlData;
-          let response = await awsService.sendEmailWithRawData(params, file_);
-        })
-      })
+      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/serviceRecord.html'), 'utf8');
+      const content = render(contentHTML, { username, serviceDate, versionNo, serialNo, customer, createdAt, createdBy });
+      const htmlData =  await renderEmail(emailSubject, content )
+      params.htmlData = htmlData;
+      try{
+        await awsService.sendEmail(params);
+      }catch(e){
+        res.status(StatusCodes.OK).json({ message: 'Email Send Fails!' });
+      }
 
       const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
       _this.dbservice.postObject(emailResponse, callbackFunc);
