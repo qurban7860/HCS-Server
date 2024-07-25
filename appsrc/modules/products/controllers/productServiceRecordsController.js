@@ -353,7 +353,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       const htmlData =  await renderEmail(emailSubject, content )
       params.htmlData = htmlData;
       try{
-        await awsService.sendEmail(params);
+        await awsService.sendEmailWithRawData(params, file_);
       }catch(e){
         res.status(StatusCodes.OK).json({ message: 'Email Send Fails!' });
       }

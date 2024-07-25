@@ -13,6 +13,7 @@ let securityDBService = require('../service/securityDBService')
 const { Config } = require('../../config/models');
 const { renderEmail } = require('../../email/utils');
 this.dbservice = new securityDBService();
+const path = require('path');
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
 const { Customer, CustomerContact } = require('../../crm/models');
@@ -56,27 +57,6 @@ this.populate = [
       }
     }
   };
-
-  // exports.postUserInvitation = async (req, res, next) => {
-  //   const errors = validationResult(req);
-  //   if (!errors.isEmpty()) {
-  //     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  //   } else {
-  //     let inviteData = getDocumentFromReq(req, 'new');
-  //     await inviteData.save();
-  //     this.dbservice.postObject(inviteData, callbackFunc);
-  //     function callbackFunc(error, response) {
-  //       if (error) {
-  //         logger.error(new Error(error));
-  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-  //           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-  //           );
-  //       } else {
-  //         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
-  //       }
-  //     }
-  //   }
-  // };
 
 
   exports.patchUserInvitation = async (req, res, next) => {
@@ -136,7 +116,7 @@ this.populate = [
       const content = render(contentHTML, { username, link });
       const htmlData =  await renderEmail(emailSubject, content )
       params.htmlData = htmlData;
-      
+
       try{
         await awsService.sendEmail(params);
         res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully!' });

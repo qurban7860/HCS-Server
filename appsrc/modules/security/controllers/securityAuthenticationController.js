@@ -11,6 +11,7 @@ let rtnMsg = require('../../config/static/static');
 const awsService = require('../../../../appsrc/base/aws');
 const { render } = require('template-file');
 const fs = require('fs');
+const path = require('path');
 const { renderEmail } = require('../../email/utils');
 
 let securityDBService = require('../service/securityDBService');
