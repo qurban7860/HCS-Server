@@ -11,12 +11,12 @@ const baseRouteForObject = `/machines/:machineId/serviceRecords/files`;
 
 router.use(checkAuth, checkCustomer);
 
-router.post(`${baseRouteForObject}/:id/upload`, uploadHandler, checkMaxCount, imageOptimization, controller.postServiceRecordFiles );
+router.post(`${baseRouteForObject}/:id/`, uploadHandler, checkMaxCount, imageOptimization, controller.postServiceRecordFiles );
 
 router.get(`${baseRouteForObject}/:id/`, controller.getProductServiceRecordFiles);
 
-router.get(`${baseRouteForObject}/:id/file/:fileId/download`, controller.downloadServiceRecordFile);
+router.get(`${baseRouteForObject}/:id/:fileId/download`, controller.downloadServiceRecordFile);
 
-router.patch(`${baseRouteForObject}/:id/file/:fileId/delete`, controller.deleteServiceRecordFile);
+router.delete(`${baseRouteForObject}/:id/:fileId/`, controller.deleteServiceRecordFile);
 
 module.exports = router;

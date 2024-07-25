@@ -383,10 +383,6 @@ function getDocumentFromReq(req, reqType){
   if ("comments" in req.body) {
     doc.comments = comments;
   }
-  
-  if ("files" in req.body) {
-    doc.files = files;
-  }
 
   if ("isHistory" in req.body){
     doc.isHistory = isHistory;
