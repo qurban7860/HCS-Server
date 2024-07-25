@@ -1710,6 +1710,12 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
   const emailsToSend = Array.from( emailsSet ) 
   const machineCustomer = statusData?.machineCustomer;
   const machineInstalationSite = statusData?.machineInstalationSite;
+  console.log("allManagers : ",allManagers,"emailsToSend : ",emailsToSend )
+
+  if(Array.isArray( emailsToSend ) && emailsToSend?.length < 1){
+    console.log("No managers found to send email alert");
+    return 
+  }
 
   if(statusData && username) {
     let params = {

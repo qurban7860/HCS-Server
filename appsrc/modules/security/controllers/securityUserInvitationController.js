@@ -100,7 +100,7 @@ this.populate = [
       if(configObject && configObject?.value)
         emailSubject = configObject.value;
 
-      const link = `<a href="${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}">Click here</a>`;
+      const link = `${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
 
       let params = {
         to: `${user.email}`,

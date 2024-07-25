@@ -619,10 +619,15 @@ exports.verifyForgottenPassword = async (req, res, next) => {
 
               const contentHTML = `
               <tr>
-                <td align="left" style="padding:0;Margin:0">Your password has been updated successfully.<br>
-                  <br>
-                  Please sign in to access your account
-                  <br>
+                <td align="left" style="padding:0;Margin:0">
+                  <p>
+                    Dear ${existingUser?.name || ''},<br>
+                    <br>
+                    Your password has been updated successfully.<br>
+                    <br>
+                    Please sign in to access your account
+                    <br>
+                  </p>
                 </td>
               </tr>`;
                               
@@ -635,17 +640,12 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               };
               
               
-              const content = render(contentHTML, { username, link });
+              const content = render(contentHTML);
               const htmlData =  await renderEmail(emailSubject, content )
               params.htmlData = htmlData;
-              try{
-                await awsService.sendEmail(params);
-              }catch(e){
-                console.log(e);
-              }
+              await awsService.sendEmail(params);
 
               const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-          
               _this.dbservice.postObject(emailResponse, callbackFunc);
               function callbackFunc(error, response) {
                 if (error) {
