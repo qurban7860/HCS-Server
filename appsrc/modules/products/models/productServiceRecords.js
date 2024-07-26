@@ -68,9 +68,6 @@ const docSchema = new Schema({
   internalNote: { type: String },
   //internal notes will not be visibile to customer,
   
-  files : [],
-  //list of documents/images related to this record
-  
   operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // operators who is training.
   

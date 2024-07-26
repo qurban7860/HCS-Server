@@ -421,101 +421,118 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
 }
 
 exports.patchProductServiceRecord = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id) ) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
-
-  if (!req.body.loginUser) {
-    req.body.loginUser = await getToken(req);
-  }
-
-  if (req.body.isArchived === true) {
-    try {
-      const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-      return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-    } catch (error) {
-      return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-  }
 
-  const findServiceRecord = await ProductServiceRecords.findById(req.params.id);
-  
-  if (req.body.status?.toLowerCase() === 'draft' ) {
-    delete req.body.versionNo;
-    const findServiceRecords = await ProductServiceRecords.find({
-      serviceId: findServiceRecord?.serviceId,
-      status: 'DRAFT'
-    }).sort({ _id: -1 });
-
-    if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 || !findServiceRecords?.some((fsr)=>fsr?._id == req.params.id ) )) {
-      return res.status(StatusCodes.BAD_REQUEST).send('Service Record already in Draft!');
-    } else {
-      try{
-        await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-        return res.status(StatusCodes.OK).send('Draft Service Record updated!');
-      } catch(e){
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
-      }
+    if (!req.body.loginUser) {
+      req.body.loginUser = await getToken(req);
     }
-  } else {
 
-    let productServiceRecordObject = {};
-    const parentProductServiceRecordObject = await ProductServiceRecords.findOne({
-      serviceId: req.body.serviceId,
-      isActive: true,
-      isArchived: false
-    }).sort({ _id: -1 });
-
-    productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
-    
-    if (req.body?.update) {
-      productServiceRecordObject = await getDocumentFromReq(req);
-      await this.dbservice.patchObject(ProductServiceRecords, req.params.id, productServiceRecordObject, callbackFunc);
-    } else {
-      productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo ?? 0) + 1;
-      productServiceRecordObject = getDocumentFromReq(req, 'new');
-      await this.dbservice.postObject(ProductServiceRecords, productServiceRecordObject, callbackFunc);
+    const findServiceRecord = await ProductServiceRecords.findById(req.params.id);
+    if (!findServiceRecord) {
+      return res.status(StatusCodes.NOT_FOUND).send('Service record not found');
     }
-  }
 
-  async function callbackFunc(error, result) {
-    if (error) {
-      logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
-    } else {
-      try {
-        const queryToUpdateRecords = {
-          serviceId: req.body.serviceId,
-          _id: { $ne: result?._id ? result._id.toString() : req.params.id },
-          isDraft: false
-        };
-        await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
-
-        if (req.body.serviceRecordConfig && Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length > 0) {
-          for (let recordValue of req.body.checkItemRecordValues) {
-            recordValue.loginUser = req.body.loginUser;
-            recordValue.serviceRecord = productServiceRecordObject._id;
-            recordValue.serviceId = req.body.serviceId;
-            let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-
-            await ProductServiceRecordValue.updateMany({
-              machineCheckItem: recordValue.machineCheckItem,
-              checkItemListId: recordValue.checkItemListId
-            }, { $set: { isHistory: true } });
-
-            await serviceRecordValue.save();
-          }
-        }
-
-        return res.status(StatusCodes.CREATED).json({ serviceRecord: result });
-      } catch (updateError) {
-        logger.error(new Error(updateError));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(updateError._message);
-      }
+    if (req.body.isArchived === true) {
+      await handleArchive(req, res);
+      return;
     }
+
+    if (req.body.status?.toLowerCase() === 'draft') {
+      await handleDraftStatus(req, res, findServiceRecord);
+      return;
+    }
+
+    await handleOtherStatuses(req, res, findServiceRecord);
+
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
+
+async function handleArchive(req, res) {
+  try {
+    const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+  } catch (error) {
+    return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
+  }
+}
+
+async function handleDraftStatus(req, res, findServiceRecord) {
+  const findServiceRecords = await ProductServiceRecords.find({
+    serviceId: findServiceRecord?.serviceId,
+    status: 'DRAFT'
+  }).sort({ _id: -1 });
+  if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 || !findServiceRecords?.some((fsr) => fsr?._id == req.params.id))) {
+    return res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
+  } else {
+    try {
+      await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+      return res.status(StatusCodes.OK).send('Draft Service Record updated!');
+    } catch (e) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
+    }
+  }
+}
+
+async function handleOtherStatuses(req, res, findServiceRecord) {
+  let productServiceRecordObject = {};
+  const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
+    { serviceId: req.body.serviceId, isActive: true, isArchived: false }
+  ).sort({ _id: -1 });
+  productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
+  if (findServiceRecord.status?.toLowerCase() === 'draft') {
+    delete req.body.versionNo;
+    productServiceRecordObject = await getDocumentFromReq(req);
+    await this.dbservice.patchObject(ProductServiceRecords, req.params.id, productServiceRecordObject, callbackFunc);
+  } else {
+    productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo || 0) + 1;
+    productServiceRecordObject = getDocumentFromReq(req, 'new');
+    await this.dbservice.postObject(ProductServiceRecords, productServiceRecordObject, callbackFunc);
+  // }
+}
+
+async function callbackFunc(error, result) {
+  if (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+  } else {
+    try {
+      await updateOtherServiceRecords(req, result);
+      return res.status(StatusCodes.CREATED).json({ serviceRecord: result });
+    } catch (updateError) {
+      logger.error(new Error(updateError));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(updateError._message);
+    }
+  }
+}
+
+async function updateOtherServiceRecords(req, result) {
+  const queryToUpdateRecords = {
+    serviceId: req.body.serviceId,
+    _id: { $ne: result?._id ? result._id.toString() : req.params.id },
+  };
+  await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
+
+  if (req.body.serviceRecordConfig && Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length > 0) {
+    for (let recordValue of req.body.checkItemRecordValues) {
+      recordValue.loginUser = req.body.loginUser;
+      recordValue.serviceRecord = productServiceRecordObject._id;
+      recordValue.serviceId = req.body.serviceId;
+      let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+      await ProductServiceRecordValue.updateMany({
+        machineCheckItem: recordValue.machineCheckItem,
+        checkItemListId: recordValue.checkItemListId
+      }, { $set: { isHistory: true } });
+      await serviceRecordValue.save();
+    }
+  }
+}
 
 async function getToken(req){
   try {
