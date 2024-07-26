@@ -420,7 +420,7 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
   return res;
 }
 
-exports.patchProductServiceRecord = async (req, res, next) => {
+exports.patchProductServiceRecord = async (req, res ) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
@@ -447,68 +447,77 @@ exports.patchProductServiceRecord = async (req, res, next) => {
     }
 
     await handleOtherStatuses(req, res, findServiceRecord);
-
   } catch (error) {
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
-};
+}
 
-async function handleArchive(req, res) {
+const handleArchive = async (req, res) => {
   try {
-    const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+    var _this = this;
+    const result = await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
   } catch (error) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
+      console.log(error);
+      return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
   }
 }
 
-async function handleDraftStatus(req, res, findServiceRecord) {
-  const findServiceRecords = await ProductServiceRecords.find({
-    serviceId: findServiceRecord?.serviceId,
-    status: 'DRAFT'
-  }).sort({ _id: -1 });
-  if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 || !findServiceRecords?.some((fsr) => fsr?._id == req.params.id))) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
-  } else {
-    try {
-      await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-      return res.status(StatusCodes.OK).send('Draft Service Record updated!');
-    } catch (e) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
+const handleDraftStatus = async (req, res, findServiceRecord) =>{
+  try{
+    var _this = this;
+    const findServiceRecords = await ProductServiceRecords.find({
+      serviceId: findServiceRecord?.serviceId,
+      status: 'DRAFT'
+    }).sort({ _id: -1 });
+    console.log('findServiceRecords : ',findServiceRecords)
+    if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 && !findServiceRecords?.some((fsr) => fsr?._id == req.params.id))) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
+    } else {
+      try {
+        await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+        return res.status(StatusCodes.OK).send('Draft Service Record updated!');
+      } catch (e) {
+        console.log(e);
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
+      }
     }
+  } catch(e){
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 }
 
-async function handleOtherStatuses(req, res, findServiceRecord) {
-  let productServiceRecordObject = {};
-  const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
-    { serviceId: req.body.serviceId, isActive: true, isArchived: false }
-  ).sort({ _id: -1 });
-  productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
-  if (findServiceRecord.status?.toLowerCase() === 'draft') {
-    delete req.body.versionNo;
-    productServiceRecordObject = await getDocumentFromReq(req);
-    await this.dbservice.patchObject(ProductServiceRecords, req.params.id, productServiceRecordObject, callbackFunc);
-  } else {
-    productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo || 0) + 1;
-    productServiceRecordObject = getDocumentFromReq(req, 'new');
-    await this.dbservice.postObject(ProductServiceRecords, productServiceRecordObject, callbackFunc);
-  }
-}
-
-async function callbackFunc(error, result) {
-  if (error) {
-    logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
-  } else {
-    try {
+const handleOtherStatuses = async (req, res, findServiceRecord) => {
+  try{
+    var _this = this;
+    let productServiceRecordObject = {};
+    const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
+      { serviceId: req.body.serviceId, isActive: true, isArchived: false }
+    ).sort({ _id: -1 });
+    productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
+    if (findServiceRecord.status?.toLowerCase() === 'draft') {
+      delete req.body.versionNo;
+      productServiceRecordObject = await getDocumentFromReq(req);
+      const result = await ProductServiceRecords.updateOne({ _id: req.params.id }, productServiceRecordObject )
       await updateOtherServiceRecords(req, result);
-      return res.status(StatusCodes.CREATED).json({ serviceRecord: result });
-    } catch (updateError) {
-      logger.error(new Error(updateError));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(updateError._message);
+      return res.status(StatusCodes.OK).send('Service Record created successfully!');
+    } else {
+      const machine = await Product.findById(req.params.machineId);
+      req.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
+      req.versionNo = (parentProductServiceRecordObject?.versionNo || 0) + 1;
+      req.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
+      productServiceRecordObject = getDocumentFromReq(req, 'new');
+      const result = await productServiceRecordObject.save();
+      await updateOtherServiceRecords(req, productServiceRecordObject);
+      return res.status(StatusCodes.OK).send('Service Record created successfully!');
+      console.log("productServiceRecordObject : ",productServiceRecordObject)
+      
     }
+  } catch(e){
+    console.log(e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 }
 
@@ -532,6 +541,7 @@ async function updateOtherServiceRecords(req, result) {
       await serviceRecordValue.save();
     }
   }
+  return;
 }
 
 async function getToken(req){

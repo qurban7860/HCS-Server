@@ -19,7 +19,7 @@ const docSchema = new Schema({
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
 
-  versionNo: { type: Number, },
+  versionNo: { type: Number, default: 1, required: true },
   // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
