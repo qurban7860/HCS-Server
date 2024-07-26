@@ -1764,7 +1764,7 @@ exports.sendEmailAlert = async (statusData, securityUser, emailSubject) => {
     params.htmlData = htmlData;
 
     try{
-      await awsService.sendEmail(params);
+      await awsService.sendEmail( params, emailsToSend );
     }catch(e){
       return e.message;
     }
