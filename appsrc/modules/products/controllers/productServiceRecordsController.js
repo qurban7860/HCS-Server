@@ -494,7 +494,7 @@ async function handleOtherStatuses(req, res, findServiceRecord) {
     productServiceRecordObject.versionNo = (parentProductServiceRecordObject?.versionNo || 0) + 1;
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     await this.dbservice.postObject(ProductServiceRecords, productServiceRecordObject, callbackFunc);
-  // }
+  }
 }
 
 async function callbackFunc(error, result) {
