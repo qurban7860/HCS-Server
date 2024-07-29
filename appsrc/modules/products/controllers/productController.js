@@ -1717,9 +1717,9 @@ exports.sendEmailAlert = async ( data ) => {
     const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${ data?.transferDate } <br>` : '';
 
     if(data?.transferredDate){
-      text = `Machine ${serialNo} has been transferred from ${data?.previousCustomer} to ${data?.customer}.`
+      text = `Machine ${serialNo} has been transferred from <strong>${data?.previousCustomer || '' }</strong> to <strong>${data?.status || '' }</strong> .`
     } else {
-      text = `Machine status has been changed from ${previousStatus} to ${status}.`
+      text = `Machine status has been changed from <strong>${ data?.previousStatus }</strong>  to <strong>${status}</strong> .`
     }
 
     const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/machine.html'), 'utf8');
