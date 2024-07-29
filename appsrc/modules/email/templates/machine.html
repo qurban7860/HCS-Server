@@ -4,19 +4,22 @@
       Hi,
       <br>
       <br>
-      Machine status has been changed to {{ afterStatus }}.
+      {{ text }}
       <br>
       <br>
       <strong>Machine:</strong> {{ serialNo }} <br>
-      <strong>Current Status: </strong> {{ afterStatus }} <br>
-      {{ serialNos }}
+      {{ customer }}
+      {{ previousCustomer }}
+      <strong>Status:</strong> {{ status }} <br>
+      {{ previousStatus }}
       {{ manufactureDate }}
+      {{ billingSite }}
+      {{ installationSite }}
       {{ shippingDate }}
-      {{ decommissionedDate }}
       {{ installationDate }}
-      <strong>Customer: </strong> {{ machineCustomer }} <br>
-      <strong>Installation Site: </strong> {{ machineInstalationSite }} <br>
-
+      {{ decommissionedDate }}
+      {{ transferredDate }}
+      {{ connectedMachines }}
     </p>
   </td>
 </tr>

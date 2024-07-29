@@ -344,7 +344,6 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
-    console.log('req, userId : ',req, userId)
     // console.log("req.session",req.session);
     if(req.session) {
 

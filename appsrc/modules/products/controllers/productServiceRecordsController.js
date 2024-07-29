@@ -264,23 +264,23 @@ exports.postProductServiceRecord = async (req, res, next) => {
         response.decoilers = await Product.find({_id:{$in:response.decoilers}});
       }
 
-      if(req.body.serviceRecordConfig && 
-        Array.isArray(req.body.checkItemRecordValues) &&
-        req.body.checkItemRecordValues.length>0) {
-        if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
-        for(let recordValue of req.body.checkItemRecordValues) {
-            recordValue.loginUser = req.body.loginUser;
-            recordValue.serviceRecord = response._id;
-            recordValue.serviceId = response._id;
-            let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-              let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
-              if (error) {
-                console.error(error);
-              }
-            });
-          }
-        }
-      }
+      // if(req.body.serviceRecordConfig && 
+      //   Array.isArray(req.body.checkItemRecordValues) &&
+      //   req.body.checkItemRecordValues.length>0) {
+      //   if(Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length>0) {
+      //   for(let recordValue of req.body.checkItemRecordValues) {
+      //       recordValue.loginUser = req.body.loginUser;
+      //       recordValue.serviceRecord = response._id;
+      //       recordValue.serviceId = response._id;
+      //       let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+      //         let serviceRecordValuess = await serviceRecordValue.save((error, data) => {
+      //         if (error) {
+      //           console.error(error);
+      //         }
+      //       });
+      //     }
+      //   }
+      // }
 
       req.machineServiceRecord = response._id;
       req.machineId = req.params.machineId;
