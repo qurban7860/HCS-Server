@@ -48,13 +48,15 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
       console.log(errors);
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-
+      if (!req.body.serviceRecord) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Service Record is missing!");
+      }
       if(!req.body.loginUser){
         req.body.loginUser = await getToken(req);
       }
 
       const machine = req.params.machineId;
-      const machineServiceRecord = req.params.id;
+      // const machineServiceRecord = req.params.id;
 
       let files = [];
             
@@ -74,7 +76,7 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
-        req.body.serviceRecord = machineServiceRecord;
+        // req.body.serviceRecord = machineServiceRecord;
         req.body.name = processedFile.name;
         
         if(processedFile.base64thumbNailData){
@@ -99,6 +101,7 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
   }
 };
+
 
 exports.downloadServiceRecordValueFile = async (req, res, next) => {
   const errors = validationResult(req);
@@ -150,7 +153,8 @@ exports.downloadServiceRecordValueFile = async (req, res, next) => {
 
 exports.deleteServiceRecordValueFile = async (req, res, next) => {
   try {
-
+    req.body.isActive = false;
+    req.body.isArchived = true;
     await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getServiceRecordValueFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
       if (error) {
@@ -158,7 +162,7 @@ exports.deleteServiceRecordValueFile = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+        res.status(StatusCodes.OK).send("File Deleted successfully!");
       }
     }
   } catch (error) {

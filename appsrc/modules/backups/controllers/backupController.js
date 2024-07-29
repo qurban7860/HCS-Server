@@ -18,6 +18,8 @@ const s3 = new AWS.S3();
 const cron = require('node-cron');
 const { exec } = require('child_process');
 const fs = require('fs');
+const path = require('path');
+const { renderEmail } = require('../../email/utils');
 const archiver = require('archiver');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -163,27 +165,17 @@ exports.sendEmailforBackup = async (req, res, next) => {
     html: true
   };
 
-  let username = process.env.APP_NAME?.trim().length > 0 ? process.env.APP_NAME : 'Howick Cloud Services Backend'; 
-  let hostName = process.env.ENV?.trim().length > 0 ? process.env.ENV : 'Howick Cloud Services'; 
 
-  if (process.env.CLIENT_HOST_NAME)
-    hostName = process.env.CLIENT_HOST_NAME;
+  const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/databaseBackup.html'), 'utf8');
+  const content = render(contentHTML, { backupTime, name, databaseName, backupSize, backupLocation });
+  const htmlData =  await renderEmail(emailSubject, content )
+  params.htmlData = htmlData;
 
-  let hostUrl = "https://portal.howickltd.com";
-
-  if (process.env.CLIENT_APP_URL)
-    hostUrl = process.env.CLIENT_APP_URL;
-
-  fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
-    let footerContent = render(data, { hostName, hostUrl, username })
-
-    fs.readFile(__dirname + '/../../email/templates/data-base-backup.html', 'utf8', async function (err, data) {
-
-      let htmlData = render(data, { hostName, hostUrl, footerContent, name, databaseName, backupSize, backupTime, backupLocation })
-      params.htmlData = htmlData;
-      let response = await awsService.sendEmail(params);
-    })
-  });
+  try{
+    await awsService.sendEmail(params);
+  }catch(e){
+    return e.message;
+  }
 };
 
 exports.dbBackup = async (req, res, next) => {

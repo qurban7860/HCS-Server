@@ -19,7 +19,7 @@ const docSchema = new Schema({
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
 
-  versionNo: { type: Number, },
+  versionNo: { type: Number, default: 1, required: true },
   // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
@@ -67,9 +67,6 @@ const docSchema = new Schema({
 
   internalNote: { type: String },
   //internal notes will not be visibile to customer,
-  
-  files : [],
-  //list of documents/images related to this record
   
   operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // operators who is training.

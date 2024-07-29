@@ -11,6 +11,8 @@ const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 const { Config } = require('../../config/models');
+const { renderEmail } = require('../../email/utils');
+const path = require('path');
 this.dbservice = new securityDBService();
 
 const { SecurityUser, SecurityUserInvite } = require('../models');
@@ -56,27 +58,6 @@ this.populate = [
     }
   };
 
-  // exports.postUserInvitation = async (req, res, next) => {
-  //   const errors = validationResult(req);
-  //   if (!errors.isEmpty()) {
-  //     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  //   } else {
-  //     let inviteData = getDocumentFromReq(req, 'new');
-  //     await inviteData.save();
-  //     this.dbservice.postObject(inviteData, callbackFunc);
-  //     function callbackFunc(error, response) {
-  //       if (error) {
-  //         logger.error(new Error(error));
-  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-  //           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-  //           );
-  //       } else {
-  //         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
-  //       }
-  //     }
-  //   }
-  // };
-
 
   exports.patchUserInvitation = async (req, res, next) => {
     const errors = validationResult(req);
@@ -119,11 +100,7 @@ this.populate = [
       if(configObject && configObject?.value)
         emailSubject = configObject.value;
 
-      let emailContent = `Dear ${user.name},<br><br>Howick has invited you to join howick cloud. Please click on below link and enter password for joining.<br><br>`;
-    
-      // emailContent+=`${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${userInvite.inviteExpireTime}`;
-      
-      emailContent += `<a href="${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}">Click here</a>`;
+      const link = `${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
 
       let params = {
         to: `${user.email}`,
@@ -131,29 +108,21 @@ this.populate = [
         html: true
       };
 
-      let username = user.name;
+      const username = user.name;
 
       let hostName = 'portal.howickltd.com';
 
-      if(process.env.CLIENT_HOST_NAME)
-        hostName = process.env.CLIENT_HOST_NAME;
-      
-      let hostUrl = "https://portal.howickltd.com";
+      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/userInvite.html'), 'utf8');
+      const content = render(contentHTML, { username, link });
+      const htmlData =  await renderEmail(emailSubject, content )
+      params.htmlData = htmlData;
 
-      if(process.env.CLIENT_APP_URL)
-        hostUrl = process.env.CLIENT_APP_URL;
-
-        fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-          let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
-
-          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
-            params.htmlData = htmlData;
-            let response = await awsService.sendEmail(params);
-            res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
-          })
-        })
-
+      try{
+        await awsService.sendEmail(params);
+        res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully!' });
+      }catch(e){
+        res.status(StatusCodes.OK).send('Invitation Send Fails!');
+      }
 
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));

@@ -28,9 +28,6 @@ const docSchema = new Schema({
   comments: {type: String}, 
   // comments against this checkitem
   
-  files : [{ type: Schema.Types.ObjectId , ref: 'MachineServiceRecordValueFile'}],
-  // list of documents/images related to this checkitem
-
   isHistory: {type: Boolean, default: false},
   //if value is updated flag should be set to true as considered as history one.
 

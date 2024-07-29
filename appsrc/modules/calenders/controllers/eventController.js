@@ -5,6 +5,7 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const { render } = require('template-file');
 const fs = require('fs');
+const path = require('path');
 const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -12,7 +13,7 @@ let rtnMsg = require('../../config/static/static')
 const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
-const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
+const { filterAndDeduplicateEmails, verifyEmail, renderEmail } = require('../../email/utils');
 const { fDateTime, fDate } = require('../../../../utils/formatTime');
 
 
@@ -124,112 +125,104 @@ exports.postEvent = async (req, res, next) => {
 
 
 exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
+  try {
+    const securityUserName = securityUser?.name;
+    const uniqueTechnicians = new Set();
+    const primaryTechnicianName = `${eventData?.primaryTechnician?.firstName?.trim() || ''} ${eventData?.primaryTechnician?.lastName?.trim() || ''}`;
+    if (primaryTechnicianName) uniqueTechnicians.add(primaryTechnicianName);
 
-  const securityUserName = securityUser?.name;
-  const uniqueTechnicians = new Set();
-  const primaryTechnicianName = ` ${eventData?.primaryTechnician?.firstName?.trim() || ''} ${eventData?.primaryTechnician?.lastName?.trim() || ''}`;
-  if (primaryTechnicianName) {
-    uniqueTechnicians.add(primaryTechnicianName);
-  }
+    if (eventData && securityUserName) {
+      const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
+      let supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
 
-  if (eventData && securityUserName) {
-    const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
-    let supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
-    if(primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)){
-      const emailArray = Array.from(supportingContactsEmailsSet);
-      emailArray.splice(0, 0, primaryEmail);
-      supportingContactsEmailsSet = new Set(emailArray);
-    }
-    const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
-    for (const email of supportingContactsEmailsSet) {
-      notifyContactsEmailsSet.delete(email);
-    }
+      if (primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)) {
+        supportingContactsEmailsSet = new Set([primaryEmail, ...supportingContactsEmailsSet]);
+      }
 
-    const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
-    const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
+      const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
+      for (const email of supportingContactsEmailsSet) {
+        notifyContactsEmailsSet.delete(email);
+      }
 
-    eventData.supportingTechnicians.forEach(sp => {
-      const technicianName = ` ${sp?.firstName?.trim() || ''} ${sp?.lastName?.trim() || ''}`;
-      if (!uniqueTechnicians.has(technicianName)) {
+      const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
+      const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
+
+      eventData.supportingTechnicians.forEach(sp => {
+        const technicianName = `${sp?.firstName?.trim() || ''} ${sp?.lastName?.trim() || ''}`;
         uniqueTechnicians.add(technicianName);
+      });
+
+      const technicians = Array.from(uniqueTechnicians);
+      let emailsToSend;
+      let params = { subject: emailSubject, html: true };
+
+      const customer = eventData?.customer?.name;
+      const serialNo = eventData?.machines?.map(m => m.serialNo);
+      const site = eventData?.site?.name;
+      const description = eventData?.description;
+      const createdBy = eventData?.createdBy?.name;
+      const createdAt = new Date();
+
+      const emailLogParams = {
+        subject: emailSubject,
+        toUser: securityUser,
+        customer: eventData?.customer?._id || null,
+        createdBy: securityUser?._id,
+        updatedBy: securityUser?._id,
+      };
+
+      if (process.env.ENV.toUpperCase() === 'LIVE') {
+        emailsToSend = supportingContactsEmails;
+        params.ccAddresses = notifyContactsEmails;
+        params.to = primaryEmail;
+        emailLogParams.ccEmails = notifyContactsEmails;
+      } else {
+        emailsToSend = [
+          'a.hassan@terminustech.com',
+          'zeeshan@terminustech.com',
+          'muzna@terminustech.com',
+        ];
       }
-    });
+      emailLogParams.toEmails = emailsToSend;
 
-    const technicians = Array.from(uniqueTechnicians);
-    let emalsToSend
+      const startTime = eventData?.start ? fDateTime(eventData?.start).toString() : '';
+      const endTime = eventData?.end ? fDateTime(eventData?.end).toString() : '';
 
-    if(process.env.ENV.toLocaleUpperCase() === 'LIVE' || true ){
-      emalsToSend = supportingContactsEmails;
-    } else {
-      emalsToSend = [
-        'a.hassan@terminustech.com',
-        'zeeshan@terminustech.com',	
-        'muzna@terminustech.com',
-      ]
-    }
-    
-    let params = {
-      to: primaryEmail,
-      ccAddresses: notifyContactsEmails,
-      subject: emailSubject,
-      html: true
-    };
 
-    const customer = eventData?.customer?.name;
-    const serialNo = eventData?.machines?.map((m)=> m.serialNo);
-    const Site = eventData?.site?.name;
-    const description = eventData?.description;
-    const createdBy = eventData?.createdBy?.name;
-    const createdAt = new Date();
-
-    const emailLogParams = {
-      subject: emailSubject,
-      toUser: securityUser,
-      toEmails: primaryEmail,
-      customer: eventData?.customer?._id || null,
-      createdBy: securityUser?._id,
-      updatedBy: securityUser?._id,
-      ccEmails: notifyContactsEmails,
-    }
-
-    const options = {
-      timeZone: 'Pacific/Auckland', // New Zealand time zone
-      hour12: true, // 24-hour format
-      hour: '2-digit',
-      minute: '2-digit',
-    };
-    
-    const startTime = `${ eventData?.start ? fDateTime(eventData?.start) : '' }`?.toString();
-    const endTime = `${ eventData?.end ? fDateTime(eventData?.end) : ''}`?.toString();
-
-    let hostName = 'portal.howickltd.com';
-
-    if (process.env.CLIENT_HOST_NAME)
-      hostName = process.env.CLIENT_HOST_NAME;
-
-    let hostUrl = "https://portal.howickltd.com";
-
-    if (process.env.CLIENT_APP_URL)
-      hostUrl = process.env.CLIENT_APP_URL;
-    const emailResponse = await addEmail( emailLogParams );
-    this.dbservice.postObject(emailResponse, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      const emailResponse = await addEmail(emailLogParams);
+      this.dbservice.postObject(emailResponse, callbackFunc);
+      function callbackFunc(error, response) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+        }
       }
-    }
 
-    fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
-      let footerContent = render(data, { emailSubject, hostName, hostUrl })
-      fs.readFile(__dirname + '/../../email/templates/CalendarAlert.html', 'utf8', async function (err, data) {
-        let htmlData = render(data, { emailSubject, hostName, hostUrl, securityUserName, footerContent, customer, serialNo, Site, description, technicians, startTime, endTime, createdBy, createdAt })
-        params.htmlData = htmlData;
-        await awsService.sendEmail(params, emalsToSend );
-      })
-    })
+      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/eventAlert.html'), 'utf8');
+
+      const content = render(contentHTML, {
+        securityUserName,
+        customer,
+        serialNo,
+        site,
+        description,
+        technicians,
+        startTime,
+        endTime,
+        createdBy,
+        createdAt
+      });
+
+      const htmlData =  await renderEmail(emailSubject, content )
+
+      params.htmlData = htmlData;
+      await awsService.sendEmail(params, emailsToSend);
+    }
+  } catch (error) {
+    console.log(error);
+    throw `Failed to send email: ${error.message}`;
   }
-}
+};
 
 
 exports.patchEvent = async (req, res, next) => {
