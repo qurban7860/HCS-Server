@@ -834,7 +834,7 @@ exports.patchProductStatus = async (req, res, next) => {
 
         const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine').populate(machinePopulate).lean();
         if(Array.isArray( connectionsToUpdate )){
-          params.machineConnections = await connectionsToUpdate.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel?.name}`).join(', ');
+          params.connectedMachines = await connectionsToUpdate.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel?.name}`).join(', ');
         }
         const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine._id);
         if(connectedMachineIds?.length > 0) {
@@ -1004,7 +1004,7 @@ exports.transferOwnership = async (req, res, next) => {
                 params.customer = newMachineData?.customer?.name || '';
                 params.status = newMachineData?.status?.name || '';
                 if(Array.isArray( newMachineData.machineConnections )){
-                  params.machineConnections = await newMachineData?.machineConnections.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel.name}`).join(', ');
+                  params.connectedMachines = await newMachineData?.machineConnections.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel.name}`).join(', ');
                 }
                 exports.sendEmailAlert( params );
                 res.status(StatusCodes.CREATED).json({ Machine: newMachineAfterTranspher });
