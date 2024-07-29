@@ -1689,8 +1689,7 @@ function getContactName(contacts) {
 exports.sendEmailAlert = async ( data ) => {
 
   const emailsSet = filterAndDeduplicateEmails( data?.managers )
-  const emailsToSend = Array.from( emailsSet ) 
-  console.log( 'emailsToSend : ', emailsToSend)
+  const emailsToSend = Array.from( emailsSet )
   let text = '';
   if(Array.isArray( emailsToSend ) && emailsToSend?.length < 1){
     return 
@@ -1718,9 +1717,9 @@ exports.sendEmailAlert = async ( data ) => {
     const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${ data?.transferredDate } <br>` : '';
 
     if(data?.transferredDate){
-      text = `Machine ${serialNo} has been transferred from <strong>${data?.previousCustomer || '' }</strong> to <strong>${data?.status || '' }</strong> .`
+      text = `Machine ${serialNo} has been transferred from <strong>${data?.previousCustomer || '' }</strong> to <strong>${data?.customer || '' }</strong> .`
     } else {
-      text = `Machine status has been changed from <strong>${ data?.previousStatus }</strong>  to <strong>${status}</strong> .`
+      text = `Machine status has been changed from <strong>${ data?.previousStatus }</strong>  to <strong>${data?.status}</strong> .`
     }
 
     const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/machine.html'), 'utf8');
