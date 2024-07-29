@@ -1688,8 +1688,9 @@ function getContactName(contacts) {
 
 exports.sendEmailAlert = async ( data ) => {
 
-  const emailsSet = filterAndDeduplicateEmails( data?.managers || []  )
+  const emailsSet = filterAndDeduplicateEmails( data?.managers )
   const emailsToSend = Array.from( emailsSet ) 
+  console.log( 'emailsToSend : ', emailsToSend)
   let text = '';
   if(Array.isArray( emailsToSend ) && emailsToSend?.length < 1){
     return 
@@ -1708,13 +1709,13 @@ exports.sendEmailAlert = async ( data ) => {
     const status = ( data?.transferredDate && data?.status ) ? `<strong>Status:</strong> ${data?.status } <br>` : '';
     const previousStatus = ( data?.transferredDate && data?.previousStatus ) ? `<strong>Previous Status:</strong> ${data?.previousStatus } <br>` : '';
     const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite } <br>` : '';
-    const installationSite = data?.instalationSite ? `<strong>Installation Site:</strong> ${data?.installationSite } <br>` : '';
+    const installationSite = data?.installationSite ? `<strong>Installation Site:</strong> ${data?.installationSite } <br>` : '';
     const connectedMachines = data?.connectedMachines ? `<strong>Connected Machines:</strong> ${data?.connectedMachines } <br>` : '';
     const manufactureDate = data?.manufactureDate ? `<strong>Manufacture Date: </strong> ${ data?.manufactureDate } <br>` : '';
     const shippingDate = data?.shippingDate ? `<strong>Shipping Date: </strong> ${ data?.shippingDate } <br>` : '';
     const decommissionedDate = data?.decommissionedDate ? `<strong>Decommissioned Date: </strong> ${ data?.decommissionedDate } <br>` : '';
     const installationDate = data?.installationDate ? `<strong>Installation Date: </strong> ${ data?.installationDate } <br>` : '';
-    const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${ data?.transferDate } <br>` : '';
+    const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${ data?.transferredDate } <br>` : '';
 
     if(data?.transferredDate){
       text = `Machine ${serialNo} has been transferred from <strong>${data?.previousCustomer || '' }</strong> to <strong>${data?.status || '' }</strong> .`
