@@ -1,29 +1,16 @@
 const express = require('express');
 const { check } = require('express-validator');
-
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-
-const fileUpload = require('../../../middleware/file-upload');
+const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const { Customer } = require('../models');
-
-const { Config } = require('../../config/models');
-
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
-const multer = require("multer");
-const awsService = require('../../../../appsrc/base/aws');
-
-
 const controllers = require('../controllers');
 const controller = controllers.documentVersionController;
 
 const router = express.Router();
 
-//  - base route for module
-// - /api/1.0.0/documents/documentVersion/
 const baseRoute = `/document`;
-
 
 router.use(checkAuth, checkCustomer);
 
@@ -34,70 +21,10 @@ router.get(`${baseRoute}/:documentid/versions/:id`,controller.getDocumentVersion
 router.get(`${baseRoute}/:documentid/versions/`, controller.getDocumentVersions);
 
 // - /api/1.0.0/documents/documentVersion/
-router.post(`${baseRoute}/:documentid/versions/`, async (req, res, next) => {
-    const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
-    const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-    const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
-    console.log("maxCount", maxCount);
-    fileUpload.fields([{name:'images', maxCount:maxCount}])(req, res, async (err) => {
-
-      if (err instanceof multer.MulterError) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
-      } else if (err) {
-        console.log(err);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-      if(req.files && req.files['images']) {
-        const documents_ = req.files['images'];
-        await Promise.all(documents_.map(async (docx, index) => {
-          docx.eTag = await awsService.generateEtag(docx.path);
-          if(configObject){
-            await awsService.processImageFile(docx);
-          }
-        }));
-      }
-      next();
-      }
-    });
-  }, controller.postDocumentVersion);
+router.post(`${baseRoute}/:documentid/versions/`, uploadHandler, checkMaxCount, imageOptimization, controller.postDocumentVersion);
 
 // - /api/1.0.0/documents/documentVersion/:id
-router.patch(`${baseRoute}/:documentid/versions/:id`, async (req, res, next) => {
-  const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i"); 
-  const maxCountObj = await Config.findOne({name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-  const maxCount =  maxCountObj && !isNaN(maxCountObj.value) ? maxCountObj.value : 20;
-
-  fileUpload.fields([{name:'images', maxCount : maxCount}])(req, res, async (err) => {
-    if (err instanceof multer.MulterError) {
-      console.log(err);
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err._message);
-    } else if (err) {
-      console.log(err);
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-      if(req.files && req.files['images']) {
-        const documents_ = req.files['images'];
-        await Promise.all(documents_.map(async (docx, index) => {
-          docx.eTag = await awsService.generateEtag(docx.path);
-          if(configObject){
-            await awsService.processImageFile(docx);
-          }
-        }));
-      }
-      next();
-    }
-  });
-}, controller.patchDocumentVersion);
-
-
-
-
-
-
-  
+router.patch(`${baseRoute}/:documentid/versions/:id`, uploadHandler, checkMaxCount, imageOptimization, controller.patchDocumentVersion);
 
 // - /api/1.0.0/documents/documentVersion/:id
 router.delete(`${baseRoute}/:documentid/versions/:id`, controller.deleteDocumentVersion);

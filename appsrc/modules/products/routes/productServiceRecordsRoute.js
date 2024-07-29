@@ -1,27 +1,15 @@
 const express = require('express');
 const { check } = require('express-validator');
 const multer = require('multer');
-
 const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../middleware/file-upload');
 const upload = multer({ dest: 'uploads/' })
-
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
-
 const controllers = require('../controllers');
 const controller = controllers.productServiceRecordsController;
 const postServiceRecordFiles = controllers.productServiceRecordsFileController.postServiceRecordFiles;
-
-
-const { Config } = require('../../config/models');
-const awsService = require('../../../../appsrc/base/aws');
-
 const router = express.Router();
-
-//  - route information from parent
-// - /api/1.0.0/products
-
 
 const baseRouteForObject = `/machines/:machineId/serviceRecords`; 
 
