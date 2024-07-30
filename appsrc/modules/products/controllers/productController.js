@@ -1724,7 +1724,7 @@ exports.sendEmailAlert = async ( data ) => {
     };
 
     const customer = (!data?.transferredDate && data?.customer) ? `<strong>Customer:</strong> ${data?.customer } <br>` : '';
-    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" style="text-decoration: none;" target="_blank" ><strong>${data?.serialNo} - ${data?.model || '' }</strong></a>`;
+    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo} - ${data?.model || '' }</strong></a>`;
     const status = ( ( data?.transferred || data?.transferredDate ) && data?.status ) ? `<strong>Status:</strong> ${data?.status } <br>` : '';
     const previousStatus = ( data?.transferredDate && data?.previousStatus ) ? `<strong>Previous Status:</strong> ${data?.previousStatus } <br>` : '';
     const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite } <br>` : '';
