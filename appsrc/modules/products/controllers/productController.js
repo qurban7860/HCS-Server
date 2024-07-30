@@ -765,26 +765,26 @@ exports.patchProductStatus = async (req, res, next) => {
     }
 
     const productObj = await Product.findOne({ _id: req.params.id })
-            .select('_id serialNo machineModel status accountManager projectManager supportManager')
-            .populate({ path: 'machineModel', select: 'name' })
-            .populate({ path: 'status', select: '_id name' })
-            .populate({ path: 'customer', select: '_id name' })
-            .populate({ path: 'instalationSite', select: '_id name' })
-            .populate({ path: 'billingSite', select: '_id name' })
-            .populate({ path: 'accountManager', select: '_id email' })
-            .populate({ path: 'projectManager', select: '_id email' })
-            .populate({ path: 'supportManager', select: '_id email' })
-            .lean();
-            params.machineId = productObj?._id;
-            params.model = productObj?.machineModel?.name;
-            params.serialNo = productObj?.serialNo;
-            params.previousStatus = productObj?.status?.name;
-            params.customer = productObj?.customer?.name;
-            params.installationSite = productObj?.instalationSite?.name;
-            params.billingSite = productObj?.billingSite?.name;
-            params.managers = [ ...productObj?.accountManager, ...productObj?.projectManager, ...productObj?.supportManager ];
-            params.subject = 'Machine status Notification';
-
+        .select('_id serialNo machineModel status accountManager projectManager supportManager')
+        .populate({ path: 'machineModel', select: 'name' })
+        .populate({ path: 'status', select: '_id name' })
+        .populate({ path: 'customer', select: '_id name' })
+        .populate({ path: 'instalationSite', select: '_id name' })
+        .populate({ path: 'billingSite', select: '_id name' })
+        .populate({ path: 'accountManager', select: '_id email' })
+        .populate({ path: 'projectManager', select: '_id email' })
+        .populate({ path: 'supportManager', select: '_id email' })
+        .lean();
+        params.machineId = productObj?._id;
+        params.model = productObj?.machineModel?.name;
+        params.serialNo = productObj?.serialNo;
+        params.previousStatus = productObj?.status?.name;
+        params.customer = productObj?.customer?.name;
+        params.installationSite = productObj?.instalationSite?.name;
+        params.billingSite = productObj?.billingSite?.name;
+        params.managers = [ ...productObj?.accountManager, ...productObj?.projectManager, ...productObj?.supportManager ];
+        params.subject = 'Machine Status Notification';
+        console.log("productObj : ",productObj,"params : ",params);
     if (!productObj) {
       return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid product Id to proceed!`);
     }
@@ -840,7 +840,7 @@ exports.patchProductStatus = async (req, res, next) => {
         }
         const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine._id);
         if(connectedMachineIds?.length > 0) {
-          await Product.updateMany({_id: {$in: connectedMachineIds}, isActive: true, isArchived: false}, updateClause);
+          await Product.updateMany( { _id: { $in: connectedMachineIds }, isActive: true, isArchived: false }, updateClause);
         }
       } catch (error) {
         console.error("Error updating ProductConnection:", error);
@@ -908,7 +908,6 @@ exports.transferOwnership = async (req, res, next) => {
         params.model = parentMachine?.machineModel?.name;
         params.serialNo = parentMachine?.serialNo;
         params.customer = parentMachine?.customer?.name || '';
-        params.transferredDate = req.body?.transferredDate ? fDate( req.body?.transferredDate ) : '';
         params.managers = [ ...parentMachine?.accountManager, ...parentMachine?.projectManager, ...parentMachine?.supportManager ];
         params.subject = 'Machine Transferred';
         if(Array.isArray( parentMachine.machineConnections )){
@@ -943,6 +942,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.transferredFromMachine = parentMachine._id;
           req.body.transferredDate = null;
           req.body.purchaseDate = transferredDate;
+          params.transferredDate = transferredDate ? fDate( transferredDate ) : '';
           req.body.manufactureDate = parentMachine.manufactureDate;
           req.body.globelMachineID = globelMachineID;
           req.body.alias = parentMachine.alias;
@@ -1457,21 +1457,13 @@ exports.moveMachine = async (req, res, next) => {
   } else {
     try {
       if (ObjectId.isValid(req.body.machine) && ObjectId.isValid(req.body.customer)) {
-        // validate if an entry already exists with the same customer and transferredFromMachine
-
         let existingMachine = await Product.findOne({ customer: req.body.customer, _id: req.body.machine, isActive: true, isArchived: false });
-
         if (existingMachine)
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Machine cannot be transferred to the same customer', true));
-
-
         let customer = await Customer.findOne({ _id: req.body.customer, isActive: true, isArchived: false });
         let machine = await Product.findOne({ _id: req.body.machine, isArchived: false, isActive: true });
-
-
         let installationSite;
         let billingSite;
-
         if (req.body.installationSite !== undefined && ObjectId.isValid(req.body.installationSite)) {
           installationSite = await CustomerSite.findOne({ _id: req.body.installationSite, isArchived: false, isActive: true });
         }
@@ -1480,31 +1472,19 @@ exports.moveMachine = async (req, res, next) => {
           billingSite = await CustomerSite.findOne({ _id: req.body.billingSite, isArchived: false, isActive: true });
         }
 
-
         if (!customer)
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Customer));
-
         if (req.body.installationSite !== undefined && ObjectId.isValid(req.body.installationSite) && !installationSite)
           return res.status(StatusCodes.BAD_REQUEST).send("Invalid installation Site");
-
         if (req.body.billingSite !== undefined && ObjectId.isValid(req.body.billingSite) && !billingSite)
           return res.status(StatusCodes.BAD_REQUEST).send('Invalid Billing Site');
-
         if (!machine)
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, Product));
-
         machine.customer = customer._id;
-
-
         machine.instalationSite = installationSite?._id || null;
-
-
         machine.billingSite = billingSite?._id || null;
-
-
         machine = await machine.save();
         return res.status(StatusCodes.OK).json({ Machine: machine });
-
       } else {
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidParamsMessage(StatusCodes.BAD_REQUEST));
       }
@@ -1708,7 +1688,7 @@ function getContactName(contacts) {
 }
 
 exports.sendEmailAlert = async ( data ) => {
-
+  console.log('data : ', data );
   const emailsSet = filterAndDeduplicateEmails( data?.managers )
   const emailsToSend = Array.from( emailsSet )
   let text = '';
@@ -1724,9 +1704,9 @@ exports.sendEmailAlert = async ( data ) => {
     };
 
     const customer = (!data?.transferredDate && data?.customer) ? `<strong>Customer:</strong> ${data?.customer } <br>` : '';
-    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo} - ${data?.model || '' }</strong></a>`;
+    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo}${data?.model ? ' - ': ''}${data?.model || '' }</strong></a>`;
     const status = ( ( data?.transferred || data?.transferredDate ) && data?.status ) ? `<strong>Status:</strong> ${data?.status } <br>` : '';
-    const previousStatus = ( data?.transferredDate && data?.previousStatus ) ? `<strong>Previous Status:</strong> ${data?.previousStatus } <br>` : '';
+    const previousStatus = data?.previousStatus ? `<strong>Previous Status:</strong> ${data?.previousStatus } <br>` : '';
     const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite } <br>` : '';
     const installationSite = data?.installationSite ? `<strong>Installation Site:</strong> ${data?.installationSite } <br>` : '';
     const connectedMachines = data?.connectedMachines ? `<strong>Connected Machines:</strong> ${data?.connectedMachines } <br>` : '';
@@ -1741,7 +1721,7 @@ exports.sendEmailAlert = async ( data ) => {
     } else if(data?.transferred ){
       text = `Machine ${serialNo} has been transferred to customer <strong>${data?.customer || '' }</strong>.`
     } else {
-      text = `Machine ${serialNo} status has been changed from <strong>${ data?.previousStatus }</strong>  to <strong>${data?.status}</strong>.`
+      text = `Machine ${serialNo} status has been changed ${ data?.previousStatus ? 'from' : '' } <strong>${ data?.previousStatus || '' }</strong>  to <strong>${data?.status || '' }</strong>.`
     }
 
     const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/machine.html'), 'utf8');
