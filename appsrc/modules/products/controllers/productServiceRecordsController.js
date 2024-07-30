@@ -278,38 +278,48 @@ exports.postProductServiceRecord = async (req, res, next) => {
 
 
 exports.newProductServiceRecordVersion = async (req, res, next) => {
-  const errors = validationResult(req);
-  const findServiceRecord = {}
-  findServiceRecord.serviceId = req.params.serviceId;
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
+  try{
+    const errors = validationResult(req);
 
-  if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
-    return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-  } 
-  
-  const machine = await Product.findById(req.params.machineId)
-  if(!machine?._id){
-    return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-  }
-  var _this = this;
-  await checkDraftServiceRecords( res, findServiceRecord )
-  let productServiceRecordObject = {};
-  const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
-    { serviceId: req.params.serviceId, isActive: true, isArchived: false }
-  ).sort({ _id: -1 });
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
 
-  productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
+    if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
+    } 
+
+    const machine = await Product.findById(req.params.machineId)
+    if(!machine?._id){
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
+    }
+
+    const productServiceRecord = await ProductServiceRecords.findById(req.params.id);
+    if(!productServiceRecord?._id){
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Record ID");
+    }
+
+    const findServiceRecord = {}
+    findServiceRecord.serviceId = productServiceRecord?.serviceId;
+    await checkDraftServiceRecords( req, res, findServiceRecord )
+    let productServiceRecordObject = {};
+    const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
+      { serviceId: productServiceRecord?.serviceId, isActive: true, isArchived: false }
+    ).sort({ _id: -1 });
+
+    productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || productServiceRecord?.serviceId;
 
     req.body.serviceRecordConfig = parentProductServiceRecordObject?.serviceRecordConfig;
     req.body.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
-    req.body.versionNo = (parentProductServiceRecordObject?.versionNo || 0) + 1;
+    req.body.versionNo = parentProductServiceRecordObject?.versionNo + 1;
     req.body.serviceId = parentProductServiceRecordObject?.serviceId 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
     await updateOtherServiceRecords(req, productServiceRecordObject);
     return res.status(StatusCodes.OK).json({ serviceRecord: result });
+  }catch(err) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)); 
+  }
 }
 
 
@@ -483,7 +493,7 @@ const handleArchive = async (req, res) => {
   }
 }
 
-const checkDraftServiceRecords = async ( res, findServiceRecord ) => {
+const checkDraftServiceRecords = async ( req, res, findServiceRecord ) => {
   const findServiceRecords = await ProductServiceRecords.find({
     serviceId: findServiceRecord?.serviceId,
     status: 'DRAFT'
@@ -497,7 +507,7 @@ const handleDraftStatus = async (req, res, findServiceRecord) =>{
   try{
     var _this = this;
       try {
-        await checkDraftServiceRecords(res, findServiceRecord)
+        await checkDraftServiceRecords( req, res, findServiceRecord)
         await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
         return res.status(StatusCodes.OK).send('Draft Service Record updated!');
       } catch (e) {
@@ -607,7 +617,7 @@ function getDocumentFromReq(req, reqType){
     doc.serviceId = serviceId;
   }
   
-  if ("versionNo" in req.body && reqType != "new"){
+  if ("versionNo" in req.body){
     doc.versionNo = versionNo;
   }
   
