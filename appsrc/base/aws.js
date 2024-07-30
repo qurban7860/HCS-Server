@@ -150,17 +150,16 @@ async function sendEmail(params, toAddresses) {
     },
     Message: {
       Body: {
-        
         Text: {
           Charset: "UTF-8",
           Data: params.body
         }
-       },
-       Subject: {
+      },
+      Subject: {
         Charset: 'UTF-8',
         Data: params.subject
-       }
-      },
+      }
+    },
     // Source: process.env.AWS_SES_FROM_EMAIL, /* required */
     Source: sourceEmail,
     ReplyToAddresses: [
@@ -183,18 +182,14 @@ async function sendEmail(params, toAddresses) {
       }
     }
   }
-  
   // Create the promise and SES service object
-  let SES = new AWS.SES({region: process.env.AWS_REGION})
-  SES.sendEmail(emailParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else     console.log(data);           // successful response
-    /*
-    data = {
-    MessageId: "EXAMPLE78603177f-7a5433e7-8edb-42ae-af10-f0181f34d6ee-000000"
-    }
-    */
-  });
+  if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
+    let SES = new AWS.SES({region: process.env.AWS_REGION})
+    SES.sendEmail(emailParams, function(err, data) {
+      if (err) console.log(err, err.stack);
+      else console.log(data);
+    });
+  }
 }
 
 
@@ -224,12 +219,13 @@ async function sendEmailWithRawData(params, file) {
     if (err) {
       console.error(`Error sending raw email: ${err}`);
     }
-    let SES = new AWS.SES({region: process.env.AWS_REGION})
-    let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
-    console.log(response);
+    if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
+      let SES = new AWS.SES({region: process.env.AWS_REGION})
+      let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
+      console.log(response);
+    }
   }); 
 }
-
 
 async function downloadFileS3(filePath) {
   const params = {
