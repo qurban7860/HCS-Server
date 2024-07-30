@@ -887,6 +887,8 @@ exports.transferOwnership = async (req, res, next) => {
       const machinePopulate = [ 
         { path: "machineModel", select: "name" },
         { path: 'customer', select: 'name' }, 
+        { path: 'billingSite', select: 'name' }, 
+        { path: 'installationSite', select: 'name' }, 
         { path: 'status', select: 'name' }, 
         { path: 'accountManager', select: 'email' },
         { path: 'projectManager', select: 'email' },
@@ -1013,6 +1015,12 @@ exports.transferOwnership = async (req, res, next) => {
                 newParams.serialNo = newMachineData?.serialNo;
                 newParams.customer = newMachineData?.customer?.name || '';
                 newParams.status = newMachineData?.status?.name || '';
+                newParams.transferred = true;
+                newParams.billingSite = newMachineData?.billingSite?.name || '';
+                newParams.installationSite = newMachineData?.instalationSite?.name || '';
+                newParams.installationDate = newMachineData?.installationDate ? fDate( newMachineData?.installationDate ) : '';
+                newParams.shippingDate = newMachineData?.shippingDate ? fDate( newMachineData?.shippingDate ) : '';
+                newParams.manufactureDate = newMachineData?.manufactureDate ? fDate( newMachineData?.manufactureDate ) : '';
                 newParams.managers = [ ...newMachineData?.accountManager, ...newMachineData?.projectManager, ...newMachineData?.supportManager ];
                 newParams.subject = 'Machine Status Notification';
                 if(Array.isArray( newMachineData.machineConnections )){
@@ -1716,9 +1724,8 @@ exports.sendEmailAlert = async ( data ) => {
     };
 
     const customer = (!data?.transferredDate && data?.customer) ? `<strong>Customer:</strong> ${data?.customer } <br>` : '';
-    // const previousCustomer = (!data?.transferredDate && data?.previousCustomer) ? `<strong>Previous Customer:</strong> ${data?.previousCustomer } <br>` : '';
     const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" style="text-decoration: none;" target="_blank" ><strong>${data?.serialNo} - ${data?.model || '' }</strong></a>`;
-    const status = ( data?.transferredDate && data?.status ) ? `<strong>Status:</strong> ${data?.status } <br>` : '';
+    const status = ( ( data?.transferred || data?.transferredDate ) && data?.status ) ? `<strong>Status:</strong> ${data?.status } <br>` : '';
     const previousStatus = ( data?.transferredDate && data?.previousStatus ) ? `<strong>Previous Status:</strong> ${data?.previousStatus } <br>` : '';
     const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite } <br>` : '';
     const installationSite = data?.installationSite ? `<strong>Installation Site:</strong> ${data?.installationSite } <br>` : '';
@@ -1730,7 +1737,9 @@ exports.sendEmailAlert = async ( data ) => {
     const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${ data?.transferredDate } <br>` : '';
 
     if(data?.transferredDate){
-      text = `Machine ${serialNo} has been transferred from customer: <strong>${data?.previousCustomer || '' }</strong>.`
+      text = `Machine ${serialNo} has been transferred from customer <strong>${data?.customer || '' }</strong>.`
+    } else if(data?.transferred ){
+      text = `Machine ${serialNo} has been transferred to customer <strong>${data?.customer || '' }</strong>.`
     } else {
       text = `Machine ${serialNo} status has been changed from <strong>${ data?.previousStatus }</strong>  to <strong>${data?.status}</strong>.`
     }
