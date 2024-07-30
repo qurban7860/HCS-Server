@@ -579,7 +579,7 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType){
   const { 
-    serviceRecordConfig, serviceId, serviceDate, status, versionNo, customer, site, 
+    serviceRecordConfig, serviceRecordUid, serviceId, serviceDate, status, versionNo, customer, site, 
     technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
     serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
     technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
@@ -593,6 +593,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("serviceRecordConfig" in req.body){
     doc.serviceRecordConfig = serviceRecordConfig;
+  }
+
+  if ("serviceRecordUid" in req.body){
+    doc.serviceRecordUid = serviceRecordUid;
   }
 
   if ("customer" in req.body){
