@@ -300,17 +300,12 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     }
 
     const findServiceRecord = {}
-    console.log('req.params.id : ',req.params.id)
-    console.log('productServiceRecord : ',productServiceRecord)
     findServiceRecord.serviceId = productServiceRecord?.serviceId;
-    console.log('findServiceRecord : ',findServiceRecord)
     await checkDraftServiceRecords( req, res, findServiceRecord )
     let productServiceRecordObject = {};
     const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
       { serviceId: productServiceRecord?.serviceId, isActive: true, isArchived: false }
     ).sort({ _id: -1 });
-
-    console.log('parentProductServiceRecordObject : ',parentProductServiceRecordObject)
 
     productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || productServiceRecord?.serviceId;
 
@@ -324,7 +319,6 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     return res.status(StatusCodes.OK).json({ serviceRecord: result });
   }catch(err) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)); 
-
   }
 }
 
