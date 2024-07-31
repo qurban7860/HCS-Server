@@ -183,14 +183,12 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
             isActive: true, 
             isArchived: false 
           }
-          const updatePreviousValueRecords = await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
-
+          await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
           response.machineId = req.params.machineId;
-          await handleServiceRecordValueFiles( response, req, res )
           const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
-            console.log('checkItemFiles : ',checkItemFiles)
-            const newResponse = { ...response?._doc, files: checkItemFiles }
-            console.log('newResponse : ',newResponse)
+          const savedFiles = await handleServiceRecordValueFiles( response, req, res )
+
+            const newResponse = { ...response?._doc, files: [...checkItemFiles, ...savedFiles ] }
           res.status(StatusCodes.CREATED).json( newResponse );
         }
       }
@@ -228,46 +226,48 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
   }
 };
 
-async function handleServiceRecordValueFiles( checkitem, req, res ){
-  try{
-      const machine = checkitem.machineId;
-      const machineServiceRecord = checkitem.id;
+async function handleServiceRecordValueFiles(checkitem, req, res) {
+  try {
+    const machine = checkitem.machineId;
+    const machineServiceRecord = checkitem.id;
 
-      let files = [];
-      let savedFiles = [];
+    let files = [];
+    if (req?.files?.images) {
+      files = req.files.images;
+    } else {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
 
-      if(req?.files?.images){
-        files = req.files.images;
-      } else {
-        return;
+    const fileProcessingPromises = files.map(async (file) => {
+      if (!file || !file.originalname) {
+        throw new Error('Invalid file');
       }
-      for(let file of files) {
-        if(!file || !file.originalname) {
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-        }
 
-        const processedFile = await processFile(file, req.body.loginUser.userId);
-        req.body.path = processedFile.s3FilePath;
-        req.body.fileType =req.body.type = processedFile.type
-        req.body.extension = processedFile.fileExt;
-        req.body.awsETag = processedFile.awsETag;
-        req.body.eTag = processedFile.eTag;
-        req.body.machine = machine;
-        req.body.machineServiceRecord = machineServiceRecord;
+      const processedFile = await processFile(file, req.body.loginUser.userId);
+      req.body.path = processedFile.s3FilePath;
+      req.body.fileType = req.body.type = processedFile.type;
+      req.body.extension = processedFile.fileExt;
+      req.body.awsETag = processedFile.awsETag;
+      req.body.eTag = processedFile.eTag;
+      req.body.machine = machine;
+      req.body.machineServiceRecord = machineServiceRecord;
+      req.body.name = processedFile.name;
+
+      if (processedFile.base64thumbNailData) {
+        req.body.thumbnail = processedFile.base64thumbNailData;
         req.body.name = processedFile.name;
-
-        if(processedFile.base64thumbNailData){
-          req.body.thumbnail = processedFile.base64thumbNailData;
-          req.body.name = processedFile.name;
-        }
-
-        const serviveRecordCheckItemFileObject = await getServiceRecordValueFileFromReq(req, 'new');
-        serviveRecordCheckItemFileObject.save();
       }
-      return savedFiles;
-  }catch(e) {
+
+      const serviceRecordCheckItemFileObject = await getServiceRecordValueFileFromReq(req, 'new');
+      await serviceRecordCheckItemFileObject.save();
+      return serviceRecordCheckItemFileObject;
+    });
+
+    const savedFiles = await Promise.all(fileProcessingPromises);
+    return savedFiles;
+  } catch (e) {
     console.log(e);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( "Files save failed!");
   }
 }
 
