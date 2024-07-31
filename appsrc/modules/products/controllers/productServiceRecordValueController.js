@@ -169,21 +169,29 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
       req.body.machineId = req.params.machineId;
-      req.body.id = req.params.id;
 
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       async function callbackFunc(error, response) {
         if (error) {
           logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-            error._message
-            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error._message );
         } else {
-          
+          const findQuery = { 
+            serviceId: response?.serviceId, 
+            machineCheckItem: response?.machineCheckItem, 
+            checkItemListId: response?.checkItemListId, 
+            isActive: true, 
+            isArchived: false 
+          }
+          const updatePreviousValueRecords = await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
+
           response.machineId = req.params.machineId;
           await handleServiceRecordValueFiles( response, req, res )
-          res.status(StatusCodes.CREATED).json({ ProductServiceRecordValue: response });
+          const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
+            console.log('checkItemFiles : ',checkItemFiles)
+            const newResponse = { ...response?._doc, files: checkItemFiles }
+            console.log('newResponse : ',newResponse)
+          res.status(StatusCodes.CREATED).json( newResponse );
         }
       }
     }
@@ -202,7 +210,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send('Product Service Record with this name already Exists!');
     }
 
-     if(!req.body.loginUser){
+    if(!req.body.loginUser){
       req.body.loginUser = await getToken(req);
     }
 
