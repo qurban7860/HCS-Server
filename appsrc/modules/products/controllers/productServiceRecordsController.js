@@ -62,7 +62,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
       response = JSON.parse(JSON.stringify(response));  
 
       const queryToFindCurrentVer = {serviceId: response.serviceId, isActive: true, isArchived: false, isHistory: false};
-      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate').sort({_id: -1}).lean();
+      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({_id: -1}).lean();
       response.currentVersion = currentVersion;
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
         response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
@@ -75,9 +75,10 @@ exports.getProductServiceRecord = async (req, res, next) => {
       if(Array.isArray(response.operators) && response.operators.length>0) {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
-
-        const serviceRecordFileQuery = { machineServiceRecord:{ $in: req.params.id }, isArchived: false };
+        console.log('response.serviceId : ',response.serviceId);
+        const serviceRecordFileQuery = { serviceId: { $in: response.serviceId }, isArchived: false };
         let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
+        console.log('serviceRecordFiles : ',serviceRecordFiles);
         if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
           response.files = serviceRecordFiles;
         }
@@ -249,6 +250,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
   productServiceRecordObject.status = 'DRAFT';
   productServiceRecordObject.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
   productServiceRecordObject.serviceId = productServiceRecordObject?._id;
+  productServiceRecordObject.customer = machine?.customer;
 
   this.dbservice.postObject(productServiceRecordObject, callbackFunc);
 
@@ -289,7 +291,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
     } 
 
-    const machine = await Product.findById(req.params.machineId)
+    const machine = await Product.findById(req.params.machineId).populate([{ path: 'customer', populate: { path: 'mainSite'}}])
     if(!machine?._id){
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
     }
@@ -309,13 +311,35 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
 
     productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || productServiceRecord?.serviceId;
 
-    req.body.serviceRecordConfig = parentProductServiceRecordObject?.serviceRecordConfig;
+    req.body.serviceRecordConfig = parentProductServiceRecordObject?.serviceRecordConfig  || null;
     req.body.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
     req.body.versionNo = parentProductServiceRecordObject?.versionNo + 1;
-    req.body.serviceId = parentProductServiceRecordObject?.serviceId 
+    req.body.serviceId = parentProductServiceRecordObject?.serviceId  || null;
+    req.body.customer = machine?.customer?._id || null;
+    req.body.site = machine?.customer?.mainSite?._id || null;
+    req.body.status = 'DRAFT';
+    req.body.machine = machine?._id || null;
+    req.body.decoilers = parentProductServiceRecordObject?.decoilers || [];
+    req.body.operators = parentProductServiceRecordObject?.operators || [];
+    req.body.technician = parentProductServiceRecordObject?.technician || null;
+    req.body.operatorNotes = parentProductServiceRecordObject?.operatorNotes || '';
+    req.body.technicianNotes = parentProductServiceRecordObject?.technicianNotes || '';
+    req.body.textBeforeCheckItems = parentProductServiceRecordObject?.textBeforeCheckItems || '';
+    req.body.textAfterCheckItems = parentProductServiceRecordObject?.textAfterCheckItems || '';
+    req.body.internalComments = parentProductServiceRecordObject?.internalComments || '';
+    req.body.internalNote = parentProductServiceRecordObject?.internalNote || '';
+    req.body.recommendationNote = parentProductServiceRecordObject?.recommendationNote || '';
+    req.body.serviceNote = parentProductServiceRecordObject?.serviceNote || '';
+    req.body.suggestedSpares = parentProductServiceRecordObject?.suggestedSpares || '';
+
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
     await updateOtherServiceRecords(req, productServiceRecordObject);
+    const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
+    let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
+    if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
+      result.files = serviceRecordFiles;
+    }
     return res.status(StatusCodes.OK).json({ serviceRecord: result });
   }catch(err) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)); 
@@ -340,7 +364,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
     }
 
     const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false })
-      .populate([{ path: 'customer', select: 'name type isActive isArchived'}, { path: 'machine', select: 'serialNo'}, { path: 'createdBy', select: 'name'}]);
+      .populate([{ path: 'customer', select: 'name'}, { path: 'machine', select: 'serialNo'}, { path: 'createdBy', select: 'name'}]);
 
     if (serviceRecObj) {
       let emailSubject = `Service Record PDF attached`;
@@ -350,7 +374,6 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
         subject: emailSubject,
         html: true,
       };
-      
       
       const readFileAsync = util.promisify(fs.readFile);
       try {
@@ -366,6 +389,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       const SDday = SDdateObject.getDate();
       const serviceDate = `${SDdateObject.getFullYear()}-${(SDmonth) < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
       const versionNo=serviceRecObj.versionNo;
+      const serviceRecordId=serviceRecObj.serviceRecordUid
       const serialNo=serviceRecObj.machine?.serialNo;
       const customer=serviceRecObj.customer?.name;
       const createdBy=serviceRecObj.createdBy?.name;
@@ -378,7 +402,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
       
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/serviceRecord.html'), 'utf8');
-      const content = render(contentHTML, { username, serviceDate, versionNo, serialNo, customer, createdAt, createdBy });
+      const content = render(contentHTML, { username, serviceDate, serviceRecordId, versionNo, serialNo, customer, createdAt, createdBy });
       const htmlData =  await renderEmail(emailSubject, content )
       params.htmlData = htmlData;
       try{
