@@ -203,16 +203,11 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let alreadyExists = await ProductServiceRecordValue.findOne({name:req.body.name,_id:{$ne:req.params.id}});
-    if(alreadyExists) {
-      return res.status(StatusCodes.BAD_REQUEST).send('Product Service Record with this name already Exists!');
-    }
 
     if(!req.body.loginUser){
       req.body.loginUser = await getToken(req);
     }
 
-    
     this.dbservice.patchObject(ProductServiceRecordValue, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
       if (error) {
