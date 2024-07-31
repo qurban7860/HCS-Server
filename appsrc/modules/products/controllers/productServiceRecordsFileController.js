@@ -58,6 +58,12 @@ exports.postServiceRecordFiles = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
+      const serviceRecord = await ProductServiceRecords.findById(req.params.id);
+
+      if(!serviceRecord?._id){
+        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Record ID");
+      }
+
       const machine = req.params.machineId;
       const machineServiceRecord = req.params.id;
 
@@ -71,8 +77,9 @@ exports.postServiceRecordFiles = async (req, res, next) => {
           console.log('No File present for uploading')
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
-
+        
         const processedFile = await processFile(file, req.body.loginUser.userId);
+        req.body.serviceId = serviceRecord?.serviceId;
         req.body.path = processedFile.s3FilePath;
         req.body.fileType =req.body.type = processedFile.type
         req.body.extension = processedFile.fileExt;
@@ -97,11 +104,11 @@ exports.postServiceRecordFiles = async (req, res, next) => {
           }
         }
       }
-      res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Files uploaded successfully!', false));
+      res.status(StatusCodes.OK).send('Files uploaded successfully!');
     }
   }catch(e) {
     console.log(e);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Files save failed!");
   }
 };
 
@@ -263,7 +270,7 @@ async function getToken(req){
 
 function getServiceRecordFileFromReq(req, reqType) {
 
-  const { machineServiceRecord, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { machineServiceRecord, serviceId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -273,6 +280,10 @@ function getServiceRecordFileFromReq(req, reqType) {
 
   if ("machineServiceRecord" in req.body) {
     doc.machineServiceRecord = machineServiceRecord;
+  }
+
+  if ("serviceId" in req.body) {
+    doc.serviceId = serviceId;
   }
 
   if ("name" in req.body) {

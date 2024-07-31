@@ -13,7 +13,7 @@ const docSchema = new Schema({
         machineServiceRecord: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true }],
         // machine service record current version 
 
-        serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' },
+        serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true  },
         // machine service record parent
 
         name: { type: String },
