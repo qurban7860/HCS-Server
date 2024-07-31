@@ -75,10 +75,8 @@ exports.getProductServiceRecord = async (req, res, next) => {
       if(Array.isArray(response.operators) && response.operators.length>0) {
         response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
       }
-        console.log('response.serviceId : ',response.serviceId);
         const serviceRecordFileQuery = { serviceId: { $in: response.serviceId }, isArchived: false };
         let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
-        console.log('serviceRecordFiles : ',serviceRecordFiles);
         if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
           response.files = serviceRecordFiles;
         }

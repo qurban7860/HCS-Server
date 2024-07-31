@@ -169,7 +169,7 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
       req.body.machineId = req.params.machineId;
-      req.body.id = req.params.id;
+      req.body.serviceRecord = req.params.id;
 
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       async function callbackFunc(error, response) {
@@ -202,7 +202,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send('Product Service Record with this name already Exists!');
     }
 
-     if(!req.body.loginUser){
+    if(!req.body.loginUser){
       req.body.loginUser = await getToken(req);
     }
 
