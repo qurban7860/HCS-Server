@@ -235,7 +235,7 @@ async function handleServiceRecordValueFiles(checkitem, req, res) {
     if (req?.files?.images) {
       files = req.files.images;
     } else {
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      return;
     }
 
     const fileProcessingPromises = files.map(async (file) => {
