@@ -329,10 +329,11 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     req.body.recommendationNote = parentProductServiceRecordObject?.recommendationNote || '';
     req.body.serviceNote = parentProductServiceRecordObject?.serviceNote || '';
     req.body.suggestedSpares = parentProductServiceRecordObject?.suggestedSpares || '';
+    req.body.isHistory = true;
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
-    await updateOtherServiceRecords(req, productServiceRecordObject);
+    // await updateOtherServiceRecords(req, productServiceRecordObject);
     const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
     let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
@@ -492,7 +493,9 @@ exports.patchProductServiceRecord = async (req, res ) => {
       return;
     }
 
+
     if (req.body.status?.toLowerCase() === 'draft') {
+      await checkDraftServiceRecords(req, res, findServiceRecord)
       await handleDraftStatus(req, res, findServiceRecord);
       return;
     }
@@ -550,24 +553,16 @@ const handleOtherStatuses = async (req, res, findServiceRecord) => {
       { serviceId: req.body.serviceId, isActive: true, isArchived: false }
     ).sort({ _id: -1 });
     productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
-    if (findServiceRecord.status?.toLowerCase() === 'draft') {
       delete req.body.versionNo;
       productServiceRecordObject = await getDocumentFromReq(req);
       const result = await ProductServiceRecords.updateOne({ _id: req.params.id }, productServiceRecordObject )
-      await updateOtherServiceRecords(req, result);
-      return res.status(StatusCodes.OK).send('Service Record created successfully!');
-    } else {
-      const machine = await Product.findById(req.params.machineId);
-      req.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
-      req.versionNo = (parentProductServiceRecordObject?.versionNo || 0) + 1;
-      req.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
-      productServiceRecordObject = getDocumentFromReq(req, 'new');
-      const result = await productServiceRecordObject.save();
-      await updateOtherServiceRecords(req, productServiceRecordObject);
-      return res.status(StatusCodes.OK).send('Service Record created successfully!');
-      console.log("productServiceRecordObject : ",productServiceRecordObject)
-      
-    }
+      if(parentProductServiceRecordObject?.status?.toLowerCase() === 'draft'  && req.body?.status?.toLowerCase() === 'submitted'){
+        await updateOtherServiceRecords(req, result);
+      }
+      if(parentProductServiceRecordObject?.status?.toLowerCase() === 'submitted'  && req.body?.status?.toLowerCase() === 'approved'){
+        return res.status(StatusCodes.OK).send('Approval email sent successfully!');
+      }
+      return res.status(StatusCodes.OK).send('Service Record updated successfully!');
   } catch(e){
     console.log(e);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
