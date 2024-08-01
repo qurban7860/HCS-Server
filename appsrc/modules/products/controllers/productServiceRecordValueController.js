@@ -54,98 +54,111 @@ exports.getProductServiceRecordValues = async (req, res, next) => {
   }
 }
 
-exports.getProductServiceRecordCheckItems = async (req, res, next) => {
-
+exports.getProductServiceRecordCheckItems = async (req, res) => {
   let populateObject = [
-    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists '},
-    {path: 'createdBy', select: 'name'},
-    {path: 'updatedBy', select: 'name'}
+    { path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists' },
+    { path: 'createdBy', select: 'name' },
+    { path: 'updatedBy', select: 'name' }
   ];
-  try{
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.serviceId, populateObject, callbackFunc);
 
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
+  try {
+    const response = await this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.serviceId, populateObject);
+    const activeValues = await fetchServiceRecordValues(response.serviceId, false);
+    const historicalValues = await fetchServiceRecordValues(response.serviceId, true);
 
-      // fetching active values.
-      let listProductServiceRecordValues = await ProductServiceRecordValue.find(
-      { serviceId: response.serviceId, isHistory: false, isActive: true, isArchived: false }, 
-      {checkItemValue: 1, comments: 1, serviceRecord: 1, serviceId:1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}
-      ).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}])
-      .sort({createdAt: -1});
-      listProductServiceRecordValues = JSON.parse(JSON.stringify(listProductServiceRecordValues));
+    const responseData = JSON.parse(JSON.stringify(response?.serviceRecordConfig));
 
-      // fetching history values.
-      let listProductServiceRecordHistoryValues = await ProductServiceRecordValue.find(
-      { serviceId: response.serviceId, isHistory: true, isActive: true, isArchived: false },
-      { serviceRecord:1, serviceId:1, checkItemListId:1, machineCheckItem:1, checkItemValue: 1, comments: 1, createdBy: 1, createdAt: 1 }
-      ).populate([{path: 'createdBy', select: 'name'}, {path: 'updatedBy', select: 'name'}, {path: 'serviceRecord', select: 'versionNo'}])
-      .sort({createdAt: -1});
-      listProductServiceRecordHistoryValues = JSON.parse(JSON.stringify(listProductServiceRecordHistoryValues));
-    
-      if(response.serviceRecordConfig && 
-        Array.isArray(response.serviceRecordConfig.checkItemLists) &&
-        response.serviceRecordConfig.checkItemLists.length>0) {
-        let index = 0;
-        for(let checkParam of response.serviceRecordConfig.checkItemLists) {
-          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-            let indexP = 0;
-            let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}}).populate([{path: 'createdBy', select: 'name'},{path: 'updatedBy', select: 'name'}]);
-            productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
-            for(let paramListId of checkParam.checkItems) { 
-              let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
-              if(!productCheckItemObject)
-                continue;
-              
-              let PSRV = listProductServiceRecordValues.find((psrval)=>              
-                psrval.machineCheckItem.toString() == paramListId && 
-              psrval.checkItemListId.toString() == checkParam._id
-            );
-
-              let matchedHistoryVal = listProductServiceRecordHistoryValues.filter((psrval) => {
-                return (
-                  psrval.machineCheckItem.toString() === paramListId &&
-                  psrval.checkItemListId.toString() === checkParam._id
-                );
-              });
-
-              if(PSRV) {
-                const checkItemFiles= await ProductServiceRecordValueFile.find(
-                    { serviceId: PSRV?.serviceId, 
-                      machineCheckItem: PSRV?.machineCheckItem, 
-                      checkItemListId: PSRV?.checkItemListId, 
-                      isActive: true, isArchived: false }
-                    ).select('_id name extension fileType thumbnail path').lean()
-
-                productCheckItemObject.recordValue = {
-                  serviceRecord : PSRV.serviceRecord,
-                  checkItemValue : PSRV.checkItemValue,
-                  files: checkItemFiles,
-                  comments : PSRV.comments,
-                  createdBy : PSRV.createdBy,
-                  createdAt : PSRV.createdAt
-                }
-              }
-              if(matchedHistoryVal)
-                productCheckItemObject.historicalData = matchedHistoryVal;
-
-              response.serviceRecordConfig.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
-              indexP++;
-            }
+    if (response?.serviceRecordConfig && Array.isArray(response?.serviceRecordConfig?.checkItemLists)) {
+      for (const [index, checkParam] of response.serviceRecordConfig.checkItemLists.entries()) {
+        if (Array.isArray(checkParam?.checkItems)) {
+          const checkItems = await fetchCheckItems(checkParam.checkItems);
+          for (let checkItem of checkItems) {
+            await updateCheckItemWithValues(checkItem, checkParam._id, activeValues, historicalValues);
           }
-          index++;
+          responseData.checkItemLists[index].checkItems = checkItems
         }
       }
-      res.json(response?.serviceRecordConfig);
     }
+    res.json(responseData);
+  } catch (error) {
+    logger.error(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
-} catch(e){
-  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-}
 };
+
+async function fetchServiceRecordValues(serviceId, isHistory) {
+  try{
+    const productServiceRecordValues = await  ProductServiceRecordValue.find(
+      { serviceId, isHistory, isActive: true, isArchived: false },
+      { checkItemValue: 1, comments: 1, serviceRecord: 1, serviceId: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
+    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceRecord', select: 'versionNo' }])
+    .sort({ createdAt: -1 })
+    .lean();
+    return productServiceRecordValues
+  } catch (e) {
+    logger.error(e);
+    throw e;
+  }
+}
+
+
+async function fetchCheckItems(checkItemIds) {
+  try{ 
+    const productCheckItems = await ProductCheckItem.find({ _id: { $in: checkItemIds } })
+    .populate([{ path: 'createdBy', select: 'name' }, { path: 'updatedBy', select: 'name' }])
+    .lean();
+    return productCheckItems 
+  } catch(e){
+    logger.error(e);
+    throw e;
+  }
+}
+
+async function updateCheckItemWithValues(item, checkItemListId, activeValues, historicalValues) {
+  try{
+      const activeValue = activeValues.find(val =>
+        val?.machineCheckItem?.toString() === item._id.toString() &&
+      val?.checkItemListId?.toString() === checkItemListId.toString()
+    );
+
+    const historicalData = historicalValues.filter(val =>
+      val.machineCheckItem.toString() === item._id.toString() &&
+      val.checkItemListId.toString() === checkItemListId.toString()
+    );
+    if (activeValue) {
+      const checkItemFiles = await fetchCheckItemFiles(activeValue.serviceId, activeValue.machineCheckItem, activeValue.checkItemListId);
+      item.recordValue = {
+        _id: activeValue._id,
+        serviceRecord: activeValue.serviceRecord,
+        checkItemValue: activeValue.checkItemValue,
+        files: checkItemFiles,
+        comments: activeValue.comments,
+        createdBy: activeValue.createdBy,
+        createdAt: activeValue.createdAt
+      };
+    }
+
+    if (historicalData.length > 0) {
+      item.historicalData = historicalData;
+    }
+    return item;
+  } catch (e) {
+    logger.error(e);
+    throw e;
+  }
+}
+
+async function fetchCheckItemFiles(serviceId, machineCheckItem, checkItemListId) {
+  try{
+    const productServiceRecordValueFiles = await ProductServiceRecordValueFile.find(
+      { serviceId, machineCheckItem, checkItemListId, isActive: true, isArchived: false }
+    ).select('_id name extension fileType thumbnail path').lean();
+    return productServiceRecordValueFiles
+  } catch(e){
+    logger.error(e);
+    throw e;
+  }
+}
 
 exports.deleteProductServiceRecordValue = async (req, res, next) => {
   this.dbservice.deleteObject(ProductServiceRecordValue, req.params.id, res, callbackFunc);
