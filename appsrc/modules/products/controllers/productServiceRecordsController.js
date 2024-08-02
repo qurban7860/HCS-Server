@@ -177,19 +177,27 @@ exports.getProductServiceRecords = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      const responseWithHistoryFlag = addHistoryFlagToProductServiceRecords(response)
-      res.json(responseWithHistoryFlag);
+      const responseWithCurrentVersion = addCurrentVersionToProductServiceRecords(response)
+      res.json(responseWithCurrentVersion);
     }
   }
 };
 
-const addHistoryFlagToProductServiceRecords = (docServiceRecordsList) => {
-  const serviceRecordsListWithHistory = docServiceRecordsList.map((model) => {
-    const serviceRecordObject = model.toObject();
-    return {...serviceRecordObject, history: serviceRecordObject.serviceId.toString() !== serviceRecordObject._id.toString()}
-  })
+const addCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
+  const serviceRecordObjectsArr = docServiceRecordsList.map((model) => model.toObject());
+  const currentLatestVersion = serviceRecordObjectsArr
+    .map((record) => {
+      return { serviceId: record.serviceId.toString(), versionNo: record.versionNo };
+    })
+    .reduce((latestVersion, currentItem) => {
+      if (latestVersion.versionNo < currentItem.versionNo) return currentItem;
+      else return latestVersion;
+    });
+  const serviceRecordsListWithHistory = serviceRecordObjectsArr.map((object) => {
+    return { ...object, currentVersion: currentLatestVersion };
+  });
   return serviceRecordsListWithHistory;
-}
+};
 
 exports.deleteProductServiceRecord = async (req, res, next) => {
   try{
