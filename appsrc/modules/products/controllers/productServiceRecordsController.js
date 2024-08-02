@@ -177,10 +177,19 @@ exports.getProductServiceRecords = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      const responseWithHistoryFlag = addHistoryFlagToProductServiceRecords(response)
+      res.json(responseWithHistoryFlag);
     }
   }
 };
+
+const addHistoryFlagToProductServiceRecords = (docServiceRecordsList) => {
+  const serviceRecordsListWithHistory = docServiceRecordsList.map((model) => {
+    const serviceRecordObject = model.toObject();
+    return {...serviceRecordObject, history: serviceRecordObject.serviceId.toString() !== serviceRecordObject._id.toString()}
+  })
+  return serviceRecordsListWithHistory;
+}
 
 exports.deleteProductServiceRecord = async (req, res, next) => {
   try{
