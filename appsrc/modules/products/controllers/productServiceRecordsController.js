@@ -177,9 +177,26 @@ exports.getProductServiceRecords = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      res.json(response);
+      const responseWithCurrentVersion = addCurrentVersionToProductServiceRecords(response)
+      res.json(responseWithCurrentVersion);
     }
   }
+};
+
+const addCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
+  const serviceRecordObjectsArr = docServiceRecordsList.map((model) => model.toObject());
+  const currentLatestVersion = serviceRecordObjectsArr
+    .map((record) => {
+      return { serviceId: record.serviceId.toString(), versionNo: record.versionNo };
+    })
+    .reduce((latestVersion, currentItem) => {
+      if (latestVersion.versionNo < currentItem.versionNo) return currentItem;
+      else return latestVersion;
+    });
+  const serviceRecordsListWithHistory = serviceRecordObjectsArr.map((object) => {
+    return { ...object, currentVersion: currentLatestVersion };
+  });
+  return serviceRecordsListWithHistory;
 };
 
 exports.deleteProductServiceRecord = async (req, res, next) => {
