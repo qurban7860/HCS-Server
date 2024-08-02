@@ -241,7 +241,7 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
-        const response = ProductServiceRecordValue.findById( req.params.id ); 
+        const response = await ProductServiceRecordValue.findById( req.params.id ); 
         const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
         let newResponse = { ...response?._doc, files: [] };
 
@@ -253,7 +253,6 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
         if (savedFiles?.length) {
           newResponse.files.push(...savedFiles);
         }
-
         res.status(StatusCodes.ACCEPTED).json( newResponse );
       }
     }
