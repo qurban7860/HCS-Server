@@ -325,7 +325,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     req.body.recommendationNote = parentProductServiceRecordObject?.recommendationNote || '';
     req.body.serviceNote = parentProductServiceRecordObject?.serviceNote || '';
     req.body.suggestedSpares = parentProductServiceRecordObject?.suggestedSpares || '';
-    req.body.isHistory = true;
+    req.body.isHistory = false;
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
