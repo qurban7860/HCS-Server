@@ -199,9 +199,17 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
           await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
           response.machineId = req.params.machineId;
           const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
-          const savedFiles = await handleServiceRecordValueFiles( response, req, res )
+          let newResponse = { ...response?._doc, files: [] };
 
-            const newResponse = { ...response?._doc, files: [...checkItemFiles, ...savedFiles ] }
+          if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
+            newResponse.files.push(...checkItemFiles);
+          }
+          
+          const savedFiles = await handleServiceRecordValueFiles(response, req, res);
+          if (savedFiles?.length) {
+            newResponse.files.push(...savedFiles);
+          }
+
           res.status(StatusCodes.CREATED).json( newResponse );
         }
       }
@@ -220,15 +228,33 @@ exports.patchProductServiceRecordValue = async (req, res, next) => {
     if(!req.body.loginUser){
       req.body.loginUser = await getToken(req);
     }
-
+    const findQuery = { 
+      serviceId: req.params?.serviceId, 
+      machineCheckItem: req.params?.machineCheckItem, 
+      checkItemListId: req.params?.checkItemListId, 
+      isActive: true, 
+      isArchived: false 
+    }
     this.dbservice.patchObject(ProductServiceRecordValue, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
-        await handleServiceRecordValueFiles(result, req, res )
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        const response = ProductServiceRecordValue.findById( req.params.id ); 
+        const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
+        let newResponse = { ...response?._doc, files: [] };
+
+        if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
+          newResponse.files.push(...checkItemFiles);
+        }
+        
+        const savedFiles = await handleServiceRecordValueFiles(response, req, res);
+        if (savedFiles?.length) {
+          newResponse.files.push(...savedFiles);
+        }
+
+        res.status(StatusCodes.ACCEPTED).json( newResponse );
       }
     }
   }
@@ -243,7 +269,7 @@ async function handleServiceRecordValueFiles(checkitem, req, res) {
     if (req?.files?.images) {
       files = req.files.images;
     } else {
-      return;
+      return false;
     }
 
     const fileProcessingPromises = files.map(async (file) => {

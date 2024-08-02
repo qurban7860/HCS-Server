@@ -50,7 +50,6 @@ exports.postServiceRecordFiles = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log(errors);
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
 
@@ -72,7 +71,7 @@ exports.postServiceRecordFiles = async (req, res, next) => {
       if(req?.files?.images){
         files = req.files.images;
       } else {
-        res.status(StatusCodes.OK).send('No file available to be uploaded!');
+        return res.status(StatusCodes.OK).send('No file available to be uploaded!');
       }
       for(let file of files) {
         if(!file || !file.originalname) {
@@ -102,11 +101,12 @@ exports.postServiceRecordFiles = async (req, res, next) => {
         function callbackFunc(error, response) {
           if (error) {
             logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+          }else{
+            return res.status(StatusCodes.OK).send('Files uploaded successfully!');
           }
         }
       }
-      res.status(StatusCodes.OK).send('Files uploaded successfully!');
     }
   }catch(e) {
     console.log(e);
