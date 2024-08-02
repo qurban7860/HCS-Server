@@ -190,22 +190,38 @@ const getCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
   const serviceRecordObjectsArr = docServiceRecordsList.map((model) => model.toObject());
   const currentLatestVersion = serviceRecordObjectsArr
     .map((record) => {
-      return { serviceId: record.serviceId.toString(), versionNo: record.versionNo, _id: record._id };
+      return {
+        serviceId: record.serviceId.toString(),
+        versionNo: record.versionNo,
+        _id: record._id,
+        status: record.status,
+      };
     })
     .reduce((accVersion, currentItem) => {
       if (currentItem.serviceId in accVersion) {
         if (currentItem.versionNo > accVersion[currentItem.serviceId].versionNo) {
-          return { ...accVersion, [currentItem.serviceId]: { versionNo: currentItem.versionNo, _id: currentItem._id } };
+          return {
+            ...accVersion,
+            [currentItem.serviceId]: {
+              versionNo: currentItem.versionNo,
+              _id: currentItem._id,
+              status: currentItem.status,
+            },
+          };
         }
         return accVersion;
       } else
-        return { ...accVersion, [currentItem.serviceId]: { versionNo: currentItem.versionNo, _id: currentItem._id } };
+        return {
+          ...accVersion,
+          [currentItem.serviceId]: {
+            versionNo: currentItem.versionNo,
+            _id: currentItem._id,
+            status: currentItem.status,
+          },
+        };
     }, {});
   const serviceRecordsListWithHistory = serviceRecordObjectsArr.map((object) => {
-    const currentVersion = {
-      _id: currentLatestVersion[object.serviceId]._id,
-      versionNo: currentLatestVersion[object.serviceId].versionNo,
-    };
+    const currentVersion = currentLatestVersion[object.serviceId];
     return { ...object, currentVersion };
   });
   return serviceRecordsListWithHistory;
