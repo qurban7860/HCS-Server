@@ -177,13 +177,16 @@ exports.getProductServiceRecords = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      const responseWithCurrentVersion = addCurrentVersionToProductServiceRecords(response)
-      res.json(responseWithCurrentVersion);
+      if (response?.length === 0) res.json(response)
+      else {
+        const responseWithCurrentVersion = getCurrentVersionToProductServiceRecords(response)
+        res.json(responseWithCurrentVersion);
+      }
     }
   }
 };
 
-const addCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
+const getCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
   const serviceRecordObjectsArr = docServiceRecordsList.map((model) => model.toObject());
   const currentLatestVersion = serviceRecordObjectsArr
     .map((record) => {
