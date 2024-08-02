@@ -71,6 +71,8 @@ exports.postServiceRecordFiles = async (req, res, next) => {
             
       if(req?.files?.images){
         files = req.files.images;
+      } else {
+        res.status(StatusCodes.OK).send('No file available to be uploaded!');
       }
       for(let file of files) {
         if(!file || !file.originalname) {
