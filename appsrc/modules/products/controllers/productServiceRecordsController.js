@@ -329,7 +329,6 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
-    // await updateOtherServiceRecords(req, productServiceRecordObject);
     const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
     let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
@@ -489,6 +488,7 @@ exports.patchProductServiceRecord = async (req, res ) => {
       return;
     }
 
+    req.body.serviceId = findServiceRecord?.serviceId;
 
     if (req.body.status?.toLowerCase() === 'draft') {
       await checkDraftServiceRecords(req, res, findServiceRecord)
@@ -520,7 +520,7 @@ const checkDraftServiceRecords = async ( req, res, findServiceRecord ) => {
     status: 'DRAFT'
   }).sort({ _id: -1 });
   if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 0 && !findServiceRecords?.some((fsr) => fsr?._id == req.params.id))) {
-    res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
+    return res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
   } 
 }
 
@@ -543,19 +543,16 @@ const handleDraftStatus = async (req, res, findServiceRecord) =>{
 
 const handleOtherStatuses = async (req, res, findServiceRecord) => {
   try{
-    var _this = this;
+    
     let productServiceRecordObject = {};
-    const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
-      { serviceId: req.body.serviceId, isActive: true, isArchived: false }
-    ).sort({ _id: -1 });
-    productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || req.body.serviceId;
+    productServiceRecordObject.serviceId =  req.body.serviceId;
       delete req.body.versionNo;
       productServiceRecordObject = await getDocumentFromReq(req);
-      const result = await ProductServiceRecords.updateOne({ _id: req.params.id }, productServiceRecordObject )
-      if(parentProductServiceRecordObject?.status?.toLowerCase() === 'draft'  && req.body?.status?.toLowerCase() === 'submitted'){
-        await updateOtherServiceRecords(req, result);
+      await ProductServiceRecords.updateOne({ _id: req.params.id }, productServiceRecordObject )
+      if( req.body?.status?.toLowerCase() === 'submitted' ){
+        await updateOtherServiceRecords( req, findServiceRecord );
       }
-      if(parentProductServiceRecordObject?.status?.toLowerCase() === 'submitted'  && req.body?.status?.toLowerCase() === 'approved'){
+      if( req.body?.status?.toLowerCase() === 'approved' ){
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
       }
       return res.status(StatusCodes.OK).send('Service Record updated successfully!');
@@ -565,27 +562,34 @@ const handleOtherStatuses = async (req, res, findServiceRecord) => {
   }
 }
 
-async function updateOtherServiceRecords(req, result) {
-  const queryToUpdateRecords = {
-    serviceId: req.body.serviceId,
-    _id: { $ne: result?._id ? result._id.toString() : req.params.id },
-  };
-  await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
-
-  if (req.body.serviceRecordConfig && Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length > 0) {
-    for (let recordValue of req.body.checkItemRecordValues) {
-      recordValue.loginUser = req.body.loginUser;
-      recordValue.serviceRecord = productServiceRecordObject._id;
-      recordValue.serviceId = req.body.serviceId;
-      let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-      await ProductServiceRecordValue.updateMany({
-        machineCheckItem: recordValue.machineCheckItem,
-        checkItemListId: recordValue.checkItemListId
-      }, { $set: { isHistory: true } });
-      await serviceRecordValue.save();
+async function updateOtherServiceRecords( req, findServiceRecord ) {
+  try{
+      const queryToUpdateRecords = {
+        serviceId: req.body.serviceId,
+        machine: req.params.machineId,
+      _id: { $ne: req.params.id },
+    };
+    const updateRecords = await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
+    console.log( 'updateRecords : ',updateRecords );
+    console.log( 'findServiceRecord : ',findServiceRecord );
+    if (req.body.serviceRecordConfig && Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length > 0) {
+      for (let recordValue of req.body.checkItemRecordValues) {
+        recordValue.loginUser = req.body.loginUser;
+        recordValue.serviceRecord = req.params.id;
+        recordValue.serviceId = req.body.serviceId;
+        let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
+        await ProductServiceRecordValue.updateMany({
+          machineCheckItem: recordValue.machineCheckItem,
+          checkItemListId: recordValue.checkItemListId
+        }, { $set: { isHistory: true } });
+        await serviceRecordValue.save();
+      }
     }
+    return;
+  } catch (e) {
+    console.log(e);
+    throw new Error('Error updating other service records and Values!');
   }
-  return;
 }
 
 async function getToken(req){
