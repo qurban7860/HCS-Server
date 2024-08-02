@@ -13,7 +13,7 @@ const awsService = require('../../../../appsrc/base/aws');
 const { Config } = require('../../config/models');
 const path = require('path');
 const sharp = require('sharp');
-const { fTimestamp } = require('../../../../utils/formatTime');
+const { customTimestamp } = require('../../../../utils/formatTime');
 const { renderEmail } = require('../../email/utils');
 
 let productDBService = require('../service/productDBService')
@@ -35,25 +35,25 @@ this.populate = [
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
   {path: 'technician', select: 'name firstName lastName'},
-  // {path: 'operator', select: 'firstName lastName'},
+  {path: 'operators', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
 
+this.populateObject = [
+  {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+  {path: 'customer', select: 'name'},
+  {path: 'site', select: 'name'},
+  {path: 'machine', select: 'name serialNo machineModel'},
+  {path: 'technician', select: 'name firstName lastName'},
+  {path: 'operators', select: 'firstName lastName'},
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'}
+];
 
 exports.getProductServiceRecord = async (req, res, next) => {
-  let populateObject = [
-    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
-    {path: 'customer', select: 'name'},
-    {path: 'site', select: 'name'},
-    {path: 'machine', select: 'name serialNo machineModel'},
-    {path: 'technician', select: 'name firstName lastName'},
-    // {path: 'operator', select: 'firstName lastName'},
-    {path: 'createdBy', select: 'name'},
-    {path: 'updatedBy', select: 'name'}
-  ];
 
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, populateObject, callbackFunc);
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populateObject, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -86,18 +86,8 @@ exports.getProductServiceRecord = async (req, res, next) => {
 };
 
 exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) => {
-  let populateObject = [
-    {path: 'serviceRecordConfig', select: 'docTitle recordType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
-    {path: 'customer', select: 'name'},
-    {path: 'site', select: 'name'},
-    {path: 'machine', select: 'name serialNo'},
-    {path: 'technician', select: 'name firstName lastName'},
-    // {path: 'operator', select: 'firstName lastName'},
-    {path: 'createdBy', select: 'name'},
-    {path: 'updatedBy', select: 'name'}
-  ];
 
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, populateObject, callbackFunc);
+  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populateObject, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -132,7 +122,6 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
             productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
 
             for(let paramListId of checkParam.checkItems) { 
-              // let productCheckItemObject = await ProductCheckItem.findById(paramListId);
               let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
               
               if(!productCheckItemObject)
@@ -246,7 +235,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
   
   let productServiceRecordObject = await getDocumentFromReq(req, 'new');
   productServiceRecordObject.status = 'DRAFT';
-  productServiceRecordObject.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
+  productServiceRecordObject.serviceRecordUid = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
   productServiceRecordObject.serviceId = productServiceRecordObject?._id;
   productServiceRecordObject.customer = machine?.customer;
 
@@ -298,10 +287,17 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     if(!productServiceRecord?._id){
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Record ID");
     }
+    if(!productServiceRecord?.isActive){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service Record is not active!");
+    }
 
-    const findServiceRecord = {}
-    findServiceRecord.serviceId = productServiceRecord?.serviceId;
-    await checkDraftServiceRecords( req, res, findServiceRecord )
+    const findDraftServiceRecord = await ProductServiceRecords.findOne({
+      serviceId: productServiceRecord?.serviceId, status: 'DRAFT', isArchived: false
+    }).populate( this.populateObject ).sort({ _id: -1 });
+    
+    if(findDraftServiceRecord?._id){
+      return res.status(StatusCodes.OK).json( findDraftServiceRecord );
+    }
     let productServiceRecordObject = {};
     const parentProductServiceRecordObject = await ProductServiceRecords.findOne(
       { serviceId: productServiceRecord?.serviceId, isActive: true, isArchived: false }
@@ -310,7 +306,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     productServiceRecordObject.serviceId = parentProductServiceRecordObject?.serviceId || productServiceRecord?.serviceId;
 
     req.body.serviceRecordConfig = parentProductServiceRecordObject?.serviceRecordConfig  || null;
-    req.body.serviceRecordUid = `${machine?.serialNo || '' } - ${fTimestamp( new Date())?.toString()}`;
+    req.body.serviceRecordUid = parentProductServiceRecordObject?.serviceRecordUid;
     req.body.versionNo = parentProductServiceRecordObject?.versionNo + 1;
     req.body.serviceId = parentProductServiceRecordObject?.serviceId  || null;
     req.body.customer = machine?.customer?._id || null;
@@ -339,9 +335,9 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
       result.files = serviceRecordFiles;
     }
-    return res.status(StatusCodes.OK).json({ serviceRecord: result });
+    return res.status(StatusCodes.OK).json(result);
   }catch(err) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)); 
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("New version create failed!"); 
   }
 }
 
@@ -523,8 +519,8 @@ const checkDraftServiceRecords = async ( req, res, findServiceRecord ) => {
     serviceId: findServiceRecord?.serviceId,
     status: 'DRAFT'
   }).sort({ _id: -1 });
-  if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 1 && !findServiceRecords?.some((fsr) => fsr?._id == req.params.id))) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
+  if (Array.isArray(findServiceRecords) && (findServiceRecords.length > 0 && !findServiceRecords?.some((fsr) => fsr?._id == req.params.id))) {
+    res.status(StatusCodes.BAD_REQUEST).send('Service Record is already in Draft!');
   } 
 }
 
