@@ -101,9 +101,9 @@ exports.postServiceRecordFiles = async (req, res, next) => {
         function callbackFunc(error, response) {
           if (error) {
             logger.error(new Error(error));
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
           }else{
-            return res.status(StatusCodes.OK).send('Files uploaded successfully!');
+            res.status(StatusCodes.OK).send('Files uploaded successfully!');
           }
         }
       }
@@ -249,6 +249,7 @@ async function generateThumbnail(filePath) {
     
   } catch (error) {
     console.log(error);
+    throw error;
   }
 }
 
