@@ -73,40 +73,36 @@ exports.postServiceRecordFiles = async (req, res, next) => {
       } else {
         return res.status(StatusCodes.OK).send('No file available to be uploaded!');
       }
-      for(let file of files) {
-        if(!file || !file.originalname) {
-          console.log('No File present for uploading')
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+ 
+      const fileProcessingPromises = files.map(async (file) => {
+        if (!file || !file.originalname) {
+          console.log('No File present for uploading');
+          throw new Error('Invalid file');
         }
-        
+  
         const processedFile = await processFile(file, req.body.loginUser.userId);
         req.body.serviceId = serviceRecord?.serviceId;
         req.body.path = processedFile.s3FilePath;
-        req.body.fileType =req.body.type = processedFile.type
+        req.body.fileType = req.body.type = processedFile.type;
         req.body.extension = processedFile.fileExt;
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
         req.body.machineServiceRecord = machineServiceRecord;
         req.body.name = processedFile.name;
-        
-        if(processedFile.base64thumbNailData){
+  
+        if (processedFile.base64thumbNailData) {
           req.body.thumbnail = processedFile.base64thumbNailData;
           req.body.name = processedFile.name;
         }
-
+  
         const serviveRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
-        
-        await this.dbservice.postObject(serviveRecordFileObject, callbackFunc);
-        function callbackFunc(error, response) {
-          if (error) {
-            logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-          }else{
-            res.status(StatusCodes.OK).send('Files uploaded successfully!');
-          }
-        }
-      }
+        return this.dbservice.postObject(serviveRecordFileObject);
+      });
+  
+      await Promise.all(fileProcessingPromises);
+  
+      return res.status(StatusCodes.OK).send('Files uploaded successfully!');
     }
   }catch(e) {
     console.log(e);
