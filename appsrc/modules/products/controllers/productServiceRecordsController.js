@@ -187,44 +187,25 @@ exports.getProductServiceRecords = async (req, res, next) => {
 };
 
 const getCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
-  const serviceRecordObjectsArr = docServiceRecordsList.map((model) => model.toObject());
-  const currentLatestVersion = serviceRecordObjectsArr
-    .map((record) => {
-      return {
-        serviceId: record.serviceId.toString(),
+  const latestVersions = new Map();
+
+  for (const record of docServiceRecordsList) {
+    const serviceId = record.serviceId.toString();
+    const currentVersion = latestVersions.get(serviceId);
+    
+    if (!currentVersion || record.versionNo > currentVersion.versionNo) {
+      latestVersions.set(serviceId, {
         versionNo: record.versionNo,
         _id: record._id,
-        status: record.status,
-      };
-    })
-    .reduce((accVersion, currentItem) => {
-      if (currentItem.serviceId in accVersion) {
-        if (currentItem.versionNo > accVersion[currentItem.serviceId].versionNo) {
-          return {
-            ...accVersion,
-            [currentItem.serviceId]: {
-              versionNo: currentItem.versionNo,
-              _id: currentItem._id,
-              status: currentItem.status,
-            },
-          };
-        }
-        return accVersion;
-      } else
-        return {
-          ...accVersion,
-          [currentItem.serviceId]: {
-            versionNo: currentItem.versionNo,
-            _id: currentItem._id,
-            status: currentItem.status,
-          },
-        };
-    }, {});
-  const serviceRecordsListWithHistory = serviceRecordObjectsArr.map((object) => {
-    const currentVersion = currentLatestVersion[object.serviceId];
-    return { ...object, currentVersion };
-  });
-  return serviceRecordsListWithHistory;
+        status: record.status
+      });
+    }
+  }
+
+  return docServiceRecordsList.map(record => ({
+    ...record.toObject(),
+    currentVersion: latestVersions.get(record.serviceId.toString())
+  }));
 };
 
 exports.deleteProductServiceRecord = async (req, res, next) => {
