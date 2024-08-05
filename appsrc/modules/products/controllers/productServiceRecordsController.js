@@ -180,7 +180,6 @@ exports.getProductServiceRecords = async (req, res, next) => {
       if (response?.length === 0) res.json(response)
       else {
         const responseWithCurrentVersion = getCurrentVersionToProductServiceRecords(response)
-        console.log("responseWithCurrentVersion: ", responseWithCurrentVersion)
         res.json(responseWithCurrentVersion);
       }
     }
