@@ -167,12 +167,15 @@ async function sendEmail(params, toAddresses) {
     ],
   };
 
-  if( toAddresses && toAddresses.length > 0 )
+  if( toAddresses && toAddresses.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL )
     emailParams.Destination.ToAddresses = toAddresses;
 
-  if( params?.ccAddresses && params?.ccAddresses?.length > 0 ){
+  if( params?.ccAddresses && params?.ccAddresses?.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL ){
     emailParams.Destination.CcAddresses = params.ccAddresses;
   }
+
+  if(process.env.NOTIFY_RECEIVER_EMAIL)
+    emailParams.Destination.ToAddresses = [ process.env.NOTIFY_RECEIVER_EMAIL ];
 
   if(params.html) {
     emailParams.Message.Body = {

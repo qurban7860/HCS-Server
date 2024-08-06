@@ -98,7 +98,7 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
     }
   }catch(e) {
     console.log(e);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"Unable to save document"});
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send({message:"File Save Failed!"});
   }
 };
 
