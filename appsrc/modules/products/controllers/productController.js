@@ -30,7 +30,7 @@ const { SecurityUser } = require('../../security/models')
 const { Region } = require('../../regions/models')
 const { Country } = require('../../config/models')
 const ObjectId = require('mongoose').Types.ObjectId;
-const { fDateTime, fDate } = require('../../../../utils/formatTime');
+const { fDate } = require('../../../../utils/formatTime');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -1688,7 +1688,6 @@ function getContactName(contacts) {
 }
 
 exports.sendEmailAlert = async ( data ) => {
-  console.log('data : ', data );
   const emailsSet = filterAndDeduplicateEmails( data?.managers )
   const emailsToSend = Array.from( emailsSet )
   let text = '';

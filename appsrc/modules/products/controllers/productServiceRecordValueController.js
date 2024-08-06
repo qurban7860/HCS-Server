@@ -189,14 +189,14 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error._message );
         } else {
-          const findQuery = { 
-            serviceId: response?.serviceId, 
-            machineCheckItem: response?.machineCheckItem, 
-            checkItemListId: response?.checkItemListId, 
-            isActive: true, 
-            isArchived: false 
-          }
-          await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
+          // const findQuery = { 
+          //   serviceId: response?.serviceId, 
+          //   machineCheckItem: response?.machineCheckItem, 
+          //   checkItemListId: response?.checkItemListId, 
+          //   isActive: true, 
+          //   isArchived: false 
+          // }
+          // await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
           response.machineId = req.params.machineId;
           const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
           let newResponse = { ...response?._doc, files: [] };

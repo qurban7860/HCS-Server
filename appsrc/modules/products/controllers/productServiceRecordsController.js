@@ -355,6 +355,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
+    await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
     const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
     let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
@@ -576,7 +577,7 @@ const handleOtherStatuses = async (req, res, findServiceRecord) => {
       productServiceRecordObject = await getDocumentFromReq(req);
       await ProductServiceRecords.updateOne({ _id: req.params.id }, productServiceRecordObject )
       if( req.body?.status?.toLowerCase() === 'submitted' ){
-        await updateOtherServiceRecords( req, findServiceRecord );
+        await updateOtherServiceRecords( req );
       }
       if( req.body?.status?.toLowerCase() === 'approved' ){
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
@@ -588,33 +589,28 @@ const handleOtherStatuses = async (req, res, findServiceRecord) => {
   }
 }
 
-async function updateOtherServiceRecords( req, findServiceRecord ) {
+async function updateOtherServiceRecords( req ) {
   try{
       const queryToUpdateRecords = {
         serviceId: req.body.serviceId,
         machine: req.params.machineId,
       _id: { $ne: req.params.id },
     };
-    const updateRecords = await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
-    console.log( 'updateRecords : ',updateRecords );
-    console.log( 'findServiceRecord : ',findServiceRecord );
-    if (req.body.serviceRecordConfig && Array.isArray(req.body.checkItemRecordValues) && req.body.checkItemRecordValues.length > 0) {
-      for (let recordValue of req.body.checkItemRecordValues) {
-        recordValue.loginUser = req.body.loginUser;
-        recordValue.serviceRecord = req.params.id;
-        recordValue.serviceId = req.body.serviceId;
-        let serviceRecordValue = productServiceRecordValueDocumentFromReq(recordValue, 'new');
-        await ProductServiceRecordValue.updateMany({
-          machineCheckItem: recordValue.machineCheckItem,
-          checkItemListId: recordValue.checkItemListId
-        }, { $set: { isHistory: true } });
-        await serviceRecordValue.save();
-      }
-    }
+    await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
     return;
   } catch (e) {
     console.log(e);
-    throw new Error('Error updating other service records and Values!');
+    throw new Error('Update previous service records Failed!');
+  }
+}
+
+async function historyServiceRecordValues( serviceId ) {
+  try{
+    await ProductServiceRecordValue.updateMany({ serviceId }, { $set: { isHistory: true } });
+    return;
+  } catch (e) {
+    console.log(e);
+    throw new Error('Update service record Values failed!');
   }
 }
 
