@@ -62,7 +62,7 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
   ];
 
   try {
-    const response = await this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.serviceId, populateObject);
+    const response =  await ProductServiceRecords.findOne( { serviceId: req.params.serviceId } ).populate( populateObject ).sort({ _id: -1 });
     const activeValues = await fetchServiceRecordValues(response.serviceId, false);
     const historicalValues = await fetchServiceRecordValues(response.serviceId, true);
 
@@ -73,7 +73,7 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
         if (Array.isArray(checkParam?.checkItems)) {
           const checkItems = await fetchCheckItems(checkParam.checkItems);
           for (let checkItem of checkItems) {
-            await updateCheckItemWithValues(checkItem, checkParam._id, activeValues, historicalValues);
+            await updateCheckItemWithValues( checkItem, checkParam._id, activeValues, historicalValues, response );
           }
           responseData.checkItemLists[index].checkItems = checkItems
         }
@@ -114,24 +114,32 @@ async function fetchCheckItems(checkItemIds) {
   }
 }
 
-async function updateCheckItemWithValues(item, checkItemListId, activeValues, historicalValues) {
+async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, record ){
   try{
-      const activeValue = activeValues.find(val =>
-        val?.machineCheckItem?.toString() === item._id.toString() &&
+    const activeValue = activeValues.find(val =>
+      val?.machineCheckItem?.toString() === item._id.toString() &&
       val?.checkItemListId?.toString() === checkItemListId.toString()
     );
+    
+    const checkItemFiles = await fetchCheckItemFiles( record?.serviceId, item._id, checkItemListId );
+
+    if (Array.isArray(checkItemFiles) && checkItemFiles?.length > 0 ) {
+      item.recordValue = {
+        files: checkItemFiles,
+      };
+    }
 
     const historicalData = historicalValues.filter(val =>
       val.machineCheckItem.toString() === item._id.toString() &&
       val.checkItemListId.toString() === checkItemListId.toString()
     );
+
     if (activeValue) {
-      const checkItemFiles = await fetchCheckItemFiles(activeValue.serviceId, activeValue.machineCheckItem, activeValue.checkItemListId);
       item.recordValue = {
+        ...item?.recordValue,
         _id: activeValue._id,
         serviceRecord: activeValue.serviceRecord,
         checkItemValue: activeValue.checkItemValue,
-        files: checkItemFiles,
         comments: activeValue.comments,
         createdBy: activeValue.createdBy,
         createdAt: activeValue.createdAt
@@ -189,14 +197,14 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error._message );
         } else {
-          // const findQuery = { 
-          //   serviceId: response?.serviceId, 
-          //   machineCheckItem: response?.machineCheckItem, 
-          //   checkItemListId: response?.checkItemListId, 
-          //   isActive: true, 
-          //   isArchived: false 
-          // }
-          // await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
+          const findQuery = { 
+            serviceId: response?.serviceId, 
+            machineCheckItem: response?.machineCheckItem, 
+            checkItemListId: response?.checkItemListId, 
+            isActive: true, 
+            isArchived: false 
+          }
+          await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
           response.machineId = req.params.machineId;
           const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
           let newResponse = { ...response?._doc, files: [] };

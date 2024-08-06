@@ -355,7 +355,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
-    await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
+    // await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
     const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
     let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
@@ -526,7 +526,7 @@ exports.patchProductServiceRecord = async (req, res ) => {
     await handleOtherStatuses(req, res, findServiceRecord);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
   }
 }
 
@@ -597,6 +597,7 @@ async function updateOtherServiceRecords( req ) {
       _id: { $ne: req.params.id },
     };
     await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
+
     return;
   } catch (e) {
     console.log(e);
