@@ -355,7 +355,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
-    // await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
+    await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
     const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
     let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
