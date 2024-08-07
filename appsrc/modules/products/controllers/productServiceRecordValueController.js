@@ -143,16 +143,23 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
       );
     }
 
-    const checkItemFiles = await fetchCheckItemFiles(record?.serviceId, item._id, checkItemListId);
+    const checkItemFiles = await fetchCheckItemFiles(record?._id, item._id, checkItemListId);
 
     if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
       item.recordValue = { files: checkItemFiles };
     }
 
-    const historicalData = historicalValues.filter(val =>
-      val.machineCheckItem.toString() === item._id.toString() &&
-      val.checkItemListId.toString() === checkItemListId.toString() &&
-      val?.serviceRecord?.status?.toLowerCase() !== 'draft'
+    const historicalData = await Promise.all(
+      historicalValues
+        .filter(val =>
+          val.machineCheckItem.toString() === item._id.toString() &&
+          val.checkItemListId.toString() === checkItemListId.toString() &&
+          val?.serviceRecord?.status?.toLowerCase() !== 'draft'
+        )
+        .map(async (val) => ({
+          ...val,
+          files: await fetchCheckItemFiles(val.serviceRecord?._id, val?.machineCheckItem, val?.checkItemListId),
+        }))
     );
 
       if (isDraft && draftValue ) {
@@ -188,9 +195,17 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
       }
 
       if ( isDraft && activeValue ) {
+        const activeFiles = await fetchCheckItemFiles(
+          activeValue.serviceRecord?._id,
+          activeValue?.machineCheckItem,
+          activeValue?.checkItemListId
+        );
         item.historicalData = [{
           _id: activeValue._id,
+          files: activeFiles,
           serviceRecord: activeValue.serviceRecord,
+          machineCheckItem: activeValue?.machineCheckItem, 
+          checkItemListId: activeValue?.checkItemListId,
           checkItemValue: activeValue.checkItemValue,
           comments: activeValue.comments,
           createdBy: activeValue.createdBy,
@@ -208,11 +223,11 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
   }
 }
 
-async function fetchCheckItemFiles(serviceId, machineCheckItem, checkItemListId) {
+async function fetchCheckItemFiles(serviceRecord, machineCheckItem, checkItemListId) {
   try{
     const productServiceRecordValueFiles = await ProductServiceRecordValueFile.find(
-      { serviceId, machineCheckItem, checkItemListId, isActive: true, isArchived: false }
-    ).select('_id name extension fileType thumbnail path').lean();
+      { serviceRecord, machineCheckItem, checkItemListId, isActive: true, isArchived: false }
+    ).select('_id serviceRecord name extension fileType thumbnail path').lean();
     return productServiceRecordValueFiles
   } catch(e){
     logger.error(e);

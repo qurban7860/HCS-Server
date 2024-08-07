@@ -88,15 +88,10 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
-
-            //Checking blocked list of customer & users.
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
-            
-
             if(blockedCustomer) {
               const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
               dbService.postObject(securityLogs, callbackFunc);
@@ -138,7 +133,7 @@ exports.login = async (req, res, next) => {
                     }
                   }
   
-                  if (existingUser.multiFactorAuthentication) {
+                  if (existingUser.multiFactorAuthentication && false) {
                     const emailSubject = "Multi-Factor Authentication Code";
                     const code = Math.floor(100000 + Math.random() * 900000);
                     const username = existingUser.name;
@@ -293,14 +288,11 @@ async function validateAndLoginUser(req, res, existingUser) {
       });
 
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      console.log("clientIP : ",clientIP);
       const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
-      console.log("loginLogResponse : ",loginLogResponse);
 
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
         let session = await removeAndCreateNewSession(req,existingUser.id);
-        console.log("error : ",error,"session : ",session );
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
           if(!error)
