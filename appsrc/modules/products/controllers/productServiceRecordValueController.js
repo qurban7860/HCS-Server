@@ -62,7 +62,7 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
   ];
 
   try {
-    const response =  await ProductServiceRecords.findOne( { serviceId: req.params.serviceId } ).populate( populateObject ).sort({ _id: -1 });
+    const response =  await ProductServiceRecords.findById( req.params.serviceId  ).populate( populateObject ).sort({ _id: -1 });
     const activeValues = await fetchServiceRecordValues(response.serviceId, false);
     const historicalValues = await fetchServiceRecordValues(response.serviceId, true);
 
@@ -91,7 +91,7 @@ async function fetchServiceRecordValues(serviceId, isHistory) {
     const productServiceRecordValues = await  ProductServiceRecordValue.find(
       { serviceId, isHistory, isActive: true, isArchived: false },
       { checkItemValue: 1, comments: 1, serviceRecord: 1, serviceId: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
-    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceRecord', select: 'versionNo' }])
+    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceRecord', select: 'versionNo status' }])
     .sort({ createdAt: -1 })
     .lean();
     return productServiceRecordValues
@@ -113,43 +113,95 @@ async function fetchCheckItems(checkItemIds) {
     throw e;
   }
 }
+async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, record ) {
+  try {
 
-async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, record ){
-  try{
-    const activeValue = activeValues.find(val =>
-      val?.machineCheckItem?.toString() === item._id.toString() &&
-      val?.checkItemListId?.toString() === checkItemListId.toString()
-    );
+    const isDraft = record?.status?.toLowerCase() === 'draft';
+    const isHistoryRecord = record?.isHistory;
+    let draftValue = null;
+    let activeValue = null;
+    let historyRecordValue = null;
+    if( isDraft ){
+      draftValue = activeValues.find(val =>
+        val?.machineCheckItem?.toString() === item._id.toString() &&
+        val?.checkItemListId?.toString() === checkItemListId.toString() && 
+        val?.serviceRecord?._id?.toString() === record?._id?.toString()
+      );
+    }
     
-    const checkItemFiles = await fetchCheckItemFiles( record?.serviceId, item._id, checkItemListId );
+    if( isHistoryRecord ){
+      historyRecordValue = historicalValues.find(val =>
+        val?.machineCheckItem?.toString() === item._id.toString() &&
+        val?.checkItemListId?.toString() === checkItemListId.toString() && 
+        val?.serviceRecord?._id?.toString() === record?._id?.toString()
+      );
+    } else {
+      activeValue = activeValues.find(val =>
+        val?.machineCheckItem?.toString() === item._id.toString() &&
+        val?.checkItemListId?.toString() === checkItemListId.toString() && 
+        val?.serviceRecord?.status?.toLowerCase() !== 'draft'
+      );
+    }
 
-    if (Array.isArray(checkItemFiles) && checkItemFiles?.length > 0 ) {
-      item.recordValue = {
-        files: checkItemFiles,
-      };
+    const checkItemFiles = await fetchCheckItemFiles(record?.serviceId, item._id, checkItemListId);
+
+    if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
+      item.recordValue = { files: checkItemFiles };
     }
 
     const historicalData = historicalValues.filter(val =>
       val.machineCheckItem.toString() === item._id.toString() &&
-      val.checkItemListId.toString() === checkItemListId.toString()
+      val.checkItemListId.toString() === checkItemListId.toString() &&
+      val?.serviceRecord?.status?.toLowerCase() !== 'draft'
     );
 
-    if (activeValue) {
-      item.recordValue = {
-        ...item?.recordValue,
-        _id: activeValue._id,
-        serviceRecord: activeValue.serviceRecord,
-        checkItemValue: activeValue.checkItemValue,
-        comments: activeValue.comments,
-        createdBy: activeValue.createdBy,
-        createdAt: activeValue.createdAt
-      };
-    }
+      if (isDraft && draftValue ) {
+        item.recordValue = {
+          ...item?.recordValue,
+          _id: draftValue._id,
+          serviceRecord: draftValue.serviceRecord,
+          checkItemValue: draftValue.checkItemValue,
+          comments: draftValue.comments,
+          createdBy: draftValue.createdBy,
+          createdAt: draftValue.createdAt,
+        };
+      } else if ( isHistoryRecord && historyRecordValue ){
+        item.recordValue = {
+          ...item?.recordValue,
+          _id: historyRecordValue._id,
+          serviceRecord: historyRecordValue.serviceRecord,
+          checkItemValue: historyRecordValue.checkItemValue,
+          comments: historyRecordValue.comments,
+          createdBy: historyRecordValue.createdBy,
+          createdAt: historyRecordValue.createdAt,
+        };
+      } else if ( !isDraft && !isHistoryRecord && activeValue ){
+        item.recordValue = {
+          ...item?.recordValue,
+          _id: activeValue._id,
+          serviceRecord: activeValue.serviceRecord,
+          checkItemValue: activeValue.checkItemValue,
+          comments: activeValue.comments,
+          createdBy: activeValue.createdBy,
+          createdAt: activeValue.createdAt,
+        };
+      }
 
-    if (historicalData.length > 0) {
-      item.historicalData = historicalData;
-    }
+      if ( isDraft && activeValue ) {
+        item.historicalData = [{
+          _id: activeValue._id,
+          serviceRecord: activeValue.serviceRecord,
+          checkItemValue: activeValue.checkItemValue,
+          comments: activeValue.comments,
+          createdBy: activeValue.createdBy,
+          createdAt: activeValue.createdAt,
+        }, ...historicalData];
+      } else if ( historicalData.length > 0 && !isHistoryRecord ) {
+        item.historicalData = historicalData;
+      }
+
     return item;
+
   } catch (e) {
     logger.error(e);
     throw e;
@@ -204,7 +256,6 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
             isActive: true, 
             isArchived: false 
           }
-          await ProductServiceRecordValue.updateMany( { ...findQuery,_id: { $nin: response?._id } }, { $set: { isHistory: true } } );
           response.machineId = req.params.machineId;
           const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
           let newResponse = { ...response?._doc, files: [] };

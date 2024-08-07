@@ -40,8 +40,14 @@ const docSchema = new Schema({
   serviceRecordUid: { type: String, required: true  },
   //indication of current active record status.
 
-  status: { type: String, enum: ['DRAFT','SUBMITTED', 'APPROVED'], default: 'DRAFT' },
+  status: { type: String, enum: ['DRAFT','SUBMITTED'], default: 'DRAFT' },
+  //indication of current active record approval status.
+
+  approvalStatus: { type: String, enum: ['ACCEPTED','REJECTED'], },
   //indication of current active record status.
+
+  approvalNote: { type: String },
+  //current active record approval notes.
 
   technicianNotes: { type: String },
   // operator comments against this record.
