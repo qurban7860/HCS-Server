@@ -211,8 +211,9 @@ const getCurrentVersionToProductServiceRecords = (docServiceRecordsList) => {
 exports.deleteProductServiceRecord = async (req, res, next) => {
   try{
     req.body.isArchived = true;
-    const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id }).select('status')
+    const serviceRecObj = await ProductServiceRecords.findById( req.params.id ).select('status')
     if( serviceRecObj?.status?.toLowerCase() === 'draft'){
+      await ProductServiceRecordValue.updateMany( { serviceRecord: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceRecordValueFile.updateMany( { serviceRecord: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceRecordFiles.updateMany( { machineServiceRecord: req.params.id }, { $set: { isArchived: true } } );
     }
@@ -355,7 +356,7 @@ exports.newProductServiceRecordVersion = async (req, res, next) => {
 
     productServiceRecordObject = getDocumentFromReq(req, 'new');
     const result = await productServiceRecordObject.save();
-    await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
+    // await historyServiceRecordValues( parentProductServiceRecordObject?.serviceId );
     const serviceRecordFileQuery = { serviceId:{ $in: parentProductServiceRecordObject?.serviceId }, isArchived: false };
     let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
     if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
@@ -523,7 +524,7 @@ exports.patchProductServiceRecord = async (req, res ) => {
       return;
     }
 
-    await handleOtherStatuses(req, res, findServiceRecord);
+    await handleSubmitStatus(req, res, findServiceRecord);
   } catch (error) {
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
@@ -568,7 +569,7 @@ const handleDraftStatus = async (req, res, findServiceRecord) =>{
   }
 }
 
-const handleOtherStatuses = async (req, res, findServiceRecord) => {
+const handleSubmitStatus = async (req, res, findServiceRecord) => {
   try{
     
     let productServiceRecordObject = {};
@@ -577,7 +578,7 @@ const handleOtherStatuses = async (req, res, findServiceRecord) => {
       productServiceRecordObject = await getDocumentFromReq(req);
       await ProductServiceRecords.updateOne({ _id: req.params.id }, productServiceRecordObject )
       if( req.body?.status?.toLowerCase() === 'submitted' ){
-        await updateOtherServiceRecords( req );
+        await handleSubmitServiceRecords( req );
       }
       if( req.body?.status?.toLowerCase() === 'approved' ){
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
@@ -589,13 +590,14 @@ const handleOtherStatuses = async (req, res, findServiceRecord) => {
   }
 }
 
-async function updateOtherServiceRecords( req ) {
+async function handleSubmitServiceRecords( req ) {
   try{
       const queryToUpdateRecords = {
         serviceId: req.body.serviceId,
         machine: req.params.machineId,
       _id: { $ne: req.params.id },
     };
+    await historyServiceRecordValues( req );
     await ProductServiceRecords.updateMany(queryToUpdateRecords, { $set: { isHistory: true } });
 
     return;
@@ -605,9 +607,22 @@ async function updateOtherServiceRecords( req ) {
   }
 }
 
-async function historyServiceRecordValues( serviceId ) {
+async function historyServiceRecordValues( req ) {
   try{
-    await ProductServiceRecordValue.updateMany({ serviceId }, { $set: { isHistory: true } });
+
+    const draftServiceRecordValues = await ProductServiceRecordValue.find({ serviceRecord: req.params.id }).lean();
+
+    const conditions = draftServiceRecordValues.map(pair => ({
+      machineCheckItem: pair.machineCheckItem,
+      checkItemListId: pair.checkItemListId,
+      serviceId: req.body.serviceId,
+      serviceRecord: { $ne: req.params.id }
+    }));
+    
+    await ProductServiceRecordValue.updateMany(
+      { $or: conditions },
+      { $set: { isHistory: true } }
+    );
     return;
   } catch (e) {
     console.log(e);
