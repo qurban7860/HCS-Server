@@ -293,10 +293,13 @@ async function validateAndLoginUser(req, res, existingUser) {
       });
 
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
+      console.log("clientIP : ",clientIP);
+      const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
+      console.log("loginLogResponse : ",loginLogResponse);
+
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-
+        console.log("error : ",error,"session : ",session );
         let session = await removeAndCreateNewSession(req,existingUser.id);
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
@@ -304,7 +307,6 @@ async function validateAndLoginUser(req, res, existingUser) {
             error = 'Unable to Start session.'
           
           console.log(error, session);
-          // return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
