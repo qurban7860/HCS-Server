@@ -155,7 +155,7 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
         }
       }
       let currentVersion_ = await ProductServiceRecords.findOne(
-      {serviceId: response.serviceId, isActive: true, isArchived: false}, 
+      {serviceId: response.serviceId, isActive: true, isArchived: false, status:'SUBMITTED'}, 
       {versionNo: 1, _id: 1}).sort({_id: -1});
       currentVersion_ = JSON.parse(JSON.stringify(currentVersion_));     
       response.currentVersion = currentVersion_;
