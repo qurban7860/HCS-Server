@@ -61,7 +61,7 @@ exports.getProductServiceRecord = async (req, res, next) => {
     } else {
       response = JSON.parse(JSON.stringify(response));  
 
-      const queryToFindCurrentVer = {serviceId: response.serviceId, isArchived: false, isHistory: false};
+      const queryToFindCurrentVer = {serviceId: response.serviceId, isArchived: false, isHistory: false, status:'SUBMITTED'};
       const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({versionNo: -1}).lean();
       response.currentVersion = currentVersion;
       if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
@@ -155,7 +155,7 @@ exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) =>
         }
       }
       let currentVersion_ = await ProductServiceRecords.findOne(
-      {serviceId: response.serviceId, isActive: true, isArchived: false}, 
+      {serviceId: response.serviceId, isActive: true, isArchived: false, status:'SUBMITTED'}, 
       {versionNo: 1, _id: 1}).sort({_id: -1});
       currentVersion_ = JSON.parse(JSON.stringify(currentVersion_));     
       response.currentVersion = currentVersion_;
