@@ -299,8 +299,8 @@ async function validateAndLoginUser(req, res, existingUser) {
 
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-        console.log("error : ",error,"session : ",session );
         let session = await removeAndCreateNewSession(req,existingUser.id);
+        console.log("error : ",error,"session : ",session );
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
           if(!error)
