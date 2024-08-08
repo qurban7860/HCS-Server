@@ -248,48 +248,59 @@ exports.deleteProductServiceRecordValue = async (req, res, next) => {
 };
 
 exports.postProductServiceRecordValue = async (req, res, next) => {
-  try{
+  try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+
+    if (!req.body.loginUser) {
+      req.body.loginUser = await getToken(req);
+    }
+    req.body.machineId = req.params.machineId;
+
+    // Check if the record already exists
+    const existingRecord = await ProductServiceRecordValue.findOne({
+      serviceRecord: req.body.serviceRecord,
+      machineCheckItem: req.body.machineCheckItem,
+      checkItemListId: req.body.checkItemListId
+    });
+
+    if (existingRecord) {
+      // If it exists, patch the existing record
+      req.params.id = existingRecord._id; // Set the ID to the existing record's ID
+      return await exports.patchProductServiceRecordValue(req, res, next);
     } else {
-      if(!req.body.loginUser){
-        req.body.loginUser = await getToken(req);
+      // If it doesn't exist, create a new record
+      const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+      const findQuery = {
+        serviceId: response?.serviceId,
+        machineCheckItem: response?.machineCheckItem,
+        checkItemListId: response?.checkItemListId,
+        isActive: true,
+        isArchived: false
+      };
+      response.machineId = req.params.machineId;
+
+      const checkItemFiles = await ProductServiceRecordValueFile.find(findQuery)
+        .select('_id name extension fileType thumbnail path')
+        .lean();
+
+      let newResponse = { ...response?._doc, files: [] };
+
+      if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
+        newResponse.files.push(...checkItemFiles);
       }
-      req.body.machineId = req.params.machineId;
 
-      this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-      async function callbackFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error._message );
-        } else {
-          const findQuery = { 
-            serviceId: response?.serviceId, 
-            machineCheckItem: response?.machineCheckItem, 
-            checkItemListId: response?.checkItemListId, 
-            isActive: true, 
-            isArchived: false 
-          }
-          response.machineId = req.params.machineId;
-          const checkItemFiles= await ProductServiceRecordValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
-          let newResponse = { ...response?._doc, files: [] };
-
-          if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
-            newResponse.files.push(...checkItemFiles);
-          }
-          
-          const savedFiles = await handleServiceRecordValueFiles(response, req, res);
-          if (savedFiles?.length) {
-            newResponse.files.push(...savedFiles);
-          }
-
-          res.status(StatusCodes.CREATED).json( newResponse );
-        }
+      const savedFiles = await handleServiceRecordValueFiles(response, req, res);
+      if (savedFiles?.length) {
+        newResponse.files.push(...savedFiles);
       }
+
+      return res.status(StatusCodes.CREATED).json(newResponse);
     }
   } catch (e) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
