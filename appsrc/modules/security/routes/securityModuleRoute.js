@@ -1,20 +1,12 @@
 const express = require('express');
 const { check } = require('express-validator');
-
-const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
-
-
-
 const controllers = require('../controllers');
 const controller = controllers.securityModuleController;
 
 const router = express.Router();
-
-//  - base route for module
-// - /api/1.0.0/security/modules/
 
 // - /api/1.0.0/security/modules/:id
 const baseRoute = `/modules`;

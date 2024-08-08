@@ -11,6 +11,8 @@ let rtnMsg = require('../../config/static/static');
 const awsService = require('../../../../appsrc/base/aws');
 const { render } = require('template-file');
 const fs = require('fs');
+const path = require('path');
+const { renderEmail } = require('../../email/utils');
 
 let securityDBService = require('../service/securityDBService');
 const dbService = this.dbservice = new securityDBService();
@@ -86,15 +88,10 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-
           if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
-
-            //Checking blocked list of customer & users.
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
-            
-
             if(blockedCustomer) {
               const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
               dbService.postObject(securityLogs, callbackFunc);
@@ -136,47 +133,27 @@ exports.login = async (req, res, next) => {
                     }
                   }
   
-                  if (existingUser.multiFactorAuthentication) {
-  
-                    // User has enabled MFA, so redirect them to the MFA page
-                    // Generate a one time code and send it to the user's email address
+                  if (existingUser.multiFactorAuthentication && false) {
+                    const emailSubject = "Multi-Factor Authentication Code";
                     const code = Math.floor(100000 + Math.random() * 900000);
-                    
-                    let emailContent = `We detected an unusual 
-                    sign-in from a device or location you don't usually use. If this was you, 
-                    enter the code below to sign in. <br>
-                    <h2 style="font-size: 30px;letter-spacing: 10px;font-weight: bold;">${code}</h2><br>.
-                    The code will expire in <b>10</b> minutes.`;
-                    let emailSubject = "Multi-Factor Authentication Code";
-  
+                    const username = existingUser.name;
                     let params = {
                       to: `${existingUser.email}`,
                       subject: emailSubject,
                       html: true
                     };
-  
-                    
-                    let username = existingUser.name;
-  
-                    let hostName = 'portal.howickltd.com';
-  
-                    if(process.env.CLIENT_HOST_NAME)
-                      hostName = process.env.CLIENT_HOST_NAME;
-                    
-                    let hostUrl = "https://portal.howickltd.com";
-  
-                    if(process.env.CLIENT_APP_URL)
-                      hostUrl = process.env.CLIENT_APP_URL;
-                    
-                    fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-                      let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
-        
-                      fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                        let htmlData = render(data,{ username, emailSubject, emailContent, hostName, hostUrl, footerContent})
-                        params.htmlData = htmlData;
-                        let response = await awsService.sendEmail(params);
-                      })
-                    })
+                          
+                    const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/MFA.html'), 'utf8');
+                    const content = render(contentHTML, { username, code });
+                    const htmlData =  await renderEmail(emailSubject, content )
+                    params.htmlData = htmlData;
+
+                    try{
+                      await awsService.sendEmail(params);
+                    }catch(e){
+                      res.status(StatusCodes.OK).send('MFA Code Send Fails!');
+                    }
+
                     const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
                     _this.dbservice.postObject(emailResponse, callbackFunc);
                     function callbackFunc(error, response) {
@@ -188,11 +165,7 @@ exports.login = async (req, res, next) => {
                         userMFAData.multiFactorAuthenticationCode = code;
                         const currentDate = new Date();
                         userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-                        
-
-
                         _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
-                        
                         function callbackPatchFunc(error, response) {
                           return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
                         }
@@ -311,16 +284,14 @@ async function validateAndLoginUser(req, res, existingUser) {
       await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
         if (err) {
           console.error(err);
-        } else {
-          // console.log(result);
-        }
+        } 
       });
 
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog('login', req.body.email, existingUser._id, clientIP);
+      const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
+
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-
         let session = await removeAndCreateNewSession(req,existingUser.id);
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
@@ -328,7 +299,6 @@ async function validateAndLoginUser(req, res, existingUser) {
             error = 'Unable to Start session.'
           
           console.log(error, session);
-          // return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ error, session });
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
@@ -368,7 +338,6 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
-
     // console.log("req.session",req.session);
     if(req.session) {
 
@@ -548,14 +517,6 @@ exports.logout = async (req, res, next) => {
     ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
   });
 
-  // const userIds = ws.map((ws)=> ws.userId);
-  // ws.map((ws)=> {
-  //   ws.send(Buffer.from(JSON.stringify({'eventName':'onlineUsers',userIds})));
-  // });
-
-
-
-
   
   if(req.session) {
     req.session.isLoggedIn = false;
@@ -592,8 +553,8 @@ exports.forgetPassword = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
 
-          
-          let emailSubject = "Reset Password";
+          const emailSubject = "Reset Password";
+          const username = existingUser.name;
 
           let params = {
             to: `${existingUser.email}`,
@@ -601,31 +562,16 @@ exports.forgetPassword = async (req, res, next) => {
             html: true
           };
 
-          let username = existingUser.name;
-          let hostName = 'portal.howickltd.com';
+            const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/forgetPassword.html'), 'utf8');
+            const content = render(contentHTML, { username, link });
+            const htmlData =  await renderEmail(emailSubject, content )
+            params.htmlData = htmlData;
+            try{
+              await awsService.sendEmail(params);
+            }catch(e){
+              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Forget Password email fails!');
+            }
 
-          if(process.env.CLIENT_HOST_NAME)
-            hostName = process.env.CLIENT_HOST_NAME;
-          
-          let hostUrl = "https://portal.howickltd.com";
-
-          if(process.env.CLIENT_APP_URL)
-            hostUrl = process.env.CLIENT_APP_URL;
-          
-
-          fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-            let footerContent = render(data,{ hostName, hostUrl, username, link })
-            
-            fs.readFile(__dirname+'/../../email/templates/forget-password.html','utf8', async function(err,data) {
-  
-              let htmlData = render(data,{ hostName, hostUrl, username, link, footerContent })
-              params.htmlData = htmlData;
-              let response = await awsService.sendEmail(params);
-            })
-          });
-
-          // let response = await awsService.sendEmail(params);
-          
           const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
           
           _this.dbservice.postObject(emailResponse, callbackFunc);
@@ -664,8 +610,19 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
 
-              let emailContent = `Your password has been updated successfully.<br>
-                              <br>Please sign in to access your account<br>`;
+              const contentHTML = `
+              <tr>
+                <td align="left" style="padding:0;Margin:0">
+                  <p>
+                    Dear ${existingUser?.name || ''},<br>
+                    <br>
+                    Your password has been updated successfully.<br>
+                    <br>
+                    Please sign in to access your account
+                    <br>
+                  </p>
+                </td>
+              </tr>`;
                               
               let emailSubject = "Password Reset Successful";
 
@@ -675,33 +632,13 @@ exports.verifyForgottenPassword = async (req, res, next) => {
                 html: true,
               };
               
-
-              let hostName = 'portal.howickltd.com';
-
-              if(process.env.CLIENT_HOST_NAME)
-                hostName = process.env.CLIENT_HOST_NAME;
               
-              let hostUrl = "https://portal.howickltd.com";
-
-              if(process.env.CLIENT_APP_URL)
-                hostUrl = process.env.CLIENT_APP_URL;
-
-              let username = existingUser.name;
-              fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-                let footerContent = render(data,{ emailSubject, emailContent, hostName, hostUrl, username })
-      
-                fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-                  let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
-                  params.htmlData = htmlData;
-                  let response = await awsService.sendEmail(params);
-                })
-              })
-
-
-              // let response = await awsService.sendEmail(params);
+              const content = render(contentHTML);
+              const htmlData =  await renderEmail(emailSubject, content )
+              params.htmlData = htmlData;
+              await awsService.sendEmail(params);
 
               const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-          
               _this.dbservice.postObject(emailResponse, callbackFunc);
               function callbackFunc(error, response) {
                 if (error) {

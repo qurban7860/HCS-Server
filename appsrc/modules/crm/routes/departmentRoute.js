@@ -1,9 +1,7 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const fileUpload = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
-const { Customer } = require('../models');
 const verifyDelete = require('../../../middleware/verifyDelete');
 
 const controllers = require('../controllers');

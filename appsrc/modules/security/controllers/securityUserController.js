@@ -37,10 +37,9 @@ this.populate = [
 ];
 
 this.populateList = [
-  {path: 'customer', select: 'name'},
-  {path: 'contact', select: 'firstName lastName formerEmployee'},
+  {path: 'customer', select: 'name' },
+  {path: 'contact', select: 'firstName lastName formerEmployee reportingTo' },
   {path: 'roles', select: ''},
-  // {path: 'regions', select: ''},
 ];
 
 
@@ -166,7 +165,7 @@ exports.postSecurityUser = async (req, res, next) => {
           }  
         }else if(response.invitationStatus){
           res.status(StatusCodes.CREATED).json({ user: response });
-        }{
+        } else {
           return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
         }
       }

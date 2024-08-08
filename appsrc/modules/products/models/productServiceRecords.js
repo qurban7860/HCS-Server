@@ -19,7 +19,7 @@ const docSchema = new Schema({
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
 
-  versionNo: { type: Number,  required: true,  default: '1'},
+  versionNo: { type: Number, default: 1, required: true },
   // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
@@ -37,6 +37,18 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
   // technician information who performed service process.
   
+  serviceRecordUid: { type: String, required: true  },
+  //indication of current active record status.
+
+  status: { type: String, enum: ['DRAFT','SUBMITTED'], default: 'DRAFT' },
+  //indication of current active record approval status.
+
+  approvalStatus: { type: String, enum: ['ACCEPTED','REJECTED'], },
+  //indication of current active record status.
+
+  approvalNote: { type: String },
+  //current active record approval notes.
+
   technicianNotes: { type: String },
   // operator comments against this record.
 
@@ -45,7 +57,6 @@ const docSchema = new Schema({
   
   textAfterCheckItems: { type: String },
   // display this text before fields
-
   
   serviceNote: { type: String },
   //some notes regarding service/installation/training,
@@ -62,9 +73,6 @@ const docSchema = new Schema({
 
   internalNote: { type: String },
   //internal notes will not be visibile to customer,
-  
-  files : [],
-  //list of documents/images related to this record
   
   operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // operators who is training.

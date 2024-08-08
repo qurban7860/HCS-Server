@@ -4,7 +4,8 @@ const fs = require('fs');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 let rtnMsg = require('../modules/config/static/static')
 const path = require('path');
-
+const Config = require('../modules/config/models/config');
+const awsService = require('../base/aws'); // Assuming you have an awsService module
 
 const validExtensions = [
   'png',
@@ -115,4 +116,56 @@ const fileUpload = multer({
   }
 });
 
-module.exports = fileUpload;
+const uploadHandler = (req, res, next) => {
+  fileUpload.fields([{ name: 'images' }])(req, res, (err) => {
+    if (err instanceof multer.MulterError) {
+      console.error(err);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
+    } else if (err) {
+      console.error(err);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    }
+    next();
+  });
+};
+
+const checkMaxCount = async (req, res, next) => {
+  try {
+    const regex_ = new RegExp("^MAX_UPLOAD_FILES$", "i");
+    const maxCountObj = await Config.findOne({ name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+    const maxCount = maxCountObj && !isNaN(maxCountObj.value) ? parseInt(maxCountObj.value, 10) : 20;
+    if (req.files && req.files['images'] && req.files['images'].length > maxCount) {
+      return res.status(StatusCodes.BAD_REQUEST).json({ message: `Number of files should not exceed ${maxCount}` });
+    }
+    // Store maxCount in request object for further use
+    req.maxCount = maxCount; 
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+const imageOptimization = async (req, res, next) => {
+  try {
+    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); 
+    let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); 
+    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+    if(req.files && req.files['images']) {
+      const documents_ = req.files['images'];
+      await Promise.all(documents_.map(async ( docx ) => {
+        docx.eTag = await awsService.generateEtag(docx.path);
+        if(configObject){
+          await awsService.processImageFile(docx);
+        }
+      }));
+    }
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+
+module.exports = {fileUpload, uploadHandler, checkMaxCount, imageOptimization }

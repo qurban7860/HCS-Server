@@ -150,17 +150,16 @@ async function sendEmail(params, toAddresses) {
     },
     Message: {
       Body: {
-        
         Text: {
           Charset: "UTF-8",
           Data: params.body
         }
-       },
-       Subject: {
+      },
+      Subject: {
         Charset: 'UTF-8',
         Data: params.subject
-       }
-      },
+      }
+    },
     // Source: process.env.AWS_SES_FROM_EMAIL, /* required */
     Source: sourceEmail,
     ReplyToAddresses: [
@@ -168,12 +167,15 @@ async function sendEmail(params, toAddresses) {
     ],
   };
 
-  if( toAddresses && toAddresses.length > 0 )
+  if( toAddresses && toAddresses.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL )
     emailParams.Destination.ToAddresses = toAddresses;
 
-  if( params?.ccAddresses && params?.ccAddresses?.length > 0 ){
+  if( params?.ccAddresses && params?.ccAddresses?.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL ){
     emailParams.Destination.CcAddresses = params.ccAddresses;
   }
+
+  if(process.env.NOTIFY_RECEIVER_EMAIL)
+    emailParams.Destination.ToAddresses = [ process.env.NOTIFY_RECEIVER_EMAIL ];
 
   if(params.html) {
     emailParams.Message.Body = {
@@ -183,18 +185,14 @@ async function sendEmail(params, toAddresses) {
       }
     }
   }
-  
   // Create the promise and SES service object
-  let SES = new AWS.SES({region: process.env.AWS_REGION})
-  SES.sendEmail(emailParams, function(err, data) {
-    if (err) console.log(err, err.stack); // an error occurred
-    else     console.log(data);           // successful response
-    /*
-    data = {
-    MessageId: "EXAMPLE78603177f-7a5433e7-8edb-42ae-af10-f0181f34d6ee-000000"
-    }
-    */
-  });
+  if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
+    let SES = new AWS.SES({region: process.env.AWS_REGION})
+    SES.sendEmail(emailParams, function(err, data) {
+      if (err) console.log(err, err.stack);
+      else console.log(data);
+    });
+  }
 }
 
 
@@ -224,12 +222,13 @@ async function sendEmailWithRawData(params, file) {
     if (err) {
       console.error(`Error sending raw email: ${err}`);
     }
-    let SES = new AWS.SES({region: process.env.AWS_REGION})
-    let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
-    console.log(response);
+    if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
+      let SES = new AWS.SES({region: process.env.AWS_REGION})
+      let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
+      console.log(response);
+    }
   }); 
 }
-
 
 async function downloadFileS3(filePath) {
   const params = {
@@ -389,14 +388,7 @@ const processAWSFile = async (data) => {
   const base64Data = dataReceived.replace(/^data:image\/\w+;base64,/, '');
   const imageBuffer = Buffer.from(base64Data, 'base64');
   const ImageResolution = await getImageResolution(imageBuffer);
-  console.log("ImageResolution", ImageResolution);
   const desiredQuality = await calculateDesiredQuality(imageBuffer, ImageResolution);
-  console.log("desiredQuality", desiredQuality);
-
-  // const logoPath = 'logo.svg';
-  // const logoBuffer = fs.readFileSync(logoPath);
-  // console.log("logoBuffer", logoBuffer);
-  // .composite([{ input: logoBuffer, gravity: 'southeast' }])
 
   return new Promise((resolve, reject) => {
     sharp(imageBuffer)
@@ -409,12 +401,24 @@ const processAWSFile = async (data) => {
           console.error('Error resizing image:', resizeErr);
           reject(resizeErr);
         } else {
-          console.log("outputBuffer", outputBuffer);
           const outputBuffer__ = outputBuffer.toString('base64');
           resolve(outputBuffer__);
         }
       });
   });
+};
+
+const deleteFile = async ( fileName ) => {
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: fileName,
+  };
+
+  try {
+    await s3.deleteObject( params ).promise();
+  } catch (err) {
+    console.error(`Error deleting file:`, err);
+  }
 };
 
 module.exports = {
@@ -429,5 +433,6 @@ module.exports = {
   generateEtag,
   processImageFile,
   processAWSFile,
+  deleteFile,
   s3
 };
