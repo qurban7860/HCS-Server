@@ -145,9 +145,9 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
 
     const checkItemFiles = await fetchCheckItemFiles(record?._id, item._id, checkItemListId);
 
-    if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
+    // if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
       item.recordValue = { files: checkItemFiles };
-    }
+    // }
 
     const historicalData = await Promise.all(
       historicalValues
