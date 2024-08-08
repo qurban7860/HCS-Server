@@ -612,17 +612,20 @@ async function historyServiceRecordValues( req ) {
 
     const draftServiceRecordValues = await ProductServiceRecordValue.find({ serviceRecord: req.params.id }).lean();
 
-    const conditions = draftServiceRecordValues.map(pair => ({
-      machineCheckItem: pair.machineCheckItem,
-      checkItemListId: pair.checkItemListId,
-      serviceId: req.body.serviceId,
-      serviceRecord: { $ne: req.params.id }
-    }));
-    
-    await ProductServiceRecordValue.updateMany(
-      { $or: conditions },
-      { $set: { isHistory: true } }
-    );
+    if( Array.isArray( draftServiceRecordValues ) && draftServiceRecordValues?.length > 0 ){
+
+      const conditions = draftServiceRecordValues?.map(pair => ({
+        machineCheckItem: pair.machineCheckItem,
+        checkItemListId: pair.checkItemListId,
+        serviceId: req.body.serviceId,
+        serviceRecord: { $ne: req.params.id }
+      }));
+      
+      await ProductServiceRecordValue.updateMany(
+        { $or: conditions },
+        { $set: { isHistory: true } }
+      );
+    }
     return;
   } catch (e) {
     console.log(e);
