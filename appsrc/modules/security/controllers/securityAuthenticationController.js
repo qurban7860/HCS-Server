@@ -267,12 +267,11 @@ async function validateAndLoginUser(req, res, existingUser) {
 
           if ( existingUser.multiFactorAuthentication ) { 
             return await sendMfaEmail( req, res, existingUser );
-          }
-
-          return res.json({
-            accessToken,
-            userId: existingUser.id,
-            sessionId:session.session.sessionId,
+          } else{
+            return res.json({
+              accessToken,
+              userId: existingUser.id,
+              sessionId:session.session.sessionId,
             user: {
               login: existingUser.login,
               email: existingUser.email,
@@ -283,6 +282,7 @@ async function validateAndLoginUser(req, res, existingUser) {
               dataAccessibilityLevel: existingUser.dataAccessibilityLevel
             }
           });
+        }
           
         }
       }
