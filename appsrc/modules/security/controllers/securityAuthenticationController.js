@@ -133,47 +133,6 @@ exports.login = async (req, res, next) => {
                     }
                   }
   
-                  if (existingUser.multiFactorAuthentication && false) {
-                    const emailSubject = "Multi-Factor Authentication Code";
-                    const code = Math.floor(100000 + Math.random() * 900000);
-                    const username = existingUser.name;
-                    let params = {
-                      to: `${existingUser.email}`,
-                      subject: emailSubject,
-                      html: true
-                    };
-                          
-                    const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/MFA.html'), 'utf8');
-                    const content = render(contentHTML, { username, code });
-                    const htmlData =  await renderEmail(emailSubject, content )
-                    params.htmlData = htmlData;
-
-                    try{
-                      await awsService.sendEmail(params);
-                    }catch(e){
-                      res.status(StatusCodes.OK).send('MFA Code Send Fails!');
-                    }
-
-                    const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-                    _this.dbservice.postObject(emailResponse, callbackFunc);
-                    function callbackFunc(error, response) {
-                      if (error) {
-                        logger.error(new Error(error));
-                        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                      } else {
-                        let userMFAData = {};
-                        userMFAData.multiFactorAuthenticationCode = code;
-                        const currentDate = new Date();
-                        userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-                        _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
-                        function callbackPatchFunc(error, response) {
-                          return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
-                        }
-                      }
-                    }
-                    return;  
-                  }
-  
                   return await validateAndLoginUser(req, res, existingUser);
   
                 }
@@ -306,6 +265,10 @@ async function validateAndLoginUser(req, res, existingUser) {
             ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
           });
 
+          if ( existingUser.multiFactorAuthentication ) { 
+            return await sendMfaEmail( req, res, existingUser );
+          }
+
           return res.json({
             accessToken,
             userId: existingUser.id,
@@ -329,6 +292,52 @@ async function validateAndLoginUser(req, res, existingUser) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
   
+}
+const sendMfaEmail = async (req, res, existingUser) => {
+  try{
+    var _this = this;
+    const emailSubject = "Multi-Factor Authentication Code";
+    const code = Math.floor(100000 + Math.random() * 900000);
+    const username = existingUser.name;
+    let params = {
+      to: `${existingUser.email}`,
+      subject: emailSubject,
+      html: true
+    };
+
+    const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/MFA.html'), 'utf8');
+    const content = render(contentHTML, { username, code });
+    const htmlData =  await renderEmail(emailSubject, content )
+    params.htmlData = htmlData;
+
+    try{
+      await awsService.sendEmail(params);
+    }catch(e){
+      res.status(StatusCodes.OK).send('MFA Code Send Fails!');
+    }
+
+    const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
+    _this.dbservice.postObject(emailResponse, callbackFunc);
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+      } else {
+        let userMFAData = {};
+        userMFAData.multiFactorAuthenticationCode = code;
+        const currentDate = new Date();
+        userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
+        _this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData, callbackPatchFunc);
+        function callbackPatchFunc(error, response) {
+          return res.status(StatusCodes.ACCEPTED).send({message:'Authentification Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
+        }
+      }
+    }
+    return; 
+  } catch(e) {
+    console.log('Error sending MFA email: ', e);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Failed to send MFA Code!');
+  }
 }
 function delay(time) {
   return new Promise(resolve => setTimeout(resolve, time));
