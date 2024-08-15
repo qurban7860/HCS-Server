@@ -244,7 +244,7 @@ exports.patchEvent = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType) {
-  const { customer, site, contact, machines, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
+  const { isCustomerEvent, customer, site, contact, machines, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
     description, note, isActive, isArchived, start, end, loginUser } = req.body;
 
   let doc = {};
@@ -252,6 +252,10 @@ function getDocumentFromReq(req, reqType) {
     doc = new Event({});
   }
 
+  if ("isCustomerEvent" in req.body) {
+    doc.isCustomerEvent = isCustomerEvent;
+  }
+  
   if ("customer" in req.body) {
     doc.customer = customer;
   }
