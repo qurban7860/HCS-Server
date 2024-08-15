@@ -25,7 +25,6 @@ const ipRangeCheck = require("ip-range-check");
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.clientURL = process.env.CLIENT_APP_URL;
-
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
@@ -132,9 +131,8 @@ exports.login = async (req, res, next) => {
                       }
                     }
                   }
-  
+
                   return await validateAndLoginUser(req, res, existingUser);
-  
                 }
                 else {
                   const minutesToWaitUntil = 15;
@@ -223,7 +221,7 @@ exports.login = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-  //console.log('accessToken: ', accessToken)
+
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
     
@@ -251,7 +249,7 @@ async function validateAndLoginUser(req, res, existingUser) {
 
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-        let session = await removeAndCreateNewSession(req,existingUser.id);
+        let session = await removeAndCreateNewSession(req, existingUser.id?.toString());
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
           if(!error)
@@ -347,9 +345,7 @@ async function removeAndCreateNewSession(req, userId) {
 
   try {
     await removeSessions(userId);
-    // console.log("req.session",req.session);
     if(req.session) {
-
       req.session.cookie.expires = false;
       let maxAge = process.env.TOKEN_EXP_TIME || "48h";
       maxAge = maxAge.replace(/\D/g,'');
@@ -366,10 +362,8 @@ async function removeAndCreateNewSession(req, userId) {
     }
     else {
       console.log("session not found",new Date().getTime());
-
       return false;
     }
-
 
   } catch (err) {
     console.error('Error saving to session storage: ', err);
@@ -394,10 +388,27 @@ exports.multifactorverifyCode = async (req, res, next) => {
       if (existingUser.multiFactorAuthenticationCode == req.body.code) {
         const currentTime = new Date();
         const multiFactorAuthenticationExpireTime = new Date(existingUser.multiFactorAuthenticationExpireTime);
-
-        // Check if the code has expired
         if (currentTime <= multiFactorAuthenticationExpireTime) {  
-          return await validateAndLoginUser(req, res, existingUser);
+          const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
+          console.log("userSession : ", userSession );
+          if(userSession){
+            return res.json({
+              accessToken: existingUser?.token?.accessToken,
+              userId: existingUser._id,
+              sessionId: userSession.session.sessionId,
+              user: {
+                login: existingUser.login,
+                email: existingUser.email,
+                displayName: existingUser.name,
+                customer: existingUser?.customer?._id,
+                contact: existingUser?.contact?._id,
+                roles: existingUser.roles,
+                dataAccessibilityLevel: existingUser.dataAccessibilityLevel
+              }
+            });
+          } else {
+            return res.status(StatusCodes.BAD_REQUEST).send("Authentication Failed!");
+          }
         } 
         else {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'The code is no longer valid.', true));
@@ -641,7 +652,6 @@ exports.verifyForgottenPassword = async (req, res, next) => {
                 html: true,
               };
               
-              
               const content = render(contentHTML);
               const htmlData =  await renderEmail(emailSubject, content )
               params.htmlData = htmlData;
@@ -685,7 +695,6 @@ function generateRandomString() {
     const length = 32;
     const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
-
     for (let i = 0; i < length; i++) {
       const randomIndex = Math.floor(Math.random() * characters.length);
       result += characters[randomIndex];
@@ -720,9 +729,6 @@ async function issueToken(userID, userEmail, sessionID, roles, dataAccessibility
 
   let token;
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
-  
-  
-  
 
   try {
 
