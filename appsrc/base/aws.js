@@ -137,7 +137,8 @@ async function getSecretValue(secretName) {
 async function sendEmail(params, toAddresses) {
   // Create sendEmail params 
   let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
-  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  const regex = new RegExp("^COMPANY-NAME$", "i"); 
+  let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
   if(configObject && configObject?.value)
     sourceEmail = configObject.value;
 
@@ -216,32 +217,6 @@ async function sendEmailWithRawData(params, file) {
         content: file.buffer
       },
     ],
-  });
-  
-  mail.build(async (err, message) => {
-    if (err) {
-      console.error(`Error sending raw email: ${err}`);
-    }
-    if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
-      let SES = new AWS.SES({region: process.env.AWS_REGION})
-      let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
-      console.log(response);
-    }
-  }); 
-}
-
-async function sendEmailWithNoAttachment(params) {
-  let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
-  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-  if(configObject && configObject?.value)
-    sourceEmail = configObject.value;
-
-  const mail = mailcomposer({
-    Source: sourceEmail,
-    from: sourceEmail,
-    to: params.to,
-    subject: params.subject,
-    html : params.htmlData,
   });
   
   mail.build(async (err, message) => {
@@ -450,7 +425,6 @@ const deleteFile = async ( fileName ) => {
 module.exports = {
   sendEmail,
   sendEmailWithRawData,
-  sendEmailWithNoAttachment,
   uploadFileS3,
   checkFileHeader,
   copyFile,
