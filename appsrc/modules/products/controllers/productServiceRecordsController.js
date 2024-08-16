@@ -22,9 +22,10 @@ let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
 const { ProductServiceRecords, ProductServiceRecordFiles , ProductServiceRecordValue, ProductServiceRecordValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
-const { CustomerContact } = require('../../crm/models');
+const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
 const customerContact = require('../../crm/models/customerContact');
+const getAllSPCustomerContacts = require('../../crm/utils/fetchAllSPContacts');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -563,10 +564,13 @@ exports.evaluateServiceRecord = async (req, res, next) => {
     name: "Approving_Contacts",
   });
 
+  const spCustomerContacts = await getAllSPCustomerContacts()
+
   if (
     productServiceRecord?.approval?.approvingContacts?.length > 0 &&
     productServiceRecord?.approval?.approvingContacts?.includes(evaluationData?.evaluatedBy) &&
-    contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase())
+    (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
+      spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
   ) {
     reqError = false;
   }
