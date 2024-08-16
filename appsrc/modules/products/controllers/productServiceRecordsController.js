@@ -480,13 +480,13 @@ exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
     if (serviceRecObj) {
       let emailSubject = `Service Record Approval Request`;
       const submittedBy = req.body.submittedBy?.displayName;
-      const submittedAt = dayjs(req.body.submittedAt).format("YYYY-MM-DD");
-      const serviceDate = dayjs(serviceRecObj.serviceDate).format("YYYY-MM-DD");
+      const submittedAt = dayjs(req.body.submittedAt).format("DD MMM YYYY h:mm A");
+      const serviceDate = dayjs(serviceRecObj.serviceDate).format("DD MMM YYYY h:mm A");
       const versionNo = serviceRecObj.versionNo;
       const serviceRecordId = serviceRecObj.serviceRecordUid;
       const serialNo = serviceRecObj.machine?.serialNo;
       const customer = serviceRecObj.customer?.name;
-      const viewServiceRecordUrl = `${process.env.CLIENT_APP_URL || "https://portal.howickltd.com"}/products/machines/${machineId}/serviceRecords/${recordId}/view`;
+      const viewServiceRecordUrl = `${process.env.CLIENT_APP_URL || "https://portal.howickltd.com/"}products/machines/${machineId}/serviceRecords/${recordId}/view`;
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, "../../email/templates/serviceRecordApproval.html"), "utf8");
 
@@ -502,7 +502,7 @@ exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
             htmlData: htmlData,
           };
 
-          await awsService.sendEmailWithNoAttachment(params);
+          await awsService.sendEmail(params);
           await ProductServiceRecords.findByIdAndUpdate(
             recordId,
             {
