@@ -175,8 +175,7 @@ async function sendEmail(params, toAddresses) {
   }
 
   if(process.env.NOTIFY_RECEIVER_EMAIL)
-    emailParams.Destination.ToAddresses = [ process.env.NOTIFY_RECEIVER_EMAIL ];
-
+    emailParams.Destination.ToAddresses = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')?.map(c => c?.trim()?.toLowerCase());
   if(params.html) {
     emailParams.Message.Body = {
       Html: {
