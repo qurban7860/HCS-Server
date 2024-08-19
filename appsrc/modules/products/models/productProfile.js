@@ -32,7 +32,7 @@ const docSchema = new Schema({
     
     type: {  type: String, enum: ['CUSTOMER','MANUFACTURE'], default: 'CUSTOMER'},
     
-    archivedByMachine: {type: Boolean, default: false},
+    archivedByMachine: { type: Boolean, default: false },
     
 },
 {

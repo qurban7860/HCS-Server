@@ -41,6 +41,10 @@ exports.getProductLicenses = async (req, res, next) => {
   this.machineId = req.params.machineId;
   this.query = req.query != "undefined" ? req.query : {};  
   this.query.machine = this.machineId;
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, ProductLicense, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

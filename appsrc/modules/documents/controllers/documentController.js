@@ -114,7 +114,10 @@ exports.getDocuments = async (req, res, next) => {
   //   }
   // }
 
-
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
 
   let isVersionNeeded = true;
   let isDrawing = false;
@@ -244,9 +247,6 @@ exports.getDocuments = async (req, res, next) => {
         }
       }
 
-
-
-      console.log("this.query.$or", this.query);
 
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
