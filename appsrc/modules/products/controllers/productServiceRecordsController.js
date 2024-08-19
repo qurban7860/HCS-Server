@@ -183,6 +183,10 @@ exports.getProductServiceRecords = async (req, res, next) => {
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
   this.query.machine = req.params.machineId;
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {

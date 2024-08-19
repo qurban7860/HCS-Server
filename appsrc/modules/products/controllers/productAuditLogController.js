@@ -43,6 +43,10 @@ exports.getProductAuditLog = async (req, res, next) => {
 
 exports.getProductAuditLogs = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, ProductAuditLog, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
