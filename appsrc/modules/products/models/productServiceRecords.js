@@ -122,7 +122,7 @@ docSchema.index({"isArchived":1})
 
 // Virtual for currentApprovalStatus
 docSchema.virtual('currentApprovalStatus').get(function() {
-  if (this.approval.approvalLogs.length > 0) {
+  if (this.approval?.approvalLogs?.length > 0) {
     return this.approval.approvalLogs[0].status;
   }
   return "PENDING";
