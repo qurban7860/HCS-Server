@@ -94,8 +94,6 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
-  let listCustomers;
-  let listProducts;
   
   //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
@@ -114,13 +112,11 @@ exports.getDocuments = async (req, res, next) => {
   //   }
   // }
 
-  if(this.query.orderBy) {
-    this.orderBy = this.query.orderBy;
-    delete this.query.orderBy;
-  }
+    let listCustomers;
+    let listProducts;
+    let isVersionNeeded = true;
+    let isDrawing = false;
 
-  let isVersionNeeded = true;
-  let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};
     if(this.query.orderBy) {
@@ -128,28 +124,24 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    if(this.query && (this.query.isVersionNeeded==false || this.query.isVersionNeeded=='false')) {
+    if( this.query && ( this.query.isVersionNeeded == false || this.query.isVersionNeeded == 'false')) {
       isVersionNeeded = false;
       delete this.query.isVersionNeeded;
     }
 
-    let basicInfo = false;
+      let basicInfo = false;
 
-    if(this.query && (this.query.basic==true || this.query.basic=='true')) {
+    if( this.query && ( this.query.basic == true || this.query.basic == 'true' )) {
       basicInfo = true;
       delete this.query.basic;
     }
 
-
     if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
-      if (this.query.forDrawing) isDrawing = true;
-
-      let query;
+      if (this.query.forDrawing) 
+        isDrawing = true;
+        let query;
       if(this.query.forCustomer && this.query.forMachine) {
-        query = { $or : [ { customer : true } ,{ machine : true } ] };
-        // this.query.customer = { $exists : false }; 
-        // this.query.machine = { $exists : false }; 
-
+          query = { $or : [ { customer : true } ,{ machine : true } ] };
         if(!listCustomers || listCustomers.length == 0) {
           this.query.$or = [
             {customer: { '$exists': true }}, 
@@ -160,17 +152,12 @@ exports.getDocuments = async (req, res, next) => {
       
       else if(this.query.forCustomer) 
         query = { customer:true };
-      
       else if(this.query.forMachine) 
         query = { machine:true };
-      
       else if(this.query.forDrawing) 
         query = { drawing:true };
-      
       if(query) {
-
         let docCats = await DocumentCategory.find(query).select('_id').lean();
-
         if(Array.isArray(docCats) && docCats.length>0) {
           let docCatIds = docCats.map((dc)=>dc._id.toString());
           this.query.docCategory = {'$in':docCatIds};
@@ -178,22 +165,21 @@ exports.getDocuments = async (req, res, next) => {
           delete this.query.forMachine;
           delete this.query.forDrawing;
         }
-      
       }
     }
-
-    if(this.query.isArchived=='true')
-      this.query.isArchived = true;
 
     if(this.query.isArchived=='false')
       this.query.isArchived = false;
 
+    if(this.query.isArchived=='true')
+      this.query.isArchived = true;
+
+
     if(this.query.isActive=='true')
       this.query.isActive = true;
-    
+
     if(this.query.isActive=='false')
       this.query.isActive = false;
-
 
     this.populate = [
       { path: 'createdBy', select: 'name' },
@@ -206,12 +192,12 @@ exports.getDocuments = async (req, res, next) => {
     ];
 
     let andString = [];
-    if(listCustomers && listCustomers.length > 0) {
-      andString.push({ customer: {$in: listCustomers} });
+    if( listCustomers && listCustomers.length > 0 ) {
+      andString.push({ customer: { $in: listCustomers } });
     }
 
-    if(listProducts && listProducts.length > 0) {
-      andString.push({ machine: {$in: listProducts} });
+    if( listProducts && listProducts.length > 0 ) {
+      andString.push({ machine: { $in: listProducts } });
     }
     if(andString && andString.length > 0) {
       if(!this.query.$or || !this.query.$or.length == 0) {
@@ -219,8 +205,7 @@ exports.getDocuments = async (req, res, next) => {
       }
       this.query.$or.push(...andString);
     }
-
-
+    
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
 
@@ -230,8 +215,7 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-      const orCondition = [
-      ];
+      const orCondition = [];
   
       if (this.query?.searchString) {
         const regexCondition = { '$regex': escapeRegExp(this.query.searchString), '$options': 'i' };
@@ -239,7 +223,6 @@ exports.getDocuments = async (req, res, next) => {
         orCondition.push({ displayName: regexCondition });
         orCondition.push({ referenceNumber: regexCondition });
         orCondition.push({ stockNumber: regexCondition });
-        
         delete this.query.searchString;
 
         if(orCondition?.length > 0) {
@@ -247,16 +230,13 @@ exports.getDocuments = async (req, res, next) => {
         }
       }
 
-
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
 
-
     let documents = assemblyDrawings.concat(otherDocuments);
-    
 
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
