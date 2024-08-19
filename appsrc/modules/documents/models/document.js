@@ -64,6 +64,8 @@ const docSchema = new Schema({
 
         archivedByCustomer: {type: Boolean, default: false},
 
+        archivedByMachine: {type: Boolean, default: false},
+
         previousDocType: { type: Schema.Types.ObjectId , ref: 'DocumentType' },
 },
 {
