@@ -13,13 +13,12 @@ let rtnMsg = require('../../config/static/static')
 const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
+this.dbservice = new calenderDBService();
 const { filterAndDeduplicateEmails, verifyEmail, renderEmail } = require('../../email/utils');
 const { fDateTime, fDate } = require('../../../../utils/formatTime');
 
 
-this.dbservice = new calenderDBService();
-
-const { Event } = require('../models');
+const { Event, EventFile } = require('../models');
 const { SecurityUser } = require('../../security/models');
 
 
@@ -59,8 +58,14 @@ exports.getEvents = async (req, res, next) => {
     this.query.eventDate = queryDates.eventDate;
     delete this.query.month;
     delete this.query.year;
-    const response = await this.dbservice.getObjectList(req, Event, this.fields, this.query, this.orderBy, this.populate);
-    res.json(response);
+    const events = await this.dbservice.getObjectList(req, Event, this.fields, this.query, this.orderBy, this.populate);
+
+    const updatedEvents = await Promise.all(events.map(async event => {
+      const files = await EventFile.find({ event: event._id });
+      return { ...event.toObject(), files };
+    }));
+
+    res.json(updatedEvents);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -123,7 +128,37 @@ exports.postEvent = async (req, res, next) => {
   }
 };
 
+const handleEventFiles = async ( req ) => {
+  let files = [];
 
+  if(req?.files?.images){
+    files = req.files.images;
+  } else {
+    return
+  }
+  const fileProcessingPromises = files.map(async (file) => {
+    if ( !file?.originalname ) {
+      console.log('No File present for uploading');
+      throw new Error('Invalid file');
+    }
+    const processedFile = await processFile(file, req.body.loginUser.userId);
+    req.body.path = processedFile.s3FilePath;
+    req.body.fileType = req.body.type = processedFile.type;
+    req.body.extension = processedFile.fileExt;
+    req.body.awsETag = processedFile.awsETag;
+    req.body.eTag = processedFile.eTag;
+    req.body.name = processedFile.name;
+
+    if (processedFile.base64thumbNailData) {
+      req.body.thumbnail = processedFile.base64thumbNailData;
+      req.body.name = processedFile.name;
+    }
+
+    const eventFileObject = await getServiceRecordFileFromReq(req, 'new');
+    return this.dbservice.postObject(eventFileObject);
+  });
+  await Promise.all(fileProcessingPromises);
+}
 exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
   try {
     const securityUserName = securityUser?.name;
@@ -181,6 +216,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
           'a.hassan@terminustech.com',
           'zeeshan@terminustech.com',
           'muzna@terminustech.com',
+          'mubashir@terminustech.com',
         ];
       }
       emailLogParams.toEmails = emailsToSend;
