@@ -1,6 +1,8 @@
 const awsService = require('../appsrc/base/aws');
 const path = require('path');
 const sharp = require('sharp');
+const fs = require('fs');
+
 
 async function processFile(file, userId) {
     const { name, ext } = path.parse(file.originalname);

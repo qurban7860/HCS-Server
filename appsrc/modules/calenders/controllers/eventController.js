@@ -216,6 +216,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
           'a.hassan@terminustech.com',
           'zeeshan@terminustech.com',
           'muzna@terminustech.com',
+          'mubashir@terminustech.com',
         ];
       }
       emailLogParams.toEmails = emailsToSend;

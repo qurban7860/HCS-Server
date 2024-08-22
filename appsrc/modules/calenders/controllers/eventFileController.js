@@ -5,11 +5,8 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
-const fs = require('fs');
 const awsService = require('../../../base/aws');
 const { Config } = require('../../config/models');
-const path = require('path');
-const sharp = require('sharp');
 const { processFile } = require('../../../../utils/fileProcess');
 let calenderDBService = require('../service/calenderDBService')
 this.dbservice = new calenderDBService();
@@ -40,9 +37,10 @@ exports.postEventFiles = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
 
-      // if(!req.body.loginUser){
-      //   req.body.loginUser = await getToken(req);
-      // }
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+
       const event = await Event.findById(req.params.eventId);
       if(!event?._id){
         return res.status(StatusCodes.BAD_REQUEST).send("Invalid Event!");
@@ -154,6 +152,17 @@ exports.deleteEventFile = async (req, res, next) => {
   }
 };
 
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
 
 function getEventFileFromReq(req, reqType) {
 
