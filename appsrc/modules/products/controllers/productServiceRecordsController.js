@@ -69,6 +69,22 @@ exports.getProductServiceRecord = async (req, res, next) => {
       const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({ versionNo: -1 }).lean();
       response.currentVersion = currentVersion;
 
+      completeEvaluationHistory = await ProductServiceRecords.find({ serviceId: response.serviceId })
+      .select("versionNo approval.approvalLogs")
+      .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
+      .sort({ versionNo: -1 })
+      .lean()
+      .then(results => results.reduce((acc, item) => ({
+        evaluationHistory: [...acc.evaluationHistory, {
+          _id: item._id,
+          versionNo: item.versionNo,
+          logs: item.approval?.approvalLogs
+        }],
+        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0)
+      }), { evaluationHistory: [], totalLogsCount: 0 }));
+
+      response.completeEvaluationHistory = completeEvaluationHistory;
+
       if (response && Array.isArray(response.decoilers) && response.decoilers.length > 0) {
         response.decoilers = await Product.find({ _id: { $in: response.decoilers }, isActive: true, isArchived: false });
       }
