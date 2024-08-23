@@ -16,6 +16,8 @@ let calenderDBService = require('../service/calenderDBService')
 this.dbservice = new calenderDBService();
 const { filterAndDeduplicateEmails, verifyEmail, renderEmail } = require('../../email/utils');
 const { fDateTime, fDate } = require('../../../../utils/formatTime');
+const { processFile } = require('../../../../utils/fileProcess');
+const { getEventFileFromReq } = require('./eventFileController');
 
 
 const { Event, EventFile } = require('../models');
@@ -110,15 +112,29 @@ exports.deleteEvent = async (req, res, next) => {
 };
 
 exports.postEvent = async (req, res, next) => {
+  // console.log("req.body : ",req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const requestedObject = getDocumentFromReq(req, 'new');
+
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+      // req.body.isCustomerEvent = isCustomerEvent === true || isCustomerEvent === 'true'
+
+      let requestedObject = getDocumentFromReq(req, 'new');
       const response = await this.dbservice.postObject(requestedObject);
-      const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, response._id, this.populate);
+      let objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, response._id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
+      req.params.eventId = response._id
+      await handleEventFiles(req)
+      const files = await EventFile.find({ event: response._id, isArchived: false, isActive: true });
+      objectWithPopulate = {
+        ...objectWithPopulate._doc,
+        files: files || [],
+      };
       res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
       exports.sendEmailAlert(objectWithPopulate, user, "New Event Notification" );
     } catch (error) {
@@ -128,37 +144,6 @@ exports.postEvent = async (req, res, next) => {
   }
 };
 
-const handleEventFiles = async ( req ) => {
-  let files = [];
-
-  if(req?.files?.images){
-    files = req.files.images;
-  } else {
-    return
-  }
-  const fileProcessingPromises = files.map(async (file) => {
-    if ( !file?.originalname ) {
-      console.log('No File present for uploading');
-      throw new Error('Invalid file');
-    }
-    const processedFile = await processFile(file, req.body.loginUser.userId);
-    req.body.path = processedFile.s3FilePath;
-    req.body.fileType = req.body.type = processedFile.type;
-    req.body.extension = processedFile.fileExt;
-    req.body.awsETag = processedFile.awsETag;
-    req.body.eTag = processedFile.eTag;
-    req.body.name = processedFile.name;
-
-    if (processedFile.base64thumbNailData) {
-      req.body.thumbnail = processedFile.base64thumbNailData;
-      req.body.name = processedFile.name;
-    }
-
-    const eventFileObject = await getServiceRecordFileFromReq(req, 'new');
-    return this.dbservice.postObject(eventFileObject);
-  });
-  await Promise.all(fileProcessingPromises);
-}
 exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
   try {
     const securityUserName = securityUser?.name;
@@ -190,14 +175,12 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       const technicians = Array.from(uniqueTechnicians);
       let emailsToSend;
       let params = { subject: emailSubject, html: true };
-
       const customer = eventData?.customer?.name;
       const serialNo = eventData?.machines?.map(m => m.serialNo);
       const site = eventData?.site?.name;
       const description = eventData?.description;
       const createdBy = eventData?.createdBy?.name;
       const createdAt = new Date();
-
       const emailLogParams = {
         subject: emailSubject,
         toUser: securityUser,
@@ -220,11 +203,8 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         ];
       }
       emailLogParams.toEmails = emailsToSend;
-
       const startTime = eventData?.start ? fDateTime(eventData?.start).toString() : '';
       const endTime = eventData?.end ? fDateTime(eventData?.end).toString() : '';
-
-
       const emailResponse = await addEmail(emailLogParams);
       this.dbservice.postObject(emailResponse, callbackFunc);
       function callbackFunc(error, response) {
@@ -233,9 +213,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
         }
       }
-
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/eventAlert.html'), 'utf8');
-
       const content = render(contentHTML, {
         securityUserName,
         customer,
@@ -248,9 +226,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         createdBy,
         createdAt
       });
-
       const htmlData =  await renderEmail(emailSubject, content )
-
       params.htmlData = htmlData;
       await awsService.sendEmail(params, emailsToSend);
     }
@@ -267,9 +243,20 @@ exports.patchEvent = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Event, req.params.id, getDocumentFromReq(req));
-      const objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
+      await this.dbservice.patchObject(Event, req.params.id, getDocumentFromReq(req));
+      let objectWithPopulate = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
       const user = await SecurityUser.findOne({ _id: req.body.loginUser.userId, isActive: true, isArchived: false })
+      req.params.eventId = req.params.id
+      await handleEventFiles(req)
+      const files = await EventFile.find({ event: req.params.id, isArchived: false, isActive: true });
+      objectWithPopulate = {
+        ...objectWithPopulate._doc,
+        files: files || [],
+      };
+      console.log("objectWithPopulate : ",objectWithPopulate);
       res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
       exports.sendEmailAlert(objectWithPopulate, user, 'Event update notification');
     } catch (error) {
@@ -279,8 +266,54 @@ exports.patchEvent = async (req, res, next) => {
   }
 };
 
+const handleEventFiles = async ( req ) => {
+  try{
+    let files = [];
+    if(req?.files?.images){
+      files = req.files.images;
+    } else {
+      return;
+    }
+    const fileProcessingPromises = files.map(async (file) => {
+      if (!file || !file.originalname) {
+        throw new Error('Invalid file');
+      }
+      const processedFile = await processFile(file, req.body.loginUser.userId);
+      req.body.event = req.params.eventId;
+      req.body.path = processedFile.s3FilePath;
+      req.body.fileType = req.body.type = processedFile.type;
+      req.body.extension = processedFile.fileExt;
+      req.body.awsETag = processedFile.awsETag;
+      req.body.eTag = processedFile.eTag;
+      req.body.name = processedFile.name;
+      if (processedFile.base64thumbNailData) {
+        req.body.thumbnail = processedFile.base64thumbNailData;
+        req.body.name = processedFile.name;
+      }
+      const eventFileObject = getEventFileFromReq(req, 'new');
+      return this.dbservice.postObject(eventFileObject);
+    });
+    await Promise.all(fileProcessingPromises);
+    return
+  } catch( e ){
+    throw new Error("Files Save Failed!");
+  }
+}
+
+async function getToken(req){
+  try {
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
+    const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
+    decodedToken.userIP = clientIP;
+    return decodedToken;
+  } catch (error) {
+    throw new Error('Token verification failed');
+  }
+}
+
 function getDocumentFromReq(req, reqType) {
-  const { isCustomerEvent, customer, site, contact, machines, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
+  const { isCustomerEvent, priority, customer, site, contact, machines, jiraTicket, primaryTechnician, supportingTechnicians, notifyContacts, status,
     description, note, isActive, isArchived, start, end, loginUser } = req.body;
 
   let doc = {};
@@ -291,10 +324,15 @@ function getDocumentFromReq(req, reqType) {
   if ("isCustomerEvent" in req.body) {
     doc.isCustomerEvent = isCustomerEvent;
   }
-  
+
+  if ("priority" in req.body) {
+    doc.priority = priority;
+  }
+
   if ("customer" in req.body) {
     doc.customer = customer;
   }
+
   if ("site" in req.body) {
     doc.site = site;
   }
