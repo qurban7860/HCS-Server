@@ -134,8 +134,16 @@ exports.downloadEventFile = async (req, res, next) => {
 
 exports.deleteEventFile = async (req, res, next) => {
   try {
-    const eventFile = await EventFile.findByIdAndUpdate(req.params.id,{ isArchived: req.body.isArchived, isActive: req.body.isActive })
-    console.log("eventFile : ",eventFile);
+    await this.dbservice.patchObject(EventFile, req.params.id, getEventFileFromReq(req), callbackFunc);
+    function callbackFunc(error, result){
+      if (error) {
+        console.log(error);
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.status(StatusCodes.OK).send('Event file Deleted Successfully!');
+      }
+    }
     res.status(StatusCodes.OK).send('Event file Deleted Successfully!');
   } catch (error) {
     logger.error(new Error(error));

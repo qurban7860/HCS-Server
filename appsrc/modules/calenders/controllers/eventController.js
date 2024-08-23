@@ -46,7 +46,9 @@ this.populate = [
 exports.getEvent = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
-    res.json(response);
+    const files = await EventFile.find({ event: req.params.id, isArchived: false, isActive: true });
+    const updatedEvent  = { ...response.toObject(), files };
+    res.json(updatedEvent);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -63,7 +65,7 @@ exports.getEvents = async (req, res, next) => {
     const events = await this.dbservice.getObjectList(req, Event, this.fields, this.query, this.orderBy, this.populate);
 
     const updatedEvents = await Promise.all(events.map(async event => {
-      const files = await EventFile.find({ event: event._id });
+      const files = await EventFile.find({ event: event._id, isArchived: false, isActive: true });
       return { ...event.toObject(), files };
     }));
 
