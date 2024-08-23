@@ -135,7 +135,7 @@ const checkMaxCount = async (req, res, next) => {
     const maxCountObj = await Config.findOne({ name: regex_, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
     const maxCount = maxCountObj && !isNaN(maxCountObj.value) ? parseInt(maxCountObj.value, 10) : 20;
     if (req.files && req.files['images'] && req.files['images'].length > maxCount) {
-      return res.status(StatusCodes.BAD_REQUEST).json({ message: `Number of files should not exceed ${maxCount}` });
+      return res.status(StatusCodes.BAD_REQUEST).send(`Number of files should not exceed ${maxCount}`);
     }
     // Store maxCount in request object for further use
     req.maxCount = maxCount; 
