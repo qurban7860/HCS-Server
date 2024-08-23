@@ -77,7 +77,8 @@ exports.postEventFiles = async (req, res, next) => {
   
       await Promise.all(fileProcessingPromises);
   
-      return res.status(StatusCodes.OK).send('Files uploaded successfully!');
+      next();
+      // return res.status(StatusCodes.OK).send('Files uploaded successfully!');
     }
   }catch(e) {
     console.log(e);
@@ -133,8 +134,6 @@ exports.downloadEventFile = async (req, res, next) => {
 
 exports.deleteEventFile = async (req, res, next) => {
   try {
-    req.body.isActive = false;
-    req.body.isArchived = true;
     await this.dbservice.patchObject(EventFile, req.params.id, getEventFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
       if (error) {
@@ -145,6 +144,7 @@ exports.deleteEventFile = async (req, res, next) => {
         res.status(StatusCodes.OK).send('Event file Deleted Successfully!');
       }
     }
+    res.status(StatusCodes.OK).send('Event file Deleted Successfully!');
   } catch (error) {
     logger.error(new Error(error));
     console.log(error);
@@ -164,7 +164,7 @@ async function getToken(req){
   }
 }
 
-function getEventFileFromReq(req, reqType) {
+const getEventFileFromReq = (req, reqType) => {
 
   const { event, path, extension, name, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
@@ -229,3 +229,5 @@ function getEventFileFromReq(req, reqType) {
   }
   return doc;
 }
+
+exports.getEventFileFromReq = getEventFileFromReq;

@@ -18,7 +18,7 @@ router.get(`${baseRouteForObject}/`, controller.getEvents);
 
 router.post(`${baseRouteForObject}`, uploadHandler, checkMaxCount, imageOptimization, controller.postEvent);
 
-router.patch(`${baseRouteForObject}/:id`, uploadHandler, checkMaxCount, imageOptimization, verifyDelete, controller.patchEvent);
+router.patch(`${baseRouteForObject}/:id`, uploadHandler, checkMaxCount, imageOptimization, verifyDelete, controller.patchEvent );
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteEvent);
 

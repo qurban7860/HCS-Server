@@ -18,7 +18,6 @@ router.get(`${baseRouteForObject}/:id`, controller.downloadEventFile );
 
 router.get(`${baseRouteForObject}/`, controller.getEventFiles );
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteEventFile );
-
+router.patch(`${baseRouteForObject}/:id`, controller.deleteEventFile );
 
 module.exports = router;

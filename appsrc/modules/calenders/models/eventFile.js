@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
-        event: [{ type: Schema.Types.ObjectId , ref: 'Event', required: true }],
+        event: { type: Schema.Types.ObjectId , ref: 'Event', required: true },
         // machine service record current version 
 
         name: { type: String },
