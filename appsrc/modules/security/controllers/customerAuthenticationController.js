@@ -221,9 +221,9 @@ exports.login = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-
-  if (accessToken) {
-    let updatedToken = updateUserToken(accessToken);
+  
+if (accessToken) {
+  let updatedToken = updateUserToken(accessToken);
     
     dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
     async function callbackPatchFunc(error, response) {
@@ -231,9 +231,8 @@ async function validateAndLoginUser(req, res, existingUser) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
       }
-
       let QuerysecurityLog = {
-        user: existingUser.id,
+        user: existingUser._id,
         logoutTime: {$exists: false},
         statusCode: 200
       };
@@ -249,13 +248,13 @@ async function validateAndLoginUser(req, res, existingUser) {
 
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-        let session = await removeAndCreateNewSession(req, existingUser.id?.toString());
+        let session = await removeAndCreateNewSession(req, existingUser?._id?.toString());
+
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
           if(!error)
             error = 'Unable to Start session.'
-          
-          console.log(error, session);
+      
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
@@ -266,22 +265,22 @@ async function validateAndLoginUser(req, res, existingUser) {
           if ( existingUser.multiFactorAuthentication ) { 
             return await sendMfaEmail( req, res, existingUser );
           } else{
-            return res.json({
-              accessToken,
-              userId: existingUser.id,
-              sessionId:session.session.sessionId,
-            user: {
-              login: existingUser.login,
-              email: existingUser.email,
-              displayName: existingUser.name,
-              customer: existingUser?.customer?._id,
-              contact: existingUser?.contact?._id,
-              roles: existingUser.roles,
-              dataAccessibilityLevel: existingUser.dataAccessibilityLevel
+            const userRes = {
+                accessToken,
+                userId: existingUser.id,
+                // sessionId:session.session.sessionId,
+              user: {
+                login: existingUser.login,
+                email: existingUser.email,
+                displayName: existingUser.name,
+                customer: existingUser?.customer?._id,
+                contact: existingUser?.contact?._id,
+                roles: existingUser.roles,
+                dataAccessibilityLevel: existingUser.dataAccessibilityLevel
+              }
             }
-          });
-        }
-          
+            return res.json( userRes );
+          }
         }
       }
     }
@@ -342,9 +341,8 @@ function delay(time) {
 } 
 
 async function removeAndCreateNewSession(req, userId) {
-
   try {
-    await removeSessions(userId);
+    await removeSessions(userId?.toString());
     if(req.session) {
       req.session.cookie.expires = false;
       let maxAge = process.env.TOKEN_EXP_TIME || "48h";
@@ -355,7 +353,7 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
       
-      await req.session.save();
+      const reqSessions = await req.session.save();
       await delay(500);
       let user = await SecuritySession.findOne({"session.user":userId});
       return user;
@@ -390,7 +388,6 @@ exports.multiFactorVerifyCode = async (req, res, next) => {
         const multiFactorAuthenticationExpireTime = new Date(existingUser.multiFactorAuthenticationExpireTime);
         if (currentTime <= multiFactorAuthenticationExpireTime) {  
           const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
-          console.log("userSession : ", userSession );
           if(userSession){
             return res.json({
               accessToken: existingUser?.token?.accessToken,
@@ -500,9 +497,7 @@ async function removeSessions(userId) {
       }
     });
     clearTimeout(sessionTimeout);
-
   }, 2000);
-  
 }
 
 exports.logout = async (req, res, next) => {
@@ -531,7 +526,6 @@ exports.logout = async (req, res, next) => {
     req.session.isLoggedIn = false;
 
     req.session.destroy((a,b,c) => {
-      // console.log("destroy",a,b,c);
       return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     })
   }
@@ -780,7 +774,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
       requestedLogin: requestedLogin,
       loginIP: ip,
       statusCode: actionType == 'invalidIPs' ? 464 : 
-                  actionType == 'invalidRequest' ? 465 : 470
+      actionType == 'invalidRequest' ? 465 : 470
     };
   }
   
