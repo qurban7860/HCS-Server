@@ -3,6 +3,7 @@ module.exports = {
     securityModuleController: require('./securityModuleController'),
     securityConfigController: require('./securityConfigController'),
     securityAuthenticationController: require('./securityAuthenticationController'),
+    customerAuthenticationController: require('./customerAuthenticationController'),
     securityUserController: require('./securityUserController'),
     securityAudiLogController: require('./securityAuditLogController'),
     securitySignInLogController: require('./securitySignInLogController'),
@@ -13,6 +14,4 @@ module.exports = {
     securityConfigWhileListIPController: require('./securityConfigWhiteListIPController'),
     securityConfigBlackListIPController: require('./securityConfigBlackListIPController'),
     securityNotificationController: require('./securityNotificationController'),
-
-    // securityInviteController: require('./securityInviteController'),
 }

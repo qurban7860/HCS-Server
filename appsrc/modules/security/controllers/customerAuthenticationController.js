@@ -8,7 +8,7 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 const _ = require('lodash');
 let rtnMsg = require('../../config/static/static');
-const awsService = require('../../../../appsrc/base/aws');
+const awsService = require('../../../base/aws');
 const { render } = require('template-file');
 const fs = require('fs');
 const path = require('path');
@@ -87,7 +87,7 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
@@ -373,7 +373,7 @@ async function removeAndCreateNewSession(req, userId) {
 
 exports.removeAndCreateNewSession = removeAndCreateNewSession;
 
-exports.multifactorverifyCode = async (req, res, next) => {
+exports.multiFactorVerifyCode = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
   if (!errors.isEmpty()) {
@@ -463,7 +463,6 @@ exports.refreshToken = async (req, res, next) => {
 
 function isValidCustomer(customer) {
   if (_.isEmpty(customer) || 
-  customer.type != 'SP' || 
   customer.isActive == false || 
   customer.isArchived == true) {
     return false;
@@ -471,15 +470,6 @@ function isValidCustomer(customer) {
   return true;
 }
 
-
-function isValidUser(user) {
-  if (_.isEmpty(user) || 
-  user.isActive == false || 
-  user.isArchived == true) {
-    return false;
-  }
-  return true;
-}
 
 function isValidContact(contact){
   if (!_.isEmpty(contact)){
@@ -492,7 +482,6 @@ function isValidContact(contact){
 
 function isValidRole(roles) {
   const isValidRole = roles.some(role => role.isActive === true && role.isArchived === false);
-
   if (_.isEmpty(roles) || !isValidRole) {
     return false;
   }
@@ -731,7 +720,6 @@ async function issueToken(userID, userEmail, sessionID, roles, dataAccessibility
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
 
   try {
-
     token = jwt.sign(
       tokenData,
       process.env.JWT_SECRETKEY,
