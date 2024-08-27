@@ -8,7 +8,7 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 const _ = require('lodash');
 let rtnMsg = require('../../config/static/static');
-const awsService = require('../../../../appsrc/base/aws');
+const awsService = require('../../../base/aws');
 const { render } = require('template-file');
 const fs = require('fs');
 const path = require('path');
@@ -87,7 +87,7 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
           (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
@@ -221,9 +221,9 @@ exports.login = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-
-  if (accessToken) {
-    let updatedToken = updateUserToken(accessToken);
+  
+if (accessToken) {
+  let updatedToken = updateUserToken(accessToken);
     
     dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
     async function callbackPatchFunc(error, response) {
@@ -231,9 +231,8 @@ async function validateAndLoginUser(req, res, existingUser) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
       }
-
       let QuerysecurityLog = {
-        user: existingUser.id,
+        user: existingUser._id,
         logoutTime: {$exists: false},
         statusCode: 200
       };
@@ -249,13 +248,13 @@ async function validateAndLoginUser(req, res, existingUser) {
 
       dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
-        let session = await removeAndCreateNewSession(req, existingUser.id?.toString());
+        let session = await removeAndCreateNewSession(req, existingUser?._id?.toString());
+
         if (error || !session || !session.session || !session.session.sessionId) {
           logger.error(new Error(error));
           if(!error)
             error = 'Unable to Start session.'
-          
-          console.log(error, session);
+      
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
@@ -266,22 +265,22 @@ async function validateAndLoginUser(req, res, existingUser) {
           if ( existingUser.multiFactorAuthentication ) { 
             return await sendMfaEmail( req, res, existingUser );
           } else{
-            return res.json({
-              accessToken,
-              userId: existingUser.id,
-              sessionId:session.session.sessionId,
-            user: {
-              login: existingUser.login,
-              email: existingUser.email,
-              displayName: existingUser.name,
-              customer: existingUser?.customer?._id,
-              contact: existingUser?.contact?._id,
-              roles: existingUser.roles,
-              dataAccessibilityLevel: existingUser.dataAccessibilityLevel
+            const userRes = {
+                accessToken,
+                userId: existingUser.id,
+                // sessionId:session.session.sessionId,
+              user: {
+                login: existingUser.login,
+                email: existingUser.email,
+                displayName: existingUser.name,
+                customer: existingUser?.customer?._id,
+                contact: existingUser?.contact?._id,
+                roles: existingUser.roles,
+                dataAccessibilityLevel: existingUser.dataAccessibilityLevel
+              }
             }
-          });
-        }
-          
+            return res.json( userRes );
+          }
         }
       }
     }
@@ -342,9 +341,8 @@ function delay(time) {
 } 
 
 async function removeAndCreateNewSession(req, userId) {
-
   try {
-    await removeSessions(userId);
+    await removeSessions(userId?.toString());
     if(req.session) {
       req.session.cookie.expires = false;
       let maxAge = process.env.TOKEN_EXP_TIME || "48h";
@@ -355,7 +353,7 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
       
-      await req.session.save();
+      const reqSessions = await req.session.save();
       await delay(500);
       let user = await SecuritySession.findOne({"session.user":userId});
       return user;
@@ -373,7 +371,7 @@ async function removeAndCreateNewSession(req, userId) {
 
 exports.removeAndCreateNewSession = removeAndCreateNewSession;
 
-exports.multifactorverifyCode = async (req, res, next) => {
+exports.multiFactorVerifyCode = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
   if (!errors.isEmpty()) {
@@ -390,7 +388,6 @@ exports.multifactorverifyCode = async (req, res, next) => {
         const multiFactorAuthenticationExpireTime = new Date(existingUser.multiFactorAuthenticationExpireTime);
         if (currentTime <= multiFactorAuthenticationExpireTime) {  
           const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
-          console.log("userSession : ", userSession );
           if(userSession){
             return res.json({
               accessToken: existingUser?.token?.accessToken,
@@ -463,7 +460,6 @@ exports.refreshToken = async (req, res, next) => {
 
 function isValidCustomer(customer) {
   if (_.isEmpty(customer) || 
-  customer.type != 'SP' || 
   customer.isActive == false || 
   customer.isArchived == true) {
     return false;
@@ -471,15 +467,6 @@ function isValidCustomer(customer) {
   return true;
 }
 
-
-function isValidUser(user) {
-  if (_.isEmpty(user) || 
-  user.isActive == false || 
-  user.isArchived == true) {
-    return false;
-  }
-  return true;
-}
 
 function isValidContact(contact){
   if (!_.isEmpty(contact)){
@@ -492,7 +479,6 @@ function isValidContact(contact){
 
 function isValidRole(roles) {
   const isValidRole = roles.some(role => role.isActive === true && role.isArchived === false);
-
   if (_.isEmpty(roles) || !isValidRole) {
     return false;
   }
@@ -511,9 +497,7 @@ async function removeSessions(userId) {
       }
     });
     clearTimeout(sessionTimeout);
-
   }, 2000);
-  
 }
 
 exports.logout = async (req, res, next) => {
@@ -542,7 +526,6 @@ exports.logout = async (req, res, next) => {
     req.session.isLoggedIn = false;
 
     req.session.destroy((a,b,c) => {
-      // console.log("destroy",a,b,c);
       return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     })
   }
@@ -731,7 +714,6 @@ async function issueToken(userID, userEmail, sessionID, roles, dataAccessibility
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
 
   try {
-
     token = jwt.sign(
       tokenData,
       process.env.JWT_SECRETKEY,
@@ -792,7 +774,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
       requestedLogin: requestedLogin,
       loginIP: ip,
       statusCode: actionType == 'invalidIPs' ? 464 : 
-                  actionType == 'invalidRequest' ? 465 : 470
+      actionType == 'invalidRequest' ? 465 : 470
     };
   }
   

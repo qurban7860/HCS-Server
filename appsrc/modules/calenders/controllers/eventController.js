@@ -105,8 +105,8 @@ async function fetchEventsDates(month = (new Date()).getMonth() + 1, year = (new
 
 exports.deleteEvent = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Event, req.params.id);
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    await Event.updateOne({ _id: req.params.id }, { isActive: false, isArchive: true })
+    res.status(StatusCodes.OK).send("Event archived successfully!");
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -114,7 +114,6 @@ exports.deleteEvent = async (req, res, next) => {
 };
 
 exports.postEvent = async (req, res, next) => {
-  // console.log("req.body : ",req.body);
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
