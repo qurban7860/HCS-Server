@@ -16,7 +16,7 @@ const validateIP = require('../../../middleware/validateIP');
 // - /api/1.0.0/customer/getToken/
 router.post(`/getToken`, controller.login);
 
-// - /api/1.0.0/customer/getToken/
+// - /api/1.0.0/customer/refreshToken/
 router.post(`/refreshToken`, controller.refreshToken);
 
 // - /api/1.0.0/customer/logout/:userID
