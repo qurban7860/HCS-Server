@@ -153,9 +153,6 @@ exports.getSPCustomerContacts = async (req, res, next) => {
         "customer.type": "SP",
         "customer.isActive": true,
         "customer.isArchived": false
-
-
-
       }
     },
     {
@@ -178,7 +175,29 @@ exports.getSPCustomerContacts = async (req, res, next) => {
         "contact.isArchived": false
 
       }
-    }
+    },
+    {
+      $lookup: {
+        from: "Departments",
+        localField: "contact.department",
+        foreignField: "_id",
+        as: "departmentDetails",
+        pipeline: [
+          {
+            $project: {
+              departmentName: 1,
+              departmentType: 1
+            }
+          }
+        ]
+      }
+    },
+    {
+      $unwind: {
+        path: "$departmentDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    },
   ];
 
   var params = {};
