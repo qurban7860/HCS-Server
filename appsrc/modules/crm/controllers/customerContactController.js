@@ -149,6 +149,11 @@ exports.getSPCustomerContacts = async (req, res, next) => {
       }
     },
     {
+      $unwind: {
+        path: "$customer",
+      }
+    },
+    {
       $match: {
         "customer.type": "SP",
         "customer.isActive": true,
@@ -167,6 +172,11 @@ exports.getSPCustomerContacts = async (req, res, next) => {
         localField: "_id",
         foreignField: "_id",
         as: "contact"
+      }
+    },
+    {
+      $unwind: {
+        path: "$contact",
       }
     },
     {
