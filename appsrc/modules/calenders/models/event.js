@@ -9,6 +9,8 @@ const docSchema = new Schema({
 
         isCustomerEvent: { type: Boolean, default: true },
         
+        priority: { type: String },
+        
         customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
 
         contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
