@@ -38,7 +38,7 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  {path: 'technician', select: 'name firstName lastName'},
+  {path: 'technician', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -49,7 +49,7 @@ this.populateObject = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo machineModel'},
-  {path: 'technician', select: 'name firstName lastName'},
+  {path: 'technician', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
