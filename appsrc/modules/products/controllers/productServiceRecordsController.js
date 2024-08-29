@@ -13,15 +13,19 @@ const awsService = require('../../../../appsrc/base/aws');
 const { Config } = require('../../config/models');
 const path = require('path');
 const sharp = require('sharp');
+const dayjs = require('dayjs');
 const { customTimestamp } = require('../../../../utils/formatTime');
 const { renderEmail } = require('../../email/utils');
+const util = require('util');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
 const { ProductServiceRecords, ProductServiceRecordFiles , ProductServiceRecordValue, ProductServiceRecordValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
-const { CustomerContact } = require('../../crm/models');
-const util = require('util');
+const { CustomerContact, Customer } = require('../../crm/models');
+const { SecurityUser } = require('../../security/models');
+const customerContact = require('../../crm/models/customerContact');
+const getAllSPCustomerContacts = require('../../crm/utils/fetchAllSPContacts');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -34,7 +38,7 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  {path: 'technician', select: 'name firstName lastName'},
+  {path: 'technician', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -45,7 +49,7 @@ this.populateObject = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo machineModel'},
-  {path: 'technician', select: 'name firstName lastName'},
+  {path: 'technician', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -61,29 +65,54 @@ exports.getProductServiceRecord = async (req, res, next) => {
     } else {
       response = JSON.parse(JSON.stringify(response));  
 
-      const queryToFindCurrentVer = {serviceId: response.serviceId, isArchived: false, isHistory: false, status:'SUBMITTED'};
-      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({versionNo: -1}).lean();
+      const queryToFindCurrentVer = { serviceId: response.serviceId, isArchived: false, isHistory: false, status: 'SUBMITTED' };
+      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({ versionNo: -1 }).lean();
       response.currentVersion = currentVersion;
-      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
+
+      completeEvaluationHistory = await ProductServiceRecords.find({ serviceId: response.serviceId })
+      .select("versionNo approval.approvalLogs")
+      .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
+      .sort({ versionNo: -1 })
+      .lean()
+      .then(results => results.reduce((acc, item) => ({
+        evaluationHistory: [...acc.evaluationHistory, {
+          _id: item._id,
+          versionNo: item.versionNo,
+          logs: item.approval?.approvalLogs
+        }],
+        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0)
+      }), { evaluationHistory: [], totalLogsCount: 0 }));
+
+      response.completeEvaluationHistory = completeEvaluationHistory;
+
+      if (response && Array.isArray(response.decoilers) && response.decoilers.length > 0) {
+        response.decoilers = await Product.find({ _id: { $in: response.decoilers }, isActive: true, isArchived: false });
       }
 
-      if(response.machine && response.machine.machineModel){
-        response.machine.machineModel = await ProductModel.findOne({_id: response.machine.machineModel}, {name: 1});
+      if (response.machine && response.machine.machineModel) {
+        response.machine.machineModel = await ProductModel.findOne({ _id: response.machine.machineModel }, { name: 1 });
       }
-      
-      if(Array.isArray(response.operators) && response.operators.length>0) {
-        response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
+
+      if (Array.isArray(response.operators) && response.operators.length > 0) {
+        response.operators = await CustomerContact.find({ _id: { $in: response.operators } }, { firstName: 1, lastName: 1 });
       }
-        const serviceRecordFileQuery = { serviceId: { $in: response.serviceId }, isArchived: false };
-        let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
-        if( Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0 ){
-          response.files = serviceRecordFiles;
-        }
+
+      await ProductServiceRecords.populate(response, {
+        path: 'approval.approvalLogs.evaluatedBy',
+        select: 'firstName lastName',
+      });
+
+      const serviceRecordFileQuery = { serviceId: { $in: response.serviceId }, isArchived: false };
+      let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
+      if (Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0) {
+        response.files = serviceRecordFiles;
+      }
+
       res.json(response);
     }
   }
 };
+
 
 exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) => {
 
@@ -170,6 +199,10 @@ exports.getProductServiceRecords = async (req, res, next) => {
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
   this.query.machine = req.params.machineId;
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, ProductServiceRecords, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -382,7 +415,7 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
     };
 
     if (!validateEmail(emailAddress)) {
-      return res.status(400).send('Email validation failded!');
+      return res.status(400).send('Email validation failed!');
     }
 
     const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false })
@@ -427,9 +460,9 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
       const content = render(contentHTML, { username, serviceDate, serviceRecordId, versionNo, serialNo, customer, createdAt, createdBy });
       const htmlData =  await renderEmail(emailSubject, content )
       params.htmlData = htmlData;
-      try{
+      try {
         await awsService.sendEmailWithRawData(params, file_);
-      }catch(e){
+      } catch(e) {
         res.status(StatusCodes.OK).send('Email Send Fails!');
       }
 
@@ -446,6 +479,131 @@ exports.sendServiceRecordEmail = async (req, res, next) => {
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Service Record configuration not found!', true));
     }
+  }
+};
+
+exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
+  const errors = validationResult(req);
+  var _this = this;
+  const approvingContacts = req.body?.approvingContacts;
+  const machineId = req.params.machineId;
+  const recordId = req.params.id;
+  if (!errors.isEmpty() || approvingContacts?.length === 0) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    const serviceRecObj = await ProductServiceRecords.findOne({ _id: req.params.id, isActive: true, isArchived: false }).populate([
+      { path: "customer", select: "name" },
+      { path: "machine", select: "serialNo" },
+      { path: "createdBy", select: "name" },
+    ]);
+
+    if (serviceRecObj) {
+      let emailSubject = `Service Record Approval Request`;
+      const submittedBy = req.body.submittedBy?.displayName;
+      const submittedAt = dayjs(req.body.submittedAt).format("DD MMM YYYY h:mm A");
+      const serviceDate = dayjs(serviceRecObj.serviceDate).format("DD MMM YYYY h:mm A");
+      const versionNo = serviceRecObj.versionNo;
+      const serviceRecordId = serviceRecObj.serviceRecordUid;
+      const serialNo = serviceRecObj.machine?.serialNo;
+      const customer = serviceRecObj.customer?.name;
+      const viewServiceRecordUrl = `${process.env.CLIENT_APP_URL || "https://portal.howickltd.com/"}products/machines/${machineId}/serviceRecords/${recordId}/view`;
+
+      const contentHTML = await fs.promises.readFile(path.join(__dirname, "../../email/templates/serviceRecordApproval.html"), "utf8");
+
+      const sendEmailForApproval = async (contact) => {
+        try {
+          const approvalOfficer = `${contact?.firstName} ${contact?.lastName}`;
+          const content = render(contentHTML, { approvalOfficer, serviceDate, serviceRecordId, versionNo, serialNo, customer, submittedBy, submittedAt, viewServiceRecordUrl });
+          const htmlData = await renderEmail(emailSubject, content);
+          let params = {
+            to: contact?.email,
+            subject: emailSubject,
+            html: true,
+            htmlData: htmlData,
+          };
+
+          await awsService.sendEmail(params);
+          await ProductServiceRecords.findByIdAndUpdate(
+            recordId,
+            {
+              $addToSet: {
+                "approval.approvingContacts": contact._id,
+              },
+            },
+            { new: true }
+          );
+          return { success: true, emailData: { subject: params.subject, htmlData: params.htmlData, to: params.to } };
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+          return { success: false, emailData: null };
+        }
+      };
+
+      try {
+        const results = await Promise.all(approvingContacts.map(sendEmailForApproval));
+        const allEmailsSent = results.every((result) => result.success);
+
+        if (allEmailsSent) {
+          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Requests for approval sent successfully to all contacts!", false));
+        } else {
+          res.status(StatusCodes.PARTIAL_CONTENT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.PARTIAL_CONTENT, "Some emails failed to send.", true));
+        }
+
+        // Attempt logging after sending emails
+        for (const result of results) {
+          if (result.success && result.emailData) {
+            try {
+              const { subject, htmlData, to } = result.emailData;
+              const emailResponse = await addEmail(subject, htmlData, serviceRecObj, to);
+              _this.dbservice.postObject(emailResponse);
+              logger.info(`[${subject}] to [${to}] email logged`);
+            } catch (logError) {
+              console.error("Error logging email:", logError);
+              logger.error(new Error(error));
+            }
+          }
+        }
+      } catch (e) {
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(e);
+      }
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Record configuration not found!", true));
+    }
+  }
+};
+
+exports.evaluateServiceRecord = async (req, res, next) => {
+  const errors = validationResult(req);
+  const recordId = req.params.id;
+  const evaluationData = req.body?.evaluationData;
+  let reqError = true;
+
+  const productServiceRecord = await ProductServiceRecords.findById(recordId);
+  const evaluationUserEmail = await customerContact.findById(evaluationData.evaluatedBy, "email");
+  const contactsWithApproval = await Config.findOne({
+    name: "Approving_Contacts",
+  });
+
+  const spCustomerContacts = await getAllSPCustomerContacts()
+
+  if (
+    productServiceRecord?.approval?.approvingContacts?.length > 0 &&
+    productServiceRecord?.approval?.approvingContacts?.includes(evaluationData?.evaluatedBy) &&
+    (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
+      spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
+  ) {
+    reqError = false;
+  }
+
+  if (!errors.isEmpty() || reqError) {
+    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  }
+
+  if (productServiceRecord) {
+    await productServiceRecord.addApprovalLog({ ...evaluationData });
+    res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Service Record Evaluated Successfully", false));
+  } else {
+    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Record configuration not found!", true));
   }
 };
 
@@ -584,7 +742,7 @@ const handleSubmitStatus = async (req, res, findServiceRecord) => {
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
       }
       return res.status(StatusCodes.OK).send('Service Record updated successfully!');
-  } catch(e){
+  } catch(e) {
     console.log(e);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
   }

@@ -79,6 +79,12 @@ class App {
       resave: true,
       store: store
     }));
+
+    this.app.use('/api/1.0.0/customer/getToken/',session({
+      secret: process.env.SESSION_SECRETKEY,
+      resave: true,
+      store: store
+    }));
     
     
     

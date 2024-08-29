@@ -6,6 +6,11 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
+
+        isCustomerEvent: { type: Boolean, default: true },
+        
+        priority: { type: String },
+        
         customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
 
         contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],

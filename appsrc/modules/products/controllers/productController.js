@@ -263,7 +263,7 @@ exports.getProduct = async (req, res, next) => {
         machine.verifications = machineVerifications;
       }
 
-      let machineProfileQuery = { type: "MANUFACTURE", machine: machine._id, isActive: true, isArchived: false };
+      let machineProfileQuery = { type: "MANUFACTURE", machine: machine._id, isActive: true, isArchived: machine.isArchived };
       machine.machineProfiles = await ProductProfile.find(machineProfileQuery).select('names defaultName web flange').sort({ _id: 1 });
 
 

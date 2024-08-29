@@ -137,7 +137,8 @@ async function getSecretValue(secretName) {
 async function sendEmail(params, toAddresses) {
   // Create sendEmail params 
   let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
-  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
+  const regex = new RegExp("^COMPANY-NAME$", "i"); 
+  let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
   if(configObject && configObject?.value)
     sourceEmail = configObject.value;
 
@@ -175,7 +176,7 @@ async function sendEmail(params, toAddresses) {
   }
 
   if(process.env.NOTIFY_RECEIVER_EMAIL)
-    emailParams.Destination.ToAddresses = [ process.env.NOTIFY_RECEIVER_EMAIL ];
+    emailParams.Destination.ToAddresses = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')?.map(c => c?.trim()?.toLowerCase());
 
   if(params.html) {
     emailParams.Message.Body = {
@@ -201,9 +202,13 @@ const mailcomposer = require('mailcomposer');
 async function sendEmailWithRawData(params, file) {
   let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
   const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-  if(configObject && configObject?.value)
+  if( configObject && configObject?.value )
     sourceEmail = configObject.value;
 
+  if(process.env.NOTIFY_RECEIVER_EMAIL ){
+    params.to = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')?.map(c => c?.trim()?.toLowerCase());
+  }
+  
   const mail = mailcomposer({
     Source: sourceEmail,
     from: sourceEmail,
@@ -217,6 +222,7 @@ async function sendEmailWithRawData(params, file) {
       },
     ],
   });
+
   
   mail.build(async (err, message) => {
     if (err) {

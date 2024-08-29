@@ -53,6 +53,10 @@ exports.getProductConfiguration = async (req, res, next) => {
 exports.getProductConfigurations = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.orderBy = { createdAt: -1 };
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, ProductConfiguration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {

@@ -27,6 +27,10 @@ router.post(`${baseRouteForObject}/`,upload.single('document'), controller.postP
 
 router.post(`${baseRouteForObject}/:id/sendEmail`, upload.single('pdf'), controller.sendServiceRecordEmail);
 
+router.post(`${baseRouteForObject}/:id/sendApprovalEmail`, controller.sendServiceRecordApprovalEmail);
+
+router.post(`${baseRouteForObject}/:id/approveRecord`, controller.evaluateServiceRecord);
+
 router.patch(`${baseRouteForObject}/:id`, [verifyDelete,upload.single('document')], controller.patchProductServiceRecord);
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceRecord);

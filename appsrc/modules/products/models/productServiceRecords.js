@@ -34,7 +34,7 @@ const docSchema = new Schema({
   decoilers: [{ type: Schema.Types.ObjectId , ref: 'Machine' }],
   // decoiler information attached to machine.
   
-  technician: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+  technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
   // technician information who performed service process.
   
   serviceRecordUid: { type: String, required: true  },
@@ -42,12 +42,6 @@ const docSchema = new Schema({
 
   status: { type: String, enum: ['DRAFT','SUBMITTED'], default: 'DRAFT' },
   //indication of current active record approval status.
-
-  approvalStatus: { type: String, enum: ['ACCEPTED','REJECTED'], },
-  //indication of current active record status.
-
-  approvalNote: { type: String },
-  //current active record approval notes.
 
   technicianNotes: { type: String },
   // operator comments against this record.
@@ -84,9 +78,35 @@ const docSchema = new Schema({
   // just indication of current active record.
 
   archivedByMachine: {type: Boolean, default: false},
+
+  approval: {
+    
+    approvingContacts: [{ type: Schema.Types.ObjectId, ref: "CustomerContact", default: [] }],
+    // contacts who are approving this record. They have been sent an approving email
+
+    approvalLogs: {
+      type: [{
+        evaluatedBy: { type: Schema.Types.ObjectId, ref: "CustomerContact", default: null },
+        // contact who approved/rejected the service record
+
+        evaluationDate: { type: Date, default: null },
+        // date when the service record was approved/rejected 
+        
+        comments: { type: String, default: "" },
+        // current active record approval comments.
+        
+        status: { type: String, enum: ["APPROVED", "REJECTED", "PENDING"], default: "PENDING" },
+        // current approval status of the service record
+      }],
+      default: []
+    } 
+  },
+  // approval status of this record.
 },
 {
-    collection: 'MachineServiceRecords'
+    collection: 'MachineServiceRecords',
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
 });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -99,5 +119,23 @@ docSchema.index({"operators":1})
 docSchema.index({"serviceDate":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
+
+// Virtual for currentApprovalStatus
+docSchema.virtual('currentApprovalStatus').get(function() {
+  if (this.approval?.approvalLogs?.length > 0) {
+    return this.approval.approvalLogs[0].status;
+  }
+  return "PENDING";
+});
+
+// Method to add a new approval log
+docSchema.methods.addApprovalLog = function ({ evaluatedBy, status, comments = "", evaluationDate = new Date() }) {
+  if (!evaluatedBy || !["APPROVED", "REJECTED", "PENDING"].includes(status)) {
+    throw new Error("Invalid logData: evaluatedBy and valid status are required");
+  }
+
+  this.approval.approvalLogs.unshift({ evaluatedBy, status, comments, evaluationDate });
+  return this.save();
+};
 
 module.exports = mongoose.model('MachineServiceRecord', docSchema);
