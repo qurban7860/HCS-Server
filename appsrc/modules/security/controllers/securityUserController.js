@@ -23,23 +23,33 @@ this.fields = {};
 this.query = {};
 this.orderBy = { name: 1 };  
 this.populate = [
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'},
-  {path: 'customer', select: 'name isActive'},
-  {path: 'contact', select: 'firstName lastName formerEmployee isActive'},
-  {path: 'roles', select: ''},
-  {path: 'regions', populate: {
-    path: 'countries',
-    select: 'country_name as name'
-  }},
-  {path: 'customers', select: ''},  
-  {path: 'machines', select: ''},
+  { path: "createdBy", select: "name" },
+  { path: "updatedBy", select: "name" },
+  { path: "customer", select: "name isActive" },
+  { path: "contact", select: "firstName lastName formerEmployee isActive" },
+  { path: "roles", select: "" },
+  {
+    path: "regions",
+    populate: {
+      path: "countries",
+      select: "country_name as name",
+    },
+  },
+  { path: "customers", select: "" },
+  { path: "machines", select: "" },
 ];
 
 this.populateList = [
-  {path: 'customer', select: 'name' },
-  {path: 'contact', select: 'firstName lastName formerEmployee reportingTo' },
-  {path: 'roles', select: ''},
+  { path: "customer", select: "name type" },
+  {
+    path: "contact",
+    select: "firstName lastName formerEmployee reportingTo",
+    populate: {
+      path: "department",
+      select: "departmentName departmentType",
+    },
+  },
+  { path: "roles", select: "" },
 ];
 
 
@@ -64,17 +74,30 @@ exports.getSecurityUser = async (req, res, next) => {
 
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
+  if (req.query.roleType) {
+    let filteredRoles = await SecurityRole.find({ roleType: { $in: req.query.roleType }, isActive: true, isArchived: false });
 
-  if(req.query.roleType) {
-    let filteredRoles = await SecurityRole.find({roleType:{$in: req.query.roleType}, isActive: true, isArchived: false});
-    
-    if(Array.isArray(filteredRoles) && filteredRoles.length>0) {
-      let filteredRolesIds = filteredRoles.map((r)=>r._id);
-      this.query.roles = { $in : filteredRolesIds };
+    if (Array.isArray(filteredRoles) && filteredRoles.length > 0) {
+      let filteredRolesIds = filteredRoles.map((r) => r._id);
+      this.query.roles = { $in: filteredRolesIds };
     }
     delete this.query.roleType;
     delete req.query.roleType;
   }
+
+  // In case to fetch only specified fields
+  if (req.query.fields) {
+    this.fields = req.query.fields.split(',').join(' ');
+    delete req.query.fields;
+  } else this.fields = {}
+
+  // In case customer type is passed
+  const customerType = req.query.customer && req.query.customer.type;
+  delete this.query.customer;
+
+  // In case contact department type is passed
+  const departmentType = req.query.contact?.department?.departmentType;
+  delete this.query.contact;
 
   this.dbservice.getObjectList(req, SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, users) {
@@ -83,15 +106,26 @@ exports.getSecurityUsers = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       users = JSON.parse(JSON.stringify(users));
+
+      // Filter users based on customer type
+      if (customerType) {
+        users = users.filter((user) => user.customer && user.customer.type === customerType);
+      }
+
+      // Filter users based on department type
+      if (departmentType) {
+        users = users.filter((user) => user.contact?.department && user.contact?.department?.departmentType === departmentType);
+      }
+
       let i = 0;
-      for(let user of users) {
+      for (let user of users) {
         const wss = getSocketConnectionByUserId(user._id);
         users[i].isOnline = false;
 
-        if(Array.isArray(wss) && wss.length>0 && wss[0].userData._id) {
+        if (Array.isArray(wss) && wss.length > 0 && wss[0].userData._id) {
           users[i].isOnline = true;
         }
-        
+
         i++;
       }
       res.json(users);
