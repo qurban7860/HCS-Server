@@ -12,9 +12,7 @@ let rtnMsg = require('../../config/static/static')
 let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
 
-const { ErpLog } = require('../models');
-const { SecurityUser } = require('../../security/models');
-
+const { WasteLog } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -32,7 +30,7 @@ this.populate = [
 
 exports.getLog = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(ErpLog, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(WasteLog, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -68,7 +66,7 @@ exports.getLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-    let response = await this.dbservice.getObjectList(req, ErpLog, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, WasteLog, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
   } catch (error) {
@@ -88,7 +86,7 @@ exports.getLogsGraph = async (req, res, next) => {
     if(mongoose.Types.ObjectId.isValid(this.query.machine)) {
       match.machine =  new mongoose.Types.ObjectId(this.query.machine);
     }
-    const graphResults = await ErpLog.aggregate([
+    const graphResults = await WasteLog.aggregate([
       {$match:match},
       { $group: {
         _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
@@ -107,7 +105,7 @@ exports.getLogsGraph = async (req, res, next) => {
 
 exports.deleteLog = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(ErpLog, req.params.id);
+    const result = await this.dbservice.deleteObject(WasteLog, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -171,7 +169,7 @@ exports.postLogMulti = async (req, res, next) => {
 
       const fakeReq = { body: logObj };
       const query = { machine: logObj.machine, date: fakeReq.body.date };
-      const existingLog = await ErpLog.findOne(query).select('_id').lean();
+      const existingLog = await WasteLog.findOne(query).select('_id').lean();
 
       if (existingLog && skip) {
         return;
@@ -187,12 +185,12 @@ exports.postLogMulti = async (req, res, next) => {
     }));
 
     if (logsToInsert.length > 0) {
-      await ErpLog.insertMany(logsToInsert, { session });
+      await WasteLog.insertMany(logsToInsert, { session });
     }
 
     if (logsToUpdate.length > 0) {
       await Promise.all(logsToUpdate.map((log) =>
-        this.dbservice.patchObject(ErpLog, log._id, log.update, session)
+        this.dbservice.patchObject(WasteLog, log._id, log.update, session)
       ));
     }
 
@@ -215,7 +213,7 @@ exports.patchLog = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(ErpLog, req.params.id, getDocumentFromReq(req));
+      const result = await this.dbservice.patchObject(WasteLog, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -231,7 +229,7 @@ function getDocumentFromReq(req, reqType) {
   let doc = {};
 
   if (reqType && reqType === "new") {
-    doc = new ErpLog({});
+    doc = new WasteLog({});
   }
 
   Object.keys(restBody).forEach((key) => {
