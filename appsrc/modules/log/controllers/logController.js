@@ -1,6 +1,4 @@
 const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 
@@ -12,9 +10,7 @@ let rtnMsg = require('../../config/static/static')
 let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
 
-const { ErpLog } = require('../models');
-const { SecurityUser } = require('../../security/models');
-
+const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -32,7 +28,9 @@ this.populate = [
 
 exports.getLog = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(ErpLog, this.fields, req.params.id, this.populate);
+    const logType = req.query.type;
+    const model = await getModel( logType );
+    const response = await this.dbservice.getObjectById(model, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -43,6 +41,8 @@ exports.getLog = async (req, res, next) => {
 exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
+    const logType = this.query.type;
+    const model = await getModel( logType );
     if(this.query?.fromDate && this.query?.fromDate) {
       if(this.query?.isCreatedAt) {
         this.query.createdAt =  {
@@ -68,7 +68,7 @@ exports.getLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-    let response = await this.dbservice.getObjectList(req, ErpLog, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, model, this.fields, this.query, this.orderBy, this.populate);
     
     return res.json(response);
   } catch (error) {
@@ -80,6 +80,8 @@ exports.getLogs = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
+    const logType = this.query.type;
+    const model = await getModel( logType );
     const match = {}
     if(this.query.year) {
       match.date = {$gte: new Date(`${this.query.year}-01-01`) }
@@ -88,7 +90,7 @@ exports.getLogsGraph = async (req, res, next) => {
     if(mongoose.Types.ObjectId.isValid(this.query.machine)) {
       match.machine =  new mongoose.Types.ObjectId(this.query.machine);
     }
-    const graphResults = await ErpLog.aggregate([
+    const graphResults = await model.aggregate([
       {$match:match},
       { $group: {
         _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
@@ -107,7 +109,9 @@ exports.getLogsGraph = async (req, res, next) => {
 
 exports.deleteLog = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(ErpLog, req.params.id);
+    const logType = req.query.type;
+    const model = await getModel( logType );
+    const result = await this.dbservice.deleteObject(model, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -153,6 +157,8 @@ exports.postLogMulti = async (req, res, next) => {
   }
 
   try {
+    const logType = req.query.type;
+    const model = await getModel( logType );
     const { csvData, machine, customer, loginUser, skip } = req.body;
     let { update } = req.body;
     const logsToInsert = []; 
@@ -168,7 +174,7 @@ exports.postLogMulti = async (req, res, next) => {
 
       const fakeReq = { body: logObj };
       const query = { machine: logObj.machine, date: fakeReq.body.date };
-      const existingLog = await ErpLog.findOne(query).select('_id').lean();
+      const existingLog = await model.findOne(query).select('_id').lean();
 
       if (existingLog && skip) {
         return;
@@ -183,13 +189,13 @@ exports.postLogMulti = async (req, res, next) => {
       }
     }));
 
-    if (logsToInsert?.length > 0) {
-      await ErpLog.insertMany(logsToInsert);
+    if (logsToInsert.length > 0) {
+      await model.insertMany(logsToInsert);
     }
 
     if (logsToUpdate.length > 0) {
       await Promise.all(logsToUpdate.map((log) =>
-        this.dbservice.patchObject( ErpLog, log._id, log.update )
+        this.dbservice.patchObject(model, log._id, log.update)
       ));
     }
 
@@ -197,7 +203,7 @@ exports.postLogMulti = async (req, res, next) => {
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
-  } 
+  }
 };
 
 
@@ -208,7 +214,9 @@ exports.patchLog = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const result = await this.dbservice.patchObject(ErpLog, req.params.id, getDocumentFromReq(req));
+      const logType = req.query.type;
+      const model = await getModel( logType );
+      const result = await this.dbservice.patchObject(model, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
@@ -217,6 +225,26 @@ exports.patchLog = async (req, res, next) => {
   }
 };
 
+
+async function getModel( logType ){ 
+  if( !logType?.trim() ){
+    throw new Error("Log type is not defined!");
+  }
+
+  let model
+  if(logType?.toUpperCase() === 'COIL' ){
+    model = CoilLog;
+  } else if( logType.toUpperCase() === 'ERP' ){
+    model = ErpLog;
+  } else if( logType.toUpperCase() === 'PRODUCTION' ){
+    model = ProductionLog;
+  } else if( logType.toUpperCase() === 'TOOLCOUNT' ){
+    model = ToolCountLog;
+  } else if( logType.toUpperCase() === 'WASTE' ){
+    model = WasteLog;
+  }
+  return model;
+}
 
 function getDocumentFromReq(req, reqType) {
   const { loginUser, ...restBody } = req.body;

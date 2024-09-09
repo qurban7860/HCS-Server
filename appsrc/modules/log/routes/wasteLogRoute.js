@@ -4,23 +4,22 @@ const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 
 const controllers = require('../controllers');
-const controller = controllers.erpLogController;
+const controller = controllers.wasteLogController;
 
 const router = express.Router();
 
 router.use(checkAuth, checkCustomer);
 
+router.get(`/waste/`, controller.getLogs);
 
-router.get(`/erp/`, controller.getLogs);
+router.get(`/waste/graph`, controller.getLogsGraph);
 
-router.get(`/erp/graph`, controller.getLogsGraph);
+router.get(`/waste/:id`, controller.getLog);
 
-router.get(`/erp/:id`, controller.getLog);
+router.post(`/waste/`, controller.postLog);
 
-router.post(`/erp/`, controller.postLog);
+router.post(`/waste/multi`, controller.postLogMulti);
 
-router.post(`/erp/multi`, controller.postLogMulti);
-
-router.patch(`/erp/:id`, controller.patchLog);
+router.patch(`/waste/:id`, controller.patchLog);
 
 module.exports = router;

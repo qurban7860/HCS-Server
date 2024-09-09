@@ -4,23 +4,23 @@ const checkAuth = require('../../../middleware/check-auth');
 const checkCustomer = require('../../../middleware/check-customer');
 
 const controllers = require('../controllers');
-const controller = controllers.erpLogController;
+const controller = controllers.toolCountLogController;
 
 const router = express.Router();
 
 router.use(checkAuth, checkCustomer);
 
 
-router.get(`/erp/`, controller.getLogs);
+router.get(`/toolCount/`, controller.getLogs);
 
-router.get(`/erp/graph`, controller.getLogsGraph);
+router.get(`/toolCount/graph`, controller.getLogsGraph);
 
-router.get(`/erp/:id`, controller.getLog);
+router.get(`/toolCount/:id`, controller.getLog);
 
-router.post(`/erp/`, controller.postLog);
+router.post(`/toolCount/`, controller.postLog);
 
-router.post(`/erp/multi`, controller.postLogMulti);
+router.post(`/toolCount/multi`, controller.postLogMulti);
 
-router.patch(`/erp/:id`, controller.patchLog);
+router.patch(`/toolCount/:id`, controller.patchLog);
 
 module.exports = router;
