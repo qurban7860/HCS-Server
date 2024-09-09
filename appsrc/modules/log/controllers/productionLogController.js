@@ -151,10 +151,7 @@ exports.postLogMulti = async (req, res, next) => {
   if (!Array.isArray(req.body?.csvData) || req.body.csvData.length === 0) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data: Data is missing or empty');
   }
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
+  
   try {
     const { csvData, machine, customer, loginUser, skip } = req.body;
     let { update } = req.body;
@@ -187,23 +184,19 @@ exports.postLogMulti = async (req, res, next) => {
     }));
 
     if (logsToInsert.length > 0) {
-      await ProductionLog.insertMany(logsToInsert, { session });
+      await ProductionLog.insertMany(logsToInsert);
     }
 
     if (logsToUpdate.length > 0) {
       await Promise.all(logsToUpdate.map((log) =>
-        this.dbservice.patchObject(ProductionLog, log._id, log.update, session)
+        this.dbservice.patchObject(ProductionLog, log._id, log.update)
       ));
     }
 
-    await session.commitTransaction();
     res.status(StatusCodes.CREATED).json({ message: 'Logs processed successfully' });
   } catch (error) {
-    await session.abortTransaction();
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
-  } finally {
-    session.endSession();
   }
 };
 

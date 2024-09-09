@@ -156,9 +156,6 @@ exports.postLogMulti = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data: Data is missing or empty');
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
   try {
     const logType = req.query.type;
     const model = await getModel( logType );
@@ -193,23 +190,19 @@ exports.postLogMulti = async (req, res, next) => {
     }));
 
     if (logsToInsert.length > 0) {
-      await model.insertMany(logsToInsert, { session });
+      await model.insertMany(logsToInsert);
     }
 
     if (logsToUpdate.length > 0) {
       await Promise.all(logsToUpdate.map((log) =>
-        this.dbservice.patchObject(model, log._id, log.update, session)
+        this.dbservice.patchObject(model, log._id, log.update)
       ));
     }
 
-    await session.commitTransaction();
     res.status(StatusCodes.CREATED).json({ message: 'Logs processed successfully' });
   } catch (error) {
-    await session.abortTransaction();
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
-  } finally {
-    session.endSession();
   }
 };
 
@@ -231,6 +224,7 @@ exports.patchLog = async (req, res, next) => {
     }
   }
 };
+
 
 async function getModel( logType ){ 
   if( !logType?.trim() ){
