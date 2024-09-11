@@ -10,7 +10,6 @@ const router = express.Router();
 
 router.use(checkAuth, checkCustomer);
 
-
 router.get(`/`, controller.getLogs);
 // GET /api/1.0.0/logs/
 
@@ -22,9 +21,6 @@ router.get(`/:id`, controller.getLog);
 
 router.post(`/`, controller.postLog);
 // POST /api/1.0.0/logs/
-
-router.post(`/multi`, controller.postLogMulti);
-// POST /api/1.0.0/logs/multi/
 
 router.patch(`/:id`, controller.patchLog);
 // Patch /api/1.0.0/logs/:id

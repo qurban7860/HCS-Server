@@ -1,15 +1,13 @@
-const { body, validationResult } = require('express-validator');
+const { validationResult } = require('express-validator');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 
 const _ = require('lodash');
-const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
-
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -24,13 +22,13 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-
-
 exports.getLog = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {}; 
-    const Model = getModel( this.query.type );
-    delete this.query.type;
+    if( !mongoose.Types.ObjectId.isValid(req.params.id) ) {
+      return res.status(400).send("Please Provide a valid Log ID!");
+    }
+    const Model = getModel( req.query?.type );
+    delete this.query?.type;
     const response = await this.dbservice.getObjectById(Model, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
@@ -81,18 +79,17 @@ exports.getLogs = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const logType = this.query.type;
-    const Model = getModel( this.query.type );
+    const LogModel = getModel( this.query.type );
     delete this.query.type;
     const match = {}
-    if(this.query.year) {
+    if( this.query.year ) {
       match.date = {$gte: new Date(`${this.query.year}-01-01`) }
     }
 
-    if(mongoose.Types.ObjectId.isValid(this.query.machine)) {
+    if( mongoose.Types.ObjectId.isValid(this.query.machine) ) {
       match.machine =  new mongoose.Types.ObjectId(this.query.machine);
     }
-    const graphResults = await Model.aggregate([
+    const graphResults = await LogModel.aggregate([
       {$match:match},
       { $group: {
         _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
@@ -101,11 +98,10 @@ exports.getLogsGraph = async (req, res, next) => {
       }},
       { $sort: { "_id": 1 } }
     ]);
-    
     return res.json(graphResults);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)");
   }
 };
 
@@ -121,29 +117,8 @@ exports.deleteLog = async (req, res, next) => {
   }
 };
 
+
 exports.postLog = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    try {
-
-      if(!mongoose.Types.ObjectId.isValid(req.body.machine) || 
-        !mongoose.Types.ObjectId.isValid(req.body.customer)) {
-        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data, customer/machine not found!');
-      }
-
-      const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json({ Log: response });
-    } catch (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Log Save Failed!");
-    }
-  }
-};
-
-
-exports.postLogMulti = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -154,12 +129,12 @@ exports.postLogMulti = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data: machine/customer not found');
   }
 
-  if (!Array.isArray(req.body?.csvData) || req.body.csvData.length === 0) {
+  if (!Array.isArray(req.body?.logs) || req.body?.logs?.length === 0) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data: Data is missing or empty');
   }
 
   try {
-    const { csvData, machine, customer, loginUser, skip, type } = req.body;
+    const { logs, machine, customer, loginUser, skip, type } = req.body;
     const Model = getModel( type );
     let { update } = req.body;
     const logsToInsert = []; 
@@ -168,7 +143,7 @@ exports.postLogMulti = async (req, res, next) => {
     if (skip)
       update = false;
 
-    await Promise.all( csvData?.map(async (logObj) => {
+    await Promise.all( logs?.map(async (logObj) => {
         logObj.machine = machine;
         logObj.customer = customer;
         logObj.loginUser = loginUser;
@@ -228,7 +203,7 @@ exports.patchLog = async (req, res, next) => {
 
 
 function getModel( logType ){ 
-  console.log("logType : ",logType)
+
   if( !logType?.trim() ){
     throw new Error("Log type is not defined!");
   }
