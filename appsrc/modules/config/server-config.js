@@ -40,6 +40,7 @@ const apiclientRoute  = require ('../apiclient/routes');
 
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
+const productLogs  = require ('../productLogs/routes');
 const jiraRoute  = require ('../jira/routes');
 
 const backupRoute  = require ('../backups/routes');
@@ -140,12 +141,10 @@ class App {
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     calenderRoute.registerEventRoutes(this.app, apiPath);
-    
-    
-
     apiclientRoute.registerapiClientRoutes(this.app, apiPath); 
     configRoute.registerConfigRoutes(this.app, apiPath);
     logRoute.registerlogRoutes(this.app, apiPath);
+    productLogs.registerProductLogsRoutes(this.app, apiPath);
     jiraRoute.registerJiraRoutes(this.app, apiPath);
     backupRoute.registerBackupRoutes(this.app, apiPath);
   }
