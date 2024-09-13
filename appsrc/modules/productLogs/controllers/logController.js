@@ -22,7 +22,7 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-exports.getLog = async (req, res, next) => {
+exports.getLog = async ( req, res, next ) => {
   try {
     if( !mongoose.Types.ObjectId.isValid(req.params.id) ) {
       return res.status(400).send("Please Provide a valid Log ID!");
@@ -191,7 +191,8 @@ exports.patchLog = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const logType = req.query.type;
+      const logType = req.body?.type;
+      delete req.body.type;
       const Model = getModel( logType );
       const result = await this.dbservice.patchObject(Model, req.params.id, getDocumentFromReq(req));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
