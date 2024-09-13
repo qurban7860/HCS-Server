@@ -379,7 +379,8 @@ exports.refreshToken = async (req, res, next) => {
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
     if(existingUser){
-    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.dataAccessibilityLevel);
+    
+    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel);
     if (accessToken) {
       updatedToken = updateUserToken(accessToken);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -501,7 +502,8 @@ async function comparePasswords(encryptedPass, textPass, next) {
 };
 
 async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
-  const filteredRoles = roles?.filter(role => role?.isActive && !role?.isArchived)?.map(role => role?.roleType);
+
+  const filteredRoles = Array.isArray(roles) && roles?.filter(role => role?.isActive && !role?.isArchived)?.map(role => role?.roleType);
 
   let token;
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
