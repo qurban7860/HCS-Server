@@ -86,9 +86,7 @@ class App {
       resave: true,
       store: store
     }));
-    
-    
-    
+
     let allowedOrigins;
     if(process.env.CORS_CONFIG) {
       allowedOrigins = process.env.CORS_CONFIG.split(",");

@@ -391,12 +391,12 @@ exports.refreshToken = async (req, res, next) => {
         else {
           return res.json({
             accessToken,
-            userId: existingUser.id,
+            userId: existingUser?._id || '',
             user: {
-              login: existingUser.login,
-              email: existingUser.email,
-              displayName: existingUser.name,
-              roles: existingUser.roles
+              login: existingUser?.login || '',
+              email: existingUser?.email || '',
+              displayName: existingUser?.name || '',
+              roles: existingUser?.roles || [],
             }
           });
         }
@@ -501,9 +501,7 @@ async function comparePasswords(encryptedPass, textPass, next) {
 };
 
 async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
-  const filteredRoles = roles
-  .filter(role => role.isActive && !role.isArchived)
-  .map(role => role.roleType);
+  const filteredRoles = roles?.filter(role => role?.isActive && !role?.isArchived)?.map(role => role?.roleType);
 
   let token;
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
