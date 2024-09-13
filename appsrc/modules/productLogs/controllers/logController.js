@@ -134,7 +134,7 @@ exports.postLog = async (req, res, next) => {
   }
 
   try {
-    const { logs, machine, customer, loginUser, skip, type } = req.body;
+    const { logs, machine, customer, version, loginUser, skip, type } = req.body;
     const Model = getModel( type );
     let { update } = req.body;
     const logsToInsert = []; 
@@ -148,6 +148,7 @@ exports.postLog = async (req, res, next) => {
         logObj.customer = customer;
         logObj.loginUser = loginUser;
         logObj.type = type;
+        logObj.version = version;
         const fakeReq = { body: logObj };
         const query = { machine: logObj.machine, date: fakeReq.body.date };
         const existingLog = await Model.findOne(query).select('_id').lean();
