@@ -9,6 +9,7 @@ let rtnMsg = require('../../config/static/static')
 let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require('../models');
+const { isValidDate, validateYear  } = require('../../../../utils/formatTime');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -27,21 +28,24 @@ exports.getLog = async ( req, res, next ) => {
     if( !mongoose.Types.ObjectId.isValid(req.params.id) ) {
       return res.status(400).send("Please Provide a valid Log ID!");
     }
-    const Model = getModel( req.query?.type );
+    const Model = getModel( req );
     delete this.query?.type;
     const response = await this.dbservice.getObjectById(Model, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
 
 exports.getLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};  
-    const Model = getModel( this.query.type );
+    const Model = getModel( req );
     delete this.query.type;
+    if( !(isValidDate(this.query?.fromDate) && isValidDate(this.query?.toDate)) && this.query?.toDate > this.query?.fromDate ){
+      return res.status(400).send("Please Provide valid date range!");
+    }
     if(this.query?.fromDate && this.query?.fromDate) {
       if(this.query?.isCreatedAt) {
         this.query.createdAt =  {
@@ -72,17 +76,19 @@ exports.getLogs = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
 
 exports.getLogsGraph = async (req, res, next) => {
-  try {
-    this.query = req.query != "undefined" ? req.query : {};  
-    const LogModel = getModel( this.query.type );
-    delete this.query.type;
+  try {  
+    const LogModel = getModel( req );
+    delete req.query.type;
+    if( this.query?.year && !validateYear(this.query?.year) ){
+      return res.status(400).send("Please Provide valid Year!");
+    }
     const match = {}
-    if( this.query.year ) {
+    if( this.query?.year ) {
       match.date = {$gte: new Date(`${this.query.year}-01-01`) }
     }
 
@@ -101,19 +107,26 @@ exports.getLogsGraph = async (req, res, next) => {
     return res.json(graphResults);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)");
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
 
 exports.deleteLog = async (req, res, next) => {
   try {
-    const logType = req.query.type;
-    const Model = getModel( logType );
-    const result = await this.dbservice.deleteObject(Model, req.params.id);
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    req.query.type = req.query?.type || req.body?.type;
+    const Model = getModel( req );
+    await this.dbservice.deleteObject(Model, req.params.id, res, callbackFunc );
+    function callbackFunc(error, response) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
+      } else {
+        res.status(StatusCodes.OK).send("Record Deleted Successfully");
+      }
+    }
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
 
@@ -135,7 +148,8 @@ exports.postLog = async (req, res, next) => {
 
   try {
     const { logs, machine, customer, version, loginUser, skip, type } = req.body;
-    const Model = getModel( type );
+    req.query.type = type;
+    const Model = getModel( req );
     let { update } = req.body;
     const logsToInsert = []; 
     const logsToUpdate = [];
@@ -149,7 +163,7 @@ exports.postLog = async (req, res, next) => {
         logObj.loginUser = loginUser;
         logObj.type = type;
         logObj.version = version;
-        const fakeReq = { body: logObj };
+        const fakeReq = { body: logObj, query: { type } };
         const query = { machine: logObj.machine, date: fakeReq.body.date };
         const existingLog = await Model.findOne(query).select('_id').lean();
 
@@ -158,10 +172,10 @@ exports.postLog = async (req, res, next) => {
         }
 
         if (existingLog && update) {
-          const updatedLog = getDocumentFromReq(fakeReq);
+          const updatedLog = getDocumentFromReq(fakeReq, res );
           logsToUpdate.push({ _id: existingLog._id, update: updatedLog });
         } else if (!existingLog) {
-          const newLog = getDocumentFromReq(fakeReq, 'new');
+          const newLog = getDocumentFromReq(fakeReq, res, 'new');
           logsToInsert.push(newLog);
         }
     }));
@@ -190,49 +204,53 @@ exports.patchLog = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    try {
-      const logType = req.body?.type;
-      delete req.body.type;
-      const Model = getModel( logType );
-      const result = await this.dbservice.patchObject(Model, req.params.id, getDocumentFromReq(req));
+    try {  
+      req.query.type = req.query?.type || req.body?.type;
+      const LogModel = getModel( req );
+      const result = await this.dbservice.patchObject(LogModel, req.params.id, getDocumentFromReq( req, res ));
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
     }
   }
 };
 
-
-function getModel( logType ){ 
-
-  if( !logType?.trim() ){
+function getModel(req) { 
+  const type = req.query?.type;
+  
+  if (!type?.trim()) {
     throw new Error("Log type is not defined!");
   }
 
-  let Model
-  if(logType?.toUpperCase() === 'COIL' ){
-    Model = CoilLog;
-  } else if( logType.toUpperCase() === 'ERP' ){
-    Model = ErpLog;
-  } else if( logType.toUpperCase() === 'PRODUCTION' ){
-    Model = ProductionLog;
-  } else if( logType.toUpperCase() === 'TOOLCOUNT' ){
-    Model = ToolCountLog;
-  } else if( logType.toUpperCase() === 'WASTE' ){
-    Model = WasteLog;
-  }
-
-  if (!Model) {
-    throw new Error(`No model found for log type: ${logType}`);
+  let Model;
+  switch (type.toUpperCase()) {
+    case 'COIL':
+      Model = CoilLog;
+      break;
+    case 'ERP':
+      Model = ErpLog;
+      break;
+    case 'PRODUCTION':
+      Model = ProductionLog;
+      break;
+    case 'TOOLCOUNT':
+      Model = ToolCountLog;
+      break;
+    case 'WASTE':
+      Model = WasteLog;
+      break;
+    default:
+      throw new Error(`Please provide a valid log type!`);
   }
 
   return Model;
 }
+exports.getModel = getModel;
 
 function getDocumentFromReq(req, reqType) {
-  const { type, loginUser, ...restBody } = req.body;
-  const Model = getModel( type );
+  const { loginUser, ...restBody } = req.body;
+  const Model = getModel( req );
   let doc = {};
 
   if (reqType && reqType === "new") {

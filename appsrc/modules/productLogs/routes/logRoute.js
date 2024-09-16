@@ -25,4 +25,6 @@ router.post(`/`, controller.postLog);
 router.patch(`/:id`, controller.patchLog);
 // Patch /api/1.0.0/productLogs/:id
 
+router.delete(`/:id`, controller.deleteLog);
+// Patch /api/1.0.0/productLogs/:id
 module.exports = router;
