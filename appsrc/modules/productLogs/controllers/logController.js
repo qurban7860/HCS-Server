@@ -9,6 +9,7 @@ let rtnMsg = require('../../config/static/static')
 let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require('../models');
+const { Product } = require('../../products/models');
 const { isValidDate, validateYear  } = require('../../../../utils/formatTime');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -18,7 +19,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'customer', select: 'name' },
-  { path: 'machine', select: 'name' },
+  { path: 'machine', select: 'serialNo name' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
@@ -40,12 +41,13 @@ exports.getLog = async ( req, res, next ) => {
 
 exports.getLogs = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
+    this.query = req.query != "undefined" ? req.query : {};
     const Model = getModel( req );
     delete this.query.type;
     if( !(isValidDate(this.query?.fromDate) && isValidDate(this.query?.toDate)) && this.query?.toDate > this.query?.fromDate ){
       return res.status(400).send("Please Provide valid date range!");
     }
+
     if(this.query?.fromDate && this.query?.fromDate) {
       if(this.query?.isCreatedAt) {
         this.query.createdAt =  {
@@ -72,7 +74,12 @@ exports.getLogs = async (req, res, next) => {
     delete this.query?.toDate;
 
     let response = await this.dbservice.getObjectList(req, Model, this.fields, this.query, this.orderBy, this.populate);
-    
+
+    if( !Array.isArray(response) && this.query?.customer && !this.query?.machine ){
+      const machinesId = await Model.find({ customer: this.query?.customer }).select('machine').distinct('machine');
+      const machines = await Product.find({ _id: { $in: machinesId } }).select('serialNo name').exec();
+      response.machines = machines;
+    }
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
