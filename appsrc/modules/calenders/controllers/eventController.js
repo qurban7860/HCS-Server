@@ -147,7 +147,7 @@ exports.postEvent = async (req, res, next) => {
 
 exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
   try {
-    const securityUserName = `An${eventData?.isCustomerEvent ? '' : ' internal' } event has been booked by ${ securityUser?.name || '' }.`;
+    const securityUserName = `An${eventData?.isCustomerEvent ? '' : ' Internal' } Event has been booked by ${ securityUser?.name || '' }.`;
     const uniqueTechnicians = new Set();
     const primaryTechnicianName = `${eventData?.primaryTechnician?.firstName?.trim() || ''} ${eventData?.primaryTechnician?.lastName?.trim() || ''}`;
     if (primaryTechnicianName) uniqueTechnicians.add(primaryTechnicianName);
