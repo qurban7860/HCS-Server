@@ -65,13 +65,15 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
     const response =  await ProductServiceRecords.findById( req.params.serviceId  ).populate( populateObject ).sort({ _id: -1 });
     const activeValues = await fetchServiceRecordValues(response.serviceId, false);
     const historicalValues = await fetchServiceRecordValues(response.serviceId, true);
-
     const responseData = JSON.parse(JSON.stringify(response?.serviceRecordConfig));
-
+    
     if (response?.serviceRecordConfig && Array.isArray(response?.serviceRecordConfig?.checkItemLists)) {
+      // console.log("response checkItemLists : ",response.serviceRecordConfig.checkItemLists)
       for (const [index, checkParam] of response.serviceRecordConfig.checkItemLists.entries()) {
         if (Array.isArray(checkParam?.checkItems)) {
+          console.log("checkParam.checkItems : ",checkParam.checkItems)
           const checkItems = await fetchCheckItems(checkParam.checkItems);
+          // console.log("checkItems : ",checkItems)
           for (let checkItem of checkItems) {
             await updateCheckItemWithValues( checkItem, checkParam._id, activeValues, historicalValues, response );
           }
@@ -107,7 +109,11 @@ async function fetchCheckItems(checkItemIds) {
     const productCheckItems = await ProductCheckItem.find({ _id: { $in: checkItemIds } })
     .populate([{ path: 'createdBy', select: 'name' }, { path: 'updatedBy', select: 'name' }])
     .lean();
-    return productCheckItems 
+    const orderedProductCheckItems = checkItemIds.map(id => 
+      productCheckItems.find(item => item._id.toString() === id.toString())
+    );
+    
+    return orderedProductCheckItems;
   } catch(e){
     logger.error(e);
     throw e;
