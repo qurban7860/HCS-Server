@@ -59,7 +59,8 @@ const docSchema = new Schema({
         
 },
 {
-        collection: 'ToolCountLogs'
+        collection: 'ToolCountLogs',
+        strict: false
 });
 
 docSchema.set('timestamps', true);

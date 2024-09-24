@@ -59,7 +59,8 @@ const docSchema = new Schema({
         
 },
 {
-        collection: 'WasteLogs'
+        collection: 'WasteLogs',
+        strict: false
 });
 
 docSchema.set('timestamps', true);

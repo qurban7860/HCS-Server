@@ -59,7 +59,8 @@ const docSchema = new Schema({
         
 },
 {
-        collection: 'CoilLogs'
+        collection: 'CoilLogs',
+        strict: false
 });
 
 docSchema.set('timestamps', true);

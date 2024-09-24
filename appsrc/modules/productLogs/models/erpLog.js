@@ -59,7 +59,8 @@ const docSchema = new Schema({
         
 },
 {
-        collection: 'ErpLogs'
+        collection: 'ErpLogs',
+        strict: false
 });
 
 docSchema.set('timestamps', true);
