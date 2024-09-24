@@ -55,21 +55,25 @@ this.populateObject = [
   {path: 'updatedBy', select: 'name'}
 ];
 
-exports.getProductServiceRecord = async (req, res, next) => {
+const getProductServiceRecordData = async (req) => {
+  try {
+    const response = await this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populateObject);
+    
+    if (!response) {
+      throw new Error('Record not found');
+    }
+    
+    let parsedResponse = JSON.parse(JSON.stringify(response));
 
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populateObject, callbackFunc);
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      response = JSON.parse(JSON.stringify(response));  
+    const queryToFindCurrentVer = { serviceId: parsedResponse.serviceId, isArchived: false, isHistory: false, status: 'SUBMITTED' };
+    const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer)
+      .select('_id versionNo serviceDate serviceId')
+      .sort({ versionNo: -1 })
+      .lean();
+    
+    parsedResponse.currentVersion = currentVersion;
 
-      const queryToFindCurrentVer = { serviceId: response.serviceId, isArchived: false, isHistory: false, status: 'SUBMITTED' };
-      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({ versionNo: -1 }).lean();
-      response.currentVersion = currentVersion;
-
-      completeEvaluationHistory = await ProductServiceRecords.find({ serviceId: response.serviceId })
+    const completeEvaluationHistory = await ProductServiceRecords.find({ serviceId: parsedResponse.serviceId })
       .select("versionNo approval.approvalLogs")
       .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
       .sort({ versionNo: -1 })
@@ -78,41 +82,56 @@ exports.getProductServiceRecord = async (req, res, next) => {
         evaluationHistory: [...acc.evaluationHistory, {
           _id: item._id,
           versionNo: item.versionNo,
-          logs: item.approval?.approvalLogs
+          logs: item.approval?.approvalLogs,
         }],
-        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0)
+        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0),
       }), { evaluationHistory: [], totalLogsCount: 0 }));
 
-      response.completeEvaluationHistory = completeEvaluationHistory;
+    parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
 
-      if (response && Array.isArray(response.decoilers) && response.decoilers.length > 0) {
-        response.decoilers = await Product.find({ _id: { $in: response.decoilers }, isActive: true, isArchived: false });
-      }
-
-      if (response.machine && response.machine.machineModel) {
-        response.machine.machineModel = await ProductModel.findOne({ _id: response.machine.machineModel }, { name: 1 });
-      }
-
-      if (Array.isArray(response.operators) && response.operators.length > 0) {
-        response.operators = await CustomerContact.find({ _id: { $in: response.operators } }, { firstName: 1, lastName: 1 });
-      }
-
-      await ProductServiceRecords.populate(response, {
-        path: 'approval.approvalLogs.evaluatedBy',
-        select: 'firstName lastName',
-      });
-
-      const serviceRecordFileQuery = { serviceId: { $in: response.serviceId }, isArchived: false };
-      let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
-      if (Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0) {
-        response.files = serviceRecordFiles;
-      }
-
-      res.json(response);
+    if (parsedResponse && Array.isArray(parsedResponse.decoilers) && parsedResponse.decoilers.length > 0) {
+      parsedResponse.decoilers = await Product.find({ _id: { $in: parsedResponse.decoilers }, isActive: true, isArchived: false });
     }
+
+    if (parsedResponse.machine && parsedResponse.machine.machineModel) {
+      parsedResponse.machine.machineModel = await ProductModel.findOne({ _id: parsedResponse.machine.machineModel }, { name: 1 });
+    }
+
+    if (Array.isArray(parsedResponse.operators) && parsedResponse.operators.length > 0) {
+      parsedResponse.operators = await CustomerContact.find({ _id: { $in: parsedResponse.operators } }, { firstName: 1, lastName: 1 });
+    }
+
+    await ProductServiceRecords.populate(parsedResponse, {
+      path: 'approval.approvalLogs.evaluatedBy',
+      select: 'firstName lastName',
+    });
+
+    const serviceRecordFileQuery = { serviceId: { $in: parsedResponse.serviceId }, isArchived: false };
+    const serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery)
+      .select('name path extension fileType thumbnail');
+    
+    if (Array.isArray(serviceRecordFiles) && serviceRecordFiles.length > 0) {
+      parsedResponse.files = serviceRecordFiles;
+    }
+
+    return parsedResponse;
+
+  } catch (error) {
+    logger.error(new Error(error));
+    throw new Error(error);
   }
 };
 
+exports.getProductServiceRecordData = getProductServiceRecordData;
+
+exports.getProductServiceRecord = async (req, res, next) => {
+  try {
+    const data = await getProductServiceRecordData(req);
+    res.json(data);
+  } catch (e) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
 
 exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) => {
 
@@ -716,7 +735,7 @@ const handleDraftStatus = async (req, res, findServiceRecord) =>{
       try {
         await checkDraftServiceRecords( req, res, findServiceRecord)
         await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-        const response = await ProductServiceRecords.findById(req.params.id);
+        const response = await getProductServiceRecordData( req );
         return res.status(StatusCodes.OK).send(response);
       } catch (e) {
         console.log(e);

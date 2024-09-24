@@ -10,6 +10,7 @@ const { render } = require('template-file');
 const fs = require('fs');
 const awsService = require('../../../base/aws');
 const { Config } = require('../../config/models');
+const { getProductServiceRecordData } = require('./productServiceRecordsController');
 const path = require('path');
 const sharp = require('sharp');
 
@@ -71,7 +72,7 @@ exports.postServiceRecordFiles = async (req, res, next) => {
       if(req?.files?.images){
         files = req.files.images;
       } else {
-        return res.status(StatusCodes.OK).send('No file available to be uploaded!');
+        return res.status(StatusCodes.BAD_REQUEST).send('No file available to be uploaded!');
       }
  
       const fileProcessingPromises = files.map(async (file) => {
@@ -101,8 +102,8 @@ exports.postServiceRecordFiles = async (req, res, next) => {
       });
   
       await Promise.all(fileProcessingPromises);
-  
-      return res.status(StatusCodes.OK).send('Files uploaded successfully!');
+      const serviceRecordData = await getProductServiceRecordData( req );
+      return res.status(StatusCodes.OK).send(serviceRecordData);
     }
   }catch(e) {
     console.log(e);
