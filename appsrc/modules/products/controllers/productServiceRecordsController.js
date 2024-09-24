@@ -250,7 +250,7 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
       await ProductServiceRecordValueFile.updateMany( { serviceRecord: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceRecordFiles.updateMany( { machineServiceRecord: req.params.id }, { $set: { isArchived: true } } );
     }
-      const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc );
+      const result = await this.dbservice.deleteObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc );
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));
@@ -320,7 +320,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
       if (req.files && req.files.images) {
         return next(); 
       }
-      res.status(StatusCodes.CREATED).json({ serviceRecord: response });
+      res.status(StatusCodes.CREATED).json( response );
     }
   }
 }
@@ -692,8 +692,8 @@ exports.patchProductServiceRecord = async (req, res ) => {
 const handleArchive = async (req, res) => {
   try {
     var _this = this;
-    const result = await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+    await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send('Service record Archived Successfully!');
   } catch (error) {
       console.log(error);
       return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
@@ -716,7 +716,8 @@ const handleDraftStatus = async (req, res, findServiceRecord) =>{
       try {
         await checkDraftServiceRecords( req, res, findServiceRecord)
         await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-        return res.status(StatusCodes.OK).send('Draft Service Record updated!');
+        const response = await ProductServiceRecords.findById(req.params.id);
+        return res.status(StatusCodes.OK).send(response);
       } catch (e) {
         console.log(e);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
