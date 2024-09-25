@@ -563,9 +563,10 @@ exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
         const allEmailsSent = results.every((result) => result.success);
 
         if (allEmailsSent) {
-          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Requests for approval sent successfully to all contacts!", false));
+          const serviceRecordData = await getProductServiceRecordData( req )
+          res.status(StatusCodes.OK).send(serviceRecordData);
         } else {
-          res.status(StatusCodes.PARTIAL_CONTENT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.PARTIAL_CONTENT, "Some emails failed to send.", true));
+          res.status(StatusCodes.BAD_REQUEST).send("Some emails failed to send.");
         }
 
         // Attempt logging after sending emails
@@ -593,11 +594,11 @@ exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
 
 exports.evaluateServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
-  const recordId = req.params.id;
   const evaluationData = req.body?.evaluationData;
   let reqError = true;
 
-  const productServiceRecord = await ProductServiceRecords.findById(recordId);
+  const productServiceRecord = await getProductServiceRecordData( req )
+
   const evaluationUserEmail = await customerContact.findById(evaluationData.evaluatedBy, "email");
   const contactsWithApproval = await Config.findOne({
     name: "Approving_Contacts",
@@ -620,6 +621,7 @@ exports.evaluateServiceRecord = async (req, res, next) => {
 
   if (productServiceRecord) {
     await productServiceRecord.addApprovalLog({ ...evaluationData });
+
     res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Service Record Evaluated Successfully", false));
   } else {
     res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Record configuration not found!", true));
