@@ -68,12 +68,9 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
     const responseData = JSON.parse(JSON.stringify(response?.serviceRecordConfig));
     
     if (response?.serviceRecordConfig && Array.isArray(response?.serviceRecordConfig?.checkItemLists)) {
-      // console.log("response checkItemLists : ",response.serviceRecordConfig.checkItemLists)
       for (const [index, checkParam] of response.serviceRecordConfig.checkItemLists.entries()) {
         if (Array.isArray(checkParam?.checkItems)) {
-          console.log("checkParam.checkItems : ",checkParam.checkItems)
           const checkItems = await fetchCheckItems(checkParam.checkItems);
-          // console.log("checkItems : ",checkItems)
           for (let checkItem of checkItems) {
             await updateCheckItemWithValues( checkItem, checkParam._id, activeValues, historicalValues, response );
           }
@@ -81,6 +78,7 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
         }
       }
     }
+    responseData.serviceId = req.params.serviceId;
     res.json(responseData);
   } catch (error) {
     logger.error(error);
