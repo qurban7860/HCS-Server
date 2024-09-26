@@ -55,21 +55,25 @@ this.populateObject = [
   {path: 'updatedBy', select: 'name'}
 ];
 
-exports.getProductServiceRecord = async (req, res, next) => {
+const getProductServiceRecordData = async (req) => {
+  try {
+    const response = await this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populateObject);
+    
+    if (!response) {
+      throw new Error('Record not found');
+    }
+    
+    let parsedResponse = JSON.parse(JSON.stringify(response));
 
-  this.dbservice.getObjectById(ProductServiceRecords, this.fields, req.params.id, this.populateObject, callbackFunc);
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      response = JSON.parse(JSON.stringify(response));  
+    const queryToFindCurrentVer = { serviceId: parsedResponse.serviceId, isArchived: false, isHistory: false, status: 'SUBMITTED' };
+    const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer)
+      .select('_id versionNo serviceDate serviceId')
+      .sort({ versionNo: -1 })
+      .lean();
+    
+    parsedResponse.currentVersion = currentVersion;
 
-      const queryToFindCurrentVer = { serviceId: response.serviceId, isArchived: false, isHistory: false, status: 'SUBMITTED' };
-      const currentVersion = await ProductServiceRecords.findOne(queryToFindCurrentVer).select('_id versionNo serviceDate serviceId').sort({ versionNo: -1 }).lean();
-      response.currentVersion = currentVersion;
-
-      completeEvaluationHistory = await ProductServiceRecords.find({ serviceId: response.serviceId })
+    const completeEvaluationHistory = await ProductServiceRecords.find({ serviceId: parsedResponse.serviceId })
       .select("versionNo approval.approvalLogs")
       .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
       .sort({ versionNo: -1 })
@@ -78,41 +82,56 @@ exports.getProductServiceRecord = async (req, res, next) => {
         evaluationHistory: [...acc.evaluationHistory, {
           _id: item._id,
           versionNo: item.versionNo,
-          logs: item.approval?.approvalLogs
+          logs: item.approval?.approvalLogs,
         }],
-        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0)
+        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0),
       }), { evaluationHistory: [], totalLogsCount: 0 }));
 
-      response.completeEvaluationHistory = completeEvaluationHistory;
+    parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
 
-      if (response && Array.isArray(response.decoilers) && response.decoilers.length > 0) {
-        response.decoilers = await Product.find({ _id: { $in: response.decoilers }, isActive: true, isArchived: false });
-      }
-
-      if (response.machine && response.machine.machineModel) {
-        response.machine.machineModel = await ProductModel.findOne({ _id: response.machine.machineModel }, { name: 1 });
-      }
-
-      if (Array.isArray(response.operators) && response.operators.length > 0) {
-        response.operators = await CustomerContact.find({ _id: { $in: response.operators } }, { firstName: 1, lastName: 1 });
-      }
-
-      await ProductServiceRecords.populate(response, {
-        path: 'approval.approvalLogs.evaluatedBy',
-        select: 'firstName lastName',
-      });
-
-      const serviceRecordFileQuery = { serviceId: { $in: response.serviceId }, isArchived: false };
-      let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery).select('name path extension fileType thumbnail');
-      if (Array.isArray(serviceRecordFiles) && serviceRecordFiles?.length > 0) {
-        response.files = serviceRecordFiles;
-      }
-
-      res.json(response);
+    if (parsedResponse && Array.isArray(parsedResponse.decoilers) && parsedResponse.decoilers.length > 0) {
+      parsedResponse.decoilers = await Product.find({ _id: { $in: parsedResponse.decoilers }, isActive: true, isArchived: false });
     }
+
+    if (parsedResponse.machine && parsedResponse.machine.machineModel) {
+      parsedResponse.machine.machineModel = await ProductModel.findOne({ _id: parsedResponse.machine.machineModel }, { name: 1 });
+    }
+
+    if (Array.isArray(parsedResponse.operators) && parsedResponse.operators.length > 0) {
+      parsedResponse.operators = await CustomerContact.find({ _id: { $in: parsedResponse.operators } }, { firstName: 1, lastName: 1 });
+    }
+
+    await ProductServiceRecords.populate(parsedResponse, {
+      path: 'approval.approvalLogs.evaluatedBy',
+      select: 'firstName lastName',
+    });
+
+    const serviceRecordFileQuery = { serviceId: { $in: parsedResponse.serviceId }, isArchived: false };
+    const serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery)
+      .select('name path extension fileType thumbnail');
+    
+    if (Array.isArray(serviceRecordFiles) && serviceRecordFiles.length > 0) {
+      parsedResponse.files = serviceRecordFiles;
+    }
+
+    return parsedResponse;
+
+  } catch (error) {
+    logger.error(new Error(error));
+    throw new Error(error);
   }
 };
 
+exports.getProductServiceRecordData = getProductServiceRecordData;
+
+exports.getProductServiceRecord = async (req, res, next) => {
+  try {
+    const data = await getProductServiceRecordData(req);
+    res.json(data);
+  } catch (e) {
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
 
 exports.getProductServiceRecordWithIndividualDetails = async (req, res, next) => {
 
@@ -250,7 +269,7 @@ exports.deleteProductServiceRecord = async (req, res, next) => {
       await ProductServiceRecordValueFile.updateMany( { serviceRecord: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceRecordFiles.updateMany( { machineServiceRecord: req.params.id }, { $set: { isArchived: true } } );
     }
-      const result = await this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc );
+      const result = await this.dbservice.deleteObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req), callbackFunc );
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));
@@ -320,7 +339,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
       if (req.files && req.files.images) {
         return next(); 
       }
-      res.status(StatusCodes.CREATED).json({ serviceRecord: response });
+      res.status(StatusCodes.CREATED).json( response );
     }
   }
 }
@@ -544,9 +563,10 @@ exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
         const allEmailsSent = results.every((result) => result.success);
 
         if (allEmailsSent) {
-          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Requests for approval sent successfully to all contacts!", false));
+          const serviceRecordData = await getProductServiceRecordData( req )
+          res.status(StatusCodes.OK).send(serviceRecordData);
         } else {
-          res.status(StatusCodes.PARTIAL_CONTENT).send(rtnMsg.recordCustomMessageJSON(StatusCodes.PARTIAL_CONTENT, "Some emails failed to send.", true));
+          res.status(StatusCodes.BAD_REQUEST).send("Some emails failed to send.");
         }
 
         // Attempt logging after sending emails
@@ -574,11 +594,11 @@ exports.sendServiceRecordApprovalEmail = async (req, res, next) => {
 
 exports.evaluateServiceRecord = async (req, res, next) => {
   const errors = validationResult(req);
-  const recordId = req.params.id;
   const evaluationData = req.body?.evaluationData;
   let reqError = true;
 
-  const productServiceRecord = await ProductServiceRecords.findById(recordId);
+  const productServiceRecord = await ProductServiceRecords.findById(req.params.id);
+
   const evaluationUserEmail = await customerContact.findById(evaluationData.evaluatedBy, "email");
   const contactsWithApproval = await Config.findOne({
     name: "Approving_Contacts",
@@ -601,7 +621,8 @@ exports.evaluateServiceRecord = async (req, res, next) => {
 
   if (productServiceRecord) {
     await productServiceRecord.addApprovalLog({ ...evaluationData });
-    res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Service Record Evaluated Successfully", false));
+    const response = await getProductServiceRecordData( req )
+    res.status(StatusCodes.OK).send(response);
   } else {
     res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Record configuration not found!", true));
   }
@@ -692,8 +713,8 @@ exports.patchProductServiceRecord = async (req, res ) => {
 const handleArchive = async (req, res) => {
   try {
     var _this = this;
-    const result = await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+    await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send('Service record Archived Successfully!');
   } catch (error) {
       console.log(error);
       return res.status(StatusCodes.BAD_REQUEST).send('Service record Archived failed!');
@@ -716,7 +737,8 @@ const handleDraftStatus = async (req, res, findServiceRecord) =>{
       try {
         await checkDraftServiceRecords( req, res, findServiceRecord)
         await _this.dbservice.patchObject(ProductServiceRecords, req.params.id, getDocumentFromReq(req));
-        return res.status(StatusCodes.OK).send('Draft Service Record updated!');
+        const response = await getProductServiceRecordData( req );
+        return res.status(StatusCodes.OK).send(response);
       } catch (e) {
         console.log(e);
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Record updated failed!');
