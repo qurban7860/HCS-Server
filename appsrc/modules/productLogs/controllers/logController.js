@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 
 const _ = require('lodash');
+const { v4: uuidv4 } = require('uuid');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
@@ -161,6 +162,8 @@ exports.postLog = async (req, res, next) => {
     const logsToInsert = []; 
     const logsToUpdate = [];
 
+    const batchId = uuidv4();
+
     if (skip)
       update = false;
 
@@ -170,6 +173,7 @@ exports.postLog = async (req, res, next) => {
         logObj.loginUser = loginUser;
         logObj.type = type;
         logObj.version = version;
+        logObj.batchId = batchId;
         const fakeReq = { body: logObj, query: { type } };
         const query = { machine: logObj.machine, date: fakeReq.body.date };
         const existingLog = await Model.findOne(query).select('_id').lean();
@@ -182,7 +186,7 @@ exports.postLog = async (req, res, next) => {
           const updatedLog = getDocumentFromReq(fakeReq, res );
           logsToUpdate.push({ _id: existingLog._id, update: updatedLog });
         } else if (!existingLog) {
-          const newLog = getDocumentFromReq(fakeReq, res, 'new');
+          const newLog = getDocumentFromReq(fakeReq, 'new');
           logsToInsert.push(newLog);
         }
     }));

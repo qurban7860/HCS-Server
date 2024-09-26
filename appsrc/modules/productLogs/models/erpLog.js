@@ -56,9 +56,10 @@ const docSchema = new Schema({
         machine : { type: Schema.Types.ObjectId , ref: 'Machine' },
 
         archivedByMachine: {type: Boolean, default: false},
+
+        batchId: { type: String },
         
-},
-{
+},{
         collection: 'ErpLogs',
         strict: false
 });
