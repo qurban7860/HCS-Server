@@ -597,7 +597,7 @@ exports.evaluateServiceRecord = async (req, res, next) => {
   const evaluationData = req.body?.evaluationData;
   let reqError = true;
 
-  const productServiceRecord = await getProductServiceRecordData( req )
+  const productServiceRecord = await ProductServiceRecords.findById(req.params.id);
 
   const evaluationUserEmail = await customerContact.findById(evaluationData.evaluatedBy, "email");
   const contactsWithApproval = await Config.findOne({
@@ -621,8 +621,8 @@ exports.evaluateServiceRecord = async (req, res, next) => {
 
   if (productServiceRecord) {
     await productServiceRecord.addApprovalLog({ ...evaluationData });
-
-    res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Service Record Evaluated Successfully", false));
+    const response = await getProductServiceRecordData( req )
+    res.status(StatusCodes.OK).send(response);
   } else {
     res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Record configuration not found!", true));
   }
