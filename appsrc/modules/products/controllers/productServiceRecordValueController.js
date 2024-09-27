@@ -66,8 +66,8 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
     if (!response) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Record Not Found!");
     }
-    const activeValues = await fetchServiceRecordValues(req, false);
-    const historicalValues = await fetchServiceRecordValues(req, true);
+    const activeValues = await fetchServiceRecordValues(response.serviceId, false);
+    const historicalValues = await fetchServiceRecordValues(response.serviceId, true);
     const responseData = JSON.parse(JSON.stringify(response?.serviceRecordConfig));
     
     if (response?.serviceRecordConfig && Array.isArray(response?.serviceRecordConfig?.checkItemLists)) {
@@ -89,10 +89,10 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
   }
 };
 
-async function fetchServiceRecordValues( req, isHistory) {
+async function fetchServiceRecordValues( serviceId, isHistory) {
   try{
     const productServiceRecordValues = await  ProductServiceRecordValue.find(
-      { serviceId: req?.params?.serviceId, isHistory, isActive: true, isArchived: false },
+      { serviceId, isHistory, isActive: true, isArchived: false },
       { checkItemValue: 1, comments: 1, serviceRecord: 1, serviceId: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
     ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceRecord', select: 'versionNo status' }])
     .sort({ createdAt: -1 })
@@ -564,17 +564,13 @@ async function fetchFileFromAWS(file) {
       ];
 
       const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
-      const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
 
       let updatedFile = { ...file }; 
       if (isImage ) {
         const fileBase64 = await awsService.processAWSFile(data);
-        updatedFile = { ...updatedFile, src: fileBase64 };
-      } else if (!isImage ) {
-        updatedFile = { ...updatedFile, src: file }; 
-      }
-      return updatedFile;
-
+        return updatedFile = { ...updatedFile, src: fileBase64 };
+      } 
+      return file
     } else {
       throw new Error("Invalid File Provided!");
     }
