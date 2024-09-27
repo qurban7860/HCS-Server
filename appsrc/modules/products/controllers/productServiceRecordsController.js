@@ -803,7 +803,8 @@ const handleSubmitStatus = async (req, res, findServiceRecord) => {
       if( req.body?.status?.toLowerCase() === 'approved' ){
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
       }
-      return res.status(StatusCodes.OK).send('Service Record updated successfully!');
+      const data = await getProductServiceRecordData(req);
+      return res.status(StatusCodes.OK).send(data);
   } catch(e) {
     console.log(e);
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
