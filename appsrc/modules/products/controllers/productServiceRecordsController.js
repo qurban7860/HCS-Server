@@ -313,7 +313,7 @@ exports.postProductServiceRecord = async (req, res, next) => {
   const machine = await Product.findById(req.params.machineId)
   
   let productServiceRecordObject = await getDocumentFromReq(req, 'new');
-  productServiceRecordObject.status = 'DRAFT';
+  // productServiceRecordObject.status = 'DRAFT';
   productServiceRecordObject.serviceRecordUid = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
   productServiceRecordObject.serviceId = productServiceRecordObject?._id;
   productServiceRecordObject.customer = machine?.customer;

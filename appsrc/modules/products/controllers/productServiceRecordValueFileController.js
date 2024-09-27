@@ -112,7 +112,7 @@ exports.downloadServiceRecordValueFile = async (req, res, next) => {
       try {
           const file = await ProductServiceRecordValueFile.findOne({_id: req.params.id}).select('path');
           if (file) {
-              if (file.path && file.path !== '') {
+              if (file.path && file.path !== '' && file._id ) {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
                   
                   const allowedMimeTypes = [
@@ -129,9 +129,7 @@ exports.downloadServiceRecordValueFile = async (req, res, next) => {
                   const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); 
                   let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
                   const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
-                  console.log("fileSizeInMegabytes", fileSizeInMegabytes);
                   if (isImage && configObject && fileSizeInMegabytes > 2) {
-                    console.log("OPTIMIZE_IMAGE_ON_DOWNLOAD STARTED ******** ");
                     const fileBase64 = await awsService.processAWSFile(data);
                     return res.status(StatusCodes.ACCEPTED).send(fileBase64);
                   } else {
