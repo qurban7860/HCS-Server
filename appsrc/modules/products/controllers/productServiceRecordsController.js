@@ -150,12 +150,9 @@ async function fetchFileFromAWS(file) {
       let updatedFile = { ...file }; 
       if (isImage ) {
         const fileBase64 = await awsService.processAWSFile(data);
-        updatedFile = { ...updatedFile, src: fileBase64 };
-      } else if (!isImage ) {
-        updatedFile = { ...updatedFile, src: file }; 
-      }
-      return updatedFile;
-
+        return updatedFile = { ...updatedFile, src: fileBase64 };
+      } 
+      return file
     } else {
       throw new Error("Invalid File Provided!");
     }
