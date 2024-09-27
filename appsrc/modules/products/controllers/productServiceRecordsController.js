@@ -107,9 +107,15 @@ const getProductServiceRecordData = async (req) => {
     });
 
     const serviceRecordFileQuery = { serviceId: { $in: parsedResponse.serviceId }, isArchived: false };
-    const serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery)
-      .select('name path extension fileType thumbnail');
+    let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery)
+      .select('name path extension fileType thumbnail').lean();;
     
+      if( req?.query?.isHighQuality ){
+        serviceRecordFiles = await Promise.all(
+          serviceRecordFiles.map(async ( file ) => await fetchFileFromAWS(file))
+        );
+      }
+      
     if (Array.isArray(serviceRecordFiles) && serviceRecordFiles.length > 0) {
       parsedResponse.files = serviceRecordFiles;
     }
@@ -117,10 +123,47 @@ const getProductServiceRecordData = async (req) => {
     return parsedResponse;
 
   } catch (error) {
+    console.log("error : ",error)
     logger.error(new Error(error));
     throw new Error(error);
   }
 };
+
+async function fetchFileFromAWS(file) {
+  try {
+    if (file.path && file.path !== '' && file._id) {
+      const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+      
+      const allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+        'image/tiff',
+        'image/gif',
+        'image/svg+xml'
+      ];
+
+      const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
+      const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
+
+      let updatedFile = { ...file }; 
+      if (isImage ) {
+        const fileBase64 = await awsService.processAWSFile(data);
+        updatedFile = { ...updatedFile, src: fileBase64 };
+      } else if (!isImage ) {
+        updatedFile = { ...updatedFile, src: file }; 
+      }
+      return updatedFile;
+
+    } else {
+      throw new Error("Invalid File Provided!");
+    }
+  } catch (e) {
+    console.error("Error fetching file from AWS:", e.message);
+    throw new Error(e);
+  }
+}
 
 exports.getProductServiceRecordData = getProductServiceRecordData;
 
