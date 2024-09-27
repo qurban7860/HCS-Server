@@ -13,7 +13,7 @@ const awsService = require('../../../../appsrc/base/aws');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-
+const { Config } = require('../../config/models');
 const { ProductServiceRecords, ProductCheckItem, ProductServiceRecordValue, ProductServiceRecordValueFile } = require('../models');
 
 
@@ -63,8 +63,11 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
 
   try {
     const response =  await ProductServiceRecords.findById( req.params.serviceId  ).populate( populateObject ).sort({ _id: -1 });
-    const activeValues = await fetchServiceRecordValues(response.serviceId, false);
-    const historicalValues = await fetchServiceRecordValues(response.serviceId, true);
+    if (!response) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Service Record Not Found!");
+    }
+    const activeValues = await fetchServiceRecordValues(req, false);
+    const historicalValues = await fetchServiceRecordValues(req, true);
     const responseData = JSON.parse(JSON.stringify(response?.serviceRecordConfig));
     
     if (response?.serviceRecordConfig && Array.isArray(response?.serviceRecordConfig?.checkItemLists)) {
@@ -72,7 +75,7 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
         if (Array.isArray(checkParam?.checkItems)) {
           const checkItems = await fetchCheckItems(checkParam.checkItems);
           for (let checkItem of checkItems) {
-            await updateCheckItemWithValues( checkItem, checkParam._id, activeValues, historicalValues, response );
+            await updateCheckItemWithValues( checkItem, checkParam._id, activeValues, historicalValues, response, req?.query?.highQuality || false );
           }
           responseData.checkItemLists[index].checkItems = checkItems
         }
@@ -86,10 +89,10 @@ exports.getProductServiceRecordCheckItems = async (req, res) => {
   }
 };
 
-async function fetchServiceRecordValues(serviceId, isHistory) {
+async function fetchServiceRecordValues( req, isHistory) {
   try{
     const productServiceRecordValues = await  ProductServiceRecordValue.find(
-      { serviceId, isHistory, isActive: true, isArchived: false },
+      { serviceId: req?.params?.serviceId, isHistory, isActive: true, isArchived: false },
       { checkItemValue: 1, comments: 1, serviceRecord: 1, serviceId: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
     ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceRecord', select: 'versionNo status' }])
     .sort({ createdAt: -1 })
@@ -117,7 +120,7 @@ async function fetchCheckItems(checkItemIds) {
     throw e;
   }
 }
-async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, record ) {
+async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, record, isHighQuality ) {
   try {
 
     const isDraft = record?.status?.toLowerCase() === 'draft';
@@ -147,7 +150,7 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
       );
     }
 
-    const checkItemFiles = await fetchCheckItemFiles(record?._id, item._id, checkItemListId);
+    const checkItemFiles = await fetchCheckItemFiles( record?._id, item._id, checkItemListId, isHighQuality );
 
     // if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
       item.recordValue = { files: checkItemFiles };
@@ -162,7 +165,7 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
         )
         .map(async (val) => ({
           ...val,
-          files: await fetchCheckItemFiles(val.serviceRecord?._id, val?.machineCheckItem, val?.checkItemListId),
+          files: await fetchCheckItemFiles(val.serviceRecord?._id, val?.machineCheckItem, val?.checkItemListId, isHighQuality ),
         }))
     );
 
@@ -202,7 +205,8 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
         const activeFiles = await fetchCheckItemFiles(
           activeValue.serviceRecord?._id,
           activeValue?.machineCheckItem,
-          activeValue?.checkItemListId
+          activeValue?.checkItemListId,
+          isHighQuality
         );
         item.historicalData = [{
           _id: activeValue._id,
@@ -227,11 +231,17 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
   }
 }
 
-async function fetchCheckItemFiles(serviceRecord, machineCheckItem, checkItemListId) {
+async function fetchCheckItemFiles(serviceRecord, machineCheckItem, checkItemListId, isHighQuality ) {
   try{
-    const productServiceRecordValueFiles = await ProductServiceRecordValueFile.find(
+    let productServiceRecordValueFiles = await ProductServiceRecordValueFile.find(
       { serviceRecord, machineCheckItem, checkItemListId, isActive: true, isArchived: false }
     ).select('_id serviceRecord name extension fileType thumbnail path').lean();
+    if( isHighQuality ){
+      productServiceRecordValueFiles = await Promise.all(
+        productServiceRecordValueFiles.map(async ( file ) => await fetchFileFromAWS(file))
+      );
+    }
+    // console.log("productServiceRecordValueFiles",productServiceRecordValueFiles)
     return productServiceRecordValueFiles
   } catch(e){
     logger.error(e);
@@ -535,11 +545,44 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
-
 }
 
+async function fetchFileFromAWS(file) {
+  try {
+    if (file.path && file.path !== '' && file._id) {
+      const data = await awsService.fetchAWSFileInfo(file._id, file.path);
+      
+      const allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/webp',
+        'image/tiff',
+        'image/gif',
+        'image/svg+xml'
+      ];
+
+      const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
+      const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
+
+      let updatedFile = { ...file }; 
+      if (isImage ) {
+        const fileBase64 = await awsService.processAWSFile(data);
+        updatedFile = { ...updatedFile, src: fileBase64 };
+      } else if (!isImage ) {
+        updatedFile = { ...updatedFile, src: file }; 
+      }
+      return updatedFile;
+
+    } else {
+      throw new Error("Invalid File Provided!");
+    }
+  } catch (e) {
+    console.error("Error fetching file from AWS:", e.message);
+    throw new Error(e);
+  }
+}
 
 function getServiceRecordValueFileFromReq(req, reqType) {
 
