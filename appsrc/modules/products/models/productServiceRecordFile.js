@@ -37,6 +37,9 @@ const docSchema = new Schema({
         eTag: { type: String },
         // file path 
 
+        isReportDoc: { type: Boolean, default: false },
+        // file path 
+
 },
 {
         collection: 'MachineServiceRecordsFiles'

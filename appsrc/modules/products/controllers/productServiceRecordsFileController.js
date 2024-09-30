@@ -97,8 +97,8 @@ exports.postServiceRecordFiles = async (req, res, next) => {
           req.body.name = processedFile.name;
         }
   
-        const serviveRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
-        return this.dbservice.postObject(serviveRecordFileObject);
+        const serviceRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
+        return this.dbservice.postObject(serviceRecordFileObject);
       });
   
       await Promise.all(fileProcessingPromises);
@@ -270,7 +270,7 @@ async function getToken(req){
 
 function getServiceRecordFileFromReq(req, reqType) {
 
-  const { machineServiceRecord, serviceId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { machineServiceRecord, serviceId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -328,6 +328,10 @@ function getServiceRecordFileFromReq(req, reqType) {
 
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
+  }
+
+  if("isReportDoc" in req.body){
+    doc.isReportDoc = isReportDoc;
   }
 
   if (reqType == "new" && "loginUser" in req.body) {
