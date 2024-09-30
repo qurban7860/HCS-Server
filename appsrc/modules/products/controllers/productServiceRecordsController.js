@@ -106,18 +106,30 @@ const getProductServiceRecordData = async (req) => {
       select: 'firstName lastName',
     });
 
-    const serviceRecordFileQuery = { serviceId: { $in: parsedResponse.serviceId }, isArchived: false };
-    let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFileQuery)
-      .select('name path extension fileType thumbnail').lean();;
-    
+    const serviceRecordFilesQuery = { serviceId: { $in: parsedResponse.serviceId }, isArchived: false, isReportDoc: false };
+    const serviceRecordDocsQuery = { serviceId: { $in: parsedResponse.serviceId }, isArchived: false, isReportDoc: true };
+
+    let serviceRecordFiles = await ProductServiceRecordFiles.find(serviceRecordFilesQuery)
+      .select('name path extension fileType thumbnail isReportDoc').lean();
+
+    let serviceRecordDocs = await ProductServiceRecordFiles.find(serviceRecordDocsQuery)
+      .select('name path extension fileType thumbnail isReportDoc').lean();
+
       if( req?.query?.isHighQuality ){
         serviceRecordFiles = await Promise.all(
           serviceRecordFiles.map(async ( file ) => await fetchFileFromAWS(file))
+        );
+        serviceRecordDocs = await Promise.all(
+          serviceRecordDocs.map(async ( file ) => await fetchFileFromAWS(file))
         );
       }
       
     if (Array.isArray(serviceRecordFiles) && serviceRecordFiles.length > 0) {
       parsedResponse.files = serviceRecordFiles;
+    }
+
+    if (Array.isArray(serviceRecordDocs) && serviceRecordDocs.length > 0) {
+      parsedResponse.reportDocs = serviceRecordDocs;
     }
 
     return parsedResponse;
@@ -869,7 +881,7 @@ async function getToken(req){
 function getDocumentFromReq(req, reqType){
   const { 
     serviceRecordConfig, serviceRecordUid, serviceId, serviceDate, status, versionNo, customer, site, 
-    technician, params, additionalParams, machineMetreageParams, punchCyclesParams, 
+    technician, params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly,
     serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
     technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
   } = req.body;
@@ -980,6 +992,10 @@ function getDocumentFromReq(req, reqType){
     doc.textAfterCheckItems = textAfterCheckItems;
   }
 
+  if("isReportDocsOnly" in req.body ){
+    doc.isReportDocsOnly = isReportDocsOnly;
+  }
+
   if ("isHistory" in req.body){
     doc.isHistory = isHistory;
   }
@@ -1052,7 +1068,7 @@ function productServiceRecordValueDocumentFromReq(recordValue, reqType){
   if ("files" in recordValue) {
     doc.files = files;
   }
-  
+
   if ("isHistory" in recordValue){
     doc.isHistory = isHistory;
   }
