@@ -89,29 +89,50 @@ exports.getLogs = async (req, res, next) => {
 };
 
 exports.getLogsGraph = async (req, res, next) => {
-  try {  
-    const LogModel = getModel( req );
-    delete req.query.type;
-    if( this.query?.year && !validateYear(this.query?.year) ){
-      return res.status(400).send("Please Provide valid Year!");
-    }
-    const match = {}
-    if( this.query?.year ) {
-      match.date = {$gte: new Date(`${this.query.year}-01-01`) }
+  try {
+    const LogModel = getModel(req);
+    const { fromDate, toDate, unit } = req.query;
+
+    if (!isValidDate(fromDate) || !isValidDate(toDate)) {
+      return res.status(400).send("Please provide valid From Date, and To Date!");
     }
 
-    if( mongoose.Types.ObjectId.isValid(this.query.machine) ) {
-      match.machine =  new mongoose.Types.ObjectId(this.query.machine);
+    const match = {};
+    match.date = {
+      $gte: new Date(fromDate),
+      $lte: new Date(toDate),
+    };
+
+    if (mongoose.Types.ObjectId.isValid(req.query.machine)) {
+      match.machine = new mongoose.Types.ObjectId(req.query.machine);
     }
+
+    if (mongoose.Types.ObjectId.isValid(req.query.customer)) {
+      match.customer = new mongoose.Types.ObjectId(req.query.customer);
+    }
+
+    const groupBy = {
+      _id: null, 
+      componentLength: { $sum: "$componentLength" },
+      waste: { $sum: "$waste" },
+    };
+
+    if (unit === 'monthly') {
+      groupBy._id = { $dateTrunc: { date: "$date", unit: "month" } };
+    } else if (unit === 'quarterly') {
+      groupBy._id = { $dateTrunc: { date: "$date", unit: "quarter" } };
+    } else if (unit === 'yearly') {
+      groupBy._id = { $dateTrunc: { date: "$date", unit: "year" } };
+    } else {
+      return res.status(400).send("Invalid unit! Must be quarterly, monthly, or yearly.");
+    }
+
     const graphResults = await LogModel.aggregate([
-      {$match:match},
-      { $group: {
-        _id: { $dateTrunc: { date: "$date", unit: "quarter" } },
-        componentLength: { $sum: "$componentLength" },
-        waste: { $sum: "$waste" },
-      }},
-      { $sort: { "_id": 1 } }
+      { $match: match },
+      { $group: groupBy },
+      { $sort: { "_id": 1 } },
     ]);
+
     return res.json(graphResults);
   } catch (error) {
     logger.error(new Error(error));
