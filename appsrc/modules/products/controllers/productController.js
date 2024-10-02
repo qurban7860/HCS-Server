@@ -654,8 +654,8 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     await updateArchivedStatus(req);
-    const dublicateRecord = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
-    if (dublicateRecord) {
+    const duplicateRecord = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
+    if (duplicateRecord) {
       return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
     }
 
@@ -741,6 +741,7 @@ exports.patchProduct = async (req, res, next) => {
               const updateClause = { $set: { } };
               if (req.body.customer) updateClause.$set.customer = req.body.customer;
               if (req.body.instalationSite) updateClause.$set.instalationSite = req.body.instalationSite;
+              if (req.body.siteMilestone) updateClause.$set.siteMilestone = req.body.siteMilestone;
               if (req.body.billingSite) updateClause.$set.billingSite = req.body.billingSite;
               if (req.body.manufactureDate) updateClause.$set.manufactureDate = req.body.manufactureDate;
               if (req.body.purchaseDate) updateClause.$set.purchaseDate = req.body.purchaseDate;
