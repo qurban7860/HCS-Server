@@ -45,11 +45,29 @@ exports.getLogs = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     const Model = getModel( req );
     delete this.query.type;
+
+    if (this.query.searchKey && this.query.searchColumn) {
+      if (this.query.searchColumn === '_id') {
+        // For _id, we need to match the entire string
+        if (mongoose.Types.ObjectId.isValid(this.query.searchKey)) {
+          this.query._id = mongoose.Types.ObjectId(this.query.searchKey);
+        } else {
+          // If it's not a valid ObjectId, we can't search for it
+          return res.status(400).send("Invalid _id format");
+        }
+      } else {
+        // For other fields, use regex as before
+        this.query[this.query.searchColumn] = { $regex: this.query.searchKey, $options: 'i' };
+      }
+      delete this.query.searchKey;
+      delete this.query.searchColumn;
+    }
+
     if( !(isValidDate(this.query?.fromDate) && isValidDate(this.query?.toDate)) && this.query?.toDate > this.query?.fromDate ){
       return res.status(400).send("Please Provide valid date range!");
     }
 
-    if(this.query?.fromDate && this.query?.fromDate) {
+    if(this.query?.fromDate && this.query?.toDate) {
       if(this.query?.isCreatedAt) {
         this.query.createdAt =  {
           $gte: new Date(this.query.fromDate),
@@ -213,12 +231,12 @@ exports.postLog = async (req, res, next) => {
     }));
 
     if (logsToInsert.length > 0) {
-      await Model.insertMany(logsToInsert);
+      await Model.create(logsToInsert);
     }
 
     if (logsToUpdate.length > 0) {
       await Promise.all(logsToUpdate.map((log) =>
-        this.dbservice.patchObject(Model, log._id, log.update)
+        Model.updateOne({ _id: log._id }, { $set: log.update })
       ));
     }
 
