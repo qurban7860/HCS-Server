@@ -287,24 +287,25 @@ exports.postProductServiceRecordValue = async (req, res, next) => {
     } else {
       // If it doesn't exist, create a new record
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      const findQuery = {
-        serviceId: response?.serviceId,
-        machineCheckItem: response?.machineCheckItem,
-        checkItemListId: response?.checkItemListId,
-        isActive: true,
-        isArchived: false
-      };
+      // const findQuery = {
+      //   serviceId: response?.serviceId,
+      //   serviceRecord: response.serviceRecord,
+      //   machineCheckItem: response?.machineCheckItem,
+      //   checkItemListId: response?.checkItemListId,
+      //   isActive: true,
+      //   isArchived: false
+      // };
       response.machineId = req.params.machineId;
 
-      const checkItemFiles = await ProductServiceRecordValueFile.find(findQuery)
-        .select('_id name extension fileType thumbnail path')
-        .lean();
+      // const checkItemFiles = await ProductServiceRecordValueFile.find(findQuery)
+      //   .select('_id name extension fileType thumbnail path')
+      //   .lean();
 
       let newResponse = { ...response?._doc, files: [] };
 
-      if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
-        newResponse.files.push(...checkItemFiles);
-      }
+      // if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
+      //   newResponse.files.push(...checkItemFiles);
+      // }
 
       const savedFiles = await handleServiceRecordValueFiles(response, req, res);
       if (savedFiles?.length) {
