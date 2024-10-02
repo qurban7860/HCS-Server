@@ -300,18 +300,19 @@ exports.getModel = getModel;
 
 function getDocumentFromReq(req, reqType) {
   const { loginUser, ...restBody } = req.body;
-  const Model = getModel( req );
-  let doc = {};
+  let doc = { ...restBody };
+  // const Model = getModel( req );
+  // let doc = {};
 
-  if (reqType && reqType === "new") {
-    doc = new Model({});
-  }
+  // if (reqType && reqType === "new") {
+  //   doc = new Model({});
+  // }
 
-  Object.keys(restBody).forEach((key) => {
-    if (restBody[key] !== undefined) {
-      doc[key] = restBody[key];
-    }
-  });
+  // Object.keys(restBody).forEach((key) => {
+  //   if (restBody[key] !== undefined) {
+  //     doc[key] = restBody[key];
+  //   }
+  // });
 
   if (reqType === "new" && loginUser) {
     doc.createdBy = loginUser.userId;
