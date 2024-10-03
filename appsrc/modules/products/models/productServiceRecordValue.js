@@ -22,7 +22,7 @@ const docSchema = new Schema({
   checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig.checkItemLists', required: true}, 
   //this will refer to the list to which checkitem is belong to,
 
-  checkItemValue: {type: String, required: true},
+  checkItemValue: { type: String },
   // if checked, then value will be considered
   
   comments: {type: String}, 
