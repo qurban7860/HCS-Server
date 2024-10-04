@@ -109,46 +109,71 @@ exports.getLogs = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     const LogModel = getModel(req);
-    const { fromDate, toDate, unit } = req.query;
-
-    if (!isValidDate(fromDate) || !isValidDate(toDate)) {
-      return res.status(400).send("Please provide valid From Date, and To Date!");
-    }
+    const { customer, machine, periodType } = req.query;
 
     const match = {};
-    match.date = {
-      $gte: new Date(fromDate),
-      $lte: new Date(toDate),
-    };
-
-    if (mongoose.Types.ObjectId.isValid(req.query.machine)) {
-      match.machine = new mongoose.Types.ObjectId(req.query.machine);
+    if (mongoose.Types.ObjectId.isValid(customer)) {
+      match.customer = new mongoose.Types.ObjectId(customer);
+    }
+    if (mongoose.Types.ObjectId.isValid(machine)) {
+      match.machine = new mongoose.Types.ObjectId(machine);
     }
 
-    if (mongoose.Types.ObjectId.isValid(req.query.customer)) {
-      match.customer = new mongoose.Types.ObjectId(req.query.customer);
+    let groupBy, dateRange, limit;
+    const currentDate = new Date();
+
+    switch (periodType.toLowerCase()) {
+      case 'daily':
+        groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$date" } };
+        dateRange = new Date(currentDate.setDate(currentDate.getDate() - 7));
+        limit = 7;
+        break;
+      case 'monthly':
+        groupBy = { $dateToString: { format: "%Y-%m", date: "$date" } };
+        dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 12));
+        limit = 12;
+        break;
+      case 'quarterly':
+        groupBy = { 
+          $concat: [
+            { $toString: { $year: "$date" } },
+            "-",
+            "Qtr_",
+            { $toString: { $ceil: { $divide: [{ $month: "$date" }, 3] } } },            
+          ]
+        };
+        dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 15));
+        limit = 4;
+        break;
+      case 'yearly':
+        groupBy = { $dateToString: { format: "%Y", date: "$date" } };
+        dateRange = new Date(currentDate.setFullYear(currentDate.getFullYear() - 5));
+        limit = 5;
+        break;
+      default:
+        return res.status(400).send("Invalid periodType! Must be daily, monthly, quarterly, or yearly.");
     }
 
-    const groupBy = {
-      _id: null, 
-      componentLength: { $sum: "$componentLength" },
-      waste: { $sum: "$waste" },
-    };
-
-    if (unit === 'monthly') {
-      groupBy._id = { $dateTrunc: { date: "$date", unit: "month" } };
-    } else if (unit === 'quarterly') {
-      groupBy._id = { $dateTrunc: { date: "$date", unit: "quarter" } };
-    } else if (unit === 'yearly') {
-      groupBy._id = { $dateTrunc: { date: "$date", unit: "year" } };
-    } else {
-      return res.status(400).send("Invalid unit! Must be quarterly, monthly, or yearly.");
-    }
+    match.date = { $gte: dateRange };
 
     const graphResults = await LogModel.aggregate([
       { $match: match },
-      { $group: groupBy },
-      { $sort: { "_id": 1 } },
+      { $group: {
+        _id: groupBy,
+        componentLength: {
+          $sum: { $toDouble: { $ifNull: ["$componentLength", "0"] } }
+        },
+        waste: {
+          $sum: { $toDouble: { $ifNull: ["$waste", "0"] } }
+        }
+      }},
+      { $project: {
+          _id: 1,
+          componentLength: { $round: ["$componentLength", 2] },
+          waste: { $round: ["$waste", 2] }
+      }},
+      { $sort: { "_id": -1 } },
+      { $limit: limit }
     ]);
 
     return res.json(graphResults);
