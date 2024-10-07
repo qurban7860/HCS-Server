@@ -353,7 +353,7 @@ async function removeAndCreateNewSession(req, userId) {
       req.session.user = userId;
       req.session.sessionId = req.sessionID;
       
-      const reqSessions = await req.session.save();
+      await req.session.save();
       await delay(500);
       let user = await SecuritySession.findOne({"session.user":userId});
       return user;
@@ -371,55 +371,6 @@ async function removeAndCreateNewSession(req, userId) {
 
 exports.removeAndCreateNewSession = removeAndCreateNewSession;
 
-exports.multiFactorVerifyCode = async (req, res, next) => {
-  const errors = validationResult(req);
-  var _this = this;
-  if (!errors.isEmpty()) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    let existingUser = await SecurityUser.findOne({ _id: req.body.userID })
-    .populate({ path: 'customer', select: 'name type isActive isArchived' })
-    .populate({ path: 'contact', select: 'name isActive isArchived' })
-    .populate('roles');
-
-    if(existingUser){
-      if (existingUser.multiFactorAuthenticationCode == req.body.code) {
-        const currentTime = new Date();
-        const multiFactorAuthenticationExpireTime = new Date(existingUser.multiFactorAuthenticationExpireTime);
-        if (currentTime <= multiFactorAuthenticationExpireTime) {  
-          const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
-          if(userSession){
-            return res.json({
-              accessToken: existingUser?.token?.accessToken,
-              userId: existingUser._id,
-              sessionId: userSession.session.sessionId,
-              user: {
-                login: existingUser.login,
-                email: existingUser.email,
-                displayName: existingUser.name,
-                customer: existingUser?.customer?._id,
-                contact: existingUser?.contact?._id,
-                roles: existingUser.roles,
-                dataAccessibilityLevel: existingUser.dataAccessibilityLevel
-              }
-            });
-          } else {
-            return res.status(StatusCodes.BAD_REQUEST).send("Authentication Failed!");
-          }
-        } 
-        else {
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'The code is no longer valid.', true));
-        }
-      } else {
-        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid code', true));
-      }
-    }
-    else{
-      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Code not found', true));
-    }
-  }
-};
-
 exports.refreshToken = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
@@ -428,7 +379,8 @@ exports.refreshToken = async (req, res, next) => {
   } else {
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
     if(existingUser){
-    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.dataAccessibilityLevel);
+    
+    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel);
     if (accessToken) {
       updatedToken = updateUserToken(accessToken);
       _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
@@ -440,12 +392,12 @@ exports.refreshToken = async (req, res, next) => {
         else {
           return res.json({
             accessToken,
-            userId: existingUser.id,
+            userId: existingUser?._id || '',
             user: {
-              login: existingUser.login,
-              email: existingUser.email,
-              displayName: existingUser.name,
-              roles: existingUser.roles
+              login: existingUser?.login || '',
+              email: existingUser?.email || '',
+              displayName: existingUser?.name || '',
+              roles: existingUser?.roles || [],
             }
           });
         }
@@ -536,162 +488,6 @@ exports.logout = async (req, res, next) => {
 
 };
 
-exports.forgetPassword = async (req, res, next) => {
-  const errors = validationResult(req);
-  var _this = this;
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    const existingUser = await SecurityUser.findOne({ login: req.body.email, isActive: true, isArchived: false })
-        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
-                  { path: 'contact', select: 'name isActive isArchived' }]);
-    if (existingUser && isValidCustomer(existingUser.customer)) {
-      const token = await generateRandomString();
-      let updatedToken = updateUserToken(token);
-      _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-      const link = `${this.clientURL}auth/new-password/${token}/${existingUser._id}`;
-      async function callbackPatchFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-        } else {
-
-          const emailSubject = "Reset Password";
-          const username = existingUser.name;
-
-          let params = {
-            to: `${existingUser.email}`,
-            subject: emailSubject,
-            html: true
-          };
-
-            const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/forgetPassword.html'), 'utf8');
-            const content = render(contentHTML, { username, link });
-            const htmlData =  await renderEmail(emailSubject, content )
-            params.htmlData = htmlData;
-            try{
-              await awsService.sendEmail(params);
-            }catch(e){
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Forget Password email fails!');
-            }
-
-          const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-          
-          _this.dbservice.postObject(emailResponse, callbackFunc);
-          function callbackFunc(error, response) {
-            if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-            } else {
-              res.status(StatusCodes.OK).send( 'Email sent successfully!');
-            }
-          }
-        }
-      }
-    } else {
-      res.status(StatusCodes.BAD_REQUEST).send('Unable to locate the system user');
-    }
-  }
-};
-
-
-exports.verifyForgottenPassword = async (req, res, next) => {
-  try {
-    let _this = this;
-    const existingUser = await SecurityUser.findById(req.body.userId)
-        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
-                  { path: 'contact', select: 'name isActive isArchived' }]);
-    if (existingUser) {
-      if (existingUser.token && existingUser.token.accessToken == req.body.token) {        
-        const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
-        if (!tokenExpired) {
-          const hashedPassword = await bcrypt.hash(req.body.password, 12);
-          this.dbservice.patchObject(SecurityUser, existingUser._id, { password: hashedPassword, token: {} }, callbackPatchFunc);
-          async function callbackPatchFunc(error, response) {
-            if (error) {
-              logger.error(new Error(error));
-              return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-            } else {
-
-              const contentHTML = `
-              <tr>
-                <td align="left" style="padding:0;Margin:0">
-                  <p>
-                    Dear ${existingUser?.name || ''},<br>
-                    <br>
-                    Your password has been updated successfully.<br>
-                    <br>
-                    Please sign in to access your account
-                    <br>
-                  </p>
-                </td>
-              </tr>`;
-                              
-              let emailSubject = "Password Reset Successful";
-
-              let params = {
-                to: `${existingUser.email}`,
-                subject: emailSubject,
-                html: true,
-              };
-              
-              const content = render(contentHTML);
-              const htmlData =  await renderEmail(emailSubject, content )
-              params.htmlData = htmlData;
-              await awsService.sendEmail(params);
-
-              const emailResponse = await addEmail(params.subject, params.htmlData, existingUser, params.to);
-              _this.dbservice.postObject(emailResponse, callbackFunc);
-              function callbackFunc(error, response) {
-                if (error) {
-                  logger.error(new Error(error));
-                  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                } else {
-                  res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!', false));
-                }
-              }
-
-            }
-          }
-        } else {
-          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Token Expired!', true));
-        }
-      }
-      else {
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Token Invalid!', true));
-
-      }
-    } else {
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found!', true));
-    }
-  }
-  catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-  }
-
-};
-
-function generateRandomString() {
-  currentDate = new Date();
-  return new Promise((resolve) => {
-    const length = 32;
-    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = '';
-    for (let i = 0; i < length; i++) {
-      const randomIndex = Math.floor(Math.random() * characters.length);
-      result += characters[randomIndex];
-    }
-    resolve(result);
-  });
-}
-
-function isTokenExpired(tokenExpiry) {
-  const expiryDate = new Date(tokenExpiry);
-  const currentDate = new Date();
-  return currentDate > expiryDate;
-}
-
 async function comparePasswords(encryptedPass, textPass, next) {
   let isValidPassword = false;
   try {
@@ -706,9 +502,8 @@ async function comparePasswords(encryptedPass, textPass, next) {
 };
 
 async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
-  const filteredRoles = roles
-  .filter(role => role.isActive && !role.isArchived)
-  .map(role => role.roleType);
+
+  const filteredRoles = Array.isArray(roles) && roles?.filter(role => role?.isActive && !role?.isArchived)?.map(role => role?.roleType);
 
   let token;
   let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
@@ -820,27 +615,4 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
   
   const res = emailController.getDocumentFromReq(reqEmail, 'new');
   return res;
-}
-
-function getDocumentFromReq(req, reqType) {
-  const { email, password } = req.body;
-
-
-  let doc = {};
-  if (reqType && reqType == "new") {
-    doc = new SecurityConfig({});
-  }
-  if ("email" in req.body) {
-    doc.email = email;
-  }
-  if ("password" in req.body) {
-    doc.password = password;
-  }
-
-  if ("loginUser" in req.body) {
-    doc.updatedBy = loginUser.userId;
-    doc.updatedIP = loginUser.userIP;
-  }
-
-  return doc;
 }

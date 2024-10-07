@@ -147,7 +147,7 @@ exports.postEvent = async (req, res, next) => {
 
 exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
   try {
-    const securityUserName = securityUser?.name;
+    const securityUserName = `An${eventData?.isCustomerEvent ? '' : ' Internal' } Event has been booked by ${ securityUser?.name || '' }.`;
     const uniqueTechnicians = new Set();
     const primaryTechnicianName = `${eventData?.primaryTechnician?.firstName?.trim() || ''} ${eventData?.primaryTechnician?.lastName?.trim() || ''}`;
     if (primaryTechnicianName) uniqueTechnicians.add(primaryTechnicianName);
@@ -173,14 +173,15 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         uniqueTechnicians.add(technicianName);
       });
 
-      const technicians = Array.from(uniqueTechnicians);
       let emailsToSend;
       let params = { subject: emailSubject, html: true };
-      const customer = eventData?.customer?.name;
-      const serialNo = eventData?.machines?.map(m => m.serialNo);
-      const site = eventData?.site?.name;
-      const description = eventData?.description;
-      const createdBy = eventData?.createdBy?.name;
+      const customer = eventData?.isCustomerEvent ? `<strong>Customer:</strong> ${ eventData?.customer?.name || '' } </br>` : '';
+      const serialNo = eventData?.isCustomerEvent ? `<strong>Machine:</strong> ${ eventData?.machines?.map(m => m?.serialNo) || '' } </br>` : '';
+      const site = eventData?.isCustomerEvent ? `<strong>Site:</strong> ${ eventData?.site?.name || '' } </br>` : '';
+      const technicians = `<strong>${eventData?.isCustomerEvent ? 'Technicians' : 'Assignee' }: </strong> ${ Array.from(uniqueTechnicians) || '' } </br>`;
+      const description = eventData?.description || '';
+      const priority = eventData?.priority || '';
+      const createdBy = eventData?.createdBy?.name || '';
       const createdAt = new Date();
       const emailLogParams = {
         subject: emailSubject,
@@ -220,10 +221,11 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         customer,
         serialNo,
         site,
-        description,
         technicians,
         startTime,
         endTime,
+        description,
+        priority,
         createdBy,
         createdAt
       });

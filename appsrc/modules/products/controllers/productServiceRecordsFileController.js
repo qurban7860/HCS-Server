@@ -10,6 +10,7 @@ const { render } = require('template-file');
 const fs = require('fs');
 const awsService = require('../../../base/aws');
 const { Config } = require('../../config/models');
+const { getProductServiceRecordData } = require('./productServiceRecordsController');
 const path = require('path');
 const sharp = require('sharp');
 
@@ -71,7 +72,7 @@ exports.postServiceRecordFiles = async (req, res, next) => {
       if(req?.files?.images){
         files = req.files.images;
       } else {
-        return res.status(StatusCodes.OK).send('No file available to be uploaded!');
+        return res.status(StatusCodes.BAD_REQUEST).send('No file available to be uploaded!');
       }
  
       const fileProcessingPromises = files.map(async (file) => {
@@ -96,13 +97,13 @@ exports.postServiceRecordFiles = async (req, res, next) => {
           req.body.name = processedFile.name;
         }
   
-        const serviveRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
-        return this.dbservice.postObject(serviveRecordFileObject);
+        const serviceRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
+        return this.dbservice.postObject(serviceRecordFileObject);
       });
   
       await Promise.all(fileProcessingPromises);
-  
-      return res.status(StatusCodes.OK).send('Files uploaded successfully!');
+      const serviceRecordData = await getProductServiceRecordData( req );
+      return res.status(StatusCodes.OK).send(serviceRecordData);
     }
   }catch(e) {
     console.log(e);
@@ -269,7 +270,7 @@ async function getToken(req){
 
 function getServiceRecordFileFromReq(req, reqType) {
 
-  const { machineServiceRecord, serviceId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { machineServiceRecord, serviceId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -327,6 +328,10 @@ function getServiceRecordFileFromReq(req, reqType) {
 
   if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
+  }
+
+  if("isReportDoc" in req.body){
+    doc.isReportDoc = isReportDoc;
   }
 
   if (reqType == "new" && "loginUser" in req.body) {

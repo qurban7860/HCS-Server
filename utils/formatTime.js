@@ -93,6 +93,11 @@ function convertTimeToMilliseconds(timeString) {
   }, 0);
 }
 
+function validateYear(year) {
+  const currentYear = new Date().getFullYear();
+  return year >= 1900 && year <= currentYear;
+};
+
 module.exports = {
     isValidDate,
     fDate,
@@ -102,5 +107,6 @@ module.exports = {
     fTimestamp,
     customTimestamp,
     fToNow,
-    convertTimeToMilliseconds
+    convertTimeToMilliseconds,
+    validateYear,
 };

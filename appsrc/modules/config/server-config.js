@@ -40,6 +40,7 @@ const apiclientRoute  = require ('../apiclient/routes');
 
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
+const productLogs  = require ('../productLogs/routes');
 const jiraRoute  = require ('../jira/routes');
 
 const backupRoute  = require ('../backups/routes');
@@ -80,14 +81,12 @@ class App {
       store: store
     }));
 
-    this.app.use('/api/1.0.0/customer/getToken/',session({
+    this.app.use('/api/1.0.0/security/getCustomerToken/',session({
       secret: process.env.SESSION_SECRETKEY,
       resave: true,
       store: store
     }));
-    
-    
-    
+
     let allowedOrigins;
     if(process.env.CORS_CONFIG) {
       allowedOrigins = process.env.CORS_CONFIG.split(",");
@@ -140,12 +139,10 @@ class App {
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     calenderRoute.registerEventRoutes(this.app, apiPath);
-    
-    
-
     apiclientRoute.registerapiClientRoutes(this.app, apiPath); 
     configRoute.registerConfigRoutes(this.app, apiPath);
     logRoute.registerlogRoutes(this.app, apiPath);
+    productLogs.registerProductLogsRoutes(this.app, apiPath);
     jiraRoute.registerJiraRoutes(this.app, apiPath);
     backupRoute.registerBackupRoutes(this.app, apiPath);
   }

@@ -70,7 +70,6 @@ exports.getProductConfigurations = async (req, res, next) => {
 
 exports.deleteProductConfiguration = async (req, res, next) => {
   this.dbservice.deleteObject(ProductConfiguration, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -115,7 +114,6 @@ exports.postProductConfiguration = async (req, res, next) => {
         const propertyValues = [];
 
         for (const element of code) {
-          console.log(productConfObjec?.configuration, element)
           const value = productConfObjec?.configuration[element];
           if (value) {
             propertyValues.push(value);

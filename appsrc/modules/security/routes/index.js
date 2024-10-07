@@ -29,7 +29,7 @@ exports.registerSecurityRoutes = (app, apiPath) => {
     app.use(`${rootPathForModule}`, securityAuthenticationRoute);
 
     // localhost://api/1.0.0/customer/
-    app.use(`${apiPath}/customer`, customerAuthenticationRoute);
+    app.use(`${rootPathForModule}`, customerAuthenticationRoute);
 
     // localhost://api/1.0.0/security/
     app.use(`${rootPathForModule}`, securityModuleRoute);
