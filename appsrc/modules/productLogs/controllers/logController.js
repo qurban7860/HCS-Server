@@ -85,10 +85,10 @@ exports.getLogs = async (req, res, next) => {
         this.query.date = {
           $gte: new Date(this.query.date.$gte.toISOString()),
           $lte: new Date(this.query.date.$lte.toISOString())
-        }; 
+        };
       }
     }
-    
+
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
@@ -109,7 +109,7 @@ exports.getLogs = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     const LogModel = getModel(req);
-    const { customer, machine, periodType } = req.query;
+    const { customer, machine, periodType, logGraphType } = req.query;
 
     const match = {};
     if (mongoose.Types.ObjectId.isValid(customer)) {
@@ -124,7 +124,7 @@ exports.getLogsGraph = async (req, res, next) => {
 
     switch (periodType.toLowerCase()) {
       case 'daily':
-        groupBy = { $dateToString: { format: "%Y-%m-%d", date: "$date" } };
+        groupBy = { $dateToString: { format: "%m/%d", date: "$date" } };
         dateRange = new Date(currentDate.setDate(currentDate.getDate() - 7));
         limit = 7;
         break;
@@ -134,12 +134,12 @@ exports.getLogsGraph = async (req, res, next) => {
         limit = 12;
         break;
       case 'quarterly':
-        groupBy = { 
+        groupBy = {
           $concat: [
             { $toString: { $year: "$date" } },
             "-",
-            "Qtr_",
-            { $toString: { $ceil: { $divide: [{ $month: "$date" }, 3] } } },            
+            "Q",
+            { $toString: { $ceil: { $divide: [{ $month: "$date" }, 3] } } },
           ]
         };
         dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 15));
@@ -156,22 +156,59 @@ exports.getLogsGraph = async (req, res, next) => {
 
     match.date = { $gte: dateRange };
 
-    const graphResults = await LogModel.aggregate([
-      { $match: match },
-      { $group: {
+    const groupStage = {
+      $group: {
         _id: groupBy,
         componentLength: {
-          $sum: { $toDouble: { $ifNull: ["$componentLength", "0"] } }
-        },
-        waste: {
-          $sum: { $toDouble: { $ifNull: ["$waste", "0"] } }
+          $sum: {
+            $toDouble: {
+              $replaceAll: {
+                input: { $ifNull: ["$componentLength", "0"] },
+                find: ",",
+                replacement: ""
+              }
+            }
+          }
         }
-      }},
-      { $project: {
+      }
+    };
+
+    if (logGraphType === 'productionRate') {
+      groupStage.$group.time = {
+        $sum: {
+          $cond: [
+            { $ifNull: ["$time", false] },
+            { $toDouble: "$time" },
+            "NA"
+          ]
+        }
+      };
+    } else {
+      groupStage.$group.waste = {
+        $sum: {
+          $toDouble: {
+            $replaceAll: {
+              input: { $ifNull: ["$waste", "0"] },
+              find: ",",
+              replacement: ""
+            }
+          }
+        }
+      };
+    }
+
+    const graphResults = await LogModel.aggregate([
+      { $match: match },
+      groupStage,
+      {
+        $project: {
           _id: 1,
           componentLength: { $round: ["$componentLength", 2] },
-          waste: { $round: ["$waste", 2] }
-      }},
+          ...(logGraphType === 'productionRate'
+            ? { time: { $cond: [{ $eq: ["$time", "NA"] }, "NA", { $round: ["$time", 2] }] } }
+            : { waste: { $round: ["$waste", 2] } })
+        }
+      },
       { $sort: { "_id": -1 } },
       { $limit: limit }
     ]);
@@ -182,7 +219,6 @@ exports.getLogsGraph = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
-
 exports.deleteLog = async (req, res, next) => {
   try {
     req.query.type = req.query?.type || req.body?.type;
@@ -209,7 +245,7 @@ exports.postLog = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 
-  if (!mongoose.Types.ObjectId.isValid(req.body?.machine) || 
+  if (!mongoose.Types.ObjectId.isValid(req.body?.machine) ||
       !mongoose.Types.ObjectId.isValid(req.body?.customer)) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data: machine/customer not found');
   }
@@ -223,7 +259,7 @@ exports.postLog = async (req, res, next) => {
     req.query.type = type;
     const Model = getModel( req );
     let { update } = req.body;
-    const logsToInsert = []; 
+    const logsToInsert = [];
     const logsToUpdate = [];
 
     const batchId = uuidv4();
@@ -279,7 +315,7 @@ exports.patchLog = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    try {  
+    try {
       req.query.type = req.query?.type || req.body?.type;
       const LogModel = getModel( req );
       const result = await this.dbservice.patchObject(LogModel, req.params.id, getDocumentFromReq( req, res ));
@@ -291,9 +327,9 @@ exports.patchLog = async (req, res, next) => {
   }
 };
 
-function getModel(req) { 
+function getModel(req) {
   const type = req.query?.type;
-  
+
   if (!type?.trim()) {
     throw new Error("Log type is not defined!");
   }
