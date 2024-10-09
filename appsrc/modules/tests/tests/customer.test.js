@@ -1,7 +1,7 @@
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../../crm/models');
 const { securityUser } = require('../../security/models');
 
-let dbCustomerService = require('../../crm/service/customerDBService')
+let dbCustomerService = require('../../crm/services/customerDBService')
 this.dbservice = new dbCustomerService();
 
 

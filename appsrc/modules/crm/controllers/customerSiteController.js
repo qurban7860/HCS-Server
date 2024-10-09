@@ -9,7 +9,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
-let customerDBService = require('../service/customerDBService')
+let customerDBService = require('../services/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, CustomerContact, Customer, CustomerNote } = require('../models');
