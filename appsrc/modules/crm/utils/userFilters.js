@@ -8,7 +8,7 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let customerDBService = require('../service/customerDBService')
+let customerDBService = require('../services/customerDBService')
 this.dbservice = new customerDBService();
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');

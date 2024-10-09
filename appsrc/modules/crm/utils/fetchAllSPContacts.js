@@ -1,5 +1,5 @@
 const { CustomerContact } = require("../models");
-let customerDBService = require("../service/customerDBService");
+let customerDBService = require("../services/customerDBService");
 const dbservice = new customerDBService();
 
 async function getAllSPCustomerContacts() {
