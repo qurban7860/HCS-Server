@@ -21,14 +21,14 @@ this.populate = [
 getRegisteredCustomer = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     if (!ObjectId.isValid(req.params.id))
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
     if (!req.body.loginUser)
         req.body.loginUser = await getToken(req);
     await this.dbservice.getObjectById( CustomerRegistration, this.fields, req.params.id, this.populate, callbackFunc);
     async function callbackFunc(error, response) {
         if (error) {
             logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
             res.json(response);
         }
@@ -49,7 +49,7 @@ exports.getRegisteredCustomers = async (req, res, next) => {
     function callbackFunc(error, response) {
         if (error) {
             logger.error(new Error(error));
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
             res.json(response);
         }
@@ -59,16 +59,16 @@ exports.getRegisteredCustomers = async (req, res, next) => {
 exports.postRegisterCustomer = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
         delete req.body?.internalRemarks;
         await this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
         function callbackFunc(error, response) {
             if (error) {
                 logger.error(new Error(error));
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
             } else {
-                res.status(StatusCodes.CREATED).json({ RegisteredCustomer: response });
+                return res.status(StatusCodes.CREATED).json({ RegisteredCustomer: response });
             }
         }
     }
@@ -77,15 +77,15 @@ exports.postRegisterCustomer = async (req, res, next) => {
 exports.patchRegisteredCustomer = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
         if (!ObjectId.isValid(req.params.id))
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
+            return  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
         await this.dbservice.patchObject(CustomerRegistration, req.params.id,getDocumentFromReq(req), callbackFunc);
         async function callbackFunc(error, response) {
             if (error) {
                 logger.error(new Error(error));
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
             } else {
                 await getRegisteredCustomer(req, res);
             }
@@ -96,18 +96,18 @@ exports.patchRegisteredCustomer = async (req, res, next) => {
 exports.deleteRegisteredCustomer = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-        res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
         if (!ObjectId.isValid(req.params.id))
-            res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
         this.dbservice.deleteObject(CustomerRegistration, req.params.id, res, callbackFunc);
         function callbackFunc(error, result) {
             if (error) {
                 logger.error(new Error(error));
-                res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
             }
             else {
-                res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+                return res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
             }
         }
     }
