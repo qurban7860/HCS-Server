@@ -2,7 +2,9 @@ const { CustomerRegistration } = require('../models');
 
 
 function getDocumentFromReq(req, reqType) {
-    const { customerName, contactPersonName, email, phoneNumber, machineSerialNos, isActive, isArchived, loginUser } = req.body;
+    
+    const { customerName, contactPersonName, email, phoneNumber, address, machineSerialNos, status, customerNote, internalRemarks, isActive, isArchived, loginUser } = req.body;
+
     let doc = {};
 
     if (reqType && reqType == "new") {
@@ -31,6 +33,18 @@ function getDocumentFromReq(req, reqType) {
 
     if ("address" in req.body) {
         doc.address = address;
+    }
+
+    if ("status" in req.body) {
+        doc.status = status;
+    }
+
+    if ("customerNote" in req.body) {
+        doc.customerNote = customerNote;
+    }
+
+    if ("internalRemarks" in req.body) {
+        doc.internalRemarks = internalRemarks;
     }
 
     if ("isActive" in req.body) {
