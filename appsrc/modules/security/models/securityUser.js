@@ -61,6 +61,8 @@ const docSchema = new Schema({
             { type: Schema.Types.ObjectId, ref: 'Machine' }
         ],
         
+        registrationRequest:  { type: Schema.Types.ObjectId, ref: 'CustomerRegistration' },
+
         whiteListIPs: [{ type: String}],
         // list of white IPs
         

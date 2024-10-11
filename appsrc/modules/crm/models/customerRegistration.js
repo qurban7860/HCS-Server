@@ -13,7 +13,15 @@ const docSchema = new Schema({
         
         email: { type: String, required: true  },
         
+        address: { type: String },
+        
         phoneNumber: { type: String  },
+
+        status: { type: String, enum: [ "NEW", "APPROVED", "REJECTED", "PENDING" ] },
+
+        customerNote: { type: String  },
+
+        internalRemarks: { type: String  },
 
         machineSerialNos: { type: String, required: true  },
 
@@ -23,7 +31,6 @@ const docSchema = new Schema({
 });
 
 docSchema.set('timestamps', true);
-docSchema.add(baseSchema.docAddressSchema);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
