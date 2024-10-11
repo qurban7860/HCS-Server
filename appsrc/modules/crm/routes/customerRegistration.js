@@ -9,7 +9,6 @@ const controller = controllers.customerRegistration;
 
 const router = express.Router();
 
-//  - base route for module
 // - /api/1.0.0/crm/
 const baseRouteForObject = "/customers/register"; 
 
@@ -17,7 +16,7 @@ const baseRouteForObject = "/customers/register";
 router.get(`${baseRouteForObject}`, checkAuth, controller.getRegisteredCustomers);
 
 // - /api/1.0.0/crm/customers/register/:id
-router.get(`${baseRouteForObject}/:id`, controller.getRegisteredCustomer);
+router.get(`${baseRouteForObject}/:id`, checkAuth, controller.getRegisteredCustomer);
 
 // - /api/1.0.0/crm/customers/register/
 router.post(`${baseRouteForObject}/`, checkAuth, controller.postRegisterCustomer);
@@ -26,7 +25,7 @@ router.post(`${baseRouteForObject}/`, checkAuth, controller.postRegisterCustomer
 router.patch(`${baseRouteForObject}/:id`, checkAuth, verifyDelete, roleCheck, controller.patchRegisteredCustomer);
 
 // - /api/1.0.0/crm/customers/register/:id
-router.delete(`${baseRouteForObject}/:id`, controller.deleteRegisteredCustomer);
+router.delete(`${baseRouteForObject}/:id`, checkAuth, controller.deleteRegisteredCustomer);
 
 
 module.exports = router;

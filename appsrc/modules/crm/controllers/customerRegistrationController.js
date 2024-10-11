@@ -13,7 +13,10 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
-this.populate = [];
+this.populate = [
+    { path: 'createdBy', select: 'name' },
+    { path: 'updatedBy', select: 'name' }
+];
 
 getRegisteredCustomer = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
@@ -58,6 +61,7 @@ exports.postRegisterCustomer = async (req, res, next) => {
     if (!errors.isEmpty()) {
         res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
+        delete req.body?.internalRemarks;
         await this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
         function callbackFunc(error, response) {
             if (error) {
