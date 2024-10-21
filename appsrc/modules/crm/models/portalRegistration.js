@@ -21,13 +21,13 @@ const docSchema = new Schema({
 
         customerNote: { type: String  },
 
-        internalRemarks: { type: String  },
+        internalNote: { type: String  },
 
-        machineSerialNos: { type: String, required: true  },
+        machineSerialNos: [{ type: String, required: true  }],
 
 },
 {
-        collection: 'CustomerRegistrationRequests'
+        collection: 'PortalRegistrationRequests'
 });
 
 docSchema.set('timestamps', true);
@@ -39,4 +39,4 @@ docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('CustomerRegistration', docSchema);
+module.exports = mongoose.model('PortalRegistration', docSchema);

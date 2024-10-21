@@ -5,5 +5,5 @@ module.exports = {
     CustomerContact: require('./customerContact'),
     CustomerNote: require('./customerNote'),
     Department: require('./department'),
-    CustomerRegistration: require('./customerRegistration')
+    PortalRegistration: require('./portalRegistration')
 }
