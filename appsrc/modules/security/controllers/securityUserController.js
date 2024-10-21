@@ -52,6 +52,21 @@ this.populateList = [
   { path: "roles", select: "" },
 ];
 
+exports.validateUser = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};  
+  this.dbservice.getObject(SecurityUser, this.query, this.populate, callbackFunc);
+  function callbackFunc(error, user) {
+    if (error) {
+      logger.error(new Error(error));s
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      if(user?.login){
+        return res.status(StatusCodes.BAD_REQUEST).send("Email Already Exist!");
+      } 
+      return res.status(StatusCodes.ACCEPTED).send("Email available!");
+    }
+  }
+};
 
 exports.getSecurityUser = async (req, res, next) => {
   this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate, callbackFunc);

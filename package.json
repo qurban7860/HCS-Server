@@ -52,7 +52,8 @@
     "uuid": "^3.4.0",
     "winston": "^3.8.2",
     "ws": "^8.14.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.2",
