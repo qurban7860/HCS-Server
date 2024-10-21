@@ -18,10 +18,10 @@ this.populate = [
     { path: 'updatedBy', select: 'name' }
 ];
 
-getRegisteredRequest = async (req, res, next) => {
+const getPortalRequest = async( req, res ) => {
     this.query = req.query != "undefined" ? req.query : {};
     if (!ObjectId.isValid(req.params.id))
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Request ID!");
     if (!req.body.loginUser)
         req.body.loginUser = await getToken(req);
     await this.dbservice.getObjectById( PortalRegistration, this.fields, req.params.id, this.populate, callbackFunc);
@@ -32,6 +32,13 @@ getRegisteredRequest = async (req, res, next) => {
         } else {
             res.json(response);
         }
+    }
+}
+getRegisteredRequest = async (req, res) => {
+    try{
+        await getPortalRequest( req, res )
+    } catch( err ){
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -63,12 +70,13 @@ exports.postRegisterRequest = async (req, res, next) => {
     } else {
         delete req.body?.internalRemarks;
         await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ), callbackFunc);
-        function callbackFunc(error, response) {
+        async function callbackFunc(error, response) {
             if (error) {
                 logger.error(new Error(error));
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
             } else {
-                return res.status(StatusCodes.CREATED).json({ RegisteredRequest: response });
+                req.params.id = response?._id;
+                await getPortalRequest(req, res)
             }
         }
     }
@@ -80,14 +88,14 @@ exports.patchRegisteredRequest = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
         if (!ObjectId.isValid(req.params.id))
-            return  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
+            return  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Request ID!");
         await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq(req), callbackFunc);
         async function callbackFunc(error, response) {
             if (error) {
                 logger.error(new Error(error));
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
             } else {
-                await getRegisteredRequest(req, res);
+                await getPortalRequest(req, res);
             }
         }
     }
@@ -99,7 +107,7 @@ exports.deleteRegisteredRequest = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
         if (!ObjectId.isValid(req.params.id))
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Registered Customer ID!");
+            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Request ID!");
         this.dbservice.deleteObject(PortalRegistration, req.params.id, res, callbackFunc);
         function callbackFunc(error, result) {
             if (error) {
