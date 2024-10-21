@@ -14,7 +14,7 @@ const createPortalReqSchema = (reqType) => {
         contactPersonName: Yup.string().label('Contact Person Name').max(200).notRequired(),
         email: Yup.string().label('Email').email()
         .test('unique-email', 'Email already exists', async (email) => {
-            const user = await SecurityUser.findOne({ login: email });
+            const user = await SecurityUser.findOne({ login: email, isArchived: false });
             return !user;
         })
         .when([], {
