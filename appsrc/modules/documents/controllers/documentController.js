@@ -129,6 +129,13 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.isVersionNeeded;
     }
 
+    if (this.query.searchKey && this.query.searchColumn) {
+      const regexCondition = { '$regex': escapeRegExp(this.query.searchKey), '$options': 'i' };
+      this.query[this.query.searchColumn] = regexCondition;
+      delete this.query.searchKey;
+      delete this.query.searchColumn;
+    }
+
       let basicInfo = false;
 
     if( this.query && ( this.query.basic == true || this.query.basic == 'true' )) {
