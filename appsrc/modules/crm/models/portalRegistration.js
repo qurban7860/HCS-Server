@@ -7,6 +7,10 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
 
+        customer: { type: Schema.Types.ObjectId, ref: 'Customer' },
+
+        contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+
         customerName: { type: String , required: true },
         
         contactPersonName: { type: String,  }, 

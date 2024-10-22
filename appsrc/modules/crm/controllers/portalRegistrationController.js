@@ -14,6 +14,8 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
+    { path: 'customer', select: 'name' },
+    { path: 'contact', select: 'firstName lastName' },
     { path: 'createdBy', select: 'name' },
     { path: 'updatedBy', select: 'name' }
 ];
@@ -52,7 +54,7 @@ exports.getRegisteredRequests = async (req, res, next) => {
     }
     if (!req.body.loginUser)
         req.body.loginUser = await getToken(req);
-    await this.dbservice.getObjectList(req, PortalRegistration, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+    await this.dbservice.getObjectList(req, PortalRegistration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
     function callbackFunc(error, response) {
         if (error) {
             logger.error(new Error(error));
@@ -87,8 +89,13 @@ exports.patchRegisteredRequest = async (req, res, next) => {
     if (!errors.isEmpty()) {
         return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-        if (!ObjectId.isValid(req.params.id))
-            return  res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Request ID!");
+        if (!ObjectId.isValid(req.params.id)){
+            return  res.status(StatusCodes.BAD_REQUEST).send("Please Provide a valid Request ID!");
+        }
+        const findRequest= await PortalRegistration.findById(req.params.id)
+        if(findRequest?.status === 'APPROVED'){
+            return  res.status(StatusCodes.BAD_REQUEST).send("APPROVED request can not be updated!");
+        }
         await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq(req), callbackFunc);
         async function callbackFunc(error, response) {
             if (error) {
