@@ -1,8 +1,9 @@
 const { SecurityUser } = require('../../security/models');
+const { PortalRegistration } = require('../../crm/models');
 const Yup = require('yup');
 const logger = require('../../config/logger');
 
-const createPortalReqSchema = (reqType) => {
+const createPortalReqSchema = (reqType, req ) => {
     const isNewRequest = reqType === 'new';
 
     return Yup.object().shape({
@@ -13,9 +14,23 @@ const createPortalReqSchema = (reqType) => {
         }),
         contactPersonName: Yup.string().label('Contact Person Name').max(200).notRequired(),
         email: Yup.string().label('Email').email()
-        .test('unique-email', 'Email already exists', async (email) => {
-            const user = await SecurityUser.findOne({ login: email, isArchived: false });
-            return !user;
+        .test('unique-email', async function (email) {
+            const securityUser = await SecurityUser.findOne({ login: email, isArchived: false });
+            if (securityUser) {
+                return this.createError({
+                    path: 'email',
+                    message: 'Email already exists!',
+                });
+            }
+        
+            const portalRequest= await PortalRegistration.findOne({ email, isArchived: false }).lean();
+            if ( portalRequest && portalRequest?._id?.toString() !== req?.params?.id?.toString() ) {
+                return this.createError({
+                    path: 'email',
+                    message: `Portal Requests already exists against ${email}!`,
+                });
+            }
+            return true;
         })
         .when([], {
             is: () => isNewRequest,
@@ -32,6 +47,8 @@ const createPortalReqSchema = (reqType) => {
                 otherwise: (schema) => schema.notRequired(),
             }),
         status: Yup.string().label('Status').oneOf([ "NEW", "APPROVED", "REJECTED", "PENDING" ], 'Invalid status value').notRequired(),
+        customer: Yup.string().label('Customer ID').max(50).nullable().notRequired(),
+        contact: Yup.string().label('Contact ID').max(50).nullable().notRequired(),
         customerNote: Yup.string().label('Customer Note').max(5000).nullable().notRequired(),
         internalNote: Yup.string().label('Internal Note').max(5000).nullable().notRequired(),
         isActive: Yup.boolean().nullable().notRequired(),
@@ -43,7 +60,7 @@ const validatePortalReq = (reqType) => {
     return async (req, res, next) => {
         try {
             const loginUser = req.body.loginUser;
-            const portalReqSchema = createPortalReqSchema(reqType);
+            const portalReqSchema = createPortalReqSchema(reqType, req );
             const validatedBody = await portalReqSchema.validate(req.body, {
                 abortEarly: false,  
                 stripUnknown: true,
