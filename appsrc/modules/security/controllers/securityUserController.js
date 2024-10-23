@@ -68,7 +68,7 @@ exports.validateUser = async (req, res, next) => {
   }
 };
 
-exports.getSecurityUser = async (req, res, next) => {
+const getSecurityUser = async (req, res, next) => {
   this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate, callbackFunc);
   function callbackFunc(error, user) {
     if (error) {
@@ -86,6 +86,8 @@ exports.getSecurityUser = async (req, res, next) => {
     }
   }
 };
+
+exports.getSecurityUser = getSecurityUser;
 
 exports.getSecurityUsers = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
@@ -289,7 +291,7 @@ exports.patchSecurityUser = async (req, res, next) => {
                   logger.error(new Error(error));
                   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                 } else {
-                  return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                  return getSecurityUser(req, res )
                 }
               }
             }
@@ -341,7 +343,7 @@ exports.patchSecurityUser = async (req, res, next) => {
                       return logger.error(new Error(error));
                       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                     } else {
-                      return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+                      return getSecurityUser(req, res )
                     }
                   }     
                 }
