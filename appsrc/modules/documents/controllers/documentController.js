@@ -131,7 +131,16 @@ exports.getDocuments = async (req, res, next) => {
 
     if (this.query.searchKey && this.query.searchColumn) {
       const regexCondition = { '$regex': escapeRegExp(this.query.searchKey), '$options': 'i' };
-      this.query[this.query.searchColumn] = regexCondition;
+      if (this.query.searchColumn.includes('.')) {
+        const [parentField, childField] = this.query.searchColumn.split('.');
+        this.query[parentField] = {
+          $elemMatch: {
+            [childField]: regexCondition
+          }
+        };
+      } else {
+        this.query[this.query.searchColumn] = regexCondition;
+      }
       delete this.query.searchKey;
       delete this.query.searchColumn;
     }
