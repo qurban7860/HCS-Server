@@ -284,6 +284,10 @@ exports.patchSecurityUser = async (req, res, next) => {
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
             } 
             else {
+            let userAvailability = await SecurityUser.findOne({ login: user.login, isArchived: false });
+            if(userAvailability){
+              return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
+            }
             const doc = await getDocumentFromReq(req);
             _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
               function callbackFunc(error, result) {
@@ -297,7 +301,7 @@ exports.patchSecurityUser = async (req, res, next) => {
             }
 
           } else {
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            return res.status(StatusCodes.BAD_REQUEST).send("User not found!");
           }
 
         } else {
