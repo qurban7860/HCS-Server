@@ -27,9 +27,8 @@ class UserEmailService {
       const code = Math.floor(100000 + Math.random() * 900000);
       const username = user.name;
       let params = {
-          to: `${user.email}`,
+          toEmails: `${user.email}`,
           subject: emailSubject,
-          html: true
       };
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/MFA.html'), 'utf8');
@@ -81,9 +80,8 @@ class UserEmailService {
       if(configObject && configObject?.value)
           emailSubject = configObject.value;
       let params = {
-          to: `${user.email}`,
+          toEmails: `${user.email}`,
           subject: emailSubject,
-          html: true
       };
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/userInvite.html'), 'utf8');
@@ -115,9 +113,8 @@ class UserEmailService {
           const username = toUser?.name;
 
           let params = {
-            to: `${toUser?.email}`,
+            toEmails: `${toUser?.email}`,
             subject: emailSubject,
-            html: true
           };
 
           const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/forgetPassword.html'), 'utf8');
@@ -154,9 +151,8 @@ class UserEmailService {
       let emailSubject = "Password Reset Successful";
     
       let params = {
-        to: `${toUser?.email}`,
+        toEmails: `${toUser?.email}`,
         subject: emailSubject,
-        html: true,
       };
       
       const content = render(contentHTML);
