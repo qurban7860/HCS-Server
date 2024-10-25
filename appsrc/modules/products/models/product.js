@@ -4,6 +4,8 @@ const uniqueValidator = require('mongoose-unique-validator');
 const baseSchema = require('../../../base/baseSchema');
 
 const GUID = require('mongoose-guid')(mongoose);
+const mongooseAutopopulate = require('mongoose-autopopulate');
+
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
@@ -135,7 +137,26 @@ const docSchema = new Schema({
     statusChangeHistory : [{
         status : { type: Schema.Types.ObjectId , ref: 'MachineStatus' },
         dated: { type: Date }
-    }]
+    }],
+
+    // Integration record fields
+    portalKey: [{ 
+        key: { type: String, default: null },
+        createdAt: { type: Date, default: Date.now },
+        createdIP: { type: String, default: null },
+        createdBy: { 
+            type: Schema.Types.ObjectId,
+            ref: 'SecurityUser',
+            autopopulate: { select: 'name' }
+        },
+    }],
+
+    computerGUID: { type: String, default: null },
+
+    IPC_SerialNo: { type: String, default: null },
+
+    machineIntegrationSyncStatus: { type: Boolean, default: false },
+
 },
 {
     collection: 'Machines'
@@ -162,5 +183,16 @@ docSchema.add(baseSchema.docAuditSchema);
 
 
 docSchema.plugin(uniqueValidator);
+docSchema.plugin(mongooseAutopopulate);
+
+// Method to add a new portal key
+docSchema.methods.addPortalKey = function ({ key, createdIP, createdAt = new Date(), createdBy }) {
+    if (!key || !createdIP) {
+      throw new Error("Invalid data: key and updatedFromIP are required");
+    }
+  
+    this.portalKey.unshift({ key, createdIP, createdAt, createdBy });
+    return this.save();
+  };
 
 module.exports = mongoose.model('Machine', docSchema);

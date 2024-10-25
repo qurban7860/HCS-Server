@@ -4,7 +4,10 @@ const apiPath = process.env.API_ROOT;
 
 exports.registerProductRoutes = (app, apiPath) => {
     const rootPathForModule = `${ apiPath }/products`
-
+    
+    // Machine Api which do not use Auth middleware 
+    app.use(`${ rootPathForModule }`, require('./productMachineIntegrationRoute'));
+    
     app.use(`${ rootPathForModule }`, require('./productAuditLogRoute'));
     app.use(`${ rootPathForModule }`, require('./productCategoryRoute'));
     app.use(`${ rootPathForModule }`, require('./productConnectionRoute'));
@@ -29,6 +32,7 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productServiceRecordValueRoute'));
     app.use(`${ rootPathForModule }`, require('./productServiceRecordValueFileRoute'));
     app.use(`${ rootPathForModule }`, require('./categoryGroupRoute'));
+    app.use(`${ rootPathForModule }`, require('./productIntegrationRoute'));
     
 }
 
