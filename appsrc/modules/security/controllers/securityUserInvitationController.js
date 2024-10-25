@@ -9,18 +9,19 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const logger = require('../../config/logger');
 const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
-let securityDBService = require('../service/securityDBService')
 const { Config } = require('../../config/models');
 const { renderEmail } = require('../../email/utils');
 const path = require('path');
-this.dbservice = new securityDBService();
-
 const { SecurityUser, SecurityUserInvite } = require('../models');
 const { Customer, CustomerContact } = require('../../crm/models');
 const { Product } = require('../../products/models');
-
 const ObjectId = require('mongoose').Types.ObjectId;
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
+let securityDBService = require('../service/securityDBService')
+this.dbservice = new securityDBService();
+const emailService = require('../service/userEmailService');
+const userEmailService = this.userEmailService = new emailService();
+
 
 this.fields = {};
 this.query = {};
@@ -75,57 +76,11 @@ this.populate = [
   };
 
   exports.sendUserInvite = async (req, res, next) =>{
-    let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
-
-    if(user) {
-      user.invitationStatus = true;
-      user.save();
-      let userInvite = new SecurityUserInvite({});
-      userInvite.senderInvitationUser = req.body.loginUser.userId;
-      userInvite.receiverInvitationUser = req.params.id;
-      userInvite.receiverInvitationEmail = user.email;
-      userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
-
-      if(isNaN(inviteCodeExpireHours))
-        inviteCodeExpireHours = 48;
-      
-      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
-      userInvite.inviteExpireTime = expireAt;
-      userInvite.invitationStatus = 'PENDING';
-      await userInvite.save();
-    
-      let emailSubject = "User Invite - HOWICK Portal";
-      const regex = new RegExp("^USER-INVITE-SUBJECT$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-      if(configObject && configObject?.value)
-        emailSubject = configObject.value;
-
-      const link = `${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
-
-      let params = {
-        to: `${user.email}`,
-        subject: emailSubject,
-        html: true
-      };
-
-      const username = user.name;
-
-      let hostName = 'portal.howickltd.com';
-
-      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/userInvite.html'), 'utf8');
-      const content = render(contentHTML, { username, link });
-      const htmlData =  await renderEmail(emailSubject, content )
-      params.htmlData = htmlData;
-
-      try{
-        await awsService.sendEmail(params);
-        res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully!' });
-      }catch(e){
-        res.status(StatusCodes.OK).send('Invitation Send Fails!');
-      }
-
-    } else {
-      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    try{
+      await this.userEmailService.sendUserInviteEmail(req, res );
+    } catch(err){
+      logger.error(new Error(err));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Sending user invite failed!");
     }
   }
   

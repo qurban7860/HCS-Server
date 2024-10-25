@@ -38,6 +38,7 @@ const createPortalReqSchema = (reqType, req ) => {
             otherwise: (schema) => schema.notRequired(),
         }),
         phoneNumber: Yup.string().label('Phone Number').matches(/^[+0-9 ]+$/, 'Phone number must be digits only!').max(20).notRequired(),
+        country: Yup.string().label('Country').max(255).nullable().notRequired(),
         address: Yup.string().label('Address').max(255).nullable().notRequired(),
         machineSerialNos: Yup.array().typeError("Invalid Machine Serial Nos!").label('Machine Serial Nos')
             .of( Yup.string().matches(/^\d{6}$/, 'Each serial number must be exactly 6 digits') )
@@ -49,6 +50,7 @@ const createPortalReqSchema = (reqType, req ) => {
         status: Yup.string().label('Status').oneOf([ "NEW", "APPROVED", "REJECTED", "PENDING" ], 'Invalid status value').notRequired(),
         customer: Yup.string().label('Customer ID').max(50).nullable().notRequired(),
         contact: Yup.string().label('Contact ID').max(50).nullable().notRequired(),
+        roles: Yup.array().label('Roles').nullable().notRequired(),
         customerNote: Yup.string().label('Customer Note').max(5000).nullable().notRequired(),
         internalNote: Yup.string().label('Internal Note').max(5000).nullable().notRequired(),
         isActive: Yup.boolean().nullable().notRequired(),
@@ -59,14 +61,13 @@ const createPortalReqSchema = (reqType, req ) => {
 const validatePortalReq = (reqType) => {
     return async (req, res, next) => {
         try {
-            const loginUser = req.body.loginUser;
-            const portalReqSchema = createPortalReqSchema(reqType, req );
-            const validatedBody = await portalReqSchema.validate(req.body, {
-                abortEarly: false,  
+            const { loginUser, ...otherFields } = req.body;
+            const portalReqSchema = createPortalReqSchema(reqType, req);
+            const validatedBody = await portalReqSchema.validate(otherFields, {
+                abortEarly: false,
                 stripUnknown: true,
             });
-            validatedBody.loginUser = loginUser;
-            req.body = validatedBody;
+            req.body = { ...validatedBody, loginUser };
             next(); 
         } catch (error) {
             logger.error(new Error(error));

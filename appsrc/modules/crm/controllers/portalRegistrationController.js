@@ -8,6 +8,7 @@ let customerDBService = require('../services/customerDBService');
 let ObjectId = require('mongoose').Types.ObjectId;
 this.dbservice = new customerDBService();
 const { PortalRegistration } = require('../models');
+const { postSecurityUser } = require('../../security/controllers/securityUserController');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {};
@@ -32,10 +33,11 @@ const getPortalRequest = async( req, res ) => {
             logger.error(new Error(error));
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
-            res.json(response);
+            return res.json(response);
         }
     }
 }
+
 getRegisteredRequest = async (req, res) => {
     try{
         await getPortalRequest( req, res )
@@ -85,26 +87,46 @@ exports.postRegisterRequest = async (req, res, next) => {
 };
 
 exports.patchRegisteredRequest = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } else {
-        if (!ObjectId.isValid(req.params.id)){
-            return  res.status(StatusCodes.BAD_REQUEST).send("Please Provide a valid Request ID!");
-        }
-        const findRequest= await PortalRegistration.findById(req.params.id)
-        if(findRequest?.status === 'APPROVED'){
-            return  res.status(StatusCodes.BAD_REQUEST).send("APPROVED request can not be updated!");
-        }
-        await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq(req), callbackFunc);
-        async function callbackFunc(error, response) {
-            if (error) {
-                logger.error(new Error(error));
-                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-            } else {
+    try{
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        } else {
+            if (!ObjectId.isValid(req.params.id)){
+                return  res.status(StatusCodes.BAD_REQUEST).send("Please Provide a valid Request ID!");
+            }
+            const findRequest= await PortalRegistration.findById(req.params.id)
+            if(findRequest?.status === 'APPROVED'){
+                return  res.status(StatusCodes.BAD_REQUEST).send("APPROVED request can not be updated!");
+            }
+            const response = await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq(req));
+
+                const { contactPersonName, email, phoneNumber, roles, customer,contact } = req?.body;
+                if( response && req?.body?.status === 'APPROVED' && contactPersonName && email && roles && customer && contact ){
+                    const newUser = {
+                        name: contactPersonName,
+                        login: email,
+                        email,
+                        phone: phoneNumber,
+                        password: '',
+                        roles,
+                        customer,
+                        contact,
+                        isInvite: true,
+                        isNoReturn: true,
+                    }
+                    req.body = { ...req.body, ...newUser };
+                    try {
+                        await postSecurityUser(req);
+                    } catch (error) {
+                        return res.status(StatusCodes.CONFLICT).send(error.message);
+                    }
+                }
                 await getPortalRequest(req, res);
             }
-        }
+    } catch(error){
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Portal Request update failed!");
     }
 };
 

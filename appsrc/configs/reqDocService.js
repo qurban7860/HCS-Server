@@ -1,23 +1,22 @@
 
 function getDocFromReq(req, reqType, Model ) {
+    const { loginUser, ...otherFields } = req.body;
     let doc;
-    const loginUser  = req.body?.loginUser;
-    delete req.body?.loginUser;
 
     if (reqType && reqType == "new") {
         if(!Model){
             throw new Error("Internal Server error")
         }
-        doc = new Model({ ...req.body,
-            createdBy: loginUser?.userId,
-            updatedBy: loginUser?.userId,
-            createdIP: loginUser?.userIP,
-            updatedIP: loginUser?.userIP
+        doc = new Model({ ...otherFields,
+            createdBy: req?.body?.loginUser?.userId,
+            updatedBy: req?.body?.loginUser?.userId,
+            createdIP: req?.body?.loginUser?.userIP,
+            updatedIP: req?.body?.loginUser?.userIP
         });
     } else {
-        doc = { ...req.body,
-            updatedBy: loginUser?.userId,
-            updatedIP: loginUser?.userIP
+        doc = { ...otherFields,
+            updatedBy: req?.body?.loginUser?.userId,
+            updatedIP: req?.body?.loginUser?.userIP
         };
     }
     return doc;
