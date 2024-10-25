@@ -60,17 +60,17 @@ class UserEmailService {
         throw new Error('User not found!');
       }
       let userInvite = new SecurityUserInvite({});
+      userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
+      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
       let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
       if(isNaN(inviteCodeExpireHours))
         inviteCodeExpireHours = 48;
-      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
       const link = `${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
       user.invitationStatus = true;
       user.save();
       userInvite.senderInvitationUser = req.body.loginUser.userId;
       userInvite.receiverInvitationUser = req.params.id;
       userInvite.receiverInvitationEmail = user.email;
-      userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
 
       userInvite.inviteExpireTime = expireAt;
       userInvite.invitationStatus = 'PENDING';
@@ -105,9 +105,9 @@ class UserEmailService {
   resetPasswordEmail = async ( req, res, toUser ) => {
     try{
       const token = await generateRandomString();
-      let updatedToken = updateUserToken(token);
+      let updatedToken = await updateUserToken(token);
       await this.dbservice.patchObject(SecurityUser, toUser._id, updatedToken );
-      const link = `${this.clientURL}auth/new-password/${token}/${toUser._id}`;
+      const link = `${process.env.CLIENT_APP_URL}auth/new-password/${token}/${toUser._id}`;
 
           const emailSubject = "Reset Password";
           const username = toUser?.name;
