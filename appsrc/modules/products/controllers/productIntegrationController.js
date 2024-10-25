@@ -11,7 +11,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductIntegrationRecord } = require('../models');
+const { Product } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -24,23 +24,31 @@ this.populate = [
   {path: 'updatedBy', select: 'name'}
 ];
 
-exports.getIntegrationRecord = async (req, res, next) => {
-  try {
-    const { machineId } = req.params;
+// exports.getIntegrationRecord = async (req, res, next) => {
+//   try {
+//     const { machineId } = req.params;
     
-    const integrationRecord = await ProductIntegrationRecord.findOne({ machine: machineId });
-    if (!integrationRecord) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "No existing record found" });
-    }
+//     const machine = await Product.findById(machineId);
+//     if (!machine || !machine.portalKey?.length) {
+//       return res.status(StatusCodes.NOT_FOUND).json({ message: "No existing record found" });
+//     }
     
-    res.status(StatusCodes.OK).json({ MachineIntegrationRecord: integrationRecord });
-  } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-  }
-};
+//     res.status(StatusCodes.OK).json({ 
+//       MachineIntegrationRecord: {
+//         machine: machineId,
+//         portalKey: machine.currentPortalKey,
+//         computerGUID: machine.computerGUID,
+//         IPC_SerialNo: machine.IPC_SerialNo,
+//         portalKeyHistory: machine.portalKey
+//       }
+//     });
+//   } catch (error) {
+//     logger.error(new Error(error));
+//     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//   }
+// };
 
-exports.postIntegrationRecord = async (req, res, next) => {
+exports.postIntegrationPortalKey = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -48,72 +56,102 @@ exports.postIntegrationRecord = async (req, res, next) => {
     }
 
     const { machineId } = req.params;
-    const existingRecord = await ProductIntegrationRecord.findOne({ machine: machineId });
-
-    let doc;
-    if (!existingRecord) {
-      doc = getDocumentFromReq(req, 'new');
-    } else {
-      doc = getDocumentFromReq(req, 'update');
-      doc = { ...existingRecord.toObject(), ...doc };
+    const { portalKey } = req.body;
+    
+    const machine = await Product.findById(machineId);
+    if (!machine) {
+      return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
     }
 
-    const result = await ProductIntegrationRecord.findOneAndUpdate(
-      { machine: machineId },
-      doc,
-      { new: true, upsert: true }
-    );
-
-    res.status(StatusCodes.CREATED).json({ MachineIntegrationRecord: result });
+    await machine.addPortalKey({
+      key: portalKey,
+      createdIP: req?.body?.loginUser?.userIP,
+      createdBy: req?.body?.loginUser?.userId
+    });
+    const updatedMachine = await Product.findById(machineId);
+    res.status(StatusCodes.CREATED).json(updatedMachine.portalKey);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
   }
 };
 
+exports.postIntegrationDetails = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
 
-function getDocumentFromReq(req, reqType){
-  const { portalKey, machineSerialNo, computerGUID, IPC_SerialNo, loginUser } = req.body;
-  
-  let doc = {};
-  if (reqType && reqType == "new"){
-    doc = new ProductIntegrationRecord({});
+    const { machineId } = req.params;
+    const { computerGUID, IPC_SerialNo } = req.body;
+    
+    const machine = await Product.findById(machineId);
+    if (!machine) {
+      return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
+    }
+
+    machine.computerGUID = computerGUID;
+    machine.IPC_SerialNo = IPC_SerialNo;
+
+    // if (computerGUID) {
+    //   machine.computerGUID = computerGUID;
+    // }
+    
+    // if (IPC_SerialNo) {
+    //   machine.IPC_SerialNo = IPC_SerialNo;
+    // }
+    
+    const result = await machine.save();
+    // const updatedMachine = await Product.findById(machineId);
+    res.status(StatusCodes.CREATED).json({
+      computerGUID: result.computerGUID,
+      IPC_SerialNo: result.IPC_SerialNo
+    });
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
   }
-  
-    doc.machine = req.params.machineId;
+};
 
-  if ("portalKey" in req.body && "machineSerialNo" in req.body){
-    doc.portalKey = portalKey;
-    doc.machineSerialNo = machineSerialNo;
+exports.syncMachineConnection = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+
+    const { Machine_Serial_No, Howick_Portal_Key, Computer_GUID, IPC_Serial_No } = req.body;
+    
+    const machine = await Product.findOne({ serialNo: Machine_Serial_No });
+    if (!machine) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "Machine not found" });
+    }
+
+    const latestPortalKey = machine.portalKey[0]?.key;
+
+    if (!latestPortalKey || latestPortalKey !== Howick_Portal_Key) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid portal key" });
+    }
+
+    if (!machine.computerGUID || !machine.IPC_SerialNo) {
+      machine.computerGUID = Computer_GUID;
+      machine.IPC_SerialNo = IPC_Serial_No;
+      machine.machineIntegrationSyncStatus = true;
+      await machine.save();
+      return res.status(StatusCodes.OK).json({ message: "Machine connection synced successfully" });
+    }
+
+    if (machine.computerGUID === Computer_GUID && machine.IPC_SerialNo === IPC_Serial_No) {
+      machine.machineIntegrationSyncStatus = true;
+      await machine.save();
+      return res.status(StatusCodes.OK).json({ message: "Machine connection verified successfully" });
+    }
+
+    return res.status(StatusCodes.CONFLICT).json({ message: "Machine connection details mismatch" });
+
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
   }
-
-  if ("computerGUID" in req.body){
-    doc.computerGUID = computerGUID;
-  }
-
-  if ("IPC_SerialNo" in req.body){
-    doc.IPC_SerialNo = IPC_SerialNo;
-  }
-  
-  
-  if ("isActive" in req.body){
-    doc.isActive = isActive;
-  }
-  if ("isArchived" in req.body){
-    doc.isArchived = isArchived;
-  }
-
-  if (reqType == "new" && "loginUser" in req.body ){
-    doc.createdBy = loginUser.userId;
-    doc.updatedBy = loginUser.userId;
-    doc.createdIP = loginUser.userIP;
-    doc.updatedIP = loginUser.userIP;
-  } else if ("loginUser" in req.body) {
-    doc.updatedBy = loginUser.userId;
-    doc.updatedIP = loginUser.userIP;
-  } 
-
-  //console.log("doc in http req: ", doc);
-  return doc;
-
-}
+};
