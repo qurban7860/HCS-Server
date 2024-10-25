@@ -24,5 +24,4 @@ module.exports = {
     ProductServiceRecordValue: require('./productServiceRecordValue'),
     ProductServiceRecordValueFile: require('./productServiceRecordValueFile'),
     CategoryGroup: require('./categoryGroup'),
-    ProductIntegrationRecord: require('./productIntegrationRecord'),
 }

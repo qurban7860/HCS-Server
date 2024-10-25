@@ -3,7 +3,7 @@ const { check } = require('express-validator');
 
 const checkAuth = require('../../../middleware/check-auth');
 const { Product } = require('../models');
-const checkProductID = require('../../../middleware/check-parentID')('machine', Product);
+// const checkProductID = require('../../../middleware/check-parentID')('machine', Product);
 const checkCustomer = require('../../../middleware/check-customer');
 // const verifyDelete = require('../../../middleware/verifyDelete');
 
@@ -15,18 +15,15 @@ const router = express.Router();
 
 const baseRouteForObject = `/machines/:machineId/integration`;
 
-const baseRouteForApi = `/machines/syncMachineConnection`; 
+const baseRouteForMachineApi = `/machines`; 
+
+router.post(`${baseRouteForMachineApi}/syncMachineConnection`, controller.syncMachineConnection);
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}`, checkProductID, controller.getIntegrationRecord);
+router.post(`${baseRouteForObject}/portalkey`, controller.postIntegrationPortalKey);
 
-router.post(`${baseRouteForObject}`, checkProductID, controller.postIntegrationRecord);
+router.post(`${baseRouteForObject}/details`, controller.postIntegrationDetails);
 
-// router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.patchProductNote);
-
-// router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductNote);
-
-// router.get('/notes/search', controller.searchProductNotes);
 
 module.exports = router;
