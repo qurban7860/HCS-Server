@@ -11,8 +11,8 @@ const securityDBService = require('../service/securityDBService');
 const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
 let rtnMsg = require('../../config/static/static')
-this.clientURL = process.env.CLIENT_APP_URL;
-
+const portalUrl = process.env.PORTAL_APP_URL;
+const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
 
 class UserEmailService {
   constructor() {
@@ -65,7 +65,7 @@ class UserEmailService {
       if(isNaN(inviteCodeExpireHours))
         inviteCodeExpireHours = 48;
       let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
-      const link = `${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
+      const link = `${ user?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
       user.invitationStatus = true;
       user.save();
       userInvite.senderInvitationUser = req.body.loginUser.userId;
@@ -107,7 +107,7 @@ class UserEmailService {
       const token = await generateRandomString();
       let updatedToken = await updateUserToken(token);
       await this.dbservice.patchObject(SecurityUser, toUser._id, updatedToken );
-      const link = `${process.env.CLIENT_APP_URL}auth/new-password/${token}/${toUser._id}`;
+      const link = `${ user?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }auth/new-password/${token}/${toUser._id}`;
 
           const emailSubject = "Reset Password";
           const username = toUser?.name;
