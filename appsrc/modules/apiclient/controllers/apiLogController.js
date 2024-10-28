@@ -51,12 +51,26 @@ exports.getApiLog = async (req, res, next) => {
 
 exports.getApiLogs = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
+    this.query = req.query != "undefined" ? req.query : {};
+
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    const response = await this.dbservice.getObjectList(req, ApiLog, this.fields, this.query, this.orderBy, this.populate);
+
+    if(this.query.fields) {
+      this.fields = this.query.fields;
+      delete this.query.fields;
+    }
+
+    if(this.query.machine) {
+      this.populate = {
+        path: 'machine',
+        select: 'name serialNo'
+      };
+    }
+
+    const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
