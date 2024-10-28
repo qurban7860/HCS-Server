@@ -4,6 +4,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 let rtnMsg = require('../modules/config/static/static')
 const { SecurityUser } = require('../modules/security/models');
 const _ = require('lodash');
+const logger = require('../modules/config/logger');
 
 module.exports = (req, res, next) => {
   try {    
@@ -31,12 +32,10 @@ module.exports = (req, res, next) => {
         }
       });
     }else{
-      next();
-      
-      // return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User not found!', true));      
+      next();     
     }
   } catch (err) {
-    console.log(err);
+    logger.error(new Error(err));
     const error = new HttpError('Verify Delete middleware failed!', 403);
     return next(error);
   }

@@ -11,6 +11,8 @@ const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
+const emailService = require('../service/userEmailService');
+const userEmailService = this.userEmailService = new emailService();
 
 const { SecurityUser, SecurityRole, SecuritySignInLog, SecuritySession } = require('../models');
 const { Customer } = require('../../crm/models');
@@ -178,49 +180,55 @@ exports.deleteSecurityUser = async (req, res, next) => {
   }
 };
 
-exports.postSecurityUser = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } 
-  else {
+exports.postSecurityUser = async ( req, res ) => {
+  try{
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      if (res) {
+        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      } 
+      throw new Error(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } 
 
     if(!req.body.email) req.body.email = req.body.login;
     if(!req.body.login) req.body.login = req.body.email;
     if(req.body.isInvite) req.body.isActive = false;
     
-    var _this = this;
     let queryString = { 
       isArchived: false, 
       $or: [
-        { email: req.body.email.toLowerCase().trim() },
-        { login: req.body.login.toLowerCase().trim() }
+        { email: req.body.email?.toLowerCase()?.trim() },
+        { login: req.body.login?.toLowerCase()?.trim() }
       ]
     };
-    this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
-    async function getObjectCallback(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-        if(_.isEmpty(response)){
-          const doc = await getDocumentFromReq(req, 'new');
-          _this.dbservice.postObject(doc, callbackFunc);
-          function callbackFunc(error, response) {
-            if (error) {
-              logger.error(new Error(error));
-              res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-            } else {
-              res.status(StatusCodes.CREATED).json({ user: response });
-            }
-          }  
-        }else if(response.invitationStatus){
-          res.status(StatusCodes.CREATED).json({ user: response });
-        } else {
-          return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
-        }
+    const user = await this.dbservice.getObject(SecurityUser, queryString, this.populate );
+
+    if(_.isEmpty(user)){
+      const doc = await getDocumentFromReq( req, "new"  );
+      const newUser = await this.dbservice.postObject( doc );
+      if( req?.body?.isInvite ){
+        req.params.id = newUser?._id;
+        await this.userEmailService.sendUserInviteEmail( req, res );
+      } 
+      if(res){
+        return res.status(StatusCodes.CREATED).json({ user: newUser }); 
       }
+    }else if( user.invitationStatus ){
+      if (res) {
+        res.status(StatusCodes.CREATED).json({ user: user });
+      }
+    } else {
+      if (res) {
+        return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
+      }
+      throw new Error("Email/Login already exists!");
     }
+  } catch(error){
+    logger.error(new Error(error));
+    if (res) {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
+    }
+    throw error;
   }
 };
 
@@ -235,7 +243,7 @@ exports.patchSecurityUser = async (req, res, next) => {
       // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
       let hasSuperAdminRole = false;
       if(req.body.loginUser?.roleTypes?.includes("SuperAdmin") || 
-         req.body.loginUser?.roleTypes?.includes("Developer")) {
+          req.body.loginUser?.roleTypes?.includes("Developer")) {
           hasSuperAdminRole = true;
       }
 
@@ -284,6 +292,12 @@ exports.patchSecurityUser = async (req, res, next) => {
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
             } 
             else {
+              if( user?.isArchived && !req.body?.isArchived ){
+                const userAvailability = await SecurityUser.findOne({ login: user.login, isArchived: false }).lean();
+                if( userAvailability ){
+                  return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
+                }
+              }
             const doc = await getDocumentFromReq(req);
             _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
               function callbackFunc(error, result) {
@@ -297,7 +311,7 @@ exports.patchSecurityUser = async (req, res, next) => {
             }
 
           } else {
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            return res.status(StatusCodes.BAD_REQUEST).send("User not found!");
           }
 
         } else {
@@ -308,10 +322,10 @@ exports.patchSecurityUser = async (req, res, next) => {
               isArchived: false,
               _id: { $ne: req.params.id },
               $or: [
-                { email: { $regex: req.body.email.toLowerCase().trim(), $options: 'i' } },
-                { email: { $regex: req.body.login.toLowerCase().trim(), $options: 'i' } },
-                { login: { $regex: req.body.email.toLowerCase().trim(), $options: 'i' } },
-                { login: { $regex: req.body.login.toLowerCase().trim(), $options: 'i' } }
+                { email: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } },
+                { email: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } },
+                { login: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } },
+                { login: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } }
               ]
             };
 
@@ -479,11 +493,11 @@ async function getDocumentFromReq(req, reqType){
   }
 
   if ("login" in req.body){
-    doc.login = login.toLowerCase().trim();
+    doc.login = login?.toLowerCase()?.trim();
   }
 
   if ("email" in req.body){
-    doc.email = email.toLowerCase().trim();
+    doc.email = email?.toLowerCase()?.trim();
   }
 
   if ("currentEmployee" in req.body){
@@ -493,9 +507,6 @@ async function getDocumentFromReq(req, reqType){
   if ("invitationStatus" in req.body){
     doc.invitationStatus = invitationStatus;
   }
-
-  
-
 
   if ("expireAt" in req.body){
     doc.expireAt = expireAt;

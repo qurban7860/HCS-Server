@@ -1,6 +1,7 @@
 const { SecurityUser } = require('../modules/security/models');
 const { Customer } = require('../modules/crm/models');
 const { Product } = require('../modules/products/models');
+const logger = require('../modules/config/logger');
 
 module.exports = async (req, res, next) => {
   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines dataAccessibilityLevel contact').lean();
@@ -26,8 +27,7 @@ module.exports = async (req, res, next) => {
     )
   ) {
     try {
-      console.log("is not superadmin and global manager");
-      
+      logger.error(new Error("is not super admin and global manager"));
       const query___ = {
         $or: [
           { accountManager: req?.body?.userInfo?.contact },
@@ -45,14 +45,14 @@ module.exports = async (req, res, next) => {
         && (assignedCustomers === undefined || assignedCustomers === null)
         && (assignedMachines === undefined || assignedMachines === null)
         ) {
-        console.log("*** The user must be assigned to specific regions, customers, or machines");
+        logger.error(new Error("*** The user must be assigned to specific regions, customers, or machines"));
         return res.status(400).send("The user must be assigned to specific regions, customers, or machines");
       } else {
+        logger.error(new Error("is not super admin and global manager and assignment find."));
         next();
-        console.log("is not superadmin and global manager and assignment find.");
       }
     } catch (error) {
-      console.error(error);
+      logger.error(new Error(error));
       return res.status(500).send("Internal Server Error");
     }
   } else {

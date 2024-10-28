@@ -1,4 +1,5 @@
 const HttpError = require('../modules/config/models/http-error');
+const logger = require('../modules/config/logger');
 
 module.exports = (req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*');

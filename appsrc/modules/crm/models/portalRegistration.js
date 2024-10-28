@@ -17,6 +17,8 @@ const docSchema = new Schema({
         
         email: { type: String, required: true  },
         
+        country: { type: String },
+        
         address: { type: String },
         
         phoneNumber: { type: String  },
