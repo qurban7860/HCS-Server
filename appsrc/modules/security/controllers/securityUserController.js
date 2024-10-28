@@ -208,7 +208,7 @@ exports.postSecurityUser = async ( req, res ) => {
       const newUser = await this.dbservice.postObject( doc );
       if( req?.body?.isInvite ){
         req.params.id = newUser?._id;
-        return await this.userEmailService.sendUserInviteEmail( req, res );
+        await this.userEmailService.sendUserInviteEmail( req, res );
       } 
       if(res){
         return res.status(StatusCodes.CREATED).json({ user: newUser }); 
