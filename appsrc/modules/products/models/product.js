@@ -155,8 +155,11 @@ const docSchema = new Schema({
 
     IPC_SerialNo: { type: String, default: null },
 
-    machineIntegrationSyncStatus: { type: Boolean, default: false },
-
+    machineIntegrationSyncStatus: {
+        syncStatus: { type: Boolean, default: false },
+        syncDate: { type: Date, default: null },
+        syncIP: { type: String, default: null }
+    },
 },
 {
     collection: 'Machines'
