@@ -210,7 +210,6 @@ exports.login = async (req, res, next) => {
 };
 
 async function validateAndLoginUser(req, res, existingUser) {
-  var _this = this;
   const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
@@ -253,7 +252,7 @@ async function validateAndLoginUser(req, res, existingUser) {
           });
 
           if ( existingUser.multiFactorAuthentication ) { 
-            return await _this.userEmailService.sendMfaEmail( req, res, existingUser );
+            return await userEmailService.sendMfaEmail( req, res, existingUser );
           } else{
             return res.json({
               accessToken,
