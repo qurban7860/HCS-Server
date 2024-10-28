@@ -43,7 +43,7 @@ class UserEmailService {
       userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
       await this.dbservice.patchObject(SecurityUser, user._id, userMFAData);
       await this.email.sendEmail( req );
-      return res.status(StatusCodes.ACCEPTED).send('Authentication Code has been sent on your email!');
+      return res.status(StatusCodes.ACCEPTED).send({message:'Authentication Code has been sent on your email!', multiFactorAuthentication:true, userId:existingUser._id});
     }catch(error){
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('MFA Code Sending Fails!');
