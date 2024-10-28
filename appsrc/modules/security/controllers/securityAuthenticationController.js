@@ -212,9 +212,8 @@ exports.login = async (req, res, next) => {
 async function validateAndLoginUser(req, res, existingUser) {
   const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
   if (accessToken) {
-    let updatedToken = updateUserToken(accessToken);
-    
-    dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
+    let updatedToken = await updateUserToken(accessToken);
+    await dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
     async function callbackPatchFunc(error, response) {
       if (error) {
         logger.error(new Error(error));
