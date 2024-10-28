@@ -40,13 +40,15 @@ const createPortalReqSchema = (reqType, req ) => {
         phoneNumber: Yup.string().label('Phone Number').matches(/^[+0-9 ]+$/, 'Phone number must be digits only!').max(20).notRequired(),
         country: Yup.string().label('Country').max(255).nullable().notRequired(),
         address: Yup.string().label('Address').max(255).nullable().notRequired(),
-        machineSerialNos: Yup.array().typeError("Invalid Machine Serial Nos!").label('Machine Serial Nos')
-            .of( Yup.string().matches(/^\d{6}$/, 'Each serial number must be exactly 6 digits') )
-            .when([], {
-                is: () => isNewRequest,
-                then: (schema) => schema.min(1, 'Machine Serial Numbers must have at least one value').required(),
-                otherwise: (schema) => schema.notRequired(),
-            }),
+        machineSerialNos: Yup.array().typeError("Invalid Machine Serial Nos!")
+        .test( 'all-valid-serial-numbers','Each serial number must be exactly 6 digits',
+        (value) => value?.every(serialNo => /^\d{6}$/.test(serialNo)))
+        .label('Machine Serial Nos')
+        .when([], {
+            is: () => isNewRequest,
+            then: (schema) => schema.min(1, 'Machine Serial Numbers must have at least one value').required(),
+            otherwise: (schema) => schema.notRequired(),
+        }),
         status: Yup.string().label('Status').oneOf([ "NEW", "APPROVED", "REJECTED", "PENDING" ], 'Invalid status value').notRequired(),
         customer: Yup.string().label('Customer ID').max(50).nullable().notRequired(),
         contact: Yup.string().label('Contact ID').max(50).nullable().notRequired(),
