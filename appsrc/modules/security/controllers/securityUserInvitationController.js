@@ -144,7 +144,7 @@ this.populate = [
             loginUser.password = await bcrypt.hash(req.body.password, 12);
             loginUser.name = req.body.fullName?req.body.fullName:'';
             loginUser.phone = req.body.phone?req.body.phone:'';
-            
+            loginUser.isActive = true;
             loginUser.invitationStatus = false;            
 
             if(!loginUser.contact) {
