@@ -210,8 +210,8 @@ exports.login = async (req, res, next) => {
 };
 
 async function validateAndLoginUser(req, res, existingUser) {
+  var _this = this;
   const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-
   if (accessToken) {
     let updatedToken = updateUserToken(accessToken);
     
@@ -237,7 +237,7 @@ async function validateAndLoginUser(req, res, existingUser) {
       const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
       const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
 
-      dbService.postObject(loginLogResponse, callbackFunc);
+      await dbService.postObject(loginLogResponse, callbackFunc);
       async function callbackFunc(error, response) {
         let session = await removeAndCreateNewSession(req, existingUser.id?.toString());
         if (error || !session || !session.session || !session.session.sessionId) {
@@ -253,7 +253,7 @@ async function validateAndLoginUser(req, res, existingUser) {
           });
 
           if ( existingUser.multiFactorAuthentication ) { 
-            return await this.userEmailService.sendMfaEmail( req, res, existingUser );
+            return await _this.userEmailService.sendMfaEmail( req, res, existingUser );
           } else{
             return res.json({
               accessToken,
