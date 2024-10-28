@@ -230,7 +230,7 @@ async function validateAndLoginUser(req, res, existingUser) {
 
       await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
         if (err) {
-          console.error(err);
+          logger.error(new Error(err));
         } 
       });
 
@@ -245,7 +245,6 @@ async function validateAndLoginUser(req, res, existingUser) {
           if(!error)
             error = 'Unable to Start session.'
           
-          console.log(error, session);
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
         } else {
           const wss = getAllWebSockets();
@@ -306,12 +305,11 @@ async function removeAndCreateNewSession(req, userId) {
       return user;
     }
     else {
-      console.log("session not found",new Date().getTime());
       return false;
     }
 
   } catch (err) {
-    console.error('Error saving to session storage: ', err);
+    logger.error(new Error(err));
     return next(new Error('Error creating user session'));
   }
 }
@@ -514,9 +512,9 @@ exports.verifyForgottenPassword = async (req, res, next) => {
     const existingUser = await SecurityUser.findById(req.body.userId)
         .populate([{ path: 'customer', select: 'name type isActive isArchived' },
                   { path: 'contact', select: 'name isActive isArchived' }]);
-    if (existingUser) {
-      if (existingUser.token && existingUser.token.accessToken == req.body.token) {        
-        const tokenExpired = isTokenExpired(existingUser.token.tokenExpiry);
+    if (existingUser) {    
+      if (existingUser.token && existingUser.token.accessToken == req.body.token) {    
+        const tokenExpired = await isTokenExpired(existingUser.token.tokenExpiry);
         if (!tokenExpired) {
           const hashedPassword = await bcrypt.hash(req.body.password, 12);
           this.dbservice.patchObject(SecurityUser, existingUser._id, { password: hashedPassword, token: {} }, callbackPatchFunc);
@@ -525,15 +523,15 @@ exports.verifyForgottenPassword = async (req, res, next) => {
               logger.error(new Error(error));
               return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
             } else {
-              await this.userEmailService.passwordUpdatedEmail(req, res, existingUser)
+              await _this.userEmailService.passwordUpdatedEmail(req, res, existingUser)
             }
           }
         } else {
-          res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Token Expired!', true));
+          res.status(StatusCodes.BAD_REQUEST).send('Token Expired!');
         }
       }
       else {
-        res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Token Invalid!', true));
+        res.status(StatusCodes.BAD_REQUEST).send('Token Invalid!');
       }
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found!', true));

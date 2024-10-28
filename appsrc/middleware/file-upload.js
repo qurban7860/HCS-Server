@@ -6,6 +6,7 @@ let rtnMsg = require('../modules/config/static/static')
 const path = require('path');
 const Config = require('../modules/config/models/config');
 const awsService = require('../base/aws'); // Assuming you have an awsService module
+const logger = require('../modules/config/logger');
 
 const validExtensions = [
   'png',
@@ -119,10 +120,10 @@ const fileUpload = multer({
 const uploadHandler = (req, res, next) => {
   fileUpload.fields([{ name: 'images' }])(req, res, (err) => {
     if (err instanceof multer.MulterError) {
-      console.error(err);
+      logger.error(new Error(err));
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
     } else if (err) {
-      console.error(err);
+      logger.error(new Error(err));
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     }
     next();
@@ -141,7 +142,7 @@ const checkMaxCount = async (req, res, next) => {
     req.maxCount = maxCount; 
     next();
   } catch (err) {
-    console.error(err);
+    logger.error(new Error(err));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
@@ -161,8 +162,8 @@ const imageOptimization = async (req, res, next) => {
       }));
     }
     next();
-  } catch (err) {
-    console.error(err);
+  } catch (err) {;
+    logger.error(new Error(err));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };

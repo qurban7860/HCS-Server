@@ -41,7 +41,7 @@ class UserEmailService {
       userMFAData.multiFactorAuthenticationCode = code;
       const currentDate = new Date();
       userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
-      await this.dbservice.patchObject(SecurityUser, existingUser._id, userMFAData);
+      await this.dbservice.patchObject(SecurityUser, user._id, userMFAData);
       await this.email.sendEmail( req );
       return res.status(StatusCodes.ACCEPTED).send('Authentication Code has been sent on your email!');
     }catch(error){
@@ -61,10 +61,10 @@ class UserEmailService {
       }
       let userInvite = new SecurityUserInvite({});
       userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
       let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
       if(isNaN(inviteCodeExpireHours))
         inviteCodeExpireHours = 48;
+      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
       const link = `${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
       user.invitationStatus = true;
       user.save();

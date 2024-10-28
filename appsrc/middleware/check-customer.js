@@ -4,6 +4,8 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 let rtnMsg = require('../modules/config/static/static')
 const { SecurityUser } = require('../modules/security/models');
 const _ = require('lodash');
+const logger = require('../modules/config/logger');
+
 
 module.exports = (req, res, next) => {
   if (req.method === 'OPTIONS' || 
@@ -39,8 +41,7 @@ module.exports = (req, res, next) => {
       });
     }    
   } catch (err) {
-    console.log(err);
-    console.log('middleware 21---------------------------');
+    logger.error(new Error(err));
     const error = new HttpError('Authentication failed!', 403);
     return next(error);
   }

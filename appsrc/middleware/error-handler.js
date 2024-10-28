@@ -1,9 +1,10 @@
 const HttpError = require('../modules/config/models/http-error');
+const logger = require('../modules/config/logger');
 
 module.exports = (error, req, res, next) => {
     if (req.file) {
       fs.unlink(req.file.path, err => {
-        console.log(err);
+        logger.error(new Error(err));
       });
     }
     if (res.headerSent) {
