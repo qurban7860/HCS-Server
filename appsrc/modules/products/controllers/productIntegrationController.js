@@ -143,7 +143,7 @@ exports.syncMachineConnection = async (req, res, next) => {
       isArchived: false,
     }).populate("status");
 
-    if (!machine || machine.status.name === "Transferred" || machine.status.name === "Decommissioned") {
+    if (!machine || machine?.status?.name === "Transferred" || machine?.status?.name === "Decommissioned") {
       await logApiCall({
         req,
         startTime,
