@@ -41,9 +41,9 @@ const createPortalReqSchema = (reqType, req ) => {
         country: Yup.string().label('Country').max(255).nullable().notRequired(),
         address: Yup.string().label('Address').max(255).nullable().notRequired(),
         machineSerialNos: Yup.array().typeError("Invalid Machine Serial Nos!")
-        .test( 'all-valid-serial-numbers','Each serial number must be exactly 6 digits',
-        (value) => value?.every(serialNo => /^\d{6}$/.test(serialNo)))
         .label('Machine Serial Nos')
+        .test( 'all-valid-serial-numbers','Each serial number must be exactly 6 digits',
+        (value) => !value || value?.every(serialNo => /^\d{6}$/.test(serialNo)))
         .when([], {
             is: () => isNewRequest,
             then: (schema) => schema.min(1, 'Machine Serial Numbers must have at least one value').required(),
