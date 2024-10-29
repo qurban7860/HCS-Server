@@ -61,7 +61,7 @@ class UserEmailService {
         { path: "contact", select: "firstName lastName email formerEmployee isActive" },
       ];
       let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
-      console.log("user : ",user);
+
       if(!user?._id){
         if (res) {
           return res.status(StatusCodes.BAD_REQUEST).send('User not found!');
