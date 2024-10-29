@@ -24,16 +24,17 @@ this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'countries', select: '' }
+  { path: 'countries', select: '' },
+  { path: 'machine', select: 'name serialNo' }
 ];
 
 
 
 exports.getApiLog = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(ApiLog, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(apilog, this.fields, req.params.id, this.populate);
     let updatedResponse = response;
-    if (response.countries.length > 0) {
+    if (response?.countries?.length > 0) {
       const updatedCountries = response.countries.map((country) => ({
         ...country.toObject(),
         name: country.country_name, 
@@ -63,13 +64,6 @@ exports.getApiLogs = async (req, res, next) => {
       delete this.query.fields;
     }
 
-    if(this.query.machine) {
-      this.populate = {
-        path: 'machine',
-        select: 'name serialNo'
-      };
-    }
-
     const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
@@ -81,7 +75,7 @@ exports.getApiLogs = async (req, res, next) => {
 
 exports.deleteApiLog = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(ApiLog, req.params.id);
+    const result = await this.dbservice.deleteObject(apilog, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));

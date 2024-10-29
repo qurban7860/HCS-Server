@@ -17,6 +17,30 @@ const APILog = require("../../apiclient/models/apilog");
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
+exports.getIntegrationDetails = async (req, res, next) => {
+  try {
+    const { machineId } = req.params;
+
+    const machine = await Product.findById(machineId).select('portalKey computerGUID IPC_SerialNo machineIntegrationSyncStatus');
+    
+    if (!machine) {
+      return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
+    }
+
+    res.status(StatusCodes.OK).json({
+      portalKey: machine.portalKey,
+      computerGUID: machine.computerGUID,
+      IPC_SerialNo: machine.IPC_SerialNo,
+      machineIntegrationSyncStatus: machine.machineIntegrationSyncStatus
+    });
+
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+  }
+};
+
+
 exports.postIntegrationPortalKey = async (req, res, next) => {
   const startTime = Date.now();
   try {
@@ -166,12 +190,12 @@ exports.syncMachineConnection = async (req, res, next) => {
         responseData: {
           statusCode: StatusCodes.OK,
           body: getReasonPhrase(StatusCodes.OK),
-          context: "Machine Sync - Machine connection synced successfully",
+          context: "Machine Sync - Machine connection synced successfully and machine details saved",
         },
         machine,
         createdIP: clientIP,
       });
-      return res.status(StatusCodes.OK).json({ message: "Machine connection synced successfully" });
+      return res.status(StatusCodes.OK).json({ message: "Machine connection synced successfully and machine details saved" });
     }
 
     if (machine.computerGUID === Computer_GUID && machine.IPC_SerialNo === IPC_Serial_No) {
