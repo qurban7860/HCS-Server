@@ -13,7 +13,7 @@ const { Config } = require('../../config/models');
 let rtnMsg = require('../../config/static/static')
 const portalUrl = process.env.PORTAL_APP_URL;
 const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
-this.populate = [,
+this.populate = [
   { path: "customer", select: "name type isActive" },
   { path: "contact", select: "firstName lastName email formerEmployee isActive" },
 ];
@@ -56,7 +56,12 @@ class UserEmailService {
 
   sendUserInviteEmail = async (req, res ) => {
     try{
+      this.populate = [
+        { path: "customer", select: "name type isActive" },
+        { path: "contact", select: "firstName lastName email formerEmployee isActive" },
+      ];
       let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
+      console.log("user : ",user);
       if(!user?._id){
         if (res) {
           return res.status(StatusCodes.BAD_REQUEST).send('User not found!');
