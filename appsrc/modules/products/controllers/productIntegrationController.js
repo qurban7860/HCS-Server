@@ -128,7 +128,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         responseData: {
           statusCode: StatusCodes.BAD_REQUEST,
           body: getReasonPhrase(StatusCodes.BAD_REQUEST),
-          context: "Machine Sync - Validation Failed",
+          context: "Validation Failed",
         },
         createdIP: clientIP,
       });
@@ -148,14 +148,14 @@ exports.syncMachineConnection = async (req, res, next) => {
         req,
         startTime,
         responseData: {
-          statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-          body: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
-          context: "Machine Sync - Machine not found",
+          statusCode: StatusCodes.NOT_FOUND,
+          body: getReasonPhrase(StatusCodes.NOT_FOUND),
+          context: "Machine not found or has been transferred or decommissioned",
         },
         machine,
         createdIP: clientIP,
       });
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "Machine not found" });
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "Machine not found or has been transferred or decommissioned" });
     }
 
     const latestPortalKey = machine.portalKey[0]?.key;
@@ -165,9 +165,9 @@ exports.syncMachineConnection = async (req, res, next) => {
         req,
         startTime,
         responseData: {
-          statusCode: StatusCodes.BAD_REQUEST,
-          body: getReasonPhrase(StatusCodes.BAD_REQUEST),
-          context: "Machine Sync - Invalid portal key",
+          statusCode: StatusCodes.UNAUTHORIZED,
+          body: getReasonPhrase(StatusCodes.UNAUTHORIZED),
+          context: "Invalid portal key",
         },
         machine,
         createdIP: clientIP,
@@ -190,7 +190,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         responseData: {
           statusCode: StatusCodes.OK,
           body: getReasonPhrase(StatusCodes.OK),
-          context: "Machine Sync - Machine connection synced successfully and machine details saved",
+          context: "Machine connection synced successfully and machine details saved",
         },
         machine,
         createdIP: clientIP,
@@ -213,7 +213,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         responseData: {
           statusCode: StatusCodes.OK,
           body: getReasonPhrase(StatusCodes.OK),
-          context: "Machine Sync - Machine connection verified successfully",
+          context: "Machine connection verified successfully",
         },
         machine,
         createdIP: clientIP,
@@ -225,9 +225,9 @@ exports.syncMachineConnection = async (req, res, next) => {
       req,
       startTime,
       responseData: {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        body: getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR),
-        context: "Machine Sync - Machine connection details mismatch",
+        statusCode: StatusCodes.CONFLICT,
+        body: getReasonPhrase(StatusCodes.CONFLICT),
+        context: "Machine connection details mismatch",
       },
       machine,
       createdIP: clientIP,
