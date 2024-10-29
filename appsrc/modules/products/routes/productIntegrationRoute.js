@@ -15,11 +15,9 @@ const router = express.Router();
 
 const baseRouteForObject = `/machines/:machineId/integration`;
 
-const baseRouteForMachineApi = `/machines`; 
-
-router.post(`${baseRouteForMachineApi}/syncMachineConnection`, controller.syncMachineConnection);
-
 router.use(checkAuth, checkCustomer);
+
+router.get(`${baseRouteForObject}`, controller.getIntegrationDetails);
 
 router.post(`${baseRouteForObject}/portalkey`, controller.postIntegrationPortalKey);
 
