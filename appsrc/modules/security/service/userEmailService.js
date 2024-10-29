@@ -13,6 +13,10 @@ const { Config } = require('../../config/models');
 let rtnMsg = require('../../config/static/static')
 const portalUrl = process.env.PORTAL_APP_URL;
 const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
+this.populate = [,
+  { path: "customer", select: "name type isActive" },
+  { path: "contact", select: "firstName lastName email formerEmployee isActive" },
+];
 
 class UserEmailService {
   constructor() {
