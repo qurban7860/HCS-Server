@@ -14,16 +14,6 @@ const router = express.Router();
 const baseRouteForObject = "/customers/register"; 
 
 // - /api/1.0.0/crm/customers/register/
-router.get(`${baseRouteForObject}`, checkAuth, controller.getRegisteredRequests);
-
-// - /api/1.0.0/crm/customers/register/:id
-router.get(`${baseRouteForObject}/:id`, checkAuth, controller.getRegisteredRequest);
-
-// - /api/1.0.0/crm/customers/register/:id
-router.patch(`${baseRouteForObject}/:id`, checkAuth, validatePortalReq('update'), verifyDelete, roleCheck, controller.patchRegisteredRequest);
-
-// - /api/1.0.0/crm/customers/register/:id
-router.delete(`${baseRouteForObject}/:id`, checkAuth, controller.deleteRegisteredRequest);
-
+router.post(`${baseRouteForObject}/`, validatePortalReq('new'), controller.postRegisterRequest);
 
 module.exports = router;
