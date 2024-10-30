@@ -4,15 +4,15 @@ const controllers = require('../controllers');
 const controller = controllers.portalRegistration;
 const router = express.Router();
 
-// - /api/1.0.0/crm/
-const baseRouteForObject = "/customers/register"; 
+// - /api/1.0.0/
+const baseRouteForObject = "/customer/register"; 
 
-// - /api/1.0.0/crm/customers/register/
+// - /api/1.0.0/customer/register/
 router.post(`${baseRouteForObject}/`, validatePortalReq('new'), controller.postRegisterRequest);
 
 // Exported function to register customer routes
 const registerCustomerRequestRoute = (app, apiPath) => {
-    const rootPathForModule = `${apiPath}/crm`;
+    const rootPathForModule = `${apiPath}`;
 
     // Use the router with the defined root path
     app.use(rootPathForModule, router);
