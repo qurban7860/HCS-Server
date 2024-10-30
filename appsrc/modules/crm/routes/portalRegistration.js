@@ -20,7 +20,7 @@ router.get(`${baseRouteForObject}`, checkAuth, controller.getRegisteredRequests)
 router.get(`${baseRouteForObject}/:id`, checkAuth, controller.getRegisteredRequest);
 
 // - /api/1.0.0/crm/customers/register/
-router.post(`${baseRouteForObject}/`, checkAuth, validatePortalReq('new'), controller.postRegisterRequest);
+router.post(`${baseRouteForObject}/`, validatePortalReq('new'), controller.postRegisterRequest);
 
 // - /api/1.0.0/crm/customers/register/:id
 router.patch(`${baseRouteForObject}/:id`, checkAuth, validatePortalReq('update'), verifyDelete, roleCheck, controller.patchRegisteredRequest);
