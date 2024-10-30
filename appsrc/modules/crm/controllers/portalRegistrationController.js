@@ -25,8 +25,6 @@ const getPortalRequest = async( req, res ) => {
     this.query = req.query != "undefined" ? req.query : {};
     if (!ObjectId.isValid(req.params.id))
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Request ID!");
-    if (!req.body.loginUser)
-        req.body.loginUser = await getToken(req);
     await this.dbservice.getObjectById( PortalRegistration, this.fields, req.params.id, this.populate, callbackFunc);
     async function callbackFunc(error, response) {
         if (error) {
