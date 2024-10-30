@@ -1,8 +1,4 @@
 const express = require('express');
-
-const checkAuth = require('../../../middleware/check-auth');
-const roleCheck = require('../../../middleware/role-check');
-const verifyDelete = require('../../../middleware/verifyDelete');
 const { validatePortalReq } = require('../bodyValidation/portalRegistration');
 
 const controllers = require('../controllers');

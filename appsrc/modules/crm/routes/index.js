@@ -16,6 +16,7 @@ exports.registerCustomerRoutes = (app, apiPath) => {
     // localhost://api/1.0.0/crm
     app.use(`${rootPathForModule}`, portalRegistrationRequest);
 
+    
     app.use(`${rootPathForModule}`, portalRegistration);
 
     // localhost://api/1.0.0/crm/
