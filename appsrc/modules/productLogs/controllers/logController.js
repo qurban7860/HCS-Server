@@ -122,7 +122,7 @@ exports.getLogsGraph = async (req, res, next) => {
     let groupBy, dateRange, limit;
     const currentDate = new Date();
 
-    switch (periodType.toLowerCase()) {
+    switch ( periodType && periodType?.toLowerCase()) {
       case 'daily':
         groupBy = { $dateToString: { format: "%m/%d", date: "$date" } };
         dateRange = new Date(currentDate.setDate(currentDate.getDate() - 7));
