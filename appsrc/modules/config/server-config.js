@@ -30,6 +30,7 @@ const errorHandler = require('../../middleware/error-handler');
 const productRoutes  = require ('../products/routes');
 const securityRoutes  = require ('../security/routes');
 const customerRoutes  = require ('../crm/routes');
+const portalRegistrationRequestRoute  = require ('../crm/routes/portalRegistrationRequest');
 const dashboardRoute  = require ('../dashboard/routes');
 const documentRoute  = require ('../documents/routes');
 const emailRoute  = require ('../email/routes');
@@ -131,6 +132,7 @@ class App {
   }
 
   registerRoutes(){    
+    portalRegistrationRequestRoute.registerCustomerRequestRoute(this.app, apiPath);
     productRoutes.registerProductRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
