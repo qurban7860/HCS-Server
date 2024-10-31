@@ -24,11 +24,12 @@ this.populate = [
 
 
 this.populateList = [
-  {path: 'user', select: 'name email login roles', 
-    populate: {
-      path: 'roles',
-      select: '_id name'
-    }
+  {path: 'user', select: 'name email login customer contact roles', 
+    populate: [
+      { path: "customer", select: "name type " },
+      { path: "contact", select: "firstName lastName" },
+      { path: 'roles', contact: '_id name' }
+    ] 
   }
 ];
 
