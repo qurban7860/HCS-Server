@@ -10,16 +10,16 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
         // machine information.
 
-        serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true},
-        // service record id.
+        serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true},
+        // service Report id.
         
-        serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true },
-        // purpose is to maintain parent service record config uuid
+        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true },
+        // purpose is to maintain parent service Report uuid
         
         machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},
         //checkitem reference id
         
-        checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig.checkItemLists', required: true}, 
+        checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates.checkItemLists', required: true }, 
         //this will refer to the list to which checkitem is belong to,
 
         name: { type: String },
@@ -45,7 +45,7 @@ const docSchema = new Schema({
 
 },
 {
-        collection: 'MachineServiceRecordValueFiles'
+        collection: 'MachineServiceReportValueFiles'
 });
 
 docSchema.set('timestamps', true);
@@ -53,11 +53,11 @@ docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.index({"name":1})
-docSchema.index({"machineServiceRecord":1})
+docSchema.index({"machineServiceReport":1})
 docSchema.index({"machine":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineServiceRecordValueFile', docSchema);
+module.exports = mongoose.model('MachineServiceReportValueFile', docSchema);

@@ -587,7 +587,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
 };
 
 
-exports.getdublicateDrawings = async (req, res, next) => {
+exports.getduplicateDrawings = async (req, res, next) => {
   try {
     const filteredFiles = await DocumentFile.aggregate([
       {

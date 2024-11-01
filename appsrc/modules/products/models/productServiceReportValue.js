@@ -10,16 +10,16 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
   
-  serviceRecord: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord', required: true},
-  // service record id.
+  serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates', required: true},
+  // service Report id.
 
-  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecord' , required: true},
-  // purpose is to maintain parent service record config uuid
+  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplatses' , required: true},
+  // purpose is to maintain parent service Report uuid
   
   machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},
   //checkitem reference id
   
-  checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig.checkItemLists', required: true}, 
+  checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates.checkItemLists', required: true}, 
   //this will refer to the list to which checkitem is belong to,
 
   checkItemValue: { type: String },
@@ -34,7 +34,7 @@ const docSchema = new Schema({
   archivedByMachine: {type: Boolean, default: false},
 },
 {
-    collection: 'MachineServiceRecordValues'
+    collection: 'MachineServiceReportValues'
 });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -47,4 +47,4 @@ docSchema.index({"isRequired":1})
 docSchema.index({"inputType":1})
 
 
-module.exports = mongoose.model('MachineServiceRecordValue', docSchema);
+module.exports = mongoose.model('MachineServiceReportValue', docSchema);
