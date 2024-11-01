@@ -24,13 +24,13 @@ exports.registerProductRoutes = (app, apiPath) => {
     app.use(`${ rootPathForModule }`, require('./productToolInstalledRoute'));
     app.use(`${ rootPathForModule }`, require('./productToolRoute'));
     app.use(`${ rootPathForModule }`, require('./productCheckItemsRoute'));
-    app.use(`${ rootPathForModule }`, require('./productServiceRecordsConfigRoute'));
-    app.use(`${ rootPathForModule }`, require('./productServiceRecordsRoute'));
-    app.use(`${ rootPathForModule }`, require('./productServiceRecordsFileRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceReportTemplateRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceReportRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceReportFileRoute'));
     app.use(`${ rootPathForModule }`, require('./productCheckItemCategoryRoute'));
     app.use(`${ rootPathForModule }`, require('./productProfileRoute'));
-    app.use(`${ rootPathForModule }`, require('./productServiceRecordValueRoute'));
-    app.use(`${ rootPathForModule }`, require('./productServiceRecordValueFileRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceReportValueRoute'));
+    app.use(`${ rootPathForModule }`, require('./productServiceReportValueFileRoute'));
     app.use(`${ rootPathForModule }`, require('./categoryGroupRoute'));
     app.use(`${ rootPathForModule }`, require('./productIntegrationRoute'));
     

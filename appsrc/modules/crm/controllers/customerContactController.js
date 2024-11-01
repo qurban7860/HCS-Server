@@ -6,7 +6,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 
 const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../models');
 const { Config } = require('../../config/models');
-const { ProductServiceRecords, Product } = require('../../products/models');
+const { ProductServiceReports, Product } = require('../../products/models');
 const { Event } = require('../../calenders/models');
 const { SecurityUser } = require('../../security/models');
 const { Document, DocumentVersion, DocumentFile } = require('../../documents/models');
@@ -49,14 +49,14 @@ exports.getCustomerContact = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      let operatorsList = await ProductServiceRecords.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceRecordConfig machine').populate({ path: "serviceRecordConfig", select: "docTitle" });
+      let operatorsList = await ProductServiceReports.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceReportTemplate machine').populate({ path: "serviceReportTemplate", select: "docTitle" });
 
       if (operatorsList && operatorsList.length > 0) {
         response = JSON.parse(JSON.stringify(response));
-        response.serviceRecords = operatorsList;
+        response.serviceReports = operatorsList;
       }
       else
-        response.serviceRecords = [];
+        response.serviceReports = [];
 
       res.json(response);
     }
@@ -98,7 +98,7 @@ exports.getCustomerContacts = async (req, res, next) => {
 
       //   for(let contact of response) {
 
-      //     let isOperator = await ProductServiceRecords.findOne( { operators : response._id } ).select('_id machine');
+      //     let isOperator = await ProductServiceReports.findOne( { operators : response._id } ).select('_id machine');
 
       //     if(isOperator) {
       //       contact.isOperator = true;
@@ -473,7 +473,7 @@ async function checkIfContactIsAttached(req, res) {
         return "Contact is attached with Machine";
       }
 
-      const productService_ = await ProductServiceRecords.findOne({ operators: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      const productService_ = await ProductServiceReports.findOne({ operators: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
       if (productService_) {
         return "Contact is attached with Product Service";
       }

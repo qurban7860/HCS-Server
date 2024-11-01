@@ -15,19 +15,19 @@ const sharp = require('sharp');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-const { ProductServiceRecordValueFile } = require('../models');
+const { ProductServiceReportValueFile } = require('../models');
 const util = require('util');
 
 
-exports.getProductServiceRecordValueFiles = async (req, res, next) => {
-  const machineServiceRecord = req?.machineServiceRecord || req.params.id;
+exports.getProductServiceReportValueFiles = async (req, res, next) => {
+  const machineServiceReport = req?.machineServiceReport || req.params.id;
 
-  this.query = req.query != "undefined" ? req.query : { machineServiceRecord: machineServiceRecord, isArchived: false, isActive: true };  
+  this.query = req.query != "undefined" ? req.query : { machineServiceReport: machineServiceReport, isArchived: false, isActive: true };  
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
   this.query.machine = req.params.machineId;
-  this.dbservice.getObjectList(req, ProductServiceRecordValueFile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductServiceReportValueFile, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       console.log("error", error);
@@ -40,7 +40,7 @@ exports.getProductServiceRecordValueFiles = async (req, res, next) => {
 };
 
 
-exports.postServiceRecordValueFiles = async (req, res, next) => {
+exports.postServiceReportValueFiles = async (req, res, next) => {
   try{
 
     const errors = validationResult(req);
@@ -48,15 +48,14 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
       console.log(errors);
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-      if (!req.body.serviceRecord) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Service Record is missing!");
+      if (!req.body.serviceReport) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Service Report is missing!");
       }
       if(!req.body.loginUser){
         req.body.loginUser = await getToken(req);
       }
 
       const machine = req.params.machineId;
-      // const machineServiceRecord = req.params.id;
 
       let files = [];
             
@@ -76,7 +75,7 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
-        // req.body.serviceRecord = machineServiceRecord;
+        // req.body.serviceReport = machineServiceReport;
         req.body.name = processedFile.name;
         
         if(processedFile.base64thumbNailData){
@@ -84,9 +83,9 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
           req.body.name = processedFile.name;
         }
 
-        const serviveRecordFileObject = await getServiceRecordValueFileFromReq(req, 'new');
+        const serviceReportFileObject = await getServiceReportValueFileFromReq(req, 'new');
         
-        await this.dbservice.postObject(serviveRecordFileObject, callbackFunc);
+        await this.dbservice.postObject(serviceReportFileObject, callbackFunc);
         function callbackFunc(error, response) {
           if (error) {
             logger.error(new Error(error));
@@ -103,14 +102,14 @@ exports.postServiceRecordValueFiles = async (req, res, next) => {
 };
 
 
-exports.downloadServiceRecordValueFile = async (req, res, next) => {
+exports.downloadServiceReportValueFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
       console.log(errors)
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
       try {
-          const file = await ProductServiceRecordValueFile.findOne({_id: req.params.id}).select('path');
+          const file = await ProductServiceReportValueFile.findOne({_id: req.params.id}).select('path');
           if (file) {
               if (file.path && file.path !== '' && file._id ) {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
@@ -149,11 +148,11 @@ exports.downloadServiceRecordValueFile = async (req, res, next) => {
 };
 
 
-exports.deleteServiceRecordValueFile = async (req, res, next) => {
+exports.deleteServiceReportValueFile = async (req, res, next) => {
   try {
     req.body.isActive = false;
     req.body.isArchived = true;
-    await this.dbservice.patchObject(ProductServiceRecordValueFile, req.params.id, getServiceRecordValueFileFromReq(req), callbackFunc);
+    await this.dbservice.patchObject(ProductServiceReportValueFile, req.params.id, getServiceReportValueFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
       if (error) {
         console.log(error);
@@ -255,22 +254,22 @@ async function getToken(req){
   }
 }
 
-function getServiceRecordValueFileFromReq(req, reqType) {
+function getServiceReportValueFileFromReq(req, reqType) {
 
-  const { serviceRecord, serviceId, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { serviceReport, primaryServiceReportId, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
   if (reqType && reqType == "new") {
-    doc = new ProductServiceRecordValueFile({});
+    doc = new ProductServiceReportValueFile({});
   }
 
-  if ("serviceRecord" in req.body) {
-    doc.serviceRecord = serviceRecord;
+  if ("serviceReport" in req.body) {
+    doc.serviceReport = serviceReport;
   }
 
-  if ("serviceId" in req.body) {
-    doc.serviceId = serviceId;
+  if ("primaryServiceReportId" in req.body) {
+    doc.primaryServiceReportId = primaryServiceReportId;
   }
 
   if ("machineCheckItem" in req.body) {

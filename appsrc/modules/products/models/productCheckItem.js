@@ -54,7 +54,7 @@ const docSchema = new Schema({
     // System user information who has created document. 
     
     createdAt: { type: Date , default: Date.now, required: true },
-    // Date/Time for record creation. 
+    // Date/Time for Report creation. 
     
     createdIP: {type: String},
     //user ip address
@@ -63,7 +63,7 @@ const docSchema = new Schema({
     // System user information who has updated document. 
     
     updatedAt: { type: Date , default: Date.now, required: true },
-    // Date/Time for record last updated. 
+    // Date/Time for Report last updated. 
     
     updatedIP: {type: String},
     //user ip address

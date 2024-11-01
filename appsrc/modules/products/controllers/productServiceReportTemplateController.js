@@ -13,7 +13,7 @@ let productDBService = require('../service/productDBService')
 const { securityNotificationController } = require('../../security/controllers')
 this.dbservice = new productDBService();
 
-const { ProductServiceRecordsConfig, ProductCheckItem, ProductModel, Product } = require('../models');
+const { ProductServiceReportTemplate, ProductCheckItem, ProductModel, Product } = require('../models');
 
 const { SecurityUser, SecurityRole } = require('../../security/models');
 
@@ -35,7 +35,7 @@ this.populate = [
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
 
-exports.getProductServiceRecordsConfig = async (req, res, next) => {
+exports.getProductServiceReportTemplate = async (req, res, next) => {
   let populateValues = [
     {path: 'machineCategory', select: 'name'},
     {path: 'machineModel', select: 'name category'},
@@ -45,7 +45,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
     {path: 'updatedBy', select: 'name'},
     {path: 'submittedInfo.submittedBy', select: 'name'}
   ];
-  this.dbservice.getObjectById(ProductServiceRecordsConfig, this.fields, req.params.id, populateValues, callbackFunc);
+  this.dbservice.getObjectById(ProductServiceReportTemplate, this.fields, req.params.id, populateValues, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -54,7 +54,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
       try{
         response = JSON.parse(JSON.stringify(response));
         if(response) {
-          const serviceRecordsConfig = JSON.parse(JSON.stringify(response));
+          const serviceReportTemplate = JSON.parse(JSON.stringify(response));
           let index = 0;
           for(let checkParam of response.checkItemLists) {
             if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
@@ -78,20 +78,19 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
 
           
           if(Array.isArray(response.approvals) && response.approvals.length>0 ) {
-            let serviceRecordsConfigVerifications = [];
+            let serviceReportTemplateVerifications = [];
     
             for(let verification of response.approvals) {
-    
-    
+
               let user = await SecurityUser.findOne({ _id: verification.approvedBy}).select('name');
     
               if(user) {
                 verification.approvedBy = user;
-                serviceRecordsConfigVerifications.push(verification);
+                serviceReportTemplateVerifications.push(verification);
               }
     
             }
-            response.approvals = serviceRecordsConfigVerifications;
+            response.approvals = serviceReportTemplateVerifications;
           }
           return res.json(response);
         } else {
@@ -106,7 +105,7 @@ exports.getProductServiceRecordsConfig = async (req, res, next) => {
 
 };
 
-exports.getProductServiceRecordsConfigs = async (req, res, next) => {
+exports.getProductServiceReportTemplates = async (req, res, next) => {
 
   this.query = req.query != "undefined" ? req.query : {};  
   this.orderBy = { docTitle: 1 };
@@ -141,11 +140,11 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
     }
   }
 
-  let serviceRecordConfigs = await this.dbservice.getObjectList(req, ProductServiceRecordsConfig, this.fields, this.query, this.orderBy, this.populate);
+  let serviceReportTemplates = await this.dbservice.getObjectList(req, ProductServiceReportTemplate, this.fields, this.query, this.orderBy, this.populate);
 
   try{
-    serviceRecordConfigs = JSON.parse(JSON.stringify(serviceRecordConfigs));
-    return res.status(StatusCodes.OK).json(serviceRecordConfigs);
+    serviceReportTemplates = JSON.parse(JSON.stringify(serviceReportTemplates));
+    return res.status(StatusCodes.OK).json(serviceReportTemplates);
 
   }catch(e) {
     console.log(e);
@@ -154,9 +153,8 @@ exports.getProductServiceRecordsConfigs = async (req, res, next) => {
   
 };
 
-exports.deleteProductServiceRecordsConfig = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductServiceRecordsConfig, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
+exports.deleteProductServiceReportTemplate = async (req, res, next) => {
+  this.dbservice.deleteObject(ProductServiceReportTemplate, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -167,7 +165,7 @@ exports.deleteProductServiceRecordsConfig = async (req, res, next) => {
   }
 };
 
-exports.postProductServiceRecordsConfig = async (req, res, next) => {
+exports.postProductServiceReportTemplate = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     logger.error(new Error(error));
@@ -177,20 +175,20 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  if(req.body.originalConfiguration) {
+  if(req.body.originalTemplate) {
     let whereClause  = {
       $or: [{
-        _id: req.body.originalConfiguration
+        _id: req.body.originalTemplate
       }, {
-        originalConfiguration: req.body.originalConfiguration
+        originalTemplate: req.body.originalTemplate
       }], status: "APPROVED" 
     };
 
-    let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1) ;
+    let proSerObj = await ProductServiceReportTemplate.findOne(whereClause).sort({_id: -1}).limit(1) ;
     if(proSerObj)
       req.body.docVersionNo = proSerObj.docVersionNo + 1;
     else 
-      delete req.body.originalConfiguration
+      delete req.body.originalTemplate
   }
 
   if(req.body.status == "SUBMITTED") {
@@ -210,7 +208,7 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
     } else {
 
       if(req.body.status == "SUBMITTED") {
-        let type_ = "SERVICE-CONFIG";
+        let type_ = "SERVICE-TEMPLATE";
         const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
@@ -218,18 +216,18 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
             await securityNotificationController.createNotification(
-              `Service Record Config with title ${req.body.docTitle} has been submitted. Please Review.`,
+              `Service Report Template with title ${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
               type_,
               {
-                _id:response._id, 
-                docTitle:response.docTitle,
-                recordType:response.recordType,
-                status:response.status,
-                docVersionNo:response.docVersionNo
+                _id: response._id, 
+                docTitle: response.docTitle,
+                reportType: response.reportType,
+                status: response.status,
+                docVersionNo: response.docVersionNo
               },
-              "Service Config Submitted"
+              "Service Template Submitted"
             );
           }
         }   
@@ -241,13 +239,13 @@ exports.postProductServiceRecordsConfig = async (req, res, next) => {
         if(machineModel)
           response.machineModel = machineModel;
       }
-      res.status(StatusCodes.CREATED).json({ ServiceRecordConfig: response });
+      res.status(StatusCodes.CREATED).json({ ServiceReportTemplate: response });
     }
   }
 }
 };
 
-exports.patchProductServiceRecordsConfig = async (req, res, next) => {
+exports.patchProductServiceReportTemplate = async (req, res, next) => {
   const errors = validationResult(req);
   
   if (!errors.isEmpty()) {
@@ -262,101 +260,101 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
     if(req.body.isArchived=='true' || req.body.isArchived===true){
       req.body = {isArchived: true};
     } else {
-      let productServiceRecordsConfig = await ProductServiceRecordsConfig.findById(req.params.id); 
-      if(productServiceRecordsConfig.status == "DRAFT" && req.body.status == "SUBMITTED") {
+      let productServiceReportTemplate = await ProductServiceReportTemplate.findById(req.params.id); 
+      if(productServiceReportTemplate.status == "DRAFT" && req.body.status == "SUBMITTED") {
 
         req.body.submittedInfo = {
           submittedBy: req.body.loginUser.userId,
           submittedDate: new Date()
         }
 
-        let type_ = "SERVICE-CONFIG";
+        let type_ = "SERVICE-TEMPLATE";
         const roles = await SecurityRole.find({roleType:'SuperAdmin'}).select('_id');
         if(roles) {
           const users = await SecurityUser.find({roles:{$in:roles.map((r)=>r._id)}}).select('_id');
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
             await securityNotificationController.createNotification(
-              `Service Record Config with title ${req.body.docTitle} has been submitted. Please Review.`,
+              `Service Report Template with title ${req.body.docTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
               type_,
               {
-                _id:productServiceRecordsConfig._id, 
-                docTitle:productServiceRecordsConfig.docTitle,
-                recordType:productServiceRecordsConfig.recordType,
-                status:req.body.status,
-                docVersionNo:productServiceRecordsConfig.docVersionNo
+                _id:  productServiceReportTemplate._id, 
+                docTitle: productServiceReportTemplate.docTitle,
+                reportType: productServiceReportTemplate.reportType,
+                status: req.body.status,
+                docVersionNo: productServiceReportTemplate.docVersionNo
               },
-              "Service Config Submitted"
+              "Service Template Submitted"
             );
           }
         }        
 
-      } else if(productServiceRecordsConfig.status == "SUBMITTED" && req.body.status == "DRAFT") {
+      } else if(productServiceReportTemplate.status == "SUBMITTED" && req.body.status == "DRAFT") {
         req.body.submittedInfo = {};
       }
       
       if(req.body.isVerified){ 
-        if(!productServiceRecordsConfig) {
-          return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config Not Found");
+        if(!productServiceReportTemplate) {
+          return res.status(StatusCodes.BAD_REQUEST).send("Product Service Report Template Not Found");
         }
         
-        if(!Array.isArray(productServiceRecordsConfig.approvals))
-          productServiceRecordsConfig.approvals = [];
+        if(!Array.isArray(productServiceReportTemplate.approvals))
+          productServiceReportTemplate.approvals = [];
 
-        for(let verif of productServiceRecordsConfig.approvals) {
+        for(let verif of productServiceReportTemplate.approvals) {
           if(verif.approvedBy == req.body.loginUser.userId)
             return res.status(StatusCodes.BAD_REQUEST).send("Already Approved!");
         }
 
-        productServiceRecordsConfig.approvals.push({
+        productServiceReportTemplate.approvals.push({
           approvedBy: req.body.loginUser.userId,
           approvedDate: new Date(),
           approvedFrom: req.body.loginUser.userIP
         })
 
-        if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'SUBMITTED' && productServiceRecordsConfig.approvals.length >= productServiceRecordsConfig.noOfApprovalsRequired) {
-          productServiceRecordsConfig.status = 'APPROVED';
+        if(productServiceReportTemplate && productServiceReportTemplate.status === 'SUBMITTED' && productServiceReportTemplate.approvals.length >= productServiceReportTemplate.noOfApprovalsRequired) {
+          productServiceReportTemplate.status = 'APPROVED';
 
-          if(productServiceRecordsConfig.originalConfiguration) {
+          if(productServiceReportTemplate.originalTemplate) {
             let whereClause  = {
               $or: [{
-                _id: productServiceRecordsConfig.originalConfiguration
+                _id: productServiceReportTemplate.originalTemplate
               }, {
-                originalConfiguration: productServiceRecordsConfig.originalConfiguration
+                originalTemplate: productServiceReportTemplate.originalTemplate
               }], status: "APPROVED" 
             };
         
-            await ProductServiceRecordsConfig.updateMany(whereClause, { isActive: false }, { new: true });
+            await ProductServiceReportTemplate.updateMany(whereClause, { isActive: false }, { new: true });
             
 
-            let proSerObj = await ProductServiceRecordsConfig.findOne(whereClause).sort({_id: -1}).limit(1);
+            let proSerObj = await ProductServiceReportTemplate.findOne(whereClause).sort({_id: -1}).limit(1);
             if(proSerObj)
-              productServiceRecordsConfig.docVersionNo = proSerObj.docVersionNo + 1;
+              productServiceReportTemplate.docVersionNo = proSerObj.docVersionNo + 1;
           }
         }
 
-        productServiceRecordsConfig = await productServiceRecordsConfig.save();
-        return res.status(StatusCodes.ACCEPTED).json(productServiceRecordsConfig);
+        productServiceReportTemplate = await productServiceReportTemplate.save();
+        return res.status(StatusCodes.ACCEPTED).json(productServiceReportTemplate);
       }
 
 
-      if(productServiceRecordsConfig && productServiceRecordsConfig.status === 'APPROVED') {
-        return res.status(StatusCodes.BAD_REQUEST).send("Product Service Records Config is in APPROVED state!");
+      if(productServiceReportTemplate && productServiceReportTemplate.status === 'APPROVED') {
+        return res.status(StatusCodes.BAD_REQUEST).send("Product Service Report Template is in APPROVED state!");
       }
 
-      if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.status != 'SUBMITTED') {
-        return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED configuration`);
+      if(productServiceReportTemplate && req.body.status === 'APPROVED' && productServiceReportTemplate.status != 'SUBMITTED') {
+        return res.status(StatusCodes.BAD_REQUEST).send(`Status should be SUBMITTED to APPROVED Template`);
       }
       
-      if(productServiceRecordsConfig && req.body.status === 'APPROVED' && productServiceRecordsConfig.noOfApprovalsRequired > productServiceRecordsConfig.approvals.length) {
-        return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceRecordsConfig.noOfApprovalsRequired} Verification${productServiceRecordsConfig.noOfApprovalsRequired == 1 ? '':'s'} required to approve configuartion! `);
+      if(productServiceReportTemplate && req.body.status === 'APPROVED' && productServiceReportTemplate.noOfApprovalsRequired > productServiceReportTemplate.approvals.length) {
+        return res.status(StatusCodes.BAD_REQUEST).send(`${productServiceReportTemplate.noOfApprovalsRequired} Verification${productServiceReportTemplate.noOfApprovalsRequired == 1 ? '':'s'} required to approve Template! `);
       }
 
     }
      
-    this.dbservice.patchObject(ProductServiceRecordsConfig, req.params.id, getDocumentFromReq(req), callbackFunc);
+    this.dbservice.patchObject(ProductServiceReportTemplate, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
       if (error) {
         logger.error(new Error(error));
@@ -365,14 +363,14 @@ exports.patchProductServiceRecordsConfig = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        let machineServiceRecordConfig = await ProductServiceRecordsConfig.findOne({_id:req.params.id,isActive:true,isArchived:false}).populate('category');
+        let machineServiceReportTemplate = await ProductServiceReportTemplate.findOne({_id:req.params.id,isActive:true,isArchived:false}).populate('category');
         if(res && res.machineModel) {
-          let machineModel = await ProductModel.findOne({_id:machineServiceRecordConfig.machineModel,isActive:true,isArchived:false}).populate('category');
-          machineServiceRecordConfig = JSON.parse(JSON.stringify(machineServiceRecordConfig));
+          let machineModel = await ProductModel.findOne({_id:machineServiceReportTemplate.machineModel,isActive:true,isArchived:false}).populate('category');
+          machineServiceReportTemplate = JSON.parse(JSON.stringify(machineServiceReportTemplate));
           if(machineModel)
-            machineServiceRecordConfig.machineModel = machineModel;
+            machineServiceReportTemplate.machineModel = machineModel;
         }
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, machineServiceRecordConfig));
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, machineServiceReportTemplate));
       }
     }
   
@@ -392,7 +390,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { machineCategory, recordType, machineModel, status, submittedInfo, parentConfig, originalConfiguration, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
+  const { machineCategory, reportType, machineModel, status, submittedInfo, parentTemplate, originalTemplate, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
@@ -401,11 +399,11 @@ function getDocumentFromReq(req, reqType){
   
   let doc = {};
   if (reqType && reqType == "new"){
-    doc = new ProductServiceRecordsConfig({});
+    doc = new ProductServiceReportTemplate({});
   }
 
-  if ("recordType" in req.body){
-    doc.recordType = recordType;
+  if ("reportType" in req.body){
+    doc.reportType = reportType;
   }
 
   if ("machineCategory" in req.body){
@@ -425,12 +423,12 @@ function getDocumentFromReq(req, reqType){
     doc.submittedInfo = submittedInfo;
   }
   
-  if ("parentConfig" in req.body){
-    doc.parentConfig = parentConfig;
+  if ("parentTemplate" in req.body){
+    doc.parentTemplate = parentTemplate;
   }
 
-  if ("originalConfiguration" in req.body){
-    doc.originalConfiguration = originalConfiguration;
+  if ("originalTemplate" in req.body){
+    doc.originalTemplate= originalTemplate;
   }
 
   if ("docTitle" in req.body){

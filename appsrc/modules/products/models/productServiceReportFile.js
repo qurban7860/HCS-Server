@@ -10,11 +10,11 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
         // machine information.
 
-        machineServiceRecord: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true }],
-        // machine service record current version 
+        machineServiceReport: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true }],
+        // machine service Report current version 
 
-        serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords', required: true  },
-        // machine service record parent
+        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true  },
+        // machine service Report parent
 
         name: { type: String },
         // name/title of field
@@ -42,7 +42,7 @@ const docSchema = new Schema({
 
 },
 {
-        collection: 'MachineServiceRecordsFiles'
+        collection: 'MachineServiceReportFiles'
 });
 
 docSchema.set('timestamps', true);
@@ -50,11 +50,11 @@ docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.index({"name":1})
-docSchema.index({"machineServiceRecord":1})
+docSchema.index({"machineServiceReport":1})
 docSchema.index({"machine":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineServiceRecordFile', docSchema);
+module.exports = mongoose.model('MachineServiceReportFile', docSchema);

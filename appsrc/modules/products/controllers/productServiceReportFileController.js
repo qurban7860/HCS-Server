@@ -10,35 +10,35 @@ const { render } = require('template-file');
 const fs = require('fs');
 const awsService = require('../../../base/aws');
 const { Config } = require('../../config/models');
-const { getProductServiceRecordData } = require('./productServiceRecordsController');
+const { getProductServiceReportData } = require('./productServiceReportController');
 const path = require('path');
 const sharp = require('sharp');
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
-const { ProductServiceRecords, ProductServiceRecordFiles , ProductServiceRecordValue, Product, ProductModel, ProductCheckItem } = require('../models');
+const { ProductServiceReports, ProductServiceReportFiles , ProductServiceReportValue, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact } = require('../../crm/models');
 const util = require('util');
 
 
-exports.getProductServiceRecordFiles = async (req, res, next) => {
-  const machineServiceRecord = req?.machineServiceRecord || req.params.id;
+exports.getProductServiceReportFiles = async (req, res, next) => {
+  const machineServiceReport = req?.machineServiceReport || req.params.id;
 
-  this.query = req.query != "undefined" ? req.query : { machineServiceRecord: machineServiceRecord, isArchived: false, isActive: true };  
+  this.query = req.query != "undefined" ? req.query : { machineServiceReport: machineServiceReport, isArchived: false, isActive: true };  
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
 
   this.query.machine = req.params.machineId;
-  this.dbservice.getObjectList(req, ProductServiceRecordFiles, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  this.dbservice.getObjectList(req, ProductServiceReportFiles, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
       console.log("error", error);
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if( req?.machineServiceRecord ){
-        res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Service Record saved with Files successfully!', false));
+      if( req?.machineServiceReport ){
+        res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Service Report saved with Files successfully!', false));
       }
       res.json(response);
     }
@@ -46,7 +46,7 @@ exports.getProductServiceRecordFiles = async (req, res, next) => {
 };
 
 
-exports.postServiceRecordFiles = async (req, res, next) => {
+exports.postServiceReportFiles = async (req, res, next) => {
   try{
 
     const errors = validationResult(req);
@@ -58,14 +58,14 @@ exports.postServiceRecordFiles = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
       }
 
-      const serviceRecord = await ProductServiceRecords.findById(req.params.id);
+      const serviceReport = await ProductServiceReports.findById(req.params.id);
 
-      if(!serviceRecord?._id){
-        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Record ID");
+      if(!serviceReport?._id){
+        return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
       }
 
       const machine = req.params.machineId;
-      const machineServiceRecord = req.params.id;
+      const machineServiceReport = req.params.id;
 
       let files = [];
             
@@ -82,14 +82,14 @@ exports.postServiceRecordFiles = async (req, res, next) => {
         }
   
         const processedFile = await processFile(file, req.body.loginUser.userId);
-        req.body.serviceId = serviceRecord?.serviceId;
+        req.body.primaryServiceReportId = serviceReport?.primaryServiceReportId;
         req.body.path = processedFile.s3FilePath;
         req.body.fileType = req.body.type = processedFile.type;
         req.body.extension = processedFile.fileExt;
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
-        req.body.machineServiceRecord = machineServiceRecord;
+        req.body.machineServiceReport = machineServiceReport;
         req.body.name = processedFile.name;
   
         if (processedFile.base64thumbNailData) {
@@ -97,13 +97,13 @@ exports.postServiceRecordFiles = async (req, res, next) => {
           req.body.name = processedFile.name;
         }
   
-        const serviceRecordFileObject = await getServiceRecordFileFromReq(req, 'new');
-        return this.dbservice.postObject(serviceRecordFileObject);
+        const serviceReportFileObject = await getServiceReportFileFromReq(req, 'new');
+        return this.dbservice.postObject(serviceReportFileObject);
       });
   
       await Promise.all(fileProcessingPromises);
-      const serviceRecordData = await getProductServiceRecordData( req );
-      return res.status(StatusCodes.OK).send(serviceRecordData);
+      const serviceReportData = await getProductServiceReportData( req );
+      return res.status(StatusCodes.OK).send(serviceReportData);
     }
   }catch(e) {
     console.log(e);
@@ -111,14 +111,14 @@ exports.postServiceRecordFiles = async (req, res, next) => {
   }
 };
 
-exports.downloadServiceRecordFile = async (req, res, next) => {
+exports.downloadServiceReportFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
       console.log(errors)
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
       try {
-          const file = await ProductServiceRecordFiles.findOne({_id: req.params.fileId}).select('path');
+          const file = await ProductServiceReportFiles.findOne({_id: req.params.fileId}).select('path');
           if (file) {
               if (file.path && file.path !== '') {
                   const data = await awsService.fetchAWSFileInfo(file._id, file.path);
@@ -159,18 +159,18 @@ exports.downloadServiceRecordFile = async (req, res, next) => {
 };
 
 
-exports.deleteServiceRecordFile = async (req, res, next) => {
+exports.deleteServiceReportFile = async (req, res, next) => {
   try {
     req.body.isActive = false;
     req.body.isArchived = true;
-    await this.dbservice.patchObject(ProductServiceRecordFiles, req.params.fileId, getServiceRecordFileFromReq(req), callbackFunc);
+    await this.dbservice.patchObject(ProductServiceReportFiles, req.params.fileId, getServiceReportFileFromReq(req), callbackFunc);
     function callbackFunc(error, result){
       if (error) {
         console.log(error);
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
-        res.status(StatusCodes.OK).send('Service Record file Deleted Successfully!');
+        res.status(StatusCodes.OK).send('Service Report file Deleted Successfully!');
       }
     }
   } catch (error) {
@@ -268,22 +268,22 @@ async function getToken(req){
 }
 
 
-function getServiceRecordFileFromReq(req, reqType) {
+function getServiceReportFileFromReq(req, reqType) {
 
-  const { machineServiceRecord, serviceId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
+  const { machineServiceReport, primaryServiceReportId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
   if (reqType && reqType == "new") {
-    doc = new ProductServiceRecordFiles({});
+    doc = new ProductServiceReportFiles({});
   }
 
-  if ("machineServiceRecord" in req.body) {
-    doc.machineServiceRecord = machineServiceRecord;
+  if ("machineServiceReport" in req.body) {
+    doc.machineServiceReport = machineServiceReport;
   }
 
-  if ("serviceId" in req.body) {
-    doc.serviceId = serviceId;
+  if ("primaryServiceReportId" in req.body) {
+    doc.primaryServiceReportId = primaryServiceReportId;
   }
 
   if ("name" in req.body) {

@@ -10,13 +10,13 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
 
-  serviceRecordConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
-  // record configuration used to create this record.
+  serviceReportTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
+  // Report findOne used to create this Report.
 
-  serviceId: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecords' },
-  // purpose is to maintain parent service record config uuid
+  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports' },
+  // purpose is to maintain parent service Report uuid
   
-  serviceDate: { type: Date , default: Date.now, required: true },
+  serviceReportDate: { type: Date , default: Date.now, required: true },
   // date of service
 
   versionNo: { type: Number, default: 1, required: true },
@@ -37,14 +37,14 @@ const docSchema = new Schema({
   technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
   // technician information who performed service process.
   
-  serviceRecordUid: { type: String, required: true  },
-  //indication of current active record status.
+  serviceReportUID: { type: String, required: true  },
+  //indication of current active Report status.
 
-  status: { type: String, enum: ['DRAFT','SUBMITTED'], default: 'DRAFT' },
-  //indication of current active record approval status.
+  status: { type: String, enum: ['DRAFT','UNDER REVIEW' ,'MORE INFORMATION REQUIRED!' , 'SUBMITTED'], default: 'DRAFT' },
+  //indication of current active Report approval status.
 
   technicianNotes: { type: String },
-  // operator comments against this record.
+  // operator comments against this Report.
 
   textBeforeCheckItems: { type: String },
   // display this text before fields. default will be copied from configurtation
@@ -59,7 +59,7 @@ const docSchema = new Schema({
   //recommendations if required
   
   internalComments: { type: String },
-  //Internal comments in machine service record . this comments will not be printed at PDF and not visible to customer
+  //Internal comments in machine service Report. this comments will not be printed at PDF and not visible to customer
 
   
   suggestedSpares: { type: String },
@@ -72,42 +72,42 @@ const docSchema = new Schema({
   // operators who is training.
   
   operatorNotes: { type: String },
-  // operator comments against this record.
+  // operator comments against this Report.
 
   isReportDocsOnly: { type: Boolean, default: false },
-  // just indication of current active record.
+  // just indication of current active Report.
 
   isHistory: { type: Boolean, default: false },
-  // just indication of current active record.
+  // just indication of current active Report.
 
   archivedByMachine: {type: Boolean, default: false},
 
   approval: {
     
     approvingContacts: [{ type: Schema.Types.ObjectId, ref: "CustomerContact", default: [] }],
-    // contacts who are approving this record. They have been sent an approving email
+    // contacts who are approving this Report. They have been sent an approving email
 
     approvalLogs: {
       type: [{
         evaluatedBy: { type: Schema.Types.ObjectId, ref: "CustomerContact", default: null },
-        // contact who approved/rejected the service record
+        // contact who approved/rejected the service Report
 
         evaluationDate: { type: Date, default: null },
-        // date when the service record was approved/rejected 
+        // date when the service Report was approved/rejected 
         
         comments: { type: String, default: "" },
-        // current active record approval comments.
+        // current active Report approval comments.
         
         status: { type: String, enum: ["APPROVED", "REJECTED", "PENDING"], default: "PENDING" },
-        // current approval status of the service record
+        // current approval status of the service Report
       }],
       default: []
     } 
   },
-  // approval status of this record.
+  // approval status of this Report.
 },
 {
-    collection: 'MachineServiceRecords',
+    collection: 'MachineServiceReports',
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
@@ -117,7 +117,7 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-docSchema.index({"recordType":1})
+docSchema.index({"reportType":1})
 docSchema.index({"operators":1})
 docSchema.index({"serviceDate":1})
 docSchema.index({"isActive":1})
@@ -141,4 +141,4 @@ docSchema.methods.addApprovalLog = function ({ evaluatedBy, status, comments = "
   return this.save();
 };
 
-module.exports = mongoose.model('MachineServiceRecord', docSchema);
+module.exports = mongoose.model('MachineServiceReport', docSchema);

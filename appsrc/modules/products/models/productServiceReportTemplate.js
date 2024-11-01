@@ -5,11 +5,10 @@ const baseSchema = require('../../../base/baseSchema');
 
 const GUID = require('mongoose-guid')(mongoose);
 
-
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
-  recordType: { type: String, enum: ['SERVICE','REPAIR', 'TRAINING', 'PRE-INSTALL', 'INSTALL'], default: 'SERVICE' },
+  reportType: { type: String, enum: ['SERVICE','REPAIR', 'TRAINING', 'PRE-INSTALL', 'INSTALL'], default: 'SERVICE' },
   
   machineCategory: { type: Schema.Types.ObjectId , ref: 'MachineCategory' },
   // Category information of machine
@@ -20,17 +19,17 @@ const docSchema = new Schema({
   status: { type: String, enum: ['DRAFT','SUBMITTED', 'APPROVED'], default: 'DRAFT' },
   // draft/submitted/approved
 
-  parentConfig: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
-  // last configuration version.  if there is any
+  parentTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
+  // last Template version.  if there is any
   
-  originalConfiguration: { type: Schema.Types.ObjectId , ref: 'MachineServiceRecordConfig' },
-  // last configuration version.  if there is any
+  originalTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
+  // last Template version.  if there is any
   
   docTitle: { type: String },
   // name/title of document/screen
 
   docVersionNo: { type: Number,  required: true,  default: '1'},
-  // versionNo should be incremented by 1 when an approved config will be copies to draft 
+  // versionNo should be incremented by 1 when an approved Template will be copies to draft 
   // for modification.
 
   
@@ -115,7 +114,7 @@ const docSchema = new Schema({
 
 
 {
-    collection: 'MachineServiceRecordConfigs'
+    collection: 'MachineServiceReportTemplates'
 });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -123,8 +122,8 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-docSchema.index({"recordType":1})
+docSchema.index({"reportType":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
 
-module.exports = mongoose.model('MachineServiceRecordConfig', docSchema);
+module.exports = mongoose.model('MachineServiceReportTemplate', docSchema);

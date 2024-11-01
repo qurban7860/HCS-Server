@@ -23,8 +23,8 @@ router.get(`${baseRoute}/allDocumentsAgainstFilter/`, controller.getImagesAgains
 // - /api/1.0.0/document/documents/patchDocumentFilesETag/
 router.put(`${baseRoute}/putDocumentFilesETag/`, controller.putDocumentFilesETag);
 
-// - /api/1.0.0/document/documents/dublicateDrawings/
-router.get(`${baseRoute}/dublicateDrawings/`, controller.getdublicateDrawings);
+// - /api/1.0.0/document/documents/duplicateDrawings/
+router.get(`${baseRoute}/dublicateDrawings/`, controller.getduplicateDrawings);
 
 // - /api/1.0.0/documents/:id
 router.get(`${baseRoute}/:id`,controller.getDocument);

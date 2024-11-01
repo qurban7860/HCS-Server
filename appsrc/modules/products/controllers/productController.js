@@ -17,7 +17,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceRecords, ProductServiceRecordValue, ProductLicense } = require('../models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceReports, ProductServiceReportValue, ProductLicense } = require('../models');
 const { ProductConfiguration } = require('../../apiclient/models');
 
 const { ErpLog } = require('../../log/models');
@@ -543,8 +543,8 @@ exports.postProduct = async (req, res, next) => {
     console.log("errors machine patch request", errors);
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const dublicateRecord = await exports.checkDuplicateSerialNumber(req, res, null, false);
-    if (dublicateRecord) {
+    const duplicateReport = await exports.checkDuplicateSerialNumber(req, res, null, false);
+    if (duplicateReport) {
       return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
     }
 
@@ -654,8 +654,8 @@ exports.patchProduct = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     await updateArchivedStatus(req);
-    const duplicateRecord = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
-    if (duplicateRecord) {
+    const duplicateReport = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
+    if (duplicateReport) {
       return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
     }
 
@@ -892,8 +892,8 @@ async function updateArchivedStatus(req) {
     await Document.updateMany(whereClause, setClause);
     await ProductLicense.updateMany(whereClause, setClause);
     await ProductProfile.updateMany(whereClause, setClause);
-    await ProductServiceRecords.updateMany(whereClause, setClause);
-    await ProductServiceRecordValue.updateMany(whereClause, setClause);
+    await ProductServiceReports.updateMany(whereClause, setClause);
+    await ProductServiceReportValue.updateMany(whereClause, setClause);
     await ProductConfiguration.updateMany(whereClause, setClause);
     // await ErpLog.updateMany(whereClause, setClause); //optional
   }
@@ -1553,7 +1553,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
     let listProductDrawing = await ProductDrawing.aggregate(aggregate);
     let listProductLicense = await ProductLicense.aggregate(aggregate);
     let listProfileCount = await ProductProfile.aggregate(aggregate);
-    let listProductServiceRecords = await ProductServiceRecords.aggregate(aggregate);
+    let listProductServiceReports = await ProductServiceReports.aggregate(aggregate);
     let listProductConfiguration = await ProductConfiguration.aggregate(aggregate);
     let listDocument = await Document.aggregate(aggregate);
 
@@ -1566,7 +1566,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
       let countlistDocument = listDocument.find((obj) => obj?._id?.toString() == product?._id?.toString());
       let countlistProductLicense = listProductLicense.find((obj) => obj?._id?.toString() == product?._id?.toString());
       let countlistProfileCount = listProfileCount.find((obj) => obj?._id?.toString() == product?._id?.toString());
-      let countlistProductServiceRecords = listProductServiceRecords.find((obj) => obj?._id?.toString() == product?._id?.toString());
+      let countlistProductServiceReports = listProductServiceReports.find((obj) => obj?._id?.toString() == product?._id?.toString());
       let countlistProductConfiguration = listProductConfiguration.find((obj) => obj?._id?.toString() == product?._id?.toString());
 
       let finalDataObj = null;
@@ -1619,7 +1619,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           TotalDocuments: `${(countlistDocument != undefined ? countlistDocument?.count : '')}`,
           TotalLicenses: `${(countlistProductLicense != undefined ? countlistProductLicense?.count : '')}`,
           TotalProfiles: `${(countlistProfileCount != undefined ? countlistProfileCount?.count : '')}`,
-          TotalServiceRecords: `${(countlistProductServiceRecords != undefined ? countlistProductServiceRecords?.count : '')}`,
+          TotalServiceReports: `${(countlistProductServiceReports != undefined ? countlistProductServiceReports?.count : '')}`,
           TotalINI: `${(countlistProductConfiguration != undefined ? countlistProductConfiguration?.count : '')}`,
         };
       } else {
@@ -1659,7 +1659,7 @@ exports.exportProductsJSONforCSV = async (req, res, next) => {
           TotalDocuments: `${(countlistDocument != undefined ? countlistDocument?.count : '')}`,
           TotalLicenses: `${(countlistProductLicense != undefined ? countlistProductLicense?.count : '')}`,
           TotalProfiles: `${(countlistProfileCount != undefined ? countlistProfileCount?.count : '')}`,
-          TotalServiceRecords: `${(countlistProductServiceRecords != undefined ? countlistProductServiceRecords?.count : '')}`,
+          TotalServiceReports: `${(countlistProductServiceReports != undefined ? countlistProductServiceReports?.count : '')}`,
           TotalINI: `${(countlistProductConfiguration != undefined ? countlistProductConfiguration?.count : '')}`,
         };
       }
