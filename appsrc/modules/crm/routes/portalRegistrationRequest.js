@@ -5,7 +5,7 @@ const controller = controllers.portalRegistration;
 const router = express.Router();
 
 // - /api/1.0.0/
-const baseRouteForObject = "/customer/register"; 
+const baseRouteForObject = "/crm/customers/register"; 
 
 // - /api/1.0.0/customer/register/
 router.post(`${baseRouteForObject}/`, validatePortalReq('new'), controller.postRegisterRequest);
