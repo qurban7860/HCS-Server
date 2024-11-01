@@ -34,7 +34,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
-  {path: 'serviceReportTemplate', select: 'docTitle reportType'},
+  {path: 'serviceReportTemplate', select: 'reportTitle reportType'},
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
@@ -45,7 +45,7 @@ this.populate = [
 ];
 
 this.populateObject = [
-  {path: 'serviceReportTemplate', select: 'docTitle reportType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+  {path: 'serviceReportTemplate', select: 'reportTitle reportType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo machineModel'},

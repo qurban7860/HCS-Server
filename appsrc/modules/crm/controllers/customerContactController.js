@@ -49,7 +49,7 @@ exports.getCustomerContact = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      let operatorsList = await ProductServiceReports.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceReportTemplate machine').populate({ path: "serviceReportTemplate", select: "docTitle" });
+      let operatorsList = await ProductServiceReports.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceReportTemplate machine').populate({ path: "serviceReportTemplate", select: "reportTitle" });
 
       if (operatorsList && operatorsList.length > 0) {
         response = JSON.parse(JSON.stringify(response));
