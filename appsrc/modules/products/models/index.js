@@ -18,6 +18,7 @@ module.exports = {
     ProductCheckItem: require('./productCheckItem'),
     ProductServiceReportTemplate: require('./productServiceReportTemplate'),
     ProductServiceReports: require('./productServiceReports'),
+    ProductServiceReportStatuses: require('./productServiceReportStatus'),
     ProductServiceReportFiles: require('./productServiceReportFile'),
     ProductCheckItemCategory: require('./productCheckItemCategory'),
     ProductProfile: require('./productProfile'),

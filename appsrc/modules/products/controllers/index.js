@@ -22,6 +22,7 @@ module.exports = {
     productProfileController: require('./productProfileController'),
     productServiceReportValueController: require('./productServiceReportValueController'),
     productServiceReportValueFileController: require('./productServiceReportValueFileController'),
+    productServiceReportStatusController: require('./productServiceReportStatusController'),
     categoryGroupController: require('./categoryGroupController'),
     productIntegrationController: require('./productIntegrationController'),
 }
