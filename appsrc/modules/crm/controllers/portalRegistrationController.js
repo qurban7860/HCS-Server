@@ -39,8 +39,9 @@ const getPortalRequest = async( req, res ) => {
 getRegisteredRequest = async (req, res) => {
     try{
         await getPortalRequest( req, res )
-    } catch( err ){
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } catch( error ){
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to find portal request!");
     }
 };
 
@@ -66,21 +67,18 @@ exports.getRegisteredRequests = async (req, res, next) => {
 };
 
 exports.postRegisterRequest = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } else {
-        delete req.body?.internalRemarks;
-        await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ), callbackFunc);
-        async function callbackFunc(error, response) {
-            if (error) {
-                logger.error(new Error(error));
-                return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-            } else {
-                req.params.id = response?._id;
-                await getPortalRequest(req, res)
-            }
+    try{
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        } else {
+            delete req.body?.internalRemarks;
+            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ));
+            return res.status(StatusCodes.ACCEPTED).send("Portal request created successfully!");
         }
+    } catch( error ){
+        logger.error(new Error(error));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to create portal request!");
     }
 };
 
