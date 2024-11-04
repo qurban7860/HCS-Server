@@ -1,5 +1,6 @@
 const express = require('express');
-const { validatePortalReq } = require('../bodyValidation/portalRegistration');
+const { portalSchema } = require('../schema/crmSchemas');
+const { validateRequest } = require('../../../configs/reqServices');
 const controllers = require('../controllers');
 const controller = controllers.portalRegistration;
 const router = express.Router();
@@ -8,7 +9,7 @@ const router = express.Router();
 const baseRouteForObject = "/crm/customers/register"; 
 
 // - /api/1.0.0/customer/register/
-router.post(`${baseRouteForObject}/`, validatePortalReq('new'), controller.postRegisterRequest);
+router.post(`${baseRouteForObject}/`, validateRequest( portalSchema('new') ), controller.postRegisterRequest);
 
 // Exported function to register customer routes
 const registerCustomerRequestRoute = (app, apiPath) => {

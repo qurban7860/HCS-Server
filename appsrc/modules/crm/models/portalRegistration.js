@@ -23,7 +23,7 @@ const docSchema = new Schema({
         
         phoneNumber: { type: String  },
 
-        status: { type: String, enum: [ "NEW", "APPROVED", "REJECTED", "PENDING" ] },
+        status: { type: String, enum: [ "NEW", "APPROVED", "REJECTED", "PENDING" ], default:"NEW" },
 
         customerNote: { type: String  },
 

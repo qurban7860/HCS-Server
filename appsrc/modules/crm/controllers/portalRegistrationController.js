@@ -1,6 +1,6 @@
 const { validationResult } = require('express-validator');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { getDocFromReq } = require('../../../configs/reqDocService');
+const { getDocFromReq } = require('../../../configs/reqServices');
 const logger = require('../../config/logger');
 const { getToken } = require('../../../configs/getToken');
 let rtnMsg = require('../../config/static/static');
@@ -46,6 +46,7 @@ getRegisteredRequest = async (req, res) => {
 };
 
 exports.getRegisteredRequest = getRegisteredRequest;
+
 exports.getRegisteredRequests = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     this.orderBy = { createdAt: -1 };
@@ -73,8 +74,16 @@ exports.postRegisterRequest = async (req, res, next) => {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         } else {
             delete req.body?.internalRemarks;
-            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ));
-            return res.status(StatusCodes.ACCEPTED).send("Portal request created successfully!");
+            delete req.body?.status;
+            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ), callbackFunc);
+            async function callbackFunc(error, response) {
+                if ( error ) {
+                    logger.error(new Error(error));
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to create portal request!");
+                } else {
+                    return res.status(StatusCodes.ACCEPTED).send("Portal request created successfully!");
+                }
+            }
         }
     } catch( error ){
         logger.error(new Error(error));
