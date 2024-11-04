@@ -20,12 +20,10 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'serviceReportID', select: 'serviceReportDate serviceReportTemplate ', 
-    populate: [{ path: "MachineServiceReportTemplates", select: "name type " } ]  
-  },
-  {path: 'primaryServiceReportId', select: 'name'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'serviceReportID', select: 'serviceReportDate serviceReportUID' },
+  { path: 'primaryServiceReportId', select: 'name' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 
 
@@ -116,24 +114,8 @@ function getDocumentFromReq(req, reqType){
     doc = new ProductServiceReportNotes({});
   }
 
-  if ("name" in req.body){
-    doc.name = name;
-  }
-
-  if ("type" in req.body){
-    doc.type = type;
-  }
-
-  if ("description" in req.body){
-    doc.description = description;
-  }
-
-  if ("displayOrderNo" in req.body){
-    doc.displayOrderNo = displayOrderNo;
-  }
-  
-  if ("isDefault" in req.body){
-    doc.isDefault = isDefault;
+  if ("note" in req.body){
+    doc.note = note;
   }
 
   if ("isActive" in req.body){
@@ -153,7 +135,6 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
 
 }
