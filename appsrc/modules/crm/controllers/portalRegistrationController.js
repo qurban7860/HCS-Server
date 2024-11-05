@@ -7,6 +7,8 @@ let rtnMsg = require('../../config/static/static');
 let customerDBService = require('../services/customerDBService');
 let ObjectId = require('mongoose').Types.ObjectId;
 this.dbservice = new customerDBService();
+const emailService = require('../../security/service/userEmailService');
+const userEmailService = this.userEmailService = new emailService();
 const { PortalRegistration } = require('../models');
 const { postSecurityUser } = require('../../security/controllers/securityUserController');
 
@@ -109,6 +111,7 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                 const { contactPersonName, email, phoneNumber, roles, customer,contact } = req?.body;
                 if( response && req?.body?.status === 'APPROVED' && contactPersonName && email && roles && customer && contact ){
                     const newUser = {
+                        registrationRequest: req.params.id,
                         name: contactPersonName,
                         login: email,
                         email,
@@ -118,15 +121,18 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                         customer,
                         contact,
                         isInvite: true,
-                        isNoReturn: true,
                     }
                     req.body = { ...req.body, ...newUser };
                     try {
-                        await postSecurityUser(req);
+                        const user = await postSecurityUser(req, res);
+                        const result = await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq({ body: { securityUser: user?._id }}));
+                        req.params.id = newUser?._id;
+                        await this.userEmailService.sendUserInviteEmail( req, res );
                     } catch (error) {
                         return res.status(StatusCodes.CONFLICT).send(error.message);
                     }
                 }
+                req.params.id = result?._id
                 await getPortalRequest(req, res);
             }
     } catch(error){

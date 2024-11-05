@@ -5,6 +5,7 @@ const logger = require('../../config/logger');
 
 const portalSchema = (reqType, req ) => {
     const isNewRequest = reqType === 'new';
+    const isInvite = req?.body?.isInvite || false;
 
     return Yup.object().shape({
         customerName: Yup.string().label('Customer Name').max(200).when([], {
@@ -22,7 +23,6 @@ const portalSchema = (reqType, req ) => {
                     message: 'Email already exists!',
                 });
             }
-        
             const portalRequest= await PortalRegistration.findOne({ email, isArchived: false }).lean();
             if ( portalRequest && portalRequest?._id?.toString() !== req?.params?.id?.toString() ) {
                 return this.createError({
@@ -34,6 +34,12 @@ const portalSchema = (reqType, req ) => {
         })
         .when([], {
             is: () => isNewRequest,
+            then: (schema) => schema.required(),
+            otherwise: (schema) => schema.notRequired(),
+        }),
+        login: Yup.string().label('Email').email()
+        .when([], {
+            is: () => isInvite,
             then: (schema) => schema.required(),
             otherwise: (schema) => schema.notRequired(),
         }),
@@ -60,6 +66,7 @@ const portalSchema = (reqType, req ) => {
         customerNote: Yup.string().label('Customer Note').max(5000).nullable().notRequired(),
         internalNote: Yup.string().label('Internal Note').max(5000).nullable().notRequired(),
         isActive: Yup.boolean().nullable().notRequired(),
+        isInvite: Yup.boolean().nullable().notRequired(),
         isArchived: Yup.boolean().nullable().notRequired(),
     });
 };

@@ -11,6 +11,8 @@ const docSchema = new Schema({
 
         contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
 
+        securityUser: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
+
         customerName: { type: String , required: true },
         
         contactPersonName: { type: String,  }, 
