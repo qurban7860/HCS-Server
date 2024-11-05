@@ -135,7 +135,6 @@ const getProductServiceReportData = async (req) => {
     return parsedResponse;
 
   } catch (error) {
-    console.log("error : ",error)
     logger.error(new Error(error));
     throw new Error(error);
   }
