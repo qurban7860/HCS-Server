@@ -3,7 +3,7 @@ const express = require('express');
 // const verifyDelete = require('../../../middleware/verifyDelete');
 
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.productIntegrationController;
 
 const router = express.Router();

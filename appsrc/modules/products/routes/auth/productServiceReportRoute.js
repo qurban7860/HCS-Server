@@ -1,12 +1,11 @@
 const express = require('express');
-const { check } = require('express-validator');
 const multer = require('multer');
-const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../middleware/file-upload');
+const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../../middleware/file-upload');
 const upload = multer({ dest: 'uploads/' })
-const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
-const verifyDelete = require('../../../middleware/verifyDelete');
-const controllers = require('../controllers');
+const checkAuth = require('../../../../middleware/check-auth');
+const checkCustomer = require('../../../../middleware/check-customer');
+const verifyDelete = require('../../../../middleware/verifyDelete');
+const controllers = require('../../controllers');
 const controller = controllers.productServiceReportController;
 const postServiceReportFiles = controllers.productServiceReportFileController.postServiceReportFiles;
 const router = express.Router();
