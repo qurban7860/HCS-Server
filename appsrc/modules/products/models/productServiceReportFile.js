@@ -10,10 +10,10 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
         // machine information.
 
-        machineServiceReport: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true }],
+        machineServiceReport: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true }],
         // machine service Report current version 
 
-        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true  },
+        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true  },
         // machine service Report parent
 
         name: { type: String },

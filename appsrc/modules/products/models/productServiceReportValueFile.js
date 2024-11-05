@@ -10,16 +10,16 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
         // machine information.
 
-        serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true},
+        serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true},
         // service Report id.
         
-        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports', required: true },
+        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true },
         // purpose is to maintain parent service Report uuid
         
-        machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},
+        machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem', required: true},
         //checkitem reference id
         
-        checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates.checkItemLists', required: true }, 
+        checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate.checkItemLists', required: true }, 
         //this will refer to the list to which checkitem is belong to,
 
         name: { type: String },

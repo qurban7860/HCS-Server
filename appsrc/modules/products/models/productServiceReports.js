@@ -10,10 +10,10 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({  
 
-  serviceReportTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
+  serviceReportTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate' },
   // Report findOne used to create this Report.
 
-  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports' },
+  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
   // purpose is to maintain parent service Report uuid
   
   serviceReportDate: { type: Date , default: Date.now, required: true },
