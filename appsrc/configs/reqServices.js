@@ -35,7 +35,7 @@ const validateRequest = (schema) => async (req, res, next) => {
     const validatedBody = await schema.validate(otherFields, {
       abortEarly: false,
       stripUnknown: true,
-      context: { reqId: req.params?.id },
+      context: { req, res },
     });
     
     req.body = { ...validatedBody, loginUser };

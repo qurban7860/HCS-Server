@@ -3,10 +3,8 @@ const { PortalRegistration } = require('../models');
 const Yup = require('yup');
 const logger = require('../../config/logger');
 
-const portalSchema = (reqType, req ) => {
+const portalSchema = (reqType ) => {
     const isNewRequest = reqType === 'new';
-    const isInvite = req?.body?.isInvite || false;
-
     return Yup.object().shape({
         customerName: Yup.string().label('Customer Name').max(200).when([], {
             is: () => isNewRequest,
@@ -16,6 +14,7 @@ const portalSchema = (reqType, req ) => {
         contactPersonName: Yup.string().label('Contact Person Name').max(200).notRequired(),
         email: Yup.string().label('Email').email()
         .test('unique-email', async function (email) {
+            const { req } = this.options.context;
             const securityUser = await SecurityUser.findOne({ login: email, isArchived: false });
             if (securityUser) {
                 return this.createError({
@@ -34,12 +33,6 @@ const portalSchema = (reqType, req ) => {
         })
         .when([], {
             is: () => isNewRequest,
-            then: (schema) => schema.required(),
-            otherwise: (schema) => schema.notRequired(),
-        }),
-        login: Yup.string().label('Email').email()
-        .when([], {
-            is: () => isInvite,
             then: (schema) => schema.required(),
             otherwise: (schema) => schema.notRequired(),
         }),
