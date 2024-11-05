@@ -149,7 +149,6 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
 
 }

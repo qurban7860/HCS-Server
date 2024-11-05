@@ -40,7 +40,8 @@ const docSchema = new Schema({
   serviceReportUID: { type: String, required: true  },
   //indication of current active Report status.
 
-  status: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportStatuses' },
+  status: { type: String, enum: ['DRAFT','UNDER REVIEW' ,'MORE INFORMATION REQUIRED!' , 'SUBMITTED'], default: 'DRAFT' },
+  // status: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportStatuses' },
   //indication of current active Report approval status.
 
   technicianNotes: { type: String },
