@@ -16,7 +16,7 @@ const docSchema = new Schema({
   primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
   // purpose is to maintain parent service Report uuid
   
-  serviceReportDate: { type: Date , default: Date.now, required: true },
+  serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
 
   versionNo: { type: Number, default: 1, required: true },

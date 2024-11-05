@@ -25,7 +25,7 @@ router.get(`${baseRouteForObject}/:id`, controller.getProductServiceReportValue)
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceReportValues);
 
-router.get(`${baseRouteForObject}/:serviceId/checkItems`, controller.getProductServiceReportCheckItems);
+router.get(`${baseRouteForObject}/:primaryServiceReportId/checkItems`, controller.getProductServiceReportCheckItems);
 
 router.post(`${baseRouteForObject}/`,uploadHandler, checkMaxCount, imageOptimization, controller.postProductServiceReportValue );
 
