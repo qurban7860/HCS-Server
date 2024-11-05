@@ -1,12 +1,14 @@
 const { validationResult } = require('express-validator');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const { getDocFromReq } = require('../../../configs/reqDocService');
+const { getDocFromReq } = require('../../../configs/reqServices');
 const logger = require('../../config/logger');
 const { getToken } = require('../../../configs/getToken');
 let rtnMsg = require('../../config/static/static');
 let customerDBService = require('../services/customerDBService');
 let ObjectId = require('mongoose').Types.ObjectId;
 this.dbservice = new customerDBService();
+const emailService = require('../../security/service/userEmailService');
+const userEmailService = this.userEmailService = new emailService();
 const { PortalRegistration } = require('../models');
 const { postSecurityUser } = require('../../security/controllers/securityUserController');
 
@@ -15,8 +17,9 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-    { path: 'customer', select: 'name' },
-    { path: 'contact', select: 'firstName lastName' },
+    { path: 'customer', select: 'name isActive' },
+    { path: 'contact', select: 'firstName lastName isActive' },
+    { path: 'securityUser', select: 'name isActive' },
     { path: 'createdBy', select: 'name' },
     { path: 'updatedBy', select: 'name' }
 ];
@@ -46,6 +49,7 @@ getRegisteredRequest = async (req, res) => {
 };
 
 exports.getRegisteredRequest = getRegisteredRequest;
+
 exports.getRegisteredRequests = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     this.orderBy = { createdAt: -1 };
@@ -73,8 +77,16 @@ exports.postRegisterRequest = async (req, res, next) => {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         } else {
             delete req.body?.internalRemarks;
-            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ));
-            return res.status(StatusCodes.ACCEPTED).send("Portal request created successfully!");
+            delete req.body?.status;
+            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ), callbackFunc);
+            async function callbackFunc(error, response) {
+                if ( error ) {
+                    logger.error(new Error(error));
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to create portal request!");
+                } else {
+                    return res.status(StatusCodes.ACCEPTED).send("Portal request created successfully!");
+                }
+            }
         }
     } catch( error ){
         logger.error(new Error(error));
@@ -100,6 +112,7 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                 const { contactPersonName, email, phoneNumber, roles, customer,contact } = req?.body;
                 if( response && req?.body?.status === 'APPROVED' && contactPersonName && email && roles && customer && contact ){
                     const newUser = {
+                        registrationRequest: req.params.id,
                         name: contactPersonName,
                         login: email,
                         email,
@@ -109,15 +122,15 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                         customer,
                         contact,
                         isInvite: true,
-                        isNoReturn: true,
                     }
                     req.body = { ...req.body, ...newUser };
-                    try {
-                        await postSecurityUser(req);
-                    } catch (error) {
-                        return res.status(StatusCodes.CONFLICT).send(error.message);
-                    }
+                    const user = await postSecurityUser(req);
+                    await this.dbservice.patchObject(PortalRegistration, req.params.id, { securityUser: user?._id } );
+                    req.params.id = user?._id?.toString();
+                    await this.userEmailService.sendUserInviteEmail( req );
+                    req.params.id = findRequest?._id
                 }
+                
                 await getPortalRequest(req, res);
             }
     } catch(error){

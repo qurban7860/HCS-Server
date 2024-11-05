@@ -1,11 +1,10 @@
 const { SecurityUser } = require('../../security/models');
-const { PortalRegistration } = require('../../crm/models');
+const { PortalRegistration } = require('../models');
 const Yup = require('yup');
 const logger = require('../../config/logger');
 
-const createPortalReqSchema = (reqType, req ) => {
+const portalSchema = (reqType ) => {
     const isNewRequest = reqType === 'new';
-
     return Yup.object().shape({
         customerName: Yup.string().label('Customer Name').max(200).when([], {
             is: () => isNewRequest,
@@ -15,6 +14,7 @@ const createPortalReqSchema = (reqType, req ) => {
         contactPersonName: Yup.string().label('Contact Person Name').max(200).notRequired(),
         email: Yup.string().label('Email').email()
         .test('unique-email', async function (email) {
+            const { req } = this.options.context;
             const securityUser = await SecurityUser.findOne({ login: email, isArchived: false });
             if (securityUser) {
                 return this.createError({
@@ -22,7 +22,6 @@ const createPortalReqSchema = (reqType, req ) => {
                     message: 'Email already exists!',
                 });
             }
-        
             const portalRequest= await PortalRegistration.findOne({ email, isArchived: false }).lean();
             if ( portalRequest && portalRequest?._id?.toString() !== req?.params?.id?.toString() ) {
                 return this.createError({
@@ -49,43 +48,25 @@ const createPortalReqSchema = (reqType, req ) => {
             then: (schema) => schema.min(1, 'Machine Serial Numbers must have at least one value').required(),
             otherwise: (schema) => schema.notRequired(),
         }),
-        status: Yup.string().label('Status').oneOf([ "NEW", "APPROVED", "REJECTED", "PENDING" ], 'Invalid status value').notRequired(),
+        status: Yup.string().label('Status')
+        .when([], {
+            is: () => !isNewRequest,
+            then: (schema) => schema.oneOf([ "NEW", "APPROVED", "REJECTED", "PENDING" ], 'Invalid status value').notRequired(),
+        }),
         customer: Yup.string().label('Customer ID').max(50).nullable().notRequired(),
         contact: Yup.string().label('Contact ID').max(50).nullable().notRequired(),
         roles: Yup.array().label('Roles').nullable().notRequired(),
         customerNote: Yup.string().label('Customer Note').max(5000).nullable().notRequired(),
         internalNote: Yup.string().label('Internal Note').max(5000).nullable().notRequired(),
         isActive: Yup.boolean().nullable().notRequired(),
+        isInvite: Yup.boolean().nullable().notRequired(),
         isArchived: Yup.boolean().nullable().notRequired(),
     });
 };
 
-const validatePortalReq = (reqType) => {
-    return async (req, res, next) => {
-        try {
-            const { loginUser, ...otherFields } = req.body;
-            const portalReqSchema = createPortalReqSchema(reqType, req);
-            const validatedBody = await portalReqSchema.validate(otherFields, {
-                abortEarly: false,
-                stripUnknown: true,
-            });
-            req.body = { ...validatedBody, loginUser };
-            next(); 
-        } catch (error) {
-            logger.error(new Error(error));
-            if (error instanceof Yup.ValidationError) {
-                return res.status(400).json({
-                    errors: error.inner.map(err => ({
-                        field: err.path,
-                        message: err.message
-                    }))
-                });
-            }
-            next(error);
-        }
-    };
-};
+
+
 
 module.exports = {
-    validatePortalReq
+    portalSchema
 };

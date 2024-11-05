@@ -11,6 +11,8 @@ const docSchema = new Schema({
 
         contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
 
+        securityUser: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
+
         customerName: { type: String , required: true },
         
         contactPersonName: { type: String,  }, 
@@ -23,7 +25,7 @@ const docSchema = new Schema({
         
         phoneNumber: { type: String  },
 
-        status: { type: String, enum: [ "NEW", "APPROVED", "REJECTED", "PENDING" ] },
+        status: { type: String, enum: [ "NEW", "APPROVED", "REJECTED", "PENDING" ], default:"NEW" },
 
         customerNote: { type: String  },
 

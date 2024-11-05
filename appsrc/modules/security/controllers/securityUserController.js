@@ -28,6 +28,7 @@ this.populate = [
   { path: "createdBy", select: "name" },
   { path: "updatedBy", select: "name" },
   { path: "customer", select: "name type isActive" },
+  { path: "registrationRequest", select: "customerName contactPersonName" },
   { path: "contact", select: "firstName lastName formerEmployee isActive" },
   { path: "roles", select: "" },
   {
@@ -51,6 +52,7 @@ this.populateList = [
       select: "departmentName departmentType",
     },
   },
+  { path: "registrationRequest", select: "customerName contactPersonName" },
   { path: "roles", select: "" },
 ];
 
@@ -184,10 +186,7 @@ exports.postSecurityUser = async ( req, res ) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      if (res) {
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      } 
-      throw new Error(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } 
 
     if(!req.body.email) req.body.email = req.body.login;
@@ -207,27 +206,21 @@ exports.postSecurityUser = async ( req, res ) => {
       const doc = await getDocumentFromReq( req, "new"  );
       const newUser = await this.dbservice.postObject( doc );
       if( req?.body?.isInvite ){
+        if( req?.body?.registrationRequest ){
+          return newUser;
+        }
         req.params.id = newUser?._id;
         await this.userEmailService.sendUserInviteEmail( req, res );
       } 
-      if(res){
         return res.status(StatusCodes.CREATED).json({ user: newUser }); 
-      }
     }else if( user.invitationStatus ){
-      if (res) {
-        res.status(StatusCodes.CREATED).json({ user: user });
-      }
+      res.status(StatusCodes.CREATED).json({ user: user });
     } else {
-      if (res) {
-        return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
-      }
-      throw new Error("Email/Login already exists!");
+      return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
     }
   } catch(error){
     logger.error(new Error(error));
-    if (res) {
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
-    }
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
     throw error;
   }
 };
@@ -449,7 +442,7 @@ async function comparePasswords(encryptedPass, textPass, next){
 
 async function getDocumentFromReq(req, reqType){
   const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, dataAccessibilityLevel, regions, machines,
-    password, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
+    password, registrationRequest, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
 
 
   let doc = {};
@@ -508,6 +501,10 @@ async function getDocumentFromReq(req, reqType){
     doc.invitationStatus = invitationStatus;
   }
 
+  if ("registrationRequest" in req.body){
+    doc.registrationRequest = registrationRequest;
+  }
+  
   if ("expireAt" in req.body){
     doc.expireAt = expireAt;
   }

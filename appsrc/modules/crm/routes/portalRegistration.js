@@ -3,7 +3,8 @@ const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
 const roleCheck = require('../../../middleware/role-check');
 const verifyDelete = require('../../../middleware/verifyDelete');
-const { validatePortalReq } = require('../bodyValidation/portalRegistration');
+const { portalSchema } = require('../schema/crmSchemas');
+const { validateRequest } = require('../../../configs/reqServices');
 
 const controllers = require('../controllers');
 const controller = controllers.portalRegistration;
@@ -20,7 +21,7 @@ router.get(`${baseRouteForObject}`, checkAuth, controller.getRegisteredRequests)
 router.get(`${baseRouteForObject}/:id`, checkAuth, controller.getRegisteredRequest);
 
 // - /api/1.0.0/crm/customers/register/:id
-router.patch(`${baseRouteForObject}/:id`, checkAuth, validatePortalReq('update'), verifyDelete, roleCheck, controller.patchRegisteredRequest);
+router.patch(`${baseRouteForObject}/:id`, checkAuth, validateRequest( portalSchema('update') ), verifyDelete, roleCheck, controller.patchRegisteredRequest);
 
 // - /api/1.0.0/crm/customers/register/:id
 router.delete(`${baseRouteForObject}/:id`, checkAuth, controller.deleteRegisteredRequest);
