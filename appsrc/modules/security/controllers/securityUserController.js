@@ -28,6 +28,7 @@ this.populate = [
   { path: "createdBy", select: "name" },
   { path: "updatedBy", select: "name" },
   { path: "customer", select: "name type isActive" },
+  { path: "registrationRequest", select: "customerName contactPersonName" },
   { path: "contact", select: "firstName lastName formerEmployee isActive" },
   { path: "roles", select: "" },
   {
@@ -51,6 +52,7 @@ this.populateList = [
       select: "departmentName departmentType",
     },
   },
+  { path: "registrationRequest", select: "customerName contactPersonName" },
   { path: "roles", select: "" },
 ];
 
@@ -185,7 +187,6 @@ exports.postSecurityUser = async ( req, res ) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      throw new Error(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } 
 
     if(!req.body.email) req.body.email = req.body.login;
@@ -205,10 +206,10 @@ exports.postSecurityUser = async ( req, res ) => {
       const doc = await getDocumentFromReq( req, "new"  );
       const newUser = await this.dbservice.postObject( doc );
       if( req?.body?.isInvite ){
-        req.params.id = newUser?._id;
         if( req?.body?.registrationRequest ){
           return newUser;
         }
+        req.params.id = newUser?._id;
         await this.userEmailService.sendUserInviteEmail( req, res );
       } 
         return res.status(StatusCodes.CREATED).json({ user: newUser }); 
@@ -216,7 +217,6 @@ exports.postSecurityUser = async ( req, res ) => {
       res.status(StatusCodes.CREATED).json({ user: user });
     } else {
       return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
-      throw new Error("Email/Login already exists!");
     }
   } catch(error){
     logger.error(new Error(error));

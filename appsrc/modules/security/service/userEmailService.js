@@ -102,6 +102,7 @@ class UserEmailService {
       if (res) {
         res.status(StatusCodes.OK).send('Invitation Sent Successfully!');
       }
+      return null
     }catch(error){
       logger.error(new Error(error));
       if (res) {

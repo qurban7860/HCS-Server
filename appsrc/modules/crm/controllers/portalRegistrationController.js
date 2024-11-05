@@ -17,8 +17,9 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-    { path: 'customer', select: 'name' },
-    { path: 'contact', select: 'firstName lastName' },
+    { path: 'customer', select: 'name isActive' },
+    { path: 'contact', select: 'firstName lastName isActive' },
+    { path: 'securityUser', select: 'name isActive' },
     { path: 'createdBy', select: 'name' },
     { path: 'updatedBy', select: 'name' }
 ];
@@ -123,15 +124,11 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                         isInvite: true,
                     }
                     req.body = { ...req.body, ...newUser };
-                    try {
-                        const user = await postSecurityUser(req, res);
-                        const result = await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq({ body: { securityUser: user?._id }}));
-                        req.params.id = user?._id;
-                        await this.userEmailService.sendUserInviteEmail( req, res );
-                        req.params.id = result?._id
-                    } catch (error) {
-                        return res.status(StatusCodes.CONFLICT).send(error.message);
-                    }
+                    const user = await postSecurityUser(req);
+                    await this.dbservice.patchObject(PortalRegistration, req.params.id, { securityUser: user?._id } );
+                    req.params.id = user?._id?.toString();
+                    await this.userEmailService.sendUserInviteEmail( req );
+                    req.params.id = findRequest?._id
                 }
                 
                 await getPortalRequest(req, res);
