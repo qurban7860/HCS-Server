@@ -25,7 +25,7 @@ const docSchema = new Schema({
   originalTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
   // last Template version.  if there is any
   
-  docTitle: { type: String },
+  reportTitle: { type: String },
   // name/title of document/screen
 
   docVersionNo: { type: Number,  required: true,  default: '1'},

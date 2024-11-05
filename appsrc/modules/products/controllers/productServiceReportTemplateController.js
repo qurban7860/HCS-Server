@@ -108,7 +108,7 @@ exports.getProductServiceReportTemplate = async (req, res, next) => {
 exports.getProductServiceReportTemplates = async (req, res, next) => {
 
   this.query = req.query != "undefined" ? req.query : {};  
-  this.orderBy = { docTitle: 1 };
+  this.orderBy = { reportTitle: 1 };
 
   if(this.query.isArchived=='true'){
     this.query.isArchived = true
@@ -216,13 +216,13 @@ exports.postProductServiceReportTemplate = async (req, res, next) => {
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
             await securityNotificationController.createNotification(
-              `Service Report Template with title ${req.body.docTitle} has been submitted. Please Review.`,
+              `Service Report Template with title ${req.body.reportTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
               type_,
               {
                 _id: response._id, 
-                docTitle: response.docTitle,
+                reportTitle: response.reportTitle,
                 reportType: response.reportType,
                 status: response.status,
                 docVersionNo: response.docVersionNo
@@ -275,13 +275,13 @@ exports.patchProductServiceReportTemplate = async (req, res, next) => {
           if(Array.isArray(users) && users.length>0) {
             const userIds = users.map((u)=>u._id);
             await securityNotificationController.createNotification(
-              `Service Report Template with title ${req.body.docTitle} has been submitted. Please Review.`,
+              `Service Report Template with title ${req.body.reportTitle} has been submitted. Please Review.`,
               req.body.loginUser.userId, 
               userIds,
               type_,
               {
                 _id:  productServiceReportTemplate._id, 
-                docTitle: productServiceReportTemplate.docTitle,
+                reportTitle: productServiceReportTemplate.reportTitle,
                 reportType: productServiceReportTemplate.reportType,
                 status: req.body.status,
                 docVersionNo: productServiceReportTemplate.docVersionNo
@@ -390,7 +390,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { machineCategory, reportType, machineModel, status, submittedInfo, parentTemplate, originalTemplate, docTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
+  const { machineCategory, reportType, machineModel, status, submittedInfo, parentTemplate, originalTemplate, reportTitle, docVersionNo, textBeforeCheckItems, paramsTitle, params, 
     checkItemLists, enableAdditionalParams, additionalParamsTitle, additionalParams, 
     enableMachineMetreage, machineMetreageTitle, machineMetreageParams, enablePunchCycles, punchCyclesTitle, 
     punchCyclesParams, textAfterCheckItems, isOperatorSignatureRequired, enableNote, enableMaintenanceRecommendations, 
@@ -431,8 +431,8 @@ function getDocumentFromReq(req, reqType){
     doc.originalTemplate= originalTemplate;
   }
 
-  if ("docTitle" in req.body){
-    doc.docTitle = docTitle;
+  if ("reportTitle" in req.body){
+    doc.reportTitle = reportTitle;
   }
 
   if ("docVersionNo" in req.body){

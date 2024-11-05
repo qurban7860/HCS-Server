@@ -56,7 +56,7 @@ exports.getProductServiceReportValues = async (req, res, next) => {
 
 exports.getProductServiceReportCheckItems = async (req, res) => {
   let populateObject = [
-    { path: 'serviceReportTemplate', select: 'docTitle reportType checkItemLists' },
+    { path: 'serviceReportTemplate', select: 'reportTitle reportType checkItemLists' },
     { path: 'createdBy', select: 'name' },
     { path: 'updatedBy', select: 'name' }
   ];
