@@ -11,11 +11,11 @@ const docSchema = new Schema({
     comments: { type: String, default: "" },
     // Report comments.
     
-    serviceReportID: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports' },
+    serviceReportID: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
 
-    primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReports' },
+    primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
 
-    status: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportStatuses' },
+    status: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportStatus' },
     
 },
 {

@@ -19,10 +19,10 @@ const docSchema = new Schema({
   status: { type: String, enum: ['DRAFT','SUBMITTED', 'APPROVED'], default: 'DRAFT' },
   // draft/submitted/approved
 
-  parentTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
+  parentTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate' },
   // last Template version.  if there is any
   
-  originalTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates' },
+  originalTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate' },
   // last Template version.  if there is any
   
   reportTitle: { type: String },

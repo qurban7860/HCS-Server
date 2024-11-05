@@ -10,16 +10,16 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
   
-  serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates', required: true},
+  serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate', required: true},
   // service Report id.
 
-  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplatses' , required: true},
+  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplatse' , required: true},
   // purpose is to maintain parent service Report uuid
   
-  machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItems', required: true},
+  machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem', required: true},
   //checkitem reference id
   
-  checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplates.checkItemLists', required: true}, 
+  checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate.checkItemLists', required: true}, 
   //this will refer to the list to which checkitem is belong to,
 
   checkItemValue: { type: String },
