@@ -126,13 +126,14 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                     try {
                         const user = await postSecurityUser(req, res);
                         const result = await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq({ body: { securityUser: user?._id }}));
-                        req.params.id = newUser?._id;
+                        req.params.id = user?._id;
                         await this.userEmailService.sendUserInviteEmail( req, res );
+                        req.params.id = result?._id
                     } catch (error) {
                         return res.status(StatusCodes.CONFLICT).send(error.message);
                     }
                 }
-                req.params.id = result?._id
+                
                 await getPortalRequest(req, res);
             }
     } catch(error){
