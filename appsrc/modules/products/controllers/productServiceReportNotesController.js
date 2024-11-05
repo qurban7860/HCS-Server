@@ -20,7 +20,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  { path: 'serviceReportID', select: 'serviceReportDate serviceReportUID' },
+  { path: 'serviceReportID', select: 'serviceDate serviceReportUID' },
   { path: 'primaryServiceReportId', select: 'name' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
