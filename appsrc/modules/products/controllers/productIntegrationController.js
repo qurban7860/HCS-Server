@@ -135,10 +135,10 @@ exports.syncMachineConnection = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
-    const { Machine_Serial_No, Howick_Portal_Key, Computer_GUID, IPC_Serial_No } = req.body;
+    const { machineSerialNo, howickPortalKey, computerGUID, IPCSerialNo } = req.body;
 
     const machine = await Product.findOne({
-      serialNo: Machine_Serial_No,
+      serialNo: machineSerialNo,
       isActive: true,
       isArchived: false,
     }).populate("status");
@@ -160,7 +160,7 @@ exports.syncMachineConnection = async (req, res, next) => {
 
     const latestPortalKey = machine.portalKey[0]?.key;
 
-    if (!latestPortalKey || latestPortalKey !== Howick_Portal_Key) {
+    if (!latestPortalKey || latestPortalKey !== howickPortalKey) {
       await logApiCall({
         req,
         startTime,
@@ -176,8 +176,8 @@ exports.syncMachineConnection = async (req, res, next) => {
     }
 
     if (!machine.computerGUID || !machine.IPC_SerialNo) {
-      machine.computerGUID = Computer_GUID;
-      machine.IPC_SerialNo = IPC_Serial_No;
+      machine.computerGUID = computerGUID;
+      machine.IPC_SerialNo = IPCSerialNo;
       machine.machineIntegrationSyncStatus = {
         syncStatus: true,
         syncDate: new Date(),
@@ -198,7 +198,7 @@ exports.syncMachineConnection = async (req, res, next) => {
       return res.status(StatusCodes.OK).json({ message: "Machine connection synced successfully and machine details saved" });
     }
 
-    if (machine.computerGUID === Computer_GUID && machine.IPC_SerialNo === IPC_Serial_No) {
+    if (machine.computerGUID === computerGUID && machine.IPC_SerialNo === IPCSerialNo) {
       if (!machine.machineIntegrationSyncStatus?.syncStatus) {
         machine.machineIntegrationSyncStatus = {
           syncStatus: true,
@@ -257,7 +257,7 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     machine: machine ? [machine._id] : [],
     customer: machine?.customer,
     apiType: "MACHINE-INTEGRATION",
-    responseTime: `${Date.now() - startTime}ms`,
+    responseTime: `${Date.now() - startTime}`,
     response: JSON.stringify(responseData.body),
     responseStatusCode: responseData.statusCode,
     additionalContextualInformation: responseData.context,

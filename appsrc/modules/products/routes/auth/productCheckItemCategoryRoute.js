@@ -1,10 +1,10 @@
 const express = require('express');
 
-const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
-const verifyDelete = require('../../../middleware/verifyDelete');
+const checkAuth = require('../../../../middleware/check-auth');
+const checkCustomer = require('../../../../middleware/check-customer');
+const verifyDelete = require('../../../../middleware/verifyDelete');
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.productCheckItemCategoryController;
 
 const router = express.Router();
