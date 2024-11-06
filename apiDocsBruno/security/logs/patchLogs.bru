@@ -1,0 +1,41 @@
+meta {
+  name: patchLogs
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/security/roles/63ee11eefc59555968adae9a
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "serialNo": "0002",
+      "parentMachine": "63e9bb294cca96340261450a",
+      "name": "0002",
+      "description": "second machine",
+      "status": "63ed99092f965840a8bb6511",
+      "supplier": "63ed9e042f965840a8bb651f",
+      "machineModel": "63e9b847ae43ac31f3049756",
+      "workOrderRef": "workorder001",
+      "customer":"63e9bb294cca96340261450a",
+      "instalationSite":"63e9bb294cca96340261450a",
+      "billingSite":"63e9bb294cca96340261450a",
+      "operators":[],
+      "accountManager":"63e9bb294cca96340261450a",
+      "projectManager":"63e9bb294cca96340261450a",
+      "supportManager":"63e9bb294cca96340261450a",
+      "license":"63e9bb294cca96340261450a",
+      "logo":"63e9bb294cca96340261450a",
+      "tools":[],
+      "internalTags":["123", "124"],
+      "customerTags": ["431", "567"]
+  }
+  
+}

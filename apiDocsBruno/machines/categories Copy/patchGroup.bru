@@ -1,0 +1,24 @@
+meta {
+  name: patchGroup
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/groups/65b346c434285037acb95b20
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Group A",
+      "category": ["65b0af9c0624a96618ed9625", "6555bfa97889406abce1978a", "64ae5c0cdc483f373399901b"],
+      "isActive" : true,
+      "isArchived" : false
+  }
+}

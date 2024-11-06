@@ -1,0 +1,25 @@
+meta {
+  name: postCategory
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/categories/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Decoilew1234jh76",
+      "description":"Decoiler for ss",
+      "isActive" : true,
+      "isArchived" : false,
+      "test" : "testsing"
+  }
+}

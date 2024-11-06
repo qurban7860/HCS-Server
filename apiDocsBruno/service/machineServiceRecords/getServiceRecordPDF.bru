@@ -1,0 +1,21 @@
+meta {
+  name: getServiceRecordPDF
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/products/machines/6555c00b7889406abce19b4d/serviceRecords/656851f5235ea17190055f32/sendEmail
+  body: text
+  auth: bearer
+}
+
+params:query {
+  ~isArchived: false
+  ~isHistory: true
+  ~serviceId: 6551cf2931f54b4dd8e6d228
+}
+
+auth:bearer {
+  token: {{token}}
+}

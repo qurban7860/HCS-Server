@@ -1,0 +1,38 @@
+meta {
+  name: addLog
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/logs/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "coilBatchName": "Sample Coil Batch Name",
+    "ccThickess": "Sample CC Thickness",
+    "coilLength": "Sample Coil Length",
+    "operator": "Sample Operator",
+    "frameSet": "Sample Frame Set",
+    "componentLabel": "Sample Component Label",
+    "componentLength": "Sample Component Length",
+    "componentWeight": "Sample Component Weight",
+    "webWidth": "Sample Web Width",
+    "flangeHeight": "Sample Flange Height",
+    "profileShape": "Sample Profile Shape",
+    "waste": "Sample Waste",
+    "type": "ERP",
+    "time": "Sample Time",
+    "date": "2023-10-12T14:30:00.000Z", 
+    "customer": "65277f18a5d3a51cc0556689",
+    "machine": "65277f33a5d3a51cc05566ac"
+  }
+  
+}

@@ -1,0 +1,32 @@
+meta {
+  name: addCheckItems
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/checkItems/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "titlet",
+      "printName": "title to print at reports. default is same as name ",
+      "description": "detailed description of field",
+      "helpHint": "display this text as help at input screen ",
+      "linkToUserManual": "link to user manual for this parameter",
+      "isRequired": true,
+      "inputType": false,
+      "unitType": "like Meter, Cycle, Kg, etc",
+      "minValidation": "For text value, The length of value can be 0 to 100",
+      "maxValidation": "For text value, The length of value can be 0 to 100",
+      "isActive": true,
+      "isArchived": false
+  }
+}

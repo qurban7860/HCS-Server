@@ -1,0 +1,23 @@
+meta {
+  name: postNote
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/security/invites
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note": "Haris Ahmad ......... Haris Ahmad ......... Haris Ahmad ......... Haris Ahmad ......... Haris Ahmad ......... ",
+      "isActive": true,
+      "isArchived": false
+  }   
+}

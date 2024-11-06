@@ -1,0 +1,19 @@
+meta {
+  name: patchMachine
+  type: http
+  seq: 9
+}
+
+patch {
+  url: {{baseUrl}}/products/machines/663044a2b1ad8c505807c6f3
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {}
+}

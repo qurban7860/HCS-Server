@@ -1,0 +1,29 @@
+meta {
+  name: postMetaSchema
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/configs/metaSchemas/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "configJSON": [
+      { "_id":1 , "name": "Boolean"},
+      { "_id":2 , "name": "Date"},
+      { "_id":3 , "name": "Long Text"},
+      { "_id":4 , "name": "Number"},
+      { "_id":5 , "name": "Short Text"},
+      { "_id":6 , "name": "Status"}
+    ],
+      "collectionType": "inputTypes"
+  }
+}

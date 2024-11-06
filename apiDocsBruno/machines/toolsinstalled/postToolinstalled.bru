@@ -1,0 +1,56 @@
+meta {
+  name: postToolinstalled
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/products/machines/64db0df9560174368fb4e2a2/toolsinstalled/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "tool": "64cb8b4324cc41af21aee6c8",
+      "offset": "253243242342",
+      "isApplyWaste": true,
+      "wasteTriggerDistance": "100",
+      "isApplyCrimp": false,
+      "crimpTriggerDistance": "200",
+      "isBackToBackPunch": false,
+      "isManualSelect": true,
+      "isAssign": false,
+      "operations": 123321,
+      "isActive": false,
+      "isArchived": false,
+      "toolType": "COMPOSIT TOOL",
+      "singleToolConfig": {
+          "engageSolenoidLocation": "12",
+          "returnSolenoidLocation": "13",
+          "engageOnCondition": "PROXIMITY SENSOR",
+          "engageOffCondition": "TIMER",
+          "timeOut": "2023-08-16",
+          "engagingDuration": "2023-08-15",
+          "returningDuration": "2023-08-14",
+          "twoWayCheckDelayTime": "2023-08-13",
+          "homeProximitySensorLocation": "12312",
+          "engagedProximitySensorLocation": "5132",
+          "pressureTarget": "92642",
+          "distanceSensorLocation": "1122",
+          "distanceSensorTarget": "2233",
+          "isHasTwoWayCheck": true,
+          "isEngagingHasEnable": false,
+          "isReturningHasEnable": "true",
+          "movingPunchCondition": "PUNCH WHILE JOGGING"
+      },
+      "compositeToolConfig": {
+          "engageInstruction": ["64cb8b4324cc41af21aee6c8", "64cb8b4324cc41af21aee6c8"],
+          "disengageInstruction": ["64cb8b4324cc41af21aee6c8", "64cb8b4324cc41af21aee6c8"]
+      }
+  }
+}

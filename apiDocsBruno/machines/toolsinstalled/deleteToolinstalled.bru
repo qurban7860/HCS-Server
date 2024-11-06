@@ -1,0 +1,15 @@
+meta {
+  name: deleteToolinstalled
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/products/machines/64db0df9560174368fb4e2a2/toolsinstalled/64e307c3dcad4c16c6fce6e8
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

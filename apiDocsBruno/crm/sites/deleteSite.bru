@@ -1,0 +1,19 @@
+meta {
+  name: deleteSite
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/crm/customers/:customerId/sites/63f51351adb70d3ee84f03fd
+  body: none
+  auth: bearer
+}
+
+params:path {
+  customerId: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

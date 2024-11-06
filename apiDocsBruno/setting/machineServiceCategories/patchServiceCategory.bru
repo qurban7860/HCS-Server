@@ -1,0 +1,24 @@
+meta {
+  name: patchServiceCategory
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/CheckItemCategories/64f82c1ac4a4bd34e4bd6b57
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Category B@",
+      "description":"Description for category B@",
+      "isActive" : true,
+      "isArchived" : false
+  }
+}

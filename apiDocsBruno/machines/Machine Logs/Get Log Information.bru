@@ -1,0 +1,21 @@
+meta {
+  name: Get Log Information
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/productLogs/66e430f1ec5bd4d178c5c1d1?type=erp&machine=65277f33a5d3a51cc05566ac
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: erp
+  machine: 65277f33a5d3a51cc05566ac
+  ~customer: customerId
+}
+
+auth:bearer {
+  token: {{auth-token}}
+}

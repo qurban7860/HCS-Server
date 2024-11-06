@@ -1,0 +1,21 @@
+meta {
+  name: patchUser
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/security/users/changeUserStatus/649aea5ffb6c2099cb97ba09/false
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "userLocked": false
+  }
+}

@@ -1,0 +1,33 @@
+meta {
+  name: getToken
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/security/getToken
+  body: json
+  auth: none
+}
+
+headers {
+  ~Content-Type: application/json
+}
+
+body:json {
+  {
+      "email": "muzna@terminustech.com", 
+      "password": "123456"
+  }
+}
+
+tests {
+  test("Response body should be valid JSON", () => {
+  //     pm.response.to.be.json();
+  });
+  
+  const responseObj = res.getBody();
+  const accessToken = responseObj.accessToken;
+  bru.setEnvVar("token", accessToken);
+  console.log(res.getBody()?.toString())
+}

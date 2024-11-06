@@ -1,0 +1,26 @@
+meta {
+  name: getUsers
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/security/configs/blockedusers
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~name: Naveed Ilyas
+  ~roleType: superAdmin
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name" : "Naveed Ilyas"
+  }
+}

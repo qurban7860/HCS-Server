@@ -1,0 +1,23 @@
+meta {
+  name: addConfig
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/configs/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "EXPORT_UUID",
+      "type": "AUTH",
+      "value" : " TrUe "
+  }
+}

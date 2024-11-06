@@ -1,0 +1,21 @@
+meta {
+  name: patchMachineStatus
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/products/machines/66049464031c5f9046e4e63f/updateStatus/6642b77a9b8c7e42bcc9108d
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "dated": "2024-02-27T19:00:00.000Z"
+  }
+}

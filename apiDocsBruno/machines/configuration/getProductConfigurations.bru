@@ -1,0 +1,15 @@
+meta {
+  name: getProductConfigurations
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/apiclient/productConfigurations/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

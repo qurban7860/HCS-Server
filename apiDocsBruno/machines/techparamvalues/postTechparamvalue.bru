@@ -1,0 +1,24 @@
+meta {
+  name: postTechparamvalue
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/techparams/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "category": "64362603a2f598516f9025a0",
+      "name": "Decoiler33678",
+      "code": "Decoiler67",
+      "description":"Decoiler for ss"
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: getUserInvitation
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/security/invites/64fac3abb0e61e12c2059ea1
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note":"User notes ...."
+  }
+}

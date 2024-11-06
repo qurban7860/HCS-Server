@@ -1,0 +1,24 @@
+meta {
+  name: patchfile
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/filemanager/files/6479f486d1586167d83a7c5b
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  name: pkr
+  customer: {{customer}}
+  machine: 
+  documentType: 6479f14d1d15656415e29fe1
+  documentCategory: 6479f458d1586167d83a7c4f
+  images: @file(/home/haris/Pictures/Screenshot from 2023-05-18 15-19-59.png)
+}

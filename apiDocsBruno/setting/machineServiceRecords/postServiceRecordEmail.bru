@@ -1,0 +1,28 @@
+meta {
+  name: postServiceRecordEmail
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/machines/6555c00b7889406abce19b4d/serviceRecords/656988bf8f0a9eac0917dff4/sendEmail
+  body: multipartForm
+  auth: bearer
+}
+
+params:query {
+  ~isArchived: false
+  ~isHistory: true
+  ~serviceId: 6551cf2931f54b4dd8e6d228
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  pdf: @file(/C:/Users/haris/Downloads/Example Formates/07.pdf)
+  email: abc@gamil.com;
+  : 
+  ~pdf: @file()
+}

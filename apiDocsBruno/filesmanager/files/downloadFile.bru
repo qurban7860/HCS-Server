@@ -1,0 +1,19 @@
+meta {
+  name: downloadFile
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/documents/files/65a4e95fa41fa76c31db62cc/download/
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~download: true
+}
+
+auth:bearer {
+  token: {{token}}
+}

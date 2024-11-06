@@ -1,0 +1,28 @@
+meta {
+  name: getLogs
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/logs/erp/?fromDate=2023-08-01T06:14:18.000Z&toDate=2024-01-11T19:00:00.000Z
+  body: json
+  auth: bearer
+}
+
+params:query {
+  fromDate: 2023-08-01T06:14:18.000Z
+  toDate: 2024-01-11T19:00:00.000Z
+  ~isArchived: false
+  ~machine: 6597c6e46293e89c50ea24a2
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "page": 1
+  }
+}

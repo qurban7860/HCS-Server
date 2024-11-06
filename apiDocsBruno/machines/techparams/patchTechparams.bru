@@ -1,0 +1,24 @@
+meta {
+  name: patchTechparams
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/techparams/63edac5e2f965840a8bb6551
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "category": "63edab482f965840a8bb6536",
+      "name": "Decoiler12",
+      "code": "Decoiler12",
+      "description":"Decoiler for ss"
+  }
+}

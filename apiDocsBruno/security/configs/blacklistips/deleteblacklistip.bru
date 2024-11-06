@@ -1,0 +1,15 @@
+meta {
+  name: deleteblacklistip
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/security/configs/Blacklistips/651fafb174c6762a487f0ac5
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,15 @@
+meta {
+  name: getUserInvitations
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/security/invites
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

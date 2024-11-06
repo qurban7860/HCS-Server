@@ -1,0 +1,26 @@
+meta {
+  name: patchTechparamvalue
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/machines/64202c01ebad86149771a3f2/techparamvalues/63eded3d5e823e502390e754
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "techParam": "63edab482f965840a8bb6536",
+      "machine": "63edab482f965840a8bb6536",
+      "techParamValue": "Decoiler45454",
+      "activatedAt": "",
+      "expiryDate": "",
+      "note": "Decoiler"
+  }
+}

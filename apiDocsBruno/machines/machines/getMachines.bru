@@ -1,0 +1,20 @@
+meta {
+  name: getMachines
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/searchProductId?serialNo=123123&ref=cusref
+  body: multipartForm
+  auth: bearer
+}
+
+params:query {
+  serialNo: 123123
+  ref: cusref
+}
+
+auth:bearer {
+  token: {{token}}
+}

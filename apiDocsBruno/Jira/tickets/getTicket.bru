@@ -1,0 +1,30 @@
+meta {
+  name: getTicket
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/jira/tickets?orderBy=-created&startAt=0&maxResults=5&project=HWKSC&serialNo=20909&ref=NUA - Carlow
+  body: json
+  auth: bearer
+}
+
+params:query {
+  orderBy: -created
+  startAt: 0
+  maxResults: 5
+  project: HWKSC
+  serialNo: 20909
+  ref: NUA - Carlow
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note":"User notes ...."
+  }
+}

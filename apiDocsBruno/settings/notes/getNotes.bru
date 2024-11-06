@@ -1,0 +1,21 @@
+meta {
+  name: getNotes
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/security/users/64eedee2c26f210abe124745/securityNotes
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note":"User notes ...."
+  }
+}

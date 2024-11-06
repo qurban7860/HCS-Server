@@ -1,0 +1,25 @@
+meta {
+  name: getwhitlelistip
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/security/configs/whitelistip/
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~name: Naveed Ilyas
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name" : "Naveed Ilyas"
+  }
+}

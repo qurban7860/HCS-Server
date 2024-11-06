@@ -1,0 +1,22 @@
+meta {
+  name: getVisits
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/calender/visits?isArchived=false&isActive=true&month=5&year=2024
+  body: none
+  auth: bearer
+}
+
+params:query {
+  isArchived: false
+  isActive: true
+  month: 5
+  year: 2024
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,31 @@
+meta {
+  name: postUser
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/security/users/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Muzna Farooq",
+      "login": "muzna@gmddai3l.com",
+      "email": "muzna@gmai3ddl.com",
+      "customer": "63ef5d8cd1aa7c308de7371c",
+      "currentEmployee": false,
+      "password": "123456",
+      "expireAt": null,
+      "allWriteAccess": true,
+      "whiteListIPs": [],
+      "isActive": false,
+      "token": {}
+  }
+}
