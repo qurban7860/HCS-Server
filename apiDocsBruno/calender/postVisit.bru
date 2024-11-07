@@ -1,0 +1,38 @@
+meta {
+  name: postVisit
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/calender/visits
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "customer": "6140f8a11d5c7a431f5eab5d", // ObjectId of the customer
+      "site": "6140f8a11d5c7a431f5eab5e", // ObjectId of the customer site
+      "contact": "6140f8a11d5c7a431f5eab5f", // ObjectId of the customer contact
+      "machine": "6140f8a11d5c7a431f5eab60", // ObjectId of the machine
+      "jiraTicket": "JIRA-12345",
+      "technicians": [
+          "6140f8a11d5c7a431f5eab61",
+          "6140f8a11d5c7a431f5eab62"
+      ], // Array of ObjectId(s) of technicians
+      "status": "scheduled",
+      "title": "Maintenance Visit",
+      "description": "Routine maintenance check",
+      "start": "2024-05-10T09:00:00Z",
+      "end": "2024-05-10T12:00:00Z",
+      "completedBy": [
+          "6140f8a11d5c7a431f5eab63",
+          "6140f8a11d5c7a431f5eab64"
+      ] // Array of ObjectId(s) of users who completed the visit
+  }
+}

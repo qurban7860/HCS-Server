@@ -1,0 +1,15 @@
+meta {
+  name: deleteCheckItems
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/checkItems/650bd147b1e56cb986e119c7
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

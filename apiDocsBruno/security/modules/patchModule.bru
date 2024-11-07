@@ -1,0 +1,33 @@
+meta {
+  name: patchModule
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/security/modules/63ec9c4001b33b2187031893
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "machine": "63e9b847ae43ac31f3049756",
+      "licenseKey":"dfgfdkgjfdler vbvfor testing56",
+      "licenseDetail":{
+          "version": "version1.2",
+          "type": "consumer",
+          "deviceName": "server-name1",
+          "deviceGUID": "fgfdkgjfdlgjfdlgjfdglfjd",
+          "production": 40000,
+          "waste": 1000,
+          "extensionTime":"2023-02-13",
+          "requestTime":"2025-02-13" 
+  
+      } 
+  }
+}

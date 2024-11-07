@@ -1,0 +1,25 @@
+meta {
+  name: allDocumentsAgainstFilter
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/documents/document/allDocumentsAgainstFilter?machine=65bcdfe9929a44b7b71bf9a3&fileType=pdf
+  body: json
+  auth: bearer
+}
+
+params:query {
+  machine: 65bcdfe9929a44b7b71bf9a3
+  fileType: pdf
+  ~includeMachines: true
+  ~includeDrawings: true
+  ~customer: 6592884c229ae548b2566ae4
+  ~includeCustomers: true
+  ~documentId: 65c367552a9b1e054d316eeb
+}
+
+auth:bearer {
+  token: {{token}}
+}

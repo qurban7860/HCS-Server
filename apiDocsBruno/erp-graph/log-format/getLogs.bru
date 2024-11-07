@@ -1,0 +1,26 @@
+meta {
+  name: getLogs
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/logs/logformat
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~isArchived: false
+  ~machine: 6597c6e46293e89c50ea24a2
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "page": 1
+  }
+}

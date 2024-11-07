@@ -1,0 +1,30 @@
+meta {
+  name: Get List of Logs
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}productLogs/?type=PRODUCTION&machine=66ab21ed998027e7de3aa37e&fromDate=2019-01-06&toDate=2024-10-12&isArchived=false&archivedByMachine=false&pagination[page]=0&pagination[pageSize]=100
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: PRODUCTION
+  machine: 66ab21ed998027e7de3aa37e
+  fromDate: 2019-01-06
+  toDate: 2024-10-12
+  isArchived: false
+  archivedByMachine: false
+  pagination[page]: 0
+  pagination[pageSize]: 100
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}

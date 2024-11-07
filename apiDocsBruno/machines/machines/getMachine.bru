@@ -1,0 +1,15 @@
+meta {
+  name: getMachine
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/machines/65e04e160b6d8b308ce97a9a
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

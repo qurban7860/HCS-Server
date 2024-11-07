@@ -1,0 +1,16 @@
+meta {
+  name: deleteNote
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/crm/customers/643651d65a1dfb01885fc6ea/notes/6439027a50e670e4b2d8fb3eToken
+
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

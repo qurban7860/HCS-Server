@@ -1,0 +1,15 @@
+meta {
+  name: getCategories
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/filemanager/categories/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

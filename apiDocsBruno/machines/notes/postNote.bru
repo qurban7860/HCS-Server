@@ -1,0 +1,21 @@
+meta {
+  name: postNote
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/machines/64202a86ebad86149771a32a/notes/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note":"Machine Notes ...."
+  }
+}

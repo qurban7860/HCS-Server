@@ -1,0 +1,23 @@
+meta {
+  name: patchStatus
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/statuses/63ed988e2f965840a8bb650a
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Order Accepted",
+      "description":"Order Accepted",
+      "displayOrderNo": 0
+  }
+}

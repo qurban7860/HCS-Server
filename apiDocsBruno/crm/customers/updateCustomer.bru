@@ -1,0 +1,32 @@
+meta {
+  name: updateCustomer
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/crm/customers/651e958ecd34c13084c5a970
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Danial Ahmad",
+      "tradingName": "Customer XYZz",
+      "clientCode": "abc",
+      "type": "SP",
+      "mainSite": "63e9d13e4acb9d3d727a3813",
+      "primaryBillingContact": "63ee30dba87ccbc1a138a627",
+      "primaryTechnicalContact": "63ee30dba87ccbc1a138a626",
+      "accountManager":"63ee275a07a2cfba8be4556e",
+      "projectManager":"63ee270a07a2cfba8be45564",
+      "supportManager":"63ee270a07a2cfba8be45564",
+      "isActive":true,
+      "isArchived":false
+  }
+}

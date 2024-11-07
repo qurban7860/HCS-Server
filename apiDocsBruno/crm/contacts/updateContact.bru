@@ -1,0 +1,32 @@
+meta {
+  name: updateContact
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/crm/customers/655b52acf49c034e22cf20a5/contacts/655b5879e542e355cd0d027b
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "firstName": "Haris",
+      "lastName": "Ahmad",
+      "title": "Haris Ahmad",
+      "contactTypes": [
+          "technical",
+          "financial"
+      ],
+      "phone": "+92-345-7399098",
+      "email": "",
+      "sites": [],
+      "isActive": false,
+      "isArchived": true
+  }
+}

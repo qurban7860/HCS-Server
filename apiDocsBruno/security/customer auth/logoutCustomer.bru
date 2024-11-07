@@ -1,0 +1,15 @@
+meta {
+  name: logoutCustomer
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/security/logoutCustomer/649aea5ffb6c2099cb97ba09
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,30 @@
+meta {
+  name: postServiceRecordValue
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/machines/652522f5b1108d1648686f3c/serviceRecordValues
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "serviceRecord": "6538dd38b6a0db5d74744db0",
+      "serviceId": "6538dd38b6a0db5d74744db0",
+      
+      "machineCheckItem": "652d15e9c0a4423d84061dad",
+      "checkItemListId": "6538eeac94ad1c2ea03b298d",
+      "checkItemValue": "20",
+      "comments": "comments",
+      "files": "",
+      "isActive": true,
+      "isArchived": false
+  }
+}

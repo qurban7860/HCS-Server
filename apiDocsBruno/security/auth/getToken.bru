@@ -1,0 +1,37 @@
+meta {
+  name: getToken
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/security/getToken
+  body: json
+  auth: bearer
+}
+
+headers {
+  ~Content-Type: application/json
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "email": "muzna@terminustech.com", 
+      "password": "12345678"
+  }
+}
+
+tests {
+  // Parse the JSON response
+  var jsonResponse = res.getBody();
+  
+  // Extract the accessToken from the JSON response
+  var accessToken = jsonResponse.accessToken;
+  
+  // Set the accessToken variable in Postman environment or global scope
+  bru.setEnvVar("token", accessToken);
+}

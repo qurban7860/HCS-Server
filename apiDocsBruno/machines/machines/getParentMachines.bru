@@ -1,0 +1,15 @@
+meta {
+  name: getParentMachines
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/products/machines/connections/64b4d35b3fafc8dca9d3f9bc
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

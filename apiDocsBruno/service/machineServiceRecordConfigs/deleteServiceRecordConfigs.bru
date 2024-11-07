@@ -1,0 +1,15 @@
+meta {
+  name: deleteServiceRecordConfigs
+  type: http
+  seq: 7
+}
+
+delete {
+  url: {{baseUrl}}/products/serviceRecordsConfig/64f19cd79e9bdf093cd4fcbf
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

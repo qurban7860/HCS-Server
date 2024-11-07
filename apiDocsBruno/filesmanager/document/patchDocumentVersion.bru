@@ -1,0 +1,21 @@
+meta {
+  name: patchDocumentVersion
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/documents/document/updatedVersion/655c5797a8ea4c2ee841b066
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  { 
+      "updatedVersion": 5.1
+  }
+}

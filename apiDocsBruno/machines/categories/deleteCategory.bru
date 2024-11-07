@@ -1,0 +1,15 @@
+meta {
+  name: deleteCategory
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/categories/63e45a06fa3ccc7935f5dfb8
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

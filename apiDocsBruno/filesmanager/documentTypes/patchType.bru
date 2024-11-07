@@ -1,0 +1,22 @@
+meta {
+  name: patchType
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/filemanager/documentType/647da9bd8405f16fe3c2d00f
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  { 
+      "name": "Type 4 [active: false]",
+      "isActive":false
+  }
+}

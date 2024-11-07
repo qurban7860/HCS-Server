@@ -1,0 +1,15 @@
+meta {
+  name: getProfiles
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/64feaf6c2123c80554008b66/profiles/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

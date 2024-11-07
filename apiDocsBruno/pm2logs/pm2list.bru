@@ -1,0 +1,23 @@
+meta {
+  name: pm2list
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/logs/pm2/?out_log=false&err_log=true&app=hcs-dev-server&pageNumber=0&pageSize=100
+  body: none
+  auth: bearer
+}
+
+params:query {
+  out_log: false
+  err_log: true
+  app: hcs-dev-server
+  pageNumber: 0
+  pageSize: 100
+}
+
+auth:bearer {
+  token: {{token}}
+}

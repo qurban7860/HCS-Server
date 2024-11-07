@@ -1,0 +1,71 @@
+meta {
+  name: postServiceRecords
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/products/machines/64ae5c68dc483f373399ba95/serviceRecords
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "serviceRecordConfig": "65489d11822f3341a016dad2",
+      "serviceDate": "2023-10-03T08:00:00Z",
+      "customer": "64ae5b6edc483f37339946e9",
+      "site": "64ae5b6fdc483f3733994714",
+      // "decoilers": "64ae5be3dc483f3733997ce7",
+      "technician": "649aea5ffb6c2099cb97ba09",
+      "technicianNotes": "Technical Notes",
+      "textBeforeCheckItems": "Text Before Check Items @@",
+      "textAfterCheckItems": "Text After check itesm",
+      "serviceNote": "Text After check itesm",
+      "recommendationNote": "Text After check itesm",
+      "internalComments": "Text After check itesm",
+      "suggestedSpares": "Text After check itesm",
+      "internalNote": "Text After check itesm",
+      "machine": "64ae5c68dc483f373399ba95",
+      "checkItemRecordValues": [
+          {
+              "machineCheckItem": "652d15e9c0a4423d84061dad",
+              "checkItemListId": "65489d11822f3341a016dad3",
+              "checkItemValue": "20231112 A",
+              "comments": "comments"
+          },
+          {
+              "machineCheckItem": "652d15fbc0a4423d84061e1e",
+              "checkItemListId": "65489d11822f3341a016dad3",
+              "checkItemValue": "2nd Value",
+              "comments": "comments"
+          },
+          {
+              "machineCheckItem": "652d160cc0a4423d84061e8f",
+              "checkItemListId": "65489d11822f3341a016dad3",
+              "checkItemValue": "3rd Value",
+              "comments": "comments"
+          },
+          {
+              "machineCheckItem": "652d1701c0a4423d840620dd",
+              "checkItemListId": "65489d11822f3341a016dad4",
+              "checkItemValue": "3rd Value",
+              "comments": "comments"
+          }
+      ],
+      "files": [
+          ""
+      ],
+      "operators": [
+          "64ae8b8b2e15c83c9d02562a",
+          "64ae8b8b2e15c83c9d02564e"
+      ],
+      "operatorNotes": "Text After check itesm",
+      "isActive": true,
+      "isArchived": false
+  }
+}

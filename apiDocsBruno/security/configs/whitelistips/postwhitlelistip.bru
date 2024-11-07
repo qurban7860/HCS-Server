@@ -1,0 +1,23 @@
+meta {
+  name: postwhitlelistip
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/security/configs/Whitelistips
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "whiteListIP": "::1",
+      "isActive": true,
+      "isArchived": false
+  }
+}

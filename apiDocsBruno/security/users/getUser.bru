@@ -1,0 +1,15 @@
+meta {
+  name: getUser
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/security/users/649aea5ffb6c2099cb97ba09
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,27 @@
+meta {
+  name: moveMachine
+  type: http
+  seq: 7
+}
+
+post {
+  url: {{baseUrl}}/products/machines/moveMachine
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "machine": "651d218c5ad05a2ce479d6a1",
+    "customer": "651d348fa488252cb0c3983d",
+    "installationSite": "651d348fa488252cb0c3983e",
+    "billingSite": "651d348fa488252cb0c3983e"
+  }
+  
+  // 651d2de2dec2e43178211218
+  // 651d242b5ad05a2ce479d6f8
+}

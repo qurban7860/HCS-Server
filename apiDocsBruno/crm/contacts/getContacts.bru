@@ -1,0 +1,21 @@
+meta {
+  name: getContacts
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/undefined/contacts/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "page" : 1
+  }
+}

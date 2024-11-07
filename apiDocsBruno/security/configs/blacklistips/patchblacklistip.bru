@@ -1,0 +1,21 @@
+meta {
+  name: patchblacklistip
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/security/configs/Blacklistips/651fabdd748bf03ecc404089
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "blockedUsers": ["64208c09ebad86149771a62e", "64208c09ebad86149771a62e", "64208c09ebad86149771a62e", "64208c09ebad86149771a62e"]
+  }
+}

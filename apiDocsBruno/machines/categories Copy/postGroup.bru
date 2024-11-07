@@ -1,0 +1,27 @@
+meta {
+  name: postGroup
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/groups/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Group cc",
+      "categories": [
+          "64ae5b6fdc483f3733994737",
+          "64ae5b71dc483f3733994813"
+      ],
+      "isActive": true,
+      "isArchived": false
+  }
+}

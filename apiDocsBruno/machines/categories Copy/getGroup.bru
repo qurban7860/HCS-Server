@@ -1,0 +1,15 @@
+meta {
+  name: getGroup
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/groups/65b217191f8e8c7a9975dade
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,15 @@
+meta {
+  name: deleteuser
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/security/configs/blockedusers/651e77b9ec60c44dd4a350ab
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

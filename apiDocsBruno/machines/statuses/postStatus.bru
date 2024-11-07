@@ -1,0 +1,23 @@
+meta {
+  name: postStatus
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/statuses/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Procurement Process Initiated56789",
+      "description":"Procurement Process Initiated",
+      "displayOrderNo": 1
+  }
+}

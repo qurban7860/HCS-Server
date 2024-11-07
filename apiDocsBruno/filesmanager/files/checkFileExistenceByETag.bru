@@ -1,0 +1,20 @@
+meta {
+  name: checkFileExistenceByETag
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/documents/checkFileExistenceByETag?eTags=90a70abdfd5d1356fde3901e272b1078&eTags=90a70abdfd5d1356fde3901e272b1078
+  body: none
+  auth: bearer
+}
+
+params:query {
+  eTags: 90a70abdfd5d1356fde3901e272b1078
+  eTags: 90a70abdfd5d1356fde3901e272b1078
+}
+
+auth:bearer {
+  token: {{token}}
+}

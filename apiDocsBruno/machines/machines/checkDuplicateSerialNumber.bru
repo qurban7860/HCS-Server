@@ -1,0 +1,19 @@
+meta {
+  name: checkDuplicateSerialNumber
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/products/machines/checkDuplicateSerialNumber?serialNo=
+  body: none
+  auth: bearer
+}
+
+params:query {
+  serialNo: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

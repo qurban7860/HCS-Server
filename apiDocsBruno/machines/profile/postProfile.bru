@@ -1,0 +1,29 @@
+meta {
+  name: postProfile
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/machines/64feaf6c2123c80554008b66/profiles/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "defaultName": "Default Name 1",
+      "names": [
+              "name A",
+              "name B"
+      ],
+      "width": "100",
+      "height": false,
+      "isActive": true,
+      "isArchived": false
+  }
+}

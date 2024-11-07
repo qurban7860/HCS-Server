@@ -1,0 +1,21 @@
+meta {
+  name: moveContact
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/crm/customers/64f8087df924854f6174d812/contacts/moveContact
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "contact": "643521d1a2f598516f9020c9"
+  }
+}

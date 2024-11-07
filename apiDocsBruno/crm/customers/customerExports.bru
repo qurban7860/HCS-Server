@@ -1,0 +1,22 @@
+meta {
+  name: customerExports
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/export
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      
+      
+  }
+}

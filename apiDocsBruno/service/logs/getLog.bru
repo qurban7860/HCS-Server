@@ -1,0 +1,15 @@
+meta {
+  name: getLog
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/logs/65278a260268f91258e5a47e
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

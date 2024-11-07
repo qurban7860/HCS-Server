@@ -1,0 +1,30 @@
+meta {
+  name: postLogs
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/apiclient/logs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "requestMethod": "POST",
+    "requestURL": "https://example.com/api/endpoint",
+    "requestHeaders": "Content-Type: application/json\nAuthorization: Bearer yourAccessToken",
+    "requestBody": "{\"key\":\"value\"}",
+    "responseTime": "100ms",
+    "response": "Success",
+    "responseStatusCode": "200",
+    "additionalContextualInformation": "User ID: 123456",
+    "createdBy": "someObjectId",
+    "createdIP": "192.168.0.1"
+  }
+}

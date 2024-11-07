@@ -1,0 +1,23 @@
+meta {
+  name: patchTool
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/tools/64cc8c2224cc41af21aef1b4
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Procurement Process Initiated test",
+      "description":"Procurement Process Initiated"
+      
+  }
+}

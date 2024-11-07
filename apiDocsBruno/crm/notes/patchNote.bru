@@ -1,0 +1,31 @@
+meta {
+  name: patchNote
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/crm/customers/643651d65a1dfb01885fc6ea/notes/6439027a50e670e4b2d8fb3e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Danial Ahmad",
+      "tradingName": "Customer XYZz",
+      "type": "SP",
+      "mainSite": "63e9d13e4acb9d3d727a3813",
+      "primaryBillingContact": "63ee30dba87ccbc1a138a627",
+      "primaryTechnicalContact": "63ee30dba87ccbc1a138a626",
+      "accountManager":"63ee275a07a2cfba8be4556e",
+      "projectManager":"63ee270a07a2cfba8be45564",
+      "supportManager":"63ee270a07a2cfba8be45564",
+      "isActive":false,
+      "isArchived":false
+  }
+}

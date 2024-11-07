@@ -1,0 +1,21 @@
+meta {
+  name: postBackup
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/dbbackups/backups
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name":"a"
+  }
+}

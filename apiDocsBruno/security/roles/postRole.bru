@@ -1,0 +1,19 @@
+meta {
+  name: postRole
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/machines/machines/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {}
+}

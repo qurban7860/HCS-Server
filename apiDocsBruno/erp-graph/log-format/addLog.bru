@@ -1,0 +1,30 @@
+meta {
+  name: addLog
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/logs/logformat
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "logType": "ErpLog",
+      "logVersion": 1,
+      "logFormat": [
+          {
+              "colName": "date",
+              "dataType": "String",
+              "measurementUnit": "",
+              "colNumber": 1
+          }
+      ]
+  }
+}

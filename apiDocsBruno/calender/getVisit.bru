@@ -1,0 +1,15 @@
+meta {
+  name: getVisit
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/calender/visits/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
