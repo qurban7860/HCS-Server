@@ -1,13 +1,13 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const checkAuth = require('../../../middleware/check-auth');
-const { Customer } = require('../models');
-const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
-const checkCustomer = require('../../../middleware/check-customer');
-const verifyDelete = require('../../../middleware/verifyDelete');
+const checkAuth = require('../../../../middleware/check-auth');
+const { Customer } = require('../../models');
+const checkCustomerID = require('../../../../middleware/check-parentID')('customer', Customer);
+const checkCustomer = require('../../../../middleware/check-customer');
+const verifyDelete = require('../../../../middleware/verifyDelete');
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.customerNoteController;
 
 const router = express.Router();

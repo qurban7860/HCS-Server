@@ -1,10 +1,10 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const checkAuth = require('../../../middleware/check-auth');
-const verifyDelete = require('../../../middleware/verifyDelete');
+const checkAuth = require('../../../../middleware/check-auth');
+const verifyDelete = require('../../../../middleware/verifyDelete');
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.departmentController;
 
 const router = express.Router();

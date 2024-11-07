@@ -1,12 +1,12 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const checkAuth = require('../../../middleware/check-auth');
-const roleCheck = require('../../../middleware/role-check');
-const checkCustomer = require('../../../middleware/check-customer');
-const verifyDelete = require('../../../middleware/verifyDelete');
+const checkAuth = require('../../../../middleware/check-auth');
+const roleCheck = require('../../../../middleware/role-check');
+const checkCustomer = require('../../../../middleware/check-customer');
+const verifyDelete = require('../../../../middleware/verifyDelete');
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.customerController;
 
 const router = express.Router();

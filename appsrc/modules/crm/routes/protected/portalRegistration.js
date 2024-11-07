@@ -1,12 +1,12 @@
 const express = require('express');
 
-const checkAuth = require('../../../middleware/check-auth');
-const roleCheck = require('../../../middleware/role-check');
-const verifyDelete = require('../../../middleware/verifyDelete');
-const { portalSchema } = require('../schema/crmSchemas');
-const { validateRequest } = require('../../../configs/reqServices');
+const checkAuth = require('../../../../middleware/check-auth');
+const roleCheck = require('../../../../middleware/role-check');
+const verifyDelete = require('../../../../middleware/verifyDelete');
+const { portalSchema } = require('../../schema/crmSchemas');
+const { validateRequest } = require('../../../../configs/reqServices');
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.portalRegistration;
 
 const router = express.Router();
