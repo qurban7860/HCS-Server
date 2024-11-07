@@ -80,7 +80,6 @@ exports.postSecurityRole = async (req, res, next) => {
     if(req.body.isDefault === 'true' || req.body.isDefault === true) {
       await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
         if (err) console.error(err);  
-        else console.log(result);
       });
     }
     this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
@@ -123,8 +122,7 @@ exports.patchSecurityRole = async (req, res, next) => {
     
     if(req.body.isDefault === 'true' || req.body.isDefault === true) {
       await SecurityRole.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
-        if (err) console.error(err);  
-        else console.log(result);
+        if (err) console.error(err); 
       });
     }
 
@@ -164,7 +162,6 @@ exports.searchRoles = async (req, res, next) => {
           
           for(let role of roles) {
             let name = role.name.toLowerCase();
-            console.log(name,searchName,name.search(searchName.toLowerCase()));
             if(name.search(searchName.toLowerCase())>-1) {
               filteredRoles.push(role);
             }

@@ -84,8 +84,7 @@ exports.postRegion = async (req, res, next) => {
     try {
       if(req.body.isDefault === 'true' || req.body.isDefault === true) {
         await Region.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
-          if (err) console.error(err);  
-          else console.log(result);
+          if (err) console.error(err); 
         });
       }
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
@@ -106,7 +105,6 @@ exports.patchRegion = async (req, res, next) => {
       if(req.body.isDefault === 'true' || req.body.isDefault === true) {
         await Region.updateMany({}, { $set: { isDefault: false } }, function(err, result) {
           if (err) console.error(err);  
-          else console.log(result);
         });
       }
 

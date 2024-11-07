@@ -129,7 +129,6 @@ exports.searchSignInLogs = async (req, res, next) => {
           
           for(let signInLog of signInLogs) {
             let name = signInLog.user.name.toLowerCase();
-            console.log(name,searchName,name.search(searchName.toLowerCase()));
             if(name.search(searchName.toLowerCase())>-1) {
               filterSignInLogs.push(signInLog);
             }

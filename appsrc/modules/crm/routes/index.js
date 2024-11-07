@@ -5,12 +5,12 @@ const publicRoutes = {
 }
 
 const protectedRoutes = {
+    portalRegistration: require('./protected/portalRegistration'),
     customerRoute: require('./protected/customerRoute'),
     customerSiteRoute: require('./protected/customerSiteRoute'),
     customerContactRoute: require('./protected/customerContactRoute'),
     customerNoteRoute: require('./protected/customerNoteRoute'),
     departmentRoute: require('./protected/departmentRoute'),
-    portalRegistration: require('./protected/portalRegistration')
 }
 
 exports.registerCustomerRoutes = (app, apiPath) => {
