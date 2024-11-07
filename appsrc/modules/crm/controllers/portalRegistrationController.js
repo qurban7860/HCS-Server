@@ -84,13 +84,13 @@ exports.postRegisterRequest = async (req, res, next) => {
                     logger.error(new Error(error));
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to create portal request!");
                 } else {
-                    return res.status(StatusCodes.ACCEPTED).send("Portal request created successfully!");
+                    return res.status(StatusCodes.ACCEPTED).send("Portal request received!");
                 }
             }
         }
     } catch( error ){
         logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to create portal request!");
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Portal request failed!");
     }
 };
 
