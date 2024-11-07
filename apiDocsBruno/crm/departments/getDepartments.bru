@@ -1,0 +1,22 @@
+meta {
+  name: getDepartments
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/crm/departments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "page":1
+  
+  }
+}

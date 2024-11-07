@@ -1,0 +1,19 @@
+meta {
+  name: fetchMachineTransferHistory
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/products/machines/fetchMachineTransferHistory?globelMachineID=65dd7d6441511e56a45187b1
+  body: none
+  auth: bearer
+}
+
+params:query {
+  globelMachineID: 65dd7d6441511e56a45187b1
+}
+
+auth:bearer {
+  token: {{token}}
+}

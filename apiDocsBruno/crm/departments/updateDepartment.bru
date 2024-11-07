@@ -1,0 +1,22 @@
+meta {
+  name: updateDepartment
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/crm/departments/655b50a34bb5044da39691d4
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "isActive": false,
+      "isArchived": true
+  }
+}

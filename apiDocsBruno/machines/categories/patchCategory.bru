@@ -1,0 +1,23 @@
+meta {
+  name: patchCategory
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/categories/63e99238312ac424db5b145b
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Decoilewjh44",
+      "description":"Decoiler for ss",
+      "isActive": true
+  }
+}

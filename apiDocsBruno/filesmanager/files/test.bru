@@ -1,0 +1,23 @@
+meta {
+  name: test
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/documents/aaaaaaaa?document=
+  body: multipartForm
+  auth: bearer
+}
+
+params:query {
+  document: 
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  document: @file(/C:/Users/haris/Downloads/Packing Pictures (1).JPG)
+}

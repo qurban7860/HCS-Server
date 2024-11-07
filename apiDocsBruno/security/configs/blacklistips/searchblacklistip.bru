@@ -1,0 +1,25 @@
+meta {
+  name: searchblacklistip
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/security/configs/blacklistips?blackListIP=202.163.76.55
+  body: json
+  auth: bearer
+}
+
+params:query {
+  blackListIP: 202.163.76.55
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "blackListIP" : "202.163.76.55"
+  }
+}

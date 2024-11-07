@@ -1,0 +1,15 @@
+meta {
+  name: getTechparams
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/techparams/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

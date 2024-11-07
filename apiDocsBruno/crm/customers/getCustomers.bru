@@ -1,0 +1,26 @@
+meta {
+  name: getCustomers
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~type: SP
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "page":0,
+      "pageSize":2
+  }
+}

@@ -1,0 +1,20 @@
+meta {
+  name: syncMachineConnection
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/products/public/machines/syncMachineConnection
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "machineSerialNo": "21121",
+    "howickPortalKey": "N5LAEC8M2MD6XW6T-2X5F7WCF6337VCN-9N5LAEC8M2MD6XW-6T2X5F7WCF6337V-CN9",
+    "computerGUID": "fcdsfgdsagasdfgdfssfs",
+    "IPCSerialNo": "123dsfa"
+  }
+}

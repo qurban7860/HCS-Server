@@ -1,0 +1,26 @@
+meta {
+  name: postModule
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}security/modules/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "module 2",
+      "description":"normal module 2",
+      "accessForNormalUsers": false,
+      "isActive" : false,
+      "isArchived" : false
+  }
+  
+}

@@ -1,0 +1,22 @@
+meta {
+  name: patchMetaSchema
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/configs/metaSchemas/6576f8421e9618b3e304a03e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "configJSON": "12",
+      "isArchived": "true"
+  }
+}

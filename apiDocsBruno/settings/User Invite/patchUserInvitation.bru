@@ -1,0 +1,21 @@
+meta {
+  name: patchUserInvitation
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/security/invites/64fab3da6c7b490bc8d8652b
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "invitationStatus" : "ACCEPTED"
+  }
+}

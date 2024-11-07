@@ -1,0 +1,15 @@
+meta {
+  name: searchNote
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/products/notes/search
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

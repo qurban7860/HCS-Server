@@ -1,0 +1,44 @@
+meta {
+  name: postDocument
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/documents/documentmulti
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  customer[0]: 65c4d24803237e536c5088e1
+  customerAccess[0]: false
+  isActive[0]: true
+  referenceNumber[0]: (4)
+  versionNo[0]: 1
+  displayName[0]: (4)
+  name[0]: (4)
+  documentCategory[0]: 64870ed255a6241ba5bd9771
+  documentType[0]: 64adda74b609da2a17f9709f
+  doctype[0]: 64adda74b609da2a17f9709f
+  images[0]: @file(/C:/Users/haris/Downloads/url.png)
+  drawingMachine[0]: true
+  drawingMachine[1]: 65c4d25f03237e536c508a4f
+  customerAccess[1]: true
+  isActive[1]: true
+  referenceNumber[1]: REF-1
+  stockNumber[1]: STK-1
+  versionNo[1]: 2
+  displayName[1]: dOCX
+  name[1]: dOCX-NAME
+  description[1]: DESC
+  documentCategory[1]: 64922f9e55a6241ba5bda4ea
+  documentType[1]: 64addab3b609da2a17f970ba
+  doctype[1]: 64addab3b609da2a17f970ba
+  images[1]: @file(/C:/Users/haris/Downloads/aaaaaa.JPG)
+  ~aaaaaaaaaaaaaaaaa: 
+}

@@ -1,0 +1,15 @@
+meta {
+  name: getServiceRecordConfig
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/serviceRecordsConfig/65531d0345dc5667e0937322
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

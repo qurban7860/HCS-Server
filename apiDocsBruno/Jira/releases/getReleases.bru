@@ -1,0 +1,25 @@
+meta {
+  name: getReleases
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/jira/releases
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~err_log: true
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note":"User notes ...."
+  }
+}

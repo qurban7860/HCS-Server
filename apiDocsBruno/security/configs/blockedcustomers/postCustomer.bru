@@ -1,0 +1,24 @@
+meta {
+  name: postCustomer
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/security/configs/blockedcustomers/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "blockedCustomer":  "640f20882b6cfb6f0a58eb87",
+      "isActive": true,
+      "isArchived": false
+  }
+  
+}

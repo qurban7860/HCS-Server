@@ -1,0 +1,15 @@
+meta {
+  name: deleteConfig
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/configs/64be24c0ba45573104932f4b
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

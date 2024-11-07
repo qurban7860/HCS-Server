@@ -1,0 +1,21 @@
+meta {
+  name: updateConfig
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/configs/64be24c0ba45573104932f4b
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+  
+  }
+}

@@ -1,0 +1,21 @@
+meta {
+  name: updateLog
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/logs/65278a260268f91258e5a47e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "time": "Sample Time1"
+  }
+}

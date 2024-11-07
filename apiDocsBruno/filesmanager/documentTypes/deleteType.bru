@@ -1,0 +1,15 @@
+meta {
+  name: deleteType
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/filemanager/documentNames/646b30d3683e93064dc2e7ed
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

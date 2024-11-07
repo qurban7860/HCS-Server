@@ -1,0 +1,31 @@
+meta {
+  name: addContact
+  type: http
+  seq: 5
+}
+
+post {
+  url: {{baseUrl}}/crm/customers/640f20882b6cfb6f0a58eb87/contacts/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "firstName": "Michael",
+      "lastName": "Kim",
+      "title": "Kim",
+      "contactTypes": ["technical","financial"],
+      "phone": "+92-345-7399098",
+      "email": "harisahmaad@g.com",
+      "sites": [],
+      "isActive": false,
+      "isArchived": false,
+      "reportingTo": "64ae8b8b2e15c83c9d02564e"
+     
+  }
+}

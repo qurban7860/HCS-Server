@@ -1,0 +1,15 @@
+meta {
+  name: getTools
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/tools/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

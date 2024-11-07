@@ -1,0 +1,15 @@
+meta {
+  name: getModels
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/models/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

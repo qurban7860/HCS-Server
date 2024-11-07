@@ -1,0 +1,19 @@
+meta {
+  name: getConfig
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/jira/releases?orderBy=-name
+  body: none
+  auth: bearer
+}
+
+params:query {
+  orderBy: -name
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,15 @@
+meta {
+  name: deleteDepartment
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/crm/departments/655b50a34bb5044da39691d4
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

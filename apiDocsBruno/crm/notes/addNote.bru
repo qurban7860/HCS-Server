@@ -1,0 +1,36 @@
+meta {
+  name: addNote
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/crm/customers/643651d65a1dfb01885fc6ea/notes/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Site test",
+      "phone": "+92-345-7399098",
+      "email": "harisahmaad@gmail.com",
+      "fax": "+92 65 2556028",
+      "website": "www.gmail.com",
+      "address": {
+          "street": "12",
+          "suburb": "13",
+          "city": "NJ",
+          "region": "NJ",
+          "postcode": "58150",
+          "country": "USA"
+      },
+      "isActive": false,
+      "isArchived": false,
+      "note" : "note"
+  }
+}

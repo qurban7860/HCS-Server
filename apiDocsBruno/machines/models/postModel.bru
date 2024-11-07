@@ -1,0 +1,23 @@
+meta {
+  name: postModel
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/models/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Decoil55er76r2",
+      "description":"Decoiler for testing561",
+      "category": "63e5983264ce33a8f93e1bbd"
+  }
+}

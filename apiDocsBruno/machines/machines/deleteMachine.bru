@@ -1,0 +1,15 @@
+meta {
+  name: deleteMachine
+  type: http
+  seq: 11
+}
+
+get {
+  url: {{baseUrl}}/products/machines/export
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

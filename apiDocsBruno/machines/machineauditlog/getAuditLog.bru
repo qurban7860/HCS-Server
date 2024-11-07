@@ -1,0 +1,15 @@
+meta {
+  name: getAuditLog
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/65e9b402332169397c99e8c7/auditlogs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -1,0 +1,15 @@
+meta {
+  name: getProductConfiguration
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/productConfigurations/655caebba74a52557863145e
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

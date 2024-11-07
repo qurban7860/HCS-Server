@@ -1,0 +1,23 @@
+meta {
+  name: patchToolinstalled
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/products/machines/64db0df9560174368fb4e2a2/toolsinstalled/64e33af18e08f3284491b107
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+  
+      "isArchived": true
+   
+  }
+}

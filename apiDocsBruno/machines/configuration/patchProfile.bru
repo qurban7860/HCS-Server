@@ -1,0 +1,29 @@
+meta {
+  name: patchProfile
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/machines/64ae5b6fdc483f373399472b/profiles/64faef6a13807b1eaf933c89
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "defaultName": "gdsafsafsdf",
+      "names": [
+              "name BBddss",
+              "name B"
+      ],
+      "width": "200",
+      "height": "500",
+      "isActive": true,
+      "isArchived": true
+  }
+}

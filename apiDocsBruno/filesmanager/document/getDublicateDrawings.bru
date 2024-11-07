@@ -1,0 +1,21 @@
+meta {
+  name: getDublicateDrawings
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/documents/document/dublicateDrawings
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  { 
+      "isArchived": true
+  }
+}
