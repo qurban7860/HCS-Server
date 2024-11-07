@@ -98,6 +98,7 @@ this.populate = [
       .populate('customer')
       .populate('contact');
       let customerName = '';
+      let customerType = '';
       let contactName = '';
       let contactId = '';
       
@@ -105,6 +106,9 @@ this.populate = [
         customerName = user.customer.name;
       }
       
+      if(user && user?.customer && user?.customer?.type) {
+        customerType = user?.customer?.type;
+      }
 
       if(user && user.contact && user.contact.firstName) {
         contactName = user.contact.firstName +' '+ user.contact.lastName;
@@ -114,6 +118,7 @@ this.populate = [
       return res.status(StatusCodes.OK).json({ 
         valid:true, 
         customerName,
+        customerType,
         contactName,
         contactId,
         fullName:user.name,
