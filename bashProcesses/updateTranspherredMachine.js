@@ -9,8 +9,6 @@ const parsePhoneNumber = require('libphonenumber-js');
 async function main() {
 	const listStatus = await ProductStatus.find({isActive: true, isArchived: false, slug: 'transferred' }).select('_id transferredDate transferredMachine').sort({_id: 1}).lean();
 
-	console.log("listStatus", listStatus);
-
 	const listProducts = await Product.find({    
 		$or: [
         { transferredToMachine: { $exists: false } }, // transferredToMachine field does not exist
@@ -22,14 +20,12 @@ async function main() {
 		if(product.transferredMachine && product.transferredDate) {
 			let queryString = { transferredToMachine: product.transferredMachine };
 			queryString.globelMachineID = product._id;
-			console.log("queryString 1", queryString);
 			await Product.updateOne({ _id: product._id }, { $set:  queryString});
 			
 			delete queryString.transferredToMachine;
 			queryString.transferredFromMachine = product._id;
 			queryString.purchaseDate = product.transferredDate;
 			
-			console.log("queryString 2", queryString);
 			console.log("-----------------------------------------------");
 			await Product.updateOne({ _id: product.transferredMachine }, { $set: queryString});
 
