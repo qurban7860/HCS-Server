@@ -27,8 +27,8 @@ this.populate = [
 
 exports.getProductServiceReportStatus = async (req, res, next) => {
     try{
-        await this.dbservice.getObjectById( ProductServiceReportStatuses, this.fields, req.params.id, this.populate );
-
+        const result = await this.dbservice.getObjectById( ProductServiceReportStatuses, this.fields, req.params.id, this.populate );
+        return res.json(result)
     } catch(error){
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error?.message || "Status not found!" );
@@ -105,7 +105,7 @@ exports.patchProductServiceReportStatus = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { note, isActive, isArchived, loginUser } = req.body;
+  const { name, type, displayOrderNo, description, isDefault, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
