@@ -15,7 +15,7 @@ const docSchema = new Schema({
     description: { type: String },
     // description of Status
     
-    displayOrderNo: { type: Number },
+    displayOrderNo: { type: Number, unique: true },
     // order to display in dropdown lists
 
     isDefault: { type: Boolean, default:false }

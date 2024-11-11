@@ -18,7 +18,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { displayOrderNo: 1 };  
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -126,10 +126,6 @@ function getDocumentFromReq(req, reqType){
 
   if ("displayOrderNo" in req.body){
     doc.displayOrderNo = displayOrderNo;
-  }
-  
-  if ("isDefault" in req.body){
-    doc.isDefault = isDefault;
   }
 
   if ("isActive" in req.body){

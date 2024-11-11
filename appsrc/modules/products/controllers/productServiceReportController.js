@@ -21,7 +21,7 @@ const util = require('util');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
-const { ProductServiceReports, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
+const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
 const customerContact = require('../../crm/models/customerContact');
@@ -34,7 +34,8 @@ this.query = {};
 this.orderBy = { createdAt: -1 };   
 //this.populate = 'category';
 this.populate = [
-  {path: 'serviceReportTemplate', select: 'reportTitle reportType'},
+  {path: 'serviceReportTemplate', select: 'reportTitle reportType' },
+  {path: 'status', select: 'name type displayOrderNo' },
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
@@ -45,7 +46,8 @@ this.populate = [
 ];
 
 this.populateObject = [
-  {path: 'serviceReportTemplate', select: 'reportTitle reportType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired'},
+  {path: 'serviceReportTemplate', select: 'reportTitle reportType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired ' },
+  {path: 'status', select: 'name type displayOrderNo' },
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo machineModel'},
@@ -54,6 +56,24 @@ this.populateObject = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
+
+
+const findDraftServiceReportStatus = async ( res ) => {
+  const serviceReportStatus = await ProductServiceReportStatuses.findOne({ type: { $regex: /^draft$/i }, isArchived: false, isActive: true }).lean();
+  // if ( !serviceReportStatus ) {
+  //   return res.status(StatusCodes.BAD_REQUEST).send("Draft Status is not available!");
+  // }
+  return serviceReportStatus || null;
+}
+
+
+const findSubmitServiceReportStatus = async ( res ) => {
+  const serviceReportStatus = await ProductServiceReportStatuses.findOne({ type: { $regex: /^t[o\-\s]*do$/i }, isArchived: false, isActive: true }).lean();
+  // if ( !serviceReportStatus ) {
+  //   return res.status(StatusCodes.BAD_REQUEST).send("Submit Status is not available!");
+  // }
+  return serviceReportStatus || null;
+}
 
 const getProductServiceReportData = async (req) => {
   try {
@@ -64,8 +84,8 @@ const getProductServiceReportData = async (req) => {
     }
     
     let parsedResponse = JSON.parse(JSON.stringify(response));
-
-    const queryToFindCurrentVer = { primaryServiceReportId: parsedResponse.primaryServiceReportId, isArchived: false, isHistory: false, status: 'SUBMITTED' };
+    const submitServiceReportStatus = await findSubmitServiceReportStatus( )
+    const queryToFindCurrentVer = { primaryServiceReportId: parsedResponse.primaryServiceReportId, isArchived: false, isHistory: false, status: submitServiceReportStatus?._id };
     const currentVersion = await ProductServiceReports.findOne(queryToFindCurrentVer)
       .select('_id versionNo serviceDate primaryServiceReportId')
       .sort({ versionNo: -1 })
@@ -185,7 +205,7 @@ exports.getProductServiceReport = async (req, res, next) => {
 };
 
 exports.getProductServiceReportWithIndividualDetails = async (req, res, next) => {
-
+  const submitServiceReportStatus = await findSubmitServiceReportStatus( res )
   this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject, callbackFunc);
   async function callbackFunc(error, response) {
     if (error) {
@@ -254,7 +274,7 @@ exports.getProductServiceReportWithIndividualDetails = async (req, res, next) =>
         }
       }
       let currentVersion_ = await ProductServiceReports.findOne(
-      { primaryServiceReportId: response.primaryServiceReportId, isActive: true, isArchived: false, status:'SUBMITTED'}, 
+      { primaryServiceReportId: response.primaryServiceReportId, isActive: true, isArchived: false, status: submitServiceReportStatus?._id }, 
       { versionNo: 1, _id: 1}).sort({_id: -1});
       currentVersion_ = JSON.parse(JSON.stringify(currentVersion_));     
       response.currentVersion = currentVersion_;
@@ -313,8 +333,8 @@ const getCurrentVersionToProductServiceReports = (docServiceReportsList) => {
 exports.deleteProductServiceReport = async (req, res, next) => {
   try{
     req.body.isArchived = true;
-    const serviceRecObj = await ProductServiceReports.findById( req.params.id ).select('status')
-    if( serviceRecObj?.status?.toLowerCase() === 'draft'){
+    const serviceRecObj = await ProductServiceReports.findById( req.params.id ).select('status').populate([{ path: 'status', select: 'name type' }])
+    if( serviceRecObj?.status?.type?.toLowerCase() === 'draft'){
       await ProductServiceReportValue.updateMany( { serviceReport: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceReportValueFile.updateMany( { serviceReport: req.params.id }, { $set: { isArchived: true } } );
       await ProductServiceReportFiles.updateMany( { machineServiceReport: req.params.id }, { $set: { isArchived: true } } );
@@ -344,6 +364,7 @@ exports.deleteProductServiceReport = async (req, res, next) => {
   }
 };
 
+
 exports.postProductServiceReport = async (req, res, next) => {
 
   const errors = validationResult(req);
@@ -361,9 +382,10 @@ exports.postProductServiceReport = async (req, res, next) => {
   }
   
   const machine = await Product.findById(req.params.machineId)
-  
+
+  const serviceReportStatus = await findDraftServiceReportStatus( res )
   let productServiceReportObject = await getDocumentFromReq(req, 'new');
-  // productServiceReportObject.status = 'DRAFT';
+  productServiceReportObject.status = serviceReportStatus?._id;
   productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
   productServiceReportObject.primaryServiceReportId = productServiceReportObject?._id;
   productServiceReportObject.customer = machine?.customer;
@@ -420,8 +442,10 @@ exports.newProductServiceReportVersion = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
     }
 
+    const serviceReportStatus = await findDraftServiceReportStatus( res )
+
     const findDraftServiceReport = await ProductServiceReports.findOne({
-      primaryServiceReportId: productServiceReport?.primaryServiceReportId, status: 'DRAFT', isArchived: false
+      primaryServiceReportId: productServiceReport?.primaryServiceReportId, status: serviceReportStatus?._id, isArchived: false
     }).populate( this.populateObject ).sort({ _id: -1 });
     
     if(findDraftServiceReport?._id){
@@ -440,7 +464,7 @@ exports.newProductServiceReportVersion = async (req, res, next) => {
     req.body.primaryServiceReportId = parentProductServiceReportObject?.primaryServiceReportId  || null;
     req.body.customer = machine?.customer?._id || null;
     req.body.site = machine?.customer?.mainSite?._id || null;
-    req.body.status = 'DRAFT';
+    req.body.status = serviceReportStatus?._id;
     req.body.machine = machine?._id || null;
     req.body.decoilers = parentProductServiceReportObject?.decoilers || [];
     req.body.operators = parentProductServiceReportObject?.operators || [];
@@ -746,8 +770,9 @@ exports.patchProductServiceReport = async (req, res ) => {
     }
 
     req.body.primaryServiceReportId = findServiceReport?.primaryServiceReportId;
-
-    if (req.body.status?.toLowerCase() === 'draft') {
+    if ( req.body.status?.toLowerCase() === 'draft' ) {
+      const serviceReportStatus = await findDraftServiceReportStatus( res )
+      req.body.status = serviceReportStatus?._id
       await checkDraftServiceReports(req, res, findServiceReport)
       await handleDraftStatus(req, res, findServiceReport);
       return;
@@ -772,9 +797,10 @@ const handleArchive = async (req, res) => {
 }
 
 const checkDraftServiceReports = async ( req, res, findServiceReport ) => {
+  const serviceReportStatus = await findDraftServiceReportStatus( res )
   const findServiceReports = await ProductServiceReports.find({
     primaryServiceReportId: findServiceReport?.primaryServiceReportId,
-    status: 'DRAFT'
+    status: serviceReportStatus?._id
   }).sort({ _id: -1 });
   if (Array.isArray(findServiceReports) && (findServiceReports.length > 0 && !findServiceReports?.some((fsr) => fsr?._id == req.params.id))) {
     return res.status(StatusCodes.BAD_REQUEST).send('Service Report is already in Draft!');
@@ -785,6 +811,7 @@ const handleDraftStatus = async (req, res, findServiceReport) =>{
   try{
     var _this = this;
       try {
+        
         await checkDraftServiceReports( req, res, findServiceReport)
         await _this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
         const response = await getProductServiceReportData( req );
@@ -799,18 +826,21 @@ const handleDraftStatus = async (req, res, findServiceReport) =>{
   }
 }
 
-const handleSubmitStatus = async (req, res, findServiceReport) => {
+const handleSubmitStatus = async ( req, res, findServiceReport ) => {
   try{
-    
     let productServiceReportObject = {};
-    productServiceReportObject.primaryServiceReportId =  req.body.primaryServiceReportId;
+      productServiceReportObject.primaryServiceReportId =  req.body.primaryServiceReportId;
       delete req.body.versionNo;
-      productServiceReportObject = await getDocumentFromReq(req);
-      await ProductServiceReports.updateOne({ _id: req.params.id }, productServiceReportObject )
-      if( req.body?.status?.toLowerCase() === 'submitted' ){
+      if( req?.body?.status?.toLowerCase() === 'submitted' ){
+        const submitReportStatus = await findSubmitServiceReportStatus( res );
+        req.body.status = submitReportStatus?._id?.toString(),
         await handleSubmitServiceReports( req );
       }
-      if( req.body?.status?.toLowerCase() === 'approved' ){
+      productServiceReportObject = await getDocumentFromReq(req);
+      await ProductServiceReports.updateOne({ _id: req.params.id }, productServiceReportObject )
+      
+      console.log("req", typeof req?.body?.status )
+      if( req?.body?.status?.toLowerCase() === 'approved' ){
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
       }
       const data = await getProductServiceReportData(req);
@@ -826,8 +856,8 @@ async function handleSubmitServiceReports( req ) {
       const queryToUpdateReports = {
         primaryServiceReportId: req.body.primaryServiceReportId,
         machine: req.params.machineId,
-      _id: { $ne: req.params.id },
-    };
+        _id: { $ne: req.params.id },
+      };
     await historyServiceReportValues( req );
     await ProductServiceReports.updateMany(queryToUpdateReports, { $set: { isHistory: true } });
 
@@ -1024,70 +1054,3 @@ function getDocumentFromReq(req, reqType){
 
 }
 
-
-function productServiceReportValueDocumentFromReq(reportValue, reqType){
-  const { serviceReport, primaryServiceReportId, machineCheckItem, checkItemListId, checkItemValue, versionNo, comments, files , isHistory, isActive, isArchived } = reportValue;
-  const { loginUser } = reportValue;
-
-
-  let doc = {};
-  if (reqType && reqType == "new"){
-    doc = new ProductServiceReportValue({});
-  }
-
-  if ("serviceReport" in reportValue) {
-    doc.serviceReport = serviceReport;
-  }
-
-  if ("versionNo" in reportValue) {
-    doc.versionNo = versionNo;
-  }
-
-  if ("primaryServiceReportId" in reportValue) {
-    doc.primaryServiceReportId = primaryServiceReportId;
-  }
-
-  if ("machineCheckItem" in reportValue) {
-    doc.machineCheckItem = machineCheckItem;
-  }
-  
-  if ("checkItemListId" in reportValue) {
-    doc.checkItemListId = checkItemListId;
-  }
-  
-  if ("checkItemValue" in reportValue) {
-    doc.checkItemValue = checkItemValue;
-  }
-  
-  if ("comments" in reportValue) {
-    doc.comments = comments;
-  }
-  
-  if ("files" in reportValue) {
-    doc.files = files;
-  }
-
-  if ("isHistory" in reportValue){
-    doc.isHistory = isHistory;
-  }
-  
-  if ("isActive" in reportValue){
-    doc.isActive = isActive;
-  }
-  
-  if ("isArchived" in reportValue){
-    doc.isArchived = isArchived;
-  }
-
-  if (reqType == "new" && "loginUser" in reportValue ){
-    doc.createdBy = loginUser.userId;
-    doc.updatedBy = loginUser.userId;
-    doc.createdIP = loginUser.userIP;
-    doc.updatedIP = loginUser.userIP;
-  } else if ("loginUser" in reportValue) {
-    doc.updatedBy = loginUser.userId;
-    doc.updatedIP = loginUser.userIP;
-  } 
-
-  return doc;
-}

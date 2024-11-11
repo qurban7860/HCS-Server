@@ -94,7 +94,7 @@ async function fetchServiceReportValues( primaryServiceReportId, isHistory) {
     const productServiceReportValues = await  ProductServiceReportValue.find(
       { primaryServiceReportId, isHistory, isActive: true, isArchived: false },
       { checkItemValue: 1, comments: 1, serviceReport: 1, primaryServiceReportId: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
-    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport', select: 'versionNo status' }])
+    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport', select: 'versionNo status', populate: { path: 'status', select: 'name type displayOrderNo' }}])
     .sort({ createdAt: -1 })
     .lean();
     return productServiceReportValues
@@ -123,7 +123,7 @@ async function fetchCheckItems(checkItemIds) {
 async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, Report, isHighQuality ) {
   try {
 
-    const isDraft = Report?.status?.toLowerCase() === 'draft';
+    const isDraft = Report?.status?.type?.toLowerCase() === 'draft';
     const isHistoryReport = Report?.isHistory;
     let draftValue = null;
     let activeValue = null;
@@ -146,7 +146,7 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
       activeValue = activeValues.find(val =>
         val?.machineCheckItem?.toString() === item._id.toString() &&
         val?.checkItemListId?.toString() === checkItemListId.toString() && 
-        val?.serviceReport?.status?.toLowerCase() !== 'draft'
+        val?.serviceReport?.status?.type?.toLowerCase() !== 'draft'
       );
     }
 
@@ -161,7 +161,7 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
         .filter(val =>
           val.machineCheckItem.toString() === item._id.toString() &&
           val.checkItemListId.toString() === checkItemListId.toString() &&
-          val?.serviceReport?.status?.toLowerCase() !== 'draft'
+          val?.serviceReport?.status?.type?.toLowerCase() !== 'draft'
         )
         .map(async (val) => ({
           ...val,
