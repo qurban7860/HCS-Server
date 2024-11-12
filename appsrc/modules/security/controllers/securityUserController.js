@@ -525,6 +525,15 @@ async function getDocumentFromReq(req, reqType){
     doc.customers = customers;
   }
 
+  if ( customer ){
+    const customerId = typeof customer === 'string' ? customer : customer?._id;
+    const uniqueCustomers = new Set(doc.customers);
+    if (typeof customerId === 'string' && !uniqueCustomers.has(customerId)) {
+      uniqueCustomers.add(customerId);
+      doc.customers = Array.from(uniqueCustomers);
+    }
+  }
+
   if ("machines" in req.body){
     doc.machines = machines;
   }

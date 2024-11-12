@@ -4,7 +4,9 @@ const { Product } = require('../modules/products/models');
 const logger = require('../modules/config/logger');
 
 module.exports = async (req, res, next) => {
-  let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions customers machines dataAccessibilityLevel contact').lean();
+  let user = await SecurityUser.findById(req.body.loginUser.userId)
+  .select('customer regions customers machines dataAccessibilityLevel contact')
+  .populate({ path: 'customer', select: 'name type isActive isArchived' }).lean();
   req.body.userInfo = user;
   if (
     !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
@@ -28,15 +30,19 @@ module.exports = async (req, res, next) => {
   ) {
     try {
       logger.error(new Error("is not super admin and global manager"));
-      const query___ = {
-        $or: [
-          { accountManager: req?.body?.userInfo?.contact },
-          { projectManager: req?.body?.userInfo?.contact },
-          { supportManager: req?.body?.userInfo?.contact }
-        ]
-      };
-      let assignedCustomers = await Customer.findOne(query___).select('_id').lean();
-      let assignedMachines = await Product.findOne(query___).select('_id').lean();
+      let assignedCustomers
+      let assignedMachines
+      if( user?.customer?.type?.toLowerCase() === "sp" ){
+        const query___ = {
+          $or: [
+            { accountManager: req?.body?.userInfo?.contact },
+            { projectManager: req?.body?.userInfo?.contact },
+            { supportManager: req?.body?.userInfo?.contact }
+          ]
+        };
+        assignedCustomers = await Customer.findOne(query___).select('_id').lean();
+        assignedMachines = await Product.findOne(query___).select('_id').lean();
+      }
 
       if (
            (!user?.regions || user?.regions?.length === 0) 
