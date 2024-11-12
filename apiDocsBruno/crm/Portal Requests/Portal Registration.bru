@@ -5,7 +5,20 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/crm/public/customers/request
+  url: {{baseUrl}}/crm/public/customers/register
   body: json
   auth: none
+}
+
+body:json {
+  {
+      "customerName": "Ali Hassan",
+      "contactPersonName": "Terminus",
+      "email": "a.hassan.dev@outlook.com",
+      "phoneNumber": "+92 303 4166991",
+      "address": "Address",
+      "machineSerialNos": ["123456"],
+      "customerNote": "CustomerNote",
+      "internalNote": "Internal Note"
+  }
 }
