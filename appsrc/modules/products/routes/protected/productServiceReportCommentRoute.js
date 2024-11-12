@@ -26,4 +26,7 @@ router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductS
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceReportComment);
 
+router.get(`${baseRouteForObject}/stream`, controller.streamProductServiceReportComments);
+
+
 module.exports = router;
