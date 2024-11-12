@@ -20,6 +20,7 @@ module.exports = {
     ProductServiceReports: require('./productServiceReports'),
     ProductServiceReportStatuses: require('./productServiceReportStatus'),
     ProductServiceReportFiles: require('./productServiceReportFile'),
+    ProductServiceReportComment: require('./productServiceReportComment'),
     ProductCheckItemCategory: require('./productCheckItemCategory'),
     ProductProfile: require('./productProfile'),
     ProductServiceReportValue: require('./productServiceReportValue'),
