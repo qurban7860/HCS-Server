@@ -1,12 +1,11 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const { StatusCodes, getReasonPhrase } = require('http-status-codes');
+// const bcrypt = require('bcryptjs');
+// const jwt = require('jsonwebtoken');
+// const mongoose = require('mongoose');
 
-const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static')
+const clients = new Map();
 
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
@@ -58,7 +57,8 @@ exports.postProductServiceReportComment = async (req, res, next) => {
     this.primaryServiceReportId = req.params.primaryServiceReportId;
     this.query = { primaryServiceReportId: this.primaryServiceReportId, isActive: true, isArchived: false };
     const commentsList = await this.dbservice.getObjectList(req, ProductServiceReportComment, this.fields, this.query, this.orderBy, this.populate);
-    
+
+    broadcastComments(this.primaryServiceReportId, commentsList);
     res.status(StatusCodes.CREATED).json({ newComment: response, commentsList });
   } catch (error) {
     logger.error(new Error(error));
@@ -83,7 +83,8 @@ exports.patchProductServiceReportComment = async (req, res, next) => {
     this.primaryServiceReportId = req.params.primaryServiceReportId;
     this.query = { primaryServiceReportId: this.primaryServiceReportId, isActive: true, isArchived: false };
     const commentsList = await this.dbservice.getObjectList(req, ProductServiceReportComment, this.fields, this.query, this.orderBy, this.populate);
-    
+
+    broadcastComments(this.primaryServiceReportId, commentsList);
     res.status(StatusCodes.ACCEPTED).json({ updatedComment: response, commentsList });
   } catch (error) {
     logger.error(new Error(error));
@@ -106,12 +107,39 @@ exports.deleteProductServiceReportComment = async (req, res, next) => {
     const commentsList = await this.dbservice.getObjectList(req, ProductServiceReportComment, this.fields, this.query, this.orderBy, this.populate);
 
     // await this.dbservice.deleteObject(ProductServiceReportComment, req.params.id, res,);
+    broadcastComments(this.primaryServiceReportId, commentsList);
     res.status(StatusCodes.OK).json({ commentsList });
   } catch (e) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Delete Comment failed!");
   }
 };
+
+exports.streamProductServiceReportComments = async (req, res) => {
+  const primaryServiceReportId = req.params.primaryServiceReportId;
+  
+  res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive'
+  });
+  
+  const clientId = req.body.loginUser.userId + '_' + primaryServiceReportId;
+  
+  clients.set(clientId, res);
+  
+  req.on('close', () => {
+      clients.delete(clientId);
+  });
+};
+
+function broadcastComments(primaryServiceReportId, comments) {
+  clients.forEach((client, clientId) => {
+      if (clientId.includes(primaryServiceReportId)) {
+          client.write(`data: ${JSON.stringify(comments)}\n\n`);
+      }
+  });
+}
 
 
 function getDocumentFromReq(req, reqType){
