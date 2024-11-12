@@ -1,0 +1,23 @@
+meta {
+  name: Add comment
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/products/serviceReport/673336fbe588903ef2083841/serviceReportComments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}
+
+body:json {
+  {
+      "serviceReportId": "673339b214f7e5814d07b901",
+      "primaryServiceReportId": "673336fbe588903ef2083841",
+      "comment": "fsdvs"
+  }
+}

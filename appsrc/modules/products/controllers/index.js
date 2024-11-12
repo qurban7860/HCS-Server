@@ -18,6 +18,7 @@ module.exports = {
     productServiceReportTemplateController: require('./productServiceReportTemplateController'),
     productServiceReportController: require('./productServiceReportController'),
     productServiceReportFileController: require('./productServiceReportFileController'),
+    productServiceReportCommentController: require('./productServiceReportCommentController'),
     productCheckItemCategoryController: require('./productCheckItemCategoryController'),
     productProfileController: require('./productProfileController'),
     productServiceReportValueController: require('./productServiceReportValueController'),
