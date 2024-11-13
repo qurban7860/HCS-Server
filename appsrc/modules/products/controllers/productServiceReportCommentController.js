@@ -118,11 +118,15 @@ exports.deleteProductServiceReportComment = async (req, res, next) => {
 exports.streamProductServiceReportComments = async (req, res) => {
   const primaryServiceReportId = req.params.primaryServiceReportId;
   
-  res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive'
-  });
+  // res.writeHead(200, {
+  //     'Content-Type': 'text/event-stream',
+  //     'Cache-Control': 'no-cache',
+  //     'Connection': 'keep-alive'
+  // });
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
   
   const clientId = req.body.loginUser.userId + '_' + primaryServiceReportId;
   
