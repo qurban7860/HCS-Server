@@ -495,7 +495,7 @@ exports.forgetPassword = async (req, res, next) => {
     const existingUser = await SecurityUser.findOne({ login: req.body.email, isActive: true, isArchived: false })
         .populate([{ path: 'customer', select: 'name type isActive isArchived' },
                   { path: 'contact', select: 'name isActive isArchived' }]);
-    if (existingUser && isValidCustomer( existingUser?.customer )) {
+    if (existingUser ) {
         await this.userEmailService.resetPasswordEmail( req, res, existingUser )
     } else {
       res.status(StatusCodes.BAD_REQUEST).send('Unable to locate the system user');

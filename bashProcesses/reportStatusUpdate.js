@@ -25,7 +25,10 @@ async function updateReports() {
 
       if (oldStatus && typeof oldStatus === 'string') {
         report.oldStatus = oldStatus;
-        report.status = statusMap[oldStatus.toLowerCase()] || null;
+        const foundStatus = statusMap[oldStatus.toLowerCase()] || undefined;
+        if( foundStatus ){
+            report.status = foundStatus;
+        }
         await report.save();
         console.log(`Updated report ${report._id}: oldStatus set to ${oldStatus}, new status set to ${report.status}`);
       }

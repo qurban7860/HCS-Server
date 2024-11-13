@@ -84,8 +84,13 @@ const getProductServiceReportData = async (req) => {
     }
     
     let parsedResponse = JSON.parse(JSON.stringify(response));
-    const submitServiceReportStatus = await findSubmitServiceReportStatus( )
-    const queryToFindCurrentVer = { primaryServiceReportId: parsedResponse.primaryServiceReportId, isArchived: false, isHistory: false, status: submitServiceReportStatus?._id };
+    const draftServiceReportStatus = await findDraftServiceReportStatus( )
+    const queryToFindCurrentVer = { 
+      isHistory: false,
+      isArchived: false,
+      status: { $ne: draftServiceReportStatus?._id },
+      primaryServiceReportId: parsedResponse.primaryServiceReportId
+    };
     const currentVersion = await ProductServiceReports.findOne(queryToFindCurrentVer)
       .select('_id versionNo serviceDate primaryServiceReportId')
       .sort({ versionNo: -1 })
@@ -765,8 +770,7 @@ exports.patchProductServiceReport = async (req, res ) => {
     }
 
     if (req.body.isArchived === true) {
-      await handleArchive(req, res);
-      return;
+      return await handleArchive(req, res);
     }
 
     req.body.primaryServiceReportId = findServiceReport?.primaryServiceReportId;
@@ -778,7 +782,8 @@ exports.patchProductServiceReport = async (req, res ) => {
       return;
     }
 
-    await handleSubmitStatus(req, res, findServiceReport);
+    await handleSubmitStatus( req, res, findServiceReport );
+
   } catch (error) {
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
