@@ -833,10 +833,11 @@ const handleDraftStatus = async (req, res, findServiceReport) =>{
 
 const handleSubmitStatus = async ( req, res, findServiceReport ) => {
   try{
+    console.log("findServiceReport : ",findServiceReport)
     let productServiceReportObject = {};
       productServiceReportObject.primaryServiceReportId =  req.body.primaryServiceReportId;
       delete req.body.versionNo;
-      if( req?.body?.status?.toLowerCase() === 'submitted' ){
+      if( req?.body?.status && req?.body?.status?.toLowerCase() !== 'draft' ){
         const submitReportStatus = await findSubmitServiceReportStatus( res );
         req.body.status = submitReportStatus?._id?.toString(),
         await handleSubmitServiceReports( req );
@@ -844,7 +845,6 @@ const handleSubmitStatus = async ( req, res, findServiceReport ) => {
       productServiceReportObject = await getDocumentFromReq(req);
       await ProductServiceReports.updateOne({ _id: req.params.id }, productServiceReportObject )
       
-      console.log("req", typeof req?.body?.status )
       if( req?.body?.status?.toLowerCase() === 'approved' ){
         return res.status(StatusCodes.OK).send('Approval email sent successfully!');
       }
