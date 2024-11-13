@@ -139,7 +139,9 @@ exports.streamProductServiceReportComments = async (req, res) => {
 
 function broadcastComments(primaryServiceReportId, comments) {
   clients.forEach((client, clientId) => {
+      // console.log("clientId in loop: ", clientId);
       if (clientId.includes(primaryServiceReportId)) {
+          // console.log("clientId before streaming Data: ", clientId);
           client.write(`data: ${JSON.stringify(comments)}\n\n`);
       }
   });
