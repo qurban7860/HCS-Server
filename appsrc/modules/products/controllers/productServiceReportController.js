@@ -304,11 +304,19 @@ exports.getProductServiceReports = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if (response?.length === 0) res.json(response)
-      else {
-        const responseWithCurrentVersion = getCurrentVersionToProductServiceReports(response)
-        res.json(responseWithCurrentVersion);
+      const modifyableResponse = response?.data || response;
+    if (!modifyableResponse || modifyableResponse.length === 0) {
+      res.json(response);
+    } else {
+      let responseWithCurrentVersion = getCurrentVersionToProductServiceReports(modifyableResponse);
+      if (response?.data) {
+        responseWithCurrentVersion = {
+          ...response,
+          data: responseWithCurrentVersion,
+        };
       }
+      res.json(responseWithCurrentVersion);
+    }
     }
   }
 };
@@ -316,7 +324,7 @@ exports.getProductServiceReports = async (req, res, next) => {
 const getCurrentVersionToProductServiceReports = (docServiceReportsList) => {
   const latestVersions = new Map();
 
-  for (const report of docServiceReportsList) {
+  for (const report of ( docServiceReportsList?.data ? docServiceReportsList?.data : docServiceReportsList )  ) {
     const primaryServiceReportId = report.primaryServiceReportId.toString();
     const currentVersion = latestVersions.get(primaryServiceReportId);
     
@@ -329,7 +337,7 @@ const getCurrentVersionToProductServiceReports = (docServiceReportsList) => {
     }
   }
 
-  return docServiceReportsList.map(report => ({
+  return ( docServiceReportsList?.data ? docServiceReportsList?.data : docServiceReportsList ).map(report => ({
     ...report.toObject(),
     currentVersion: latestVersions.get(report.primaryServiceReportId.toString())
   }));
@@ -833,16 +841,14 @@ const handleDraftStatus = async (req, res, findServiceReport) =>{
 
 const handleSubmitStatus = async ( req, res, findServiceReport ) => {
   try{
-    console.log("findServiceReport : ",findServiceReport)
     let productServiceReportObject = {};
-      productServiceReportObject.primaryServiceReportId =  req.body.primaryServiceReportId;
-      delete req.body.versionNo;
-      if( req?.body?.status && req?.body?.status?.toLowerCase() !== 'draft' ){
-        const submitReportStatus = await findSubmitServiceReportStatus( res );
-        req.body.status = submitReportStatus?._id?.toString(),
-        await handleSubmitServiceReports( req );
-      }
-      productServiceReportObject = await getDocumentFromReq(req);
+    delete req.body.versionNo;
+    if( req?.body?.status && req?.body?.status?.toLowerCase() !== 'draft' ){
+      const submitReportStatus = await findSubmitServiceReportStatus( res );
+      req.body.status = submitReportStatus?._id?.toString(),
+      await handleSubmitServiceReports( req );
+    }
+    productServiceReportObject = await getDocumentFromReq(req);
       await ProductServiceReports.updateOne({ _id: req.params.id }, productServiceReportObject )
       
       if( req?.body?.status?.toLowerCase() === 'approved' ){
