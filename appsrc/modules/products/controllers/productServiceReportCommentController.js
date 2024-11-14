@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const { StatusCodes, getReasonPhrase } = require('http-status-codes');
+const LZString = require('lz-string');
 // const bcrypt = require('bcryptjs');
 // const jwt = require('jsonwebtoken');
 // const mongoose = require('mongoose');
@@ -118,11 +119,6 @@ exports.deleteProductServiceReportComment = async (req, res, next) => {
 exports.streamProductServiceReportComments = async (req, res) => {
   const primaryServiceReportId = req.params.primaryServiceReportId;
   
-  // res.writeHead(200, {
-  //     'Content-Type': 'text/event-stream',
-  //     'Cache-Control': 'no-cache',
-  //     'Connection': 'keep-alive'
-  // });
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
@@ -138,11 +134,11 @@ exports.streamProductServiceReportComments = async (req, res) => {
 };
 
 function broadcastComments(primaryServiceReportId, comments) {
+  const jsonString = JSON.stringify(comments);
+  const compressed = LZString.compressToUTF16(jsonString);
   clients.forEach((client, clientId) => {
-      // console.log("clientId in loop: ", clientId);
       if (clientId.includes(primaryServiceReportId)) {
-          // console.log("clientId before streaming Data: ", clientId);
-          client.write(`data: ${JSON.stringify(comments)}\n\n`);
+          client.write(`data: ${compressed}\n\n`);
       }
   });
 }
