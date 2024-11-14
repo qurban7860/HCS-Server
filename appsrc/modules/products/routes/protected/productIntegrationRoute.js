@@ -20,5 +20,7 @@ router.post(`${baseRouteForObject}/portalkey`, controller.postIntegrationPortalK
 
 router.post(`${baseRouteForObject}/details`, controller.postIntegrationDetails);
 
+router.get(`${baseRouteForObject}/streamIntegrationStatus`, controller.streamMachineIntegrationStatus);
+
 
 module.exports = router;

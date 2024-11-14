@@ -11,6 +11,7 @@ const { integrationDetailsSchema } = require("../validations/ProductIntegrationV
 
 let productDBService = require("../service/productDBService");
 this.dbservice = new productDBService();
+const clients = new Map();
 
 const { Product } = require("../models");
 const APILog = require("../../apiclient/models/apilog");
@@ -74,6 +75,13 @@ exports.postIntegrationPortalKey = async (req, res, next) => {
 
     const updatedMachine = await Product.findById(machineId);
 
+    broadcastIntegrationDetails(machineId, {
+      computerGUID: updatedMachine?.machinecomputerGUID,
+      IPC_SerialNo: updatedMachine?.IPC_SerialNo,
+      portalKey: updatedMachine?.portalKey,
+      machineIntegrationSyncStatus: updatedMachine?.machineIntegrationSyncStatus,
+    });
+
     res.status(StatusCodes.CREATED).json({
       portalKey: updatedMachine.portalKey, 
       syncStatus: updatedMachine.machineIntegrationSyncStatus
@@ -104,6 +112,12 @@ exports.postIntegrationDetails = async (req, res, next) => {
     machine.IPC_SerialNo = IPC_SerialNo;
     
     const result = await machine.save();
+    broadcastIntegrationDetails(machineId, {
+      computerGUID: result.computerGUID,
+      IPC_SerialNo: result.IPC_SerialNo,
+      portalKey: result.portalKey,
+      machineIntegrationSyncStatus: result.machineIntegrationSyncStatus,
+    });
 
     res.status(StatusCodes.CREATED).json({
       computerGUID: result.computerGUID,
@@ -184,6 +198,16 @@ exports.syncMachineConnection = async (req, res, next) => {
         syncIP: clientIP,
       };
       await machine.save();
+      broadcastIntegrationDetails(machine._id, {
+        computerGUID: computerGUID,
+        IPC_SerialNo: IPCSerialNo,
+        portalKey: machine.portalKey,
+        machineIntegrationSyncStatus: {
+          syncStatus: true,
+          syncDate: new Date(),
+          syncIP: clientIP,
+        }
+      });
       await logApiCall({
         req,
         startTime,
@@ -207,6 +231,18 @@ exports.syncMachineConnection = async (req, res, next) => {
         };
         await machine.save();
       }
+      broadcastIntegrationDetails(machine._id, {
+        computerGUID: computerGUID,
+        IPC_SerialNo: IPCSerialNo,
+        portalKey: machine.portalKey,
+        machineIntegrationSyncStatus: !machine.machineIntegrationSyncStatus?.syncStatus
+          ? {
+              syncStatus: true,
+              syncDate: new Date(),
+              syncIP: clientIP,
+            }
+          : machine.machineIntegrationSyncStatus,
+      });
       await logApiCall({
         req,
         startTime,
@@ -248,6 +284,31 @@ exports.syncMachineConnection = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
   }
 };
+
+exports.streamMachineIntegrationStatus = async (req, res) => {
+  const machineId = req.params.machineId;
+  
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  
+  const clientId = req.body.loginUser.userId + '_' + machineId;
+  
+  clients.set(clientId, res);
+  
+  req.on('close', () => {
+      clients.delete(clientId);
+  });
+};
+
+function broadcastIntegrationDetails(machineId, integrationDetails) {
+  clients.forEach((client, clientId) => {
+      if (clientId.includes(machineId)) {
+          client.write(`data: ${JSON.stringify(integrationDetails)}\n\n`);
+      }
+  });
+}
 
 const logApiCall = async ({ req, startTime, responseData, machine = null, createdIP, createdBy }) => {
   const apiLog = new APILog({
