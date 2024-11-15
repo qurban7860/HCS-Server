@@ -75,12 +75,12 @@ exports.postIntegrationPortalKey = async (req, res, next) => {
 
     const updatedMachine = await Product.findById(machineId);
 
-    broadcastIntegrationDetails(machineId, {
-      computerGUID: updatedMachine?.machinecomputerGUID,
-      IPC_SerialNo: updatedMachine?.IPC_SerialNo,
-      portalKey: updatedMachine?.portalKey,
-      machineIntegrationSyncStatus: updatedMachine?.machineIntegrationSyncStatus,
-    });
+    // broadcastIntegrationDetails(machineId, {
+    //   computerGUID: updatedMachine?.machinecomputerGUID,
+    //   IPC_SerialNo: updatedMachine?.IPC_SerialNo,
+    //   portalKey: updatedMachine?.portalKey,
+    //   machineIntegrationSyncStatus: updatedMachine?.machineIntegrationSyncStatus,
+    // });
 
     res.status(StatusCodes.CREATED).json({
       portalKey: updatedMachine.portalKey, 
@@ -112,12 +112,12 @@ exports.postIntegrationDetails = async (req, res, next) => {
     machine.IPC_SerialNo = IPC_SerialNo;
     
     const result = await machine.save();
-    broadcastIntegrationDetails(machineId, {
-      computerGUID: result.computerGUID,
-      IPC_SerialNo: result.IPC_SerialNo,
-      portalKey: result.portalKey,
-      machineIntegrationSyncStatus: result.machineIntegrationSyncStatus,
-    });
+    // broadcastIntegrationDetails(machineId, {
+    //   computerGUID: result.computerGUID,
+    //   IPC_SerialNo: result.IPC_SerialNo,
+    //   portalKey: result.portalKey,
+    //   machineIntegrationSyncStatus: result.machineIntegrationSyncStatus,
+    // });
 
     res.status(StatusCodes.CREATED).json({
       computerGUID: result.computerGUID,
