@@ -12,7 +12,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/serviceReport/:primaryServiceReportId/serviceReportComments`; 
+const baseRouteForObject = `/serviceReport/:serviceReportId/serviceReportComments`; 
 
 router.use(checkAuth, checkCustomer);
 

@@ -18,7 +18,7 @@ router.get(`${baseRouteForObject}/:id`, controller.getProductServiceReport);
 
 router.get(`${baseRouteForObject}/:id/values`, controller.getProductServiceReportWithIndividualDetails);
 
-router.get(`${baseRouteForObject}/:id/version/`, controller.newProductServiceReportVersion);
+router.get(`${baseRouteForObject}/:id/status/`, controller.changeProductServiceReportStatus);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceReports);
 

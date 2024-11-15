@@ -8,13 +8,15 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-    comment: { type: String, default: "" },
-
-    serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
-
+    serviceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
+    
+    type: { type: String, },
+    
+    comment: { type: String, required: true },
+    
 },
 {
-    collection: 'MachineServiceReportComment'
+    collection: 'MachineServiceReportNote'
 });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -27,4 +29,4 @@ docSchema.index({"isArchived":1})
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('MachineServiceReportComment', docSchema);
+module.exports = mongoose.model('MachineServiceReportNotes', docSchema);

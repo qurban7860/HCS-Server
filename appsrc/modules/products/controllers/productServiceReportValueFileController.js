@@ -256,7 +256,7 @@ async function getToken(req){
 
 function getServiceReportValueFileFromReq(req, reqType) {
 
-  const { serviceReport, primaryServiceReportId, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { serviceReport, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -266,10 +266,6 @@ function getServiceReportValueFileFromReq(req, reqType) {
 
   if ("serviceReport" in req.body) {
     doc.serviceReport = serviceReport;
-  }
-
-  if ("primaryServiceReportId" in req.body) {
-    doc.primaryServiceReportId = primaryServiceReportId;
   }
 
   if ("machineCheckItem" in req.body) {

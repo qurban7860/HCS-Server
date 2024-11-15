@@ -62,12 +62,12 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
   ];
 
   try {
-    const response =  await ProductServiceReports.findById( req.params.primaryServiceReportId  ).populate( populateObject ).sort({ _id: -1 });
+    const response =  await ProductServiceReports.findById( req.params.serviceReportId  ).populate( populateObject );
     if (!response) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report Not Found!");
     }
-    const activeValues = await fetchServiceReportValues(response.primaryServiceReportId, false);
-    const historicalValues = await fetchServiceReportValues(response.primaryServiceReportId, true);
+    const activeValues = await fetchServiceReportValues(response.serviceReport, false);
+    const historicalValues = await fetchServiceReportValues(response.serviceReport, true);
     const responseData = JSON.parse(JSON.stringify(response?.serviceReportTemplate));
     
     if (response?.serviceReportTemplate && Array.isArray(response?.serviceReportTemplate?.checkItemLists)) {
@@ -81,7 +81,7 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
         }
       }
     }
-    responseData.primaryServiceReportId = req.params.primaryServiceReportId;
+    responseData.serviceReport = req.params.serviceReportId;
     res.json(responseData);
   } catch (error) {
     logger.error(error);
@@ -89,12 +89,12 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
   }
 };
 
-async function fetchServiceReportValues( primaryServiceReportId, isHistory) {
+async function fetchServiceReportValues( serviceReport, isHistory) {
   try{
     const productServiceReportValues = await  ProductServiceReportValue.find(
-      { primaryServiceReportId, isHistory, isActive: true, isArchived: false },
-      { checkItemValue: 1, comments: 1, serviceReport: 1, primaryServiceReportId: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
-    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport', select: 'versionNo status', populate: { path: 'status', select: 'name type displayOrderNo' }}])
+      { serviceReport, isHistory, isActive: true, isArchived: false },
+      { checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
+    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport', select: ' status', populate: { path: 'status', select: 'name type displayOrderNo' }}])
     .sort({ createdAt: -1 })
     .lean();
     return productServiceReportValues
@@ -286,14 +286,7 @@ exports.postProductServiceReportValue = async (req, res, next) => {
     } else {
       // If it doesn't exist, create a new Report
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      // const findQuery = {
-      //   primaryServiceReportId: response?.primaryServiceReportId,
-      //   serviceReport: response.serviceReport,
-      //   machineCheckItem: response?.machineCheckItem,
-      //   checkItemListId: response?.checkItemListId,
-      //   isActive: true,
-      //   isArchived: false
-      // };
+
       response.machineId = req.params.machineId;
 
       // const checkItemFiles = await ProductServiceReportValueFile.find(findQuery)
@@ -328,7 +321,7 @@ exports.patchProductServiceReportValue = async (req, res, next) => {
       req.body.loginUser = await getToken(req);
     }
     const findQuery = { 
-      primaryServiceReportId: req.params?.primaryServiceReportId, 
+      serviceReport: req.params?.serviceReportId, 
       machineCheckItem: req.params?.machineCheckItem, 
       checkItemListId: req.params?.checkItemListId, 
       isActive: true, 
@@ -492,7 +485,7 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType){
-  const { serviceReport, primaryServiceReportId, machineCheckItem, checkItemListId, checkItemValue, comments, files , isHistory, isActive, isArchived, 
+  const { serviceReport, machineCheckItem, checkItemListId, checkItemValue, comments, files , isHistory, isActive, isArchived, 
     loginUser } = req.body;
   
   let doc = {};
@@ -504,9 +497,7 @@ function getDocumentFromReq(req, reqType){
     doc.serviceReport = serviceReport;
   }
 
-  if ("primaryServiceReportId" in req.body) {
-    doc.primaryServiceReportId = primaryServiceReportId;
-  }
+
 
   if ("machineCheckItem" in req.body) {
     doc.machineCheckItem = machineCheckItem;
@@ -582,7 +573,7 @@ async function fetchFileFromAWS(file) {
 
 function getServiceReportValueFileFromReq(req, reqType) {
 
-  const { serviceReport, primaryServiceReportId, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { serviceReport, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -592,10 +583,6 @@ function getServiceReportValueFileFromReq(req, reqType) {
 
   if ("serviceReport" in req.body) {
     doc.serviceReport = serviceReport;
-  }
-
-  if ("primaryServiceReportId" in req.body) {
-    doc.primaryServiceReportId = primaryServiceReportId;
   }
 
   if ("machineCheckItem" in req.body) {

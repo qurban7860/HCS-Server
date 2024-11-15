@@ -12,15 +12,9 @@ const docSchema = new Schema({
 
   serviceReportTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate' },
   // Report findOne used to create this Report.
-
-  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
-  // purpose is to maintain parent service Report uuid
   
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
-
-  versionNo: { type: Number, default: 1, required: true },
-  // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
   // customer information.

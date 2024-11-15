@@ -13,9 +13,6 @@ const docSchema = new Schema({
         machineServiceReport: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true }],
         // machine service Report current version 
 
-        primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true  },
-        // machine service Report parent
-
         name: { type: String },
         // name/title of field
 

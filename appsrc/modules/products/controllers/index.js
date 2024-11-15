@@ -19,6 +19,7 @@ module.exports = {
     productServiceReportController: require('./productServiceReportController'),
     productServiceReportFileController: require('./productServiceReportFileController'),
     productServiceReportCommentController: require('./productServiceReportCommentController'),
+    productServiceReportNoteController: require('./productServiceReportNoteController'),
     productCheckItemCategoryController: require('./productCheckItemCategoryController'),
     productProfileController: require('./productProfileController'),
     productServiceReportValueController: require('./productServiceReportValueController'),

@@ -19,21 +19,19 @@ this.fields = {};
 this.query = { isActive: true, isArchived: false };
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  { path: 'serviceReportId', select: '_id' },
-  { path: 'primaryServiceReportId', select: 'name' },
+  { path: 'serviceReport', select: '_id name' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
 
 exports.getProductServiceReportComments = async (req, res, next) => {
   try {
-    this.primaryServiceReportId = req.params.primaryServiceReportId;
     this.query = req.query != "undefined" ? req.query : {};
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    this.query.primaryServiceReportId = this.primaryServiceReportId;
+    this.query.serviceReport = req.params.serviceReportId;
     this.query.isActive = true;
     this.query.isArchived = false;
 
@@ -54,11 +52,11 @@ exports.postProductServiceReportComment = async (req, res, next) => {
     
     const response = await this.dbservice.postObject(getDocumentFromReq(req, "new"));
 
-    this.primaryServiceReportId = req.params.primaryServiceReportId;
-    this.query = { primaryServiceReportId: this.primaryServiceReportId, isActive: true, isArchived: false };
+    this.serviceReport = req.params.serviceReportId;
+    this.query = { serviceReport: this.serviceReport, isActive: true, isArchived: false };
     const commentsList = await this.dbservice.getObjectList(req, ProductServiceReportComment, this.fields, this.query, this.orderBy, this.populate);
 
-    broadcastComments(this.primaryServiceReportId, commentsList);
+    broadcastComments(this.serviceReport, commentsList);
     res.status(StatusCodes.CREATED).json({ newComment: response, commentsList });
   } catch (error) {
     logger.error(new Error(error));
@@ -80,11 +78,11 @@ exports.patchProductServiceReportComment = async (req, res, next) => {
 
     const response = await this.dbservice.patchObject(ProductServiceReportComment, req.params.id, getDocumentFromReq(req));
 
-    this.primaryServiceReportId = req.params.primaryServiceReportId;
-    this.query = { primaryServiceReportId: this.primaryServiceReportId, isActive: true, isArchived: false };
+    this.serviceReport = req.params.serviceReportId;
+    this.query = { serviceReport: this.serviceReport, isActive: true, isArchived: false };
     const commentsList = await this.dbservice.getObjectList(req, ProductServiceReportComment, this.fields, this.query, this.orderBy, this.populate);
 
-    broadcastComments(this.primaryServiceReportId, commentsList);
+    broadcastComments(this.serviceReport, commentsList);
     res.status(StatusCodes.ACCEPTED).json({ updatedComment: response, commentsList });
   } catch (error) {
     logger.error(new Error(error));
@@ -102,12 +100,12 @@ exports.deleteProductServiceReportComment = async (req, res, next) => {
 
     await this.dbservice.patchObject(ProductServiceReportComment, req.params.id, getDocumentFromReq(req, "delete"));
 
-    this.primaryServiceReportId = req.params.primaryServiceReportId;
-    this.query = { primaryServiceReportId: this.primaryServiceReportId, isActive: true, isArchived: false };
+    this.serviceReport = req.params.serviceReportId;
+    this.query = { serviceReport: this.serviceReport, isActive: true, isArchived: false };
     const commentsList = await this.dbservice.getObjectList(req, ProductServiceReportComment, this.fields, this.query, this.orderBy, this.populate);
 
     // await this.dbservice.deleteObject(ProductServiceReportComment, req.params.id, res,);
-    broadcastComments(this.primaryServiceReportId, commentsList);
+    broadcastComments(this.serviceReport, commentsList);
     res.status(StatusCodes.OK).json({ commentsList });
   } catch (e) {
     logger.error(new Error(error));
@@ -116,7 +114,7 @@ exports.deleteProductServiceReportComment = async (req, res, next) => {
 };
 
 exports.streamProductServiceReportComments = async (req, res) => {
-  const primaryServiceReportId = req.params.primaryServiceReportId;
+  const serviceReport = req.params.serviceReportId;
   
   // res.writeHead(200, {
   //     'Content-Type': 'text/event-stream',
@@ -128,7 +126,7 @@ exports.streamProductServiceReportComments = async (req, res) => {
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
   
-  const clientId = req.body.loginUser.userId + '_' + primaryServiceReportId;
+  const clientId = req.body.loginUser.userId + '_' + serviceReport;
   
   clients.set(clientId, res);
   
@@ -137,10 +135,10 @@ exports.streamProductServiceReportComments = async (req, res) => {
   });
 };
 
-function broadcastComments(primaryServiceReportId, comments) {
+function broadcastComments(serviceReport, comments) {
   clients.forEach((client, clientId) => {
       // console.log("clientId in loop: ", clientId);
-      if (clientId.includes(primaryServiceReportId)) {
+      if (clientId.includes(serviceReport)) {
           // console.log("clientId before streaming Data: ", clientId);
           client.write(`data: ${JSON.stringify(comments)}\n\n`);
       }
@@ -149,7 +147,7 @@ function broadcastComments(primaryServiceReportId, comments) {
 
 
 function getDocumentFromReq(req, reqType){
-  const { comment, isActive, isArchived, loginUser, serviceReportId, primaryServiceReportId } = req.body;
+  const { comment, isActive, isArchived, loginUser, serviceReport } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -159,11 +157,9 @@ function getDocumentFromReq(req, reqType){
   if ("comment" in req.body){
     doc.comment = comment;
   }
-  if ("serviceReportId" in req.body){
-    doc.serviceReportId = serviceReportId;
-  }
-  if ("primaryServiceReportId" in req.body){
-    doc.primaryServiceReportId = primaryServiceReportId;
+
+  if ("serviceReport" in req.body){
+    doc.serviceReport = serviceReport;
   }
 
   if ("isActive" in req.body){
