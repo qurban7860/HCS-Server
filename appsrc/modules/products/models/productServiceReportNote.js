@@ -8,11 +8,13 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-    serviceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
+    serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true },
     
-    type: { type: String, },
+    type: { type: String, required: true },
     
-    comment: { type: String, required: true },
+    note: { type: String, required: true },
+
+    isHistory: {type: Boolean, default: false},
     
 },
 {

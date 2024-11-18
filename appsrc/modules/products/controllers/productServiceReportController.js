@@ -21,6 +21,7 @@ const util = require('util');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
+const noteController = require('./productServiceReportNoteController');
 const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
@@ -32,7 +33,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
+
 this.populate = [
   {path: 'serviceReportTemplate', select: 'reportTitle reportType' },
   {path: 'status', select: 'name type displayOrderNo' },
@@ -50,6 +51,60 @@ this.populateObject = [
   {path: 'status', select: 'name type displayOrderNo' },
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
+  {path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'textBeforeCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'textAfterCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'recommendationNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'internalComments', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'suggestedSpares', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'internalNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
   {path: 'machine', select: 'name serialNo machineModel'},
   {path: 'technician', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
@@ -90,13 +145,6 @@ const getProductServiceReportData = async ( req ) => {
       .select("approval.approvalLogs")
       .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
       .lean()
-      .then(results => results.reduce((acc, item) => ({
-        evaluationHistory: [...acc.evaluationHistory, {
-          _id: item._id,
-          logs: item.approval?.approvalLogs,
-        }],
-        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0),
-      }), { evaluationHistory: [], totalLogsCount: 0 }));
 
     parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
 
@@ -117,8 +165,8 @@ const getProductServiceReportData = async ( req ) => {
       select: 'firstName lastName',
     });
 
-    const serviceReportDocsQuery = { serviceReportId: { $in: req.params.id }, isArchived: false, isReportDoc: true };
-    const serviceReportFilesQuery = { serviceReportId: { $in: req.params.id }, isArchived: false, isReportDoc: false };
+    const serviceReportDocsQuery = { serviceReport: { $in: req.params.id }, isArchived: false, isReportDoc: true };
+    const serviceReportFilesQuery = { serviceReport: { $in: req.params.id }, isArchived: false, isReportDoc: false };
 
     let serviceReportFiles = await ProductServiceReportFiles.find(serviceReportFilesQuery)
       .select('name path extension fileType thumbnail isReportDoc').lean();
@@ -128,10 +176,10 @@ const getProductServiceReportData = async ( req ) => {
 
       if( req?.query?.isHighQuality ){
         serviceReportFiles = await Promise.all(
-          serviceReportFiles.map(async ( file ) => await fetchFileFromAWS(file))
+          serviceReportFiles?.map(async ( file ) => await fetchFileFromAWS(file))
         );
         serviceReportDocs = await Promise.all(
-          serviceReportDocs.map(async ( file ) => await fetchFileFromAWS(file))
+          serviceReportDocs?.map(async ( file ) => await fetchFileFromAWS(file))
         );
       }
       
@@ -178,9 +226,9 @@ async function fetchFileFromAWS(file) {
     } else {
       throw new Error("Invalid File Provided!");
     }
-  } catch (e) {
-    console.error("Error fetching file from AWS:", e.message);
-    throw new Error(e);
+  } catch (error) {
+    logger.error(new Error(error));
+    throw new Error(error);
   }
 }
 
@@ -189,8 +237,9 @@ exports.getProductServiceReportData = getProductServiceReportData;
 exports.getProductServiceReport = async (req, res, next) => {
   try {
     const data = await getProductServiceReportData(req);
-    res.json(data);
-  } catch (e) {
+    res.status(StatusCodes.ACCEPTED).json(data);
+  } catch (error) {
+    logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
@@ -337,13 +386,14 @@ exports.postProductServiceReport = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
     }
     const machine = await Product.findById(req.params.machineId)
-
     const serviceReportStatus = await findDraftServiceReportStatus( res )
     let productServiceReportObject = await getDocumentFromReq(req, 'new');
     productServiceReportObject.status = serviceReportStatus?._id;
     productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
     productServiceReportObject.customer = machine?.customer;
-    const response = await this.dbservice.postObject(productServiceReportObject, callbackFunc);
+    let response = await this.dbservice.postObject(productServiceReportObject);
+    req.params.serviceReportId = response?._id;
+    await noteController.newReportNotesHandler( req );
 
         if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
           response = JSON.parse(JSON.stringify(response));
@@ -659,10 +709,13 @@ exports.patchProductServiceReport = async (req, res ) => {
     if (req.body.isArchived === true) {
       return await handleArchive(req, res);
     }
+    req.params.serviceReportId = req.params.id
+    await noteController.newReportNotesHandler(req);
 
     if ( findServiceReport?.status?.type?.toLowerCase() !== 'draft' ) {
       return res.status(StatusCodes.BAD_REQUEST).send("Only draft service report can be edit!");
     }
+    
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.ACCEPTED).send("Service report updated successfully!");
 
@@ -758,49 +811,49 @@ function getDocumentFromReq(req, reqType){
     doc.checkItemLists = checkItemLists;
   }
 
-  if ("serviceNote" in req.body){
-    doc.serviceNote = serviceNote;
-  }
+  // if ("serviceNote" in req.body){
+  //   doc.serviceNote = serviceNote;
+  // }
 
   if ("serviceDate" in req.body){
     doc.serviceDate = serviceDate;
   }
 
-  if ("recommendationNote" in req.body){
-    doc.recommendationNote = recommendationNote;
-  }
+  // if ("recommendationNote" in req.body){
+  //   doc.recommendationNote = recommendationNote;
+  // }
 
-  if ("internalComments" in req.body){
-    doc.internalComments = internalComments;
-  }
+  // if ("internalComments" in req.body){
+  //   doc.internalComments = internalComments;
+  // }
 
-  if ("suggestedSpares" in req.body){
-    doc.suggestedSpares = suggestedSpares;
-  }
+  // if ("suggestedSpares" in req.body){
+  //   doc.suggestedSpares = suggestedSpares;
+  // }
 
-  if ("internalNote" in req.body){
-    doc.internalNote = internalNote;
-  }
+  // if ("internalNote" in req.body){
+  //   doc.internalNote = internalNote;
+  // }
 
   if ("operators" in req.body){
     doc.operators = operators;
   }
 
-  if ("operatorNotes" in req.body){
-    doc.operatorNotes = operatorNotes;
-  }
+  // if ("operatorNotes" in req.body){
+  //   doc.operatorNotes = operatorNotes;
+  // }
 
-  if ("technicianNotes" in req.body){
-    doc.technicianNotes = technicianNotes;
-  }
+  // if ("technicianNotes" in req.body){
+  //   doc.technicianNotes = technicianNotes;
+  // }
 
-  if ("textBeforeCheckItems" in req.body){
-    doc.textBeforeCheckItems = textBeforeCheckItems;
-  }
+  // if ("textBeforeCheckItems" in req.body){
+  //   doc.textBeforeCheckItems = textBeforeCheckItems;
+  // }
   
-  if ("textAfterCheckItems" in req.body){
-    doc.textAfterCheckItems = textAfterCheckItems;
-  }
+  // if ("textAfterCheckItems" in req.body){
+  //   doc.textAfterCheckItems = textAfterCheckItems;
+  // }
 
   if("isReportDocsOnly" in req.body ){
     doc.isReportDocsOnly = isReportDocsOnly;

@@ -10,7 +10,7 @@ const docSchema = new Schema({
         machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
         // machine information.
 
-        machineServiceReport: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true }],
+        serviceReport: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true }],
         // machine service Report current version 
 
         name: { type: String },
