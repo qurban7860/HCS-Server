@@ -22,7 +22,7 @@ let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
 const noteController = require('./productServiceReportNoteController');
-const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
+const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportNote, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
 const customerContact = require('../../crm/models/customerContact');
@@ -54,7 +54,12 @@ this.populateObject = [
   {path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
       { path: 'createdBy', select: 'name' },
-      { path: 'updatedBy', select: 'name' }
+      { path: 'updatedBy', select: 'name' },
+      { path: 'technician', select: 'firstName lastName',
+        populate: [
+          { path: 'customer', select: 'name'}
+        ]
+      }
     ]
   },
   {path: 'textBeforeCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
@@ -102,7 +107,12 @@ this.populateObject = [
   {path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
       { path: 'createdBy', select: 'name' },
-      { path: 'updatedBy', select: 'name' }
+      { path: 'updatedBy', select: 'name' },
+      { path: 'operators', select: 'firstName lastName',
+        populate: [
+          { path: 'customer', select: 'name'}
+        ]
+      }
     ]
   },
   {path: 'machine', select: 'name serialNo machineModel'},
@@ -245,7 +255,6 @@ exports.getProductServiceReport = async (req, res, next) => {
 };
 
 exports.getProductServiceReportWithIndividualDetails = async (req, res, next) => {
-  const submitServiceReportStatus = await findSubmitServiceReportStatus( res )
   const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject, callbackFunc);
   try{
 
@@ -429,6 +438,35 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
     }
     if(!productServiceReport?.isActive){
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
+    }
+
+    Object.keys(req.body)?.forEach(field => {
+      if ( field !== "loginUser" && field !== "status" ) {
+        delete req.body[field];
+      }
+    });
+    
+    if(req.body?.status?.toUpperCase() === "SUBMITTED"){
+      const result = await ProductServiceReportNote.updateMany(
+        {
+          type: { $in: Array.from(
+            [ 
+              "technicianNotes",
+              "textBeforeCheckItems", 
+              "textAfterCheckItems", 
+              "serviceNote", 
+              "recommendationNote", 
+              "internalComments", 
+              "suggestedSpares", 
+              "internalNote", 
+              "operatorNotes"
+            ]
+          ) },
+          serviceReport: req.params.id,
+        },
+        { $set: { isHistory: true } }
+      );
+      console.log("result : ",result)
     }
     
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
@@ -701,7 +739,7 @@ exports.patchProductServiceReport = async (req, res ) => {
       req.body.loginUser = await getToken(req);
     }
 
-    const findServiceReport = await ProductServiceReports.findById(req.params.id);
+    const findServiceReport = await ProductServiceReports.findById(req.params.id).populate(this.populate);
     if (!findServiceReport) {
       return res.status(StatusCodes.NOT_FOUND).send('Service Report not found');
     }
@@ -710,18 +748,36 @@ exports.patchProductServiceReport = async (req, res ) => {
       return await handleArchive(req, res);
     }
     req.params.serviceReportId = req.params.id
-    await noteController.newReportNotesHandler(req);
 
     if ( findServiceReport?.status?.type?.toLowerCase() !== 'draft' ) {
       return res.status(StatusCodes.BAD_REQUEST).send("Only draft service report can be edit!");
     }
+
+    if(req.body?.status?.toUpperCase() === "DRAFT"){
+      const draftStatus = await findDraftServiceReportStatus();
+      if( draftStatus?._id ){
+        req.body.status = draftStatus?._id
+      } else {
+        return res.status(StatusCodes.ACCEPTED).send("Draft status not found!");
+      }
+    }
+
+    if(req.body?.status?.toUpperCase() === "SUBMITTED"){
+      const submitStatus = await findSubmitServiceReportStatus();
+      if( submitStatus?._id ){
+        req.body.status = submitStatus?._id
+      } else {
+        return res.status(StatusCodes.ACCEPTED).send("Submit status not found!");
+      }
+    }
     
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
+    await noteController.newReportNotesHandler(req);
     return res.status(StatusCodes.ACCEPTED).send("Service report updated successfully!");
 
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 }
 
@@ -752,9 +808,9 @@ async function getToken(req){
 function getDocumentFromReq(req, reqType){
   const { 
     serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
-    technician, params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly,
-    serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
-    technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
+    params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
+    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators,
+    // technicianNotes, textBeforeCheckItems, textAfterCheckItems, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
   
   let doc = {};
@@ -769,6 +825,10 @@ function getDocumentFromReq(req, reqType){
 
   if ("serviceReportUID" in req.body){
     doc.serviceReportUID = serviceReportUID;
+  }
+
+  if ("status" in req.body){
+    doc.status = status;
   }
 
   if ("customer" in req.body){
@@ -869,10 +929,6 @@ function getDocumentFromReq(req, reqType){
   
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
-  }
-
-  if ("status" in req.body){
-    doc.status = status;
   }
   
   if (reqType == "new" && "loginUser" in req.body ){

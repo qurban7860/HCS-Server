@@ -60,7 +60,7 @@ async function newReportNotesHandler( req ){
     for (const field in req.body) {
       const noteValue = req.body[field];
 
-      if (this.serviceNotes.has(field) && field !== "loginUser" && typeof noteValue === "string" && noteValue.trim() !== "") {
+      if (this.serviceNotes.has(field) && field !== "loginUser" && typeof noteValue === "string" && noteValue?.trim() ) {
          
             await ProductServiceReportNote.updateMany( { type: field, serviceReport }, { $set: { isHistory: true } } );
 
@@ -72,6 +72,12 @@ async function newReportNotesHandler( req ){
                 serviceReport,
               }
             };
+            if(field === "operatorNotes" && req.body?.operators){
+              noteData.body.operators = req.body?.operators;
+            }
+            if(field === "technicianNotes" && req.body?.technician ){
+              noteData.body.technician = req.body.technician;
+            }
 
             const savedNote = await this.dbservice.postObject(getDocumentFromReq(noteData, "new"));
 
@@ -121,18 +127,6 @@ exports.patchProductServiceReportNote = async (req, res, next) => {
     // if (existingNote.createdBy._id.toString() !== req.body.loginUser.userId) {
     //   return res.status(StatusCodes.FORBIDDEN).send("Only the note author can modify this Note");
     // }
-
-    const availableField = Object.keys(req.body)?.some(field => this.serviceNotes.has(field));
-
-    if (!availableField) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Note not found!" );
-    }
-
-    Object.keys(req.body)?.forEach(field => {
-      if (!this.serviceNotes.has(field) && field !== "loginUser") {
-          delete req.body[field];
-      }
-    });
 
     const response = await this.dbservice.patchObject(ProductServiceReportNote, req.params.id, getDocumentFromReq(req));
 
@@ -207,7 +201,7 @@ function broadcastNotes(serviceReportId, Notes) {
 
 
 function getDocumentFromReq(req, reqType){
-  const { note, serviceReport, type, isActive, isArchived, loginUser } = req.body;
+  const { note, serviceReport, type, technician, operators, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
 
@@ -222,8 +216,17 @@ function getDocumentFromReq(req, reqType){
   if ("note" in req.body){
     doc.note = note;
   }
+
   if ("serviceReport" in req.body){
     doc.serviceReport = serviceReport;
+  }
+
+  if ("technician" in req.body){
+    doc.technician = technician;
+  }
+
+  if ("operators" in req.body){
+    doc.operators = operators;
   }
 
   if ("isActive" in req.body){

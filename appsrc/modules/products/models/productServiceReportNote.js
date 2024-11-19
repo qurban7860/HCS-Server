@@ -14,6 +14,10 @@ const docSchema = new Schema({
     
     note: { type: String, required: true },
 
+    technician: { type: Schema.Types.ObjectId , ref: 'CustomerContact' },
+
+    operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+    
     isHistory: {type: Boolean, default: false},
     
 },
