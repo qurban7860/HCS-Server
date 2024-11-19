@@ -18,8 +18,6 @@ router.get(`${baseRouteForObject}/:id`, controller.getProductServiceReport);
 
 router.get(`${baseRouteForObject}/:id/values`, controller.getProductServiceReportWithIndividualDetails);
 
-router.get(`${baseRouteForObject}/:id/version/`, controller.newProductServiceReportVersion);
-
 router.get(`${baseRouteForObject}/`, controller.getProductServiceReports);
 
 router.post(`${baseRouteForObject}/`,upload.single('document'), controller.postProductServiceReport, checkMaxCount, imageOptimization, postServiceReportFiles );
@@ -30,7 +28,10 @@ router.post(`${baseRouteForObject}/:id/sendApprovalEmail`, controller.sendServic
 
 router.post(`${baseRouteForObject}/:id/approveReport`, controller.evaluateServiceReport);
 
+router.patch(`${baseRouteForObject}/:id/status/`, controller.changeProductServiceReportStatus);
+
 router.patch(`${baseRouteForObject}/:id`, [verifyDelete,upload.single('document')], controller.patchProductServiceReport);
+
 
 router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceReport);
 

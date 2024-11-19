@@ -181,6 +181,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
       const technicians = `<strong>${eventData?.isCustomerEvent ? 'Technicians' : 'Assignee' }: </strong> ${ Array.from(uniqueTechnicians) || '' } </br>`;
       const description = eventData?.description || '';
       const priority = eventData?.priority || '';
+      const status = eventData?.status || '';
       const createdBy = eventData?.createdBy?.name || '';
       const createdAt = new Date();
       const emailLogParams = {
@@ -226,6 +227,7 @@ exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
         endTime,
         description,
         priority,
+        status,
         createdBy,
         createdAt
       });

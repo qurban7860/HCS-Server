@@ -25,6 +25,7 @@ const protectedRoutes = {
   checkItems: require("./protected/productCheckItemsRoute"),
   serviceReportTemplates: require("./protected/productServiceReportTemplateRoute"),
   serviceReportComments: require("./protected/productServiceReportCommentRoute"),
+  serviceReportNotes: require("./protected/productServiceReportNoteRoute"),
   serviceReportStatuses: require("./protected/productServiceReportStatusRoute"),
   serviceReports: require("./protected/productServiceReportRoute"),
   serviceReportFiles: require("./protected/productServiceReportFileRoute"),

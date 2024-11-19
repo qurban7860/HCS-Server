@@ -12,15 +12,9 @@ const docSchema = new Schema({
 
   serviceReportTemplate: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate' },
   // Report findOne used to create this Report.
-
-  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' },
-  // purpose is to maintain parent service Report uuid
   
   serviceDate: { type: Date , default: Date.now, required: true },
   // date of service
-
-  versionNo: { type: Number, default: 1, required: true },
-  // Maintain versionNo
   
   customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
   // customer information.
@@ -40,40 +34,38 @@ const docSchema = new Schema({
   serviceReportUID: { type: String, required: true  },
   //indication of current active Report status.
 
-  oldStatus: { type: String },
-
   status: { type: Schema.Types.ObjectId , ref: 'MachineServiceReportStatus' },
   //indication of current active Report approval status.
 
-  technicianNotes: { type: String },
+  technicianNotes: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   // operator comments against this Report.
 
-  textBeforeCheckItems: { type: String },
+  textBeforeCheckItems: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   // display this text before fields. default will be copied from configurtation
   
-  textAfterCheckItems: { type: String },
+  textAfterCheckItems: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   // display this text before fields
   
-  serviceNote: { type: String },
+  serviceNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //some notes regarding service/installation/training,
   
-  recommendationNote: { type: String },
+  recommendationNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //recommendations if required
   
-  internalComments: { type: String },
+  internalComments: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //Internal comments in machine service Report. this comments will not be printed at PDF and not visible to customer
 
   
-  suggestedSpares: { type: String },
+  suggestedSpares: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //detail of suggested spares
 
-  internalNote: { type: String },
+  internalNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //internal notes will not be visibile to customer,
   
   operators: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
   // operators who is training.
   
-  operatorNotes: { type: String },
+  operatorNotes: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   // operator comments against this Report.
 
   isReportDocsOnly: { type: Boolean, default: false },

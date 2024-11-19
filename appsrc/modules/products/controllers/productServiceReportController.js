@@ -21,7 +21,8 @@ const util = require('util');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
-const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
+const noteController = require('./productServiceReportNoteController');
+const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportNote, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
 const customerContact = require('../../crm/models/customerContact');
@@ -32,7 +33,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };   
-//this.populate = 'category';
+
 this.populate = [
   {path: 'serviceReportTemplate', select: 'reportTitle reportType' },
   {path: 'status', select: 'name type displayOrderNo' },
@@ -50,6 +51,70 @@ this.populateObject = [
   {path: 'status', select: 'name type displayOrderNo' },
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
+  {path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' },
+      { path: 'technician', select: 'firstName lastName',
+        populate: [
+          { path: 'customer', select: 'name'}
+        ]
+      }
+    ]
+  },
+  {path: 'textBeforeCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'textAfterCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'recommendationNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'internalComments', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'suggestedSpares', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'internalNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' }
+    ]
+  },
+  {path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    populate: [
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' },
+      { path: 'operators', select: 'firstName lastName',
+        populate: [
+          { path: 'customer', select: 'name'}
+        ]
+      }
+    ]
+  },
   {path: 'machine', select: 'name serialNo machineModel'},
   {path: 'technician', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
@@ -75,7 +140,7 @@ const findSubmitServiceReportStatus = async ( res ) => {
   return serviceReportStatus || null;
 }
 
-const getProductServiceReportData = async (req) => {
+const getProductServiceReportData = async ( req ) => {
   try {
     const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject);
     
@@ -84,33 +149,12 @@ const getProductServiceReportData = async (req) => {
     }
     
     let parsedResponse = JSON.parse(JSON.stringify(response));
-    const draftServiceReportStatus = await findDraftServiceReportStatus( )
-    const queryToFindCurrentVer = { 
-      isHistory: false,
-      isArchived: false,
-      status: { $ne: draftServiceReportStatus?._id },
-      primaryServiceReportId: parsedResponse.primaryServiceReportId
-    };
-    const currentVersion = await ProductServiceReports.findOne(queryToFindCurrentVer)
-      .select('_id versionNo serviceDate primaryServiceReportId')
-      .sort({ versionNo: -1 })
-      .lean();
-    
-    parsedResponse.currentVersion = currentVersion;
 
-    const completeEvaluationHistory = await ProductServiceReports.find({ primaryServiceReportId: parsedResponse.primaryServiceReportId })
-      .select("versionNo approval.approvalLogs")
+
+    const completeEvaluationHistory = await ProductServiceReports.findById( req.params.id )
+      .select("approval.approvalLogs")
       .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
-      .sort({ versionNo: -1 })
       .lean()
-      .then(results => results.reduce((acc, item) => ({
-        evaluationHistory: [...acc.evaluationHistory, {
-          _id: item._id,
-          versionNo: item.versionNo,
-          logs: item.approval?.approvalLogs,
-        }],
-        totalLogsCount: acc.totalLogsCount + (item.approval?.approvalLogs?.length || 0),
-      }), { evaluationHistory: [], totalLogsCount: 0 }));
 
     parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
 
@@ -131,8 +175,8 @@ const getProductServiceReportData = async (req) => {
       select: 'firstName lastName',
     });
 
-    const serviceReportFilesQuery = { primaryServiceReportId: { $in: parsedResponse.primaryServiceReportId }, isArchived: false, isReportDoc: false };
-    const serviceReportDocsQuery = { primaryServiceReportId: { $in: parsedResponse.primaryServiceReportId }, isArchived: false, isReportDoc: true };
+    const serviceReportDocsQuery = { serviceReport: { $in: req.params.id }, isArchived: false, isReportDoc: true };
+    const serviceReportFilesQuery = { serviceReport: { $in: req.params.id }, isArchived: false, isReportDoc: false };
 
     let serviceReportFiles = await ProductServiceReportFiles.find(serviceReportFilesQuery)
       .select('name path extension fileType thumbnail isReportDoc').lean();
@@ -142,10 +186,10 @@ const getProductServiceReportData = async (req) => {
 
       if( req?.query?.isHighQuality ){
         serviceReportFiles = await Promise.all(
-          serviceReportFiles.map(async ( file ) => await fetchFileFromAWS(file))
+          serviceReportFiles?.map(async ( file ) => await fetchFileFromAWS(file))
         );
         serviceReportDocs = await Promise.all(
-          serviceReportDocs.map(async ( file ) => await fetchFileFromAWS(file))
+          serviceReportDocs?.map(async ( file ) => await fetchFileFromAWS(file))
         );
       }
       
@@ -192,9 +236,9 @@ async function fetchFileFromAWS(file) {
     } else {
       throw new Error("Invalid File Provided!");
     }
-  } catch (e) {
-    console.error("Error fetching file from AWS:", e.message);
-    throw new Error(e);
+  } catch (error) {
+    logger.error(new Error(error));
+    throw new Error(error);
   }
 }
 
@@ -203,20 +247,16 @@ exports.getProductServiceReportData = getProductServiceReportData;
 exports.getProductServiceReport = async (req, res, next) => {
   try {
     const data = await getProductServiceReportData(req);
-    res.json(data);
-  } catch (e) {
+    res.status(StatusCodes.ACCEPTED).json(data);
+  } catch (error) {
+    logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
 exports.getProductServiceReportWithIndividualDetails = async (req, res, next) => {
-  const submitServiceReportStatus = await findSubmitServiceReportStatus( res )
-  this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject, callbackFunc);
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
+  const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject, callbackFunc);
+  try{
 
       response = JSON.parse(JSON.stringify(response));
 
@@ -232,7 +272,7 @@ exports.getProductServiceReportWithIndividualDetails = async (req, res, next) =>
       let listProductServiceReportValues = await ProductServiceReportValue.find({
         serviceReport: req.params.id,
         isArchived: false
-      }, {checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceReport', select: 'versionNo'}]);
+      }, {checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceReport' }]);
       listProductServiceReportValues = JSON.parse(JSON.stringify(listProductServiceReportValues));     
 
       if(response.serviceReportTemplate && 
@@ -278,13 +318,10 @@ exports.getProductServiceReportWithIndividualDetails = async (req, res, next) =>
           index++;
         }
       }
-      let currentVersion_ = await ProductServiceReports.findOne(
-      { primaryServiceReportId: response.primaryServiceReportId, isActive: true, isArchived: false, status: submitServiceReportStatus?._id }, 
-      { versionNo: 1, _id: 1}).sort({_id: -1});
-      currentVersion_ = JSON.parse(JSON.stringify(currentVersion_));     
-      response.currentVersion = currentVersion_;
       res.json(response);
-    }
+
+  } catch( error ){
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service Report Find Failed!");
   }
 };
 
@@ -304,35 +341,9 @@ exports.getProductServiceReports = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if (response?.length === 0) res.json(response)
-      else {
-        const responseWithCurrentVersion = getCurrentVersionToProductServiceReports(response)
-        res.json(responseWithCurrentVersion);
-      }
+      res.json(response);
     }
   }
-};
-
-const getCurrentVersionToProductServiceReports = (docServiceReportsList) => {
-  const latestVersions = new Map();
-
-  for (const report of docServiceReportsList) {
-    const primaryServiceReportId = report.primaryServiceReportId.toString();
-    const currentVersion = latestVersions.get(primaryServiceReportId);
-    
-    if (!currentVersion || report.versionNo > currentVersion.versionNo) {
-      latestVersions.set(primaryServiceReportId, {
-        versionNo: report.versionNo,
-        _id: report._id,
-        status: report.status
-      });
-    }
-  }
-
-  return docServiceReportsList.map(report => ({
-    ...report.toObject(),
-    currentVersion: latestVersions.get(report.primaryServiceReportId.toString())
-  }));
 };
 
 exports.deleteProductServiceReport = async (req, res, next) => {
@@ -371,58 +382,46 @@ exports.deleteProductServiceReport = async (req, res, next) => {
 
 
 exports.postProductServiceReport = async (req, res, next) => {
-
-  const errors = validationResult(req);
-
-  if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
-    return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-  }
-  
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    
-    if(!req.body.loginUser)
-      req.body.loginUser = await getToken(req);
-  }
-  
-  const machine = await Product.findById(req.params.machineId)
-
-  const serviceReportStatus = await findDraftServiceReportStatus( res )
-  let productServiceReportObject = await getDocumentFromReq(req, 'new');
-  productServiceReportObject.status = serviceReportStatus?._id;
-  productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
-  productServiceReportObject.primaryServiceReportId = productServiceReportObject?._id;
-  productServiceReportObject.customer = machine?.customer;
-
-  this.dbservice.postObject(productServiceReportObject, callbackFunc);
-
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-        error._message
-      );
-    } else {
-      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response = JSON.parse(JSON.stringify(response));
-        response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-      }
-
-      req.machineServiceReport = response._id;
-      req.machineId = req.params.machineId;
-
-      // Pass control to the next middleware for file upload processing
-      if (req.files && req.files.images) {
-        return next(); 
-      }
-      res.status(StatusCodes.CREATED).json( response );
+  try{
+    const errors = validationResult(req);
+    if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
+      return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
     }
+
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      if(!req.body.loginUser)
+        req.body.loginUser = await getToken(req);
+    }
+    const machine = await Product.findById(req.params.machineId)
+    const serviceReportStatus = await findDraftServiceReportStatus( res )
+    let productServiceReportObject = await getDocumentFromReq(req, 'new');
+    productServiceReportObject.status = serviceReportStatus?._id;
+    productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
+    productServiceReportObject.customer = machine?.customer;
+    let response = await this.dbservice.postObject(productServiceReportObject);
+    req.params.serviceReportId = response?._id;
+    await noteController.newReportNotesHandler( req );
+
+        if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
+          response = JSON.parse(JSON.stringify(response));
+          response.decoilers = await Product.find({_id:{$in:response.decoilers}});
+        }
+        req.machineServiceReport = response._id;
+        req.machineId = req.params.machineId;
+        if (req.files && req.files.images) {
+          return next(); 
+        }
+        res.status(StatusCodes.CREATED).json( response );
+
+  } catch( error ){
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( error.message || "Service report save failed!" );
   }
 }
 
 
-exports.newProductServiceReportVersion = async (req, res, next) => {
+exports.changeProductServiceReportStatus = async (req, res, next) => {
   try{
     const errors = validationResult(req);
 
@@ -433,12 +432,6 @@ exports.newProductServiceReportVersion = async (req, res, next) => {
     if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
     } 
-
-    const machine = await Product.findById(req.params.machineId).populate([{ path: 'customer', populate: { path: 'mainSite'}}])
-    if(!machine?._id){
-      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
-    }
-
     const productServiceReport = await ProductServiceReports.findById(req.params.id);
     if(!productServiceReport?._id){
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
@@ -447,55 +440,39 @@ exports.newProductServiceReportVersion = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
     }
 
-    const serviceReportStatus = await findDraftServiceReportStatus( res )
-
-    const findDraftServiceReport = await ProductServiceReports.findOne({
-      primaryServiceReportId: productServiceReport?.primaryServiceReportId, status: serviceReportStatus?._id, isArchived: false
-    }).populate( this.populateObject ).sort({ _id: -1 });
+    Object.keys(req.body)?.forEach(field => {
+      if ( field !== "loginUser" && field !== "status" ) {
+        delete req.body[field];
+      }
+    });
     
-    if(findDraftServiceReport?._id){
-      return res.status(StatusCodes.OK).json( findDraftServiceReport );
+    if(req.body?.status?.toUpperCase() === "SUBMITTED"){
+      const result = await ProductServiceReportNote.updateMany(
+        {
+          type: { $in: Array.from(
+            [ 
+              "technicianNotes",
+              "textBeforeCheckItems", 
+              "textAfterCheckItems", 
+              "serviceNote", 
+              "recommendationNote", 
+              "internalComments", 
+              "suggestedSpares", 
+              "internalNote", 
+              "operatorNotes"
+            ]
+          ) },
+          serviceReport: req.params.id,
+        },
+        { $set: { isHistory: true } }
+      );
+      console.log("result : ",result)
     }
-    let productServiceReportObject = {};
-    const parentProductServiceReportObject = await ProductServiceReports.findOne(
-      { primaryServiceReportId: productServiceReport?.primaryServiceReportId, isActive: true, isArchived: false }
-    ).sort({ _id: -1 });
-
-    productServiceReportObject.primaryServiceReportId = parentProductServiceReportObject?.primaryServiceReportId || productServiceReport?.primaryServiceReportId;
-
-    req.body.serviceReportTemplate = parentProductServiceReportObject?.serviceReportTemplate || null;
-    req.body.serviceReportUID = parentProductServiceReportObject?.serviceReportUID;
-    req.body.versionNo = parentProductServiceReportObject?.versionNo + 1;
-    req.body.primaryServiceReportId = parentProductServiceReportObject?.primaryServiceReportId  || null;
-    req.body.customer = machine?.customer?._id || null;
-    req.body.site = machine?.customer?.mainSite?._id || null;
-    req.body.status = serviceReportStatus?._id;
-    req.body.machine = machine?._id || null;
-    req.body.decoilers = parentProductServiceReportObject?.decoilers || [];
-    req.body.operators = parentProductServiceReportObject?.operators || [];
-    req.body.technician = parentProductServiceReportObject?.technician || null;
-    req.body.operatorNotes = parentProductServiceReportObject?.operatorNotes || '';
-    req.body.technicianNotes = parentProductServiceReportObject?.technicianNotes || '';
-    req.body.textBeforeCheckItems = parentProductServiceReportObject?.textBeforeCheckItems || '';
-    req.body.textAfterCheckItems = parentProductServiceReportObject?.textAfterCheckItems || '';
-    req.body.internalComments = parentProductServiceReportObject?.internalComments || '';
-    req.body.internalNote = parentProductServiceReportObject?.internalNote || '';
-    req.body.recommendationNote = parentProductServiceReportObject?.recommendationNote || '';
-    req.body.serviceNote = parentProductServiceReportObject?.serviceNote || '';
-    req.body.suggestedSpares = parentProductServiceReportObject?.suggestedSpares || '';
-    req.body.isHistory = false;
-
-    productServiceReportObject = getDocumentFromReq(req, 'new');
-    const result = await productServiceReportObject.save();
-    // await historyServiceReportValues( parentProductServiceReportObject?.primaryServiceReportId );
-    const serviceReportFileQuery = { primaryServiceReportId:{ $in: parentProductServiceReportObject?.primaryServiceReportId }, isArchived: false };
-    let serviceReportFiles = await ProductServiceReportFiles.find(serviceReportFileQuery).select('name path extension fileType thumbnail');
-    if( Array.isArray(serviceReportFiles) && serviceReportFiles?.length > 0 ){
-      result.files = serviceReportFiles;
-    }
-    return res.status(StatusCodes.OK).json(result);
-  }catch(err) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("New version create failed!"); 
+    
+    await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
+    return res.status(StatusCodes.OK).send("Service report status updated successfully!");
+  }catch(error) {
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!" ); 
   }
 }
 
@@ -541,7 +518,6 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       const SDmonth = SDdateObject.getMonth() + 1;
       const SDday = SDdateObject.getDate();
       const serviceDate = `${SDdateObject.getFullYear()}-${(SDmonth) < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
-      const versionNo=serviceRecObj.versionNo;
       const serviceReportId=serviceRecObj.serviceReportUID
       const serialNo=serviceRecObj.machine?.serialNo;
       const customer=serviceRecObj.customer?.name;
@@ -555,7 +531,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
       
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/serviceReport.html'), 'utf8');
-      const content = render(contentHTML, { username, serviceDate, serviceReportId, versionNo, serialNo, customer, createdAt, createdBy });
+      const content = render(contentHTML, { username, serviceDate, serviceReportId, serialNo, customer, createdAt, createdBy });
       const htmlData =  await renderEmail(emailSubject, content )
       params.htmlData = htmlData;
       try {
@@ -600,7 +576,6 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
       const submittedBy = req.body.submittedBy?.displayName;
       const submittedAt = dayjs(req.body.submittedAt).format("DD MMM YYYY h:mm A");
       const serviceDate = dayjs(serviceRecObj.serviceDate).format("DD MMM YYYY h:mm A");
-      const versionNo = serviceRecObj.versionNo;
       const serviceReportId = serviceRecObj.serviceReportUID;
       const serialNo = serviceRecObj.machine?.serialNo;
       const customer = serviceRecObj.customer?.name;
@@ -611,7 +586,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
       const sendEmailForApproval = async (contact) => {
         try {
           const approvalOfficer = `${contact?.firstName} ${contact?.lastName}`;
-          const content = render(contentHTML, { approvalOfficer, serviceDate, serviceReportId, versionNo, serialNo, customer, submittedBy, submittedAt, viewServiceReportUrl });
+          const content = render(contentHTML, { approvalOfficer, serviceDate, serviceReportId, serialNo, customer, submittedBy, submittedAt, viewServiceReportUrl });
           const htmlData = await renderEmail(emailSubject, content);
           let params = {
             to: contact?.email,
@@ -764,7 +739,7 @@ exports.patchProductServiceReport = async (req, res ) => {
       req.body.loginUser = await getToken(req);
     }
 
-    const findServiceReport = await ProductServiceReports.findById(req.params.id);
+    const findServiceReport = await ProductServiceReports.findById(req.params.id).populate(this.populate);
     if (!findServiceReport) {
       return res.status(StatusCodes.NOT_FOUND).send('Service Report not found');
     }
@@ -772,21 +747,37 @@ exports.patchProductServiceReport = async (req, res ) => {
     if (req.body.isArchived === true) {
       return await handleArchive(req, res);
     }
+    req.params.serviceReportId = req.params.id
 
-    req.body.primaryServiceReportId = findServiceReport?.primaryServiceReportId;
-    if ( req.body.status?.toLowerCase() === 'draft' ) {
-      const serviceReportStatus = await findDraftServiceReportStatus( res )
-      req.body.status = serviceReportStatus?._id
-      await checkDraftServiceReports(req, res, findServiceReport)
-      await handleDraftStatus(req, res, findServiceReport);
-      return;
+    if ( findServiceReport?.status?.type?.toLowerCase() !== 'draft' ) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Only draft service report can be edit!");
     }
 
-    await handleSubmitStatus( req, res, findServiceReport );
+    if(req.body?.status?.toUpperCase() === "DRAFT"){
+      const draftStatus = await findDraftServiceReportStatus();
+      if( draftStatus?._id ){
+        req.body.status = draftStatus?._id
+      } else {
+        return res.status(StatusCodes.ACCEPTED).send("Draft status not found!");
+      }
+    }
+
+    if(req.body?.status?.toUpperCase() === "SUBMITTED"){
+      const submitStatus = await findSubmitServiceReportStatus();
+      if( submitStatus?._id ){
+        req.body.status = submitStatus?._id
+      } else {
+        return res.status(StatusCodes.ACCEPTED).send("Submit status not found!");
+      }
+    }
+    
+    await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
+    await noteController.newReportNotesHandler(req);
+    return res.status(StatusCodes.ACCEPTED).send("Service report updated successfully!");
 
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 }
 
@@ -801,103 +792,6 @@ const handleArchive = async (req, res) => {
   }
 }
 
-const checkDraftServiceReports = async ( req, res, findServiceReport ) => {
-  const serviceReportStatus = await findDraftServiceReportStatus( res )
-  const findServiceReports = await ProductServiceReports.find({
-    primaryServiceReportId: findServiceReport?.primaryServiceReportId,
-    status: serviceReportStatus?._id
-  }).sort({ _id: -1 });
-  if (Array.isArray(findServiceReports) && (findServiceReports.length > 0 && !findServiceReports?.some((fsr) => fsr?._id == req.params.id))) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Service Report is already in Draft!');
-  } 
-}
-
-const handleDraftStatus = async (req, res, findServiceReport) =>{
-  try{
-    var _this = this;
-      try {
-        
-        await checkDraftServiceReports( req, res, findServiceReport)
-        await _this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
-        const response = await getProductServiceReportData( req );
-        return res.status(StatusCodes.OK).send(response);
-      } catch (e) {
-        console.log(e);
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Service Report updated failed!');
-      }
-  } catch(e){
-    console.log(e);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
-  }
-}
-
-const handleSubmitStatus = async ( req, res, findServiceReport ) => {
-  try{
-    console.log("findServiceReport : ",findServiceReport)
-    let productServiceReportObject = {};
-      productServiceReportObject.primaryServiceReportId =  req.body.primaryServiceReportId;
-      delete req.body.versionNo;
-      if( req?.body?.status && req?.body?.status?.toLowerCase() !== 'draft' ){
-        const submitReportStatus = await findSubmitServiceReportStatus( res );
-        req.body.status = submitReportStatus?._id?.toString(),
-        await handleSubmitServiceReports( req );
-      }
-      productServiceReportObject = await getDocumentFromReq(req);
-      await ProductServiceReports.updateOne({ _id: req.params.id }, productServiceReportObject )
-      
-      if( req?.body?.status?.toLowerCase() === 'approved' ){
-        return res.status(StatusCodes.OK).send('Approval email sent successfully!');
-      }
-      const data = await getProductServiceReportData(req);
-      return res.status(StatusCodes.OK).send(data);
-  } catch(e) {
-    console.log(e);
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordUpdateMessage(StatusCodes.INTERNAL_SERVER_ERROR));
-  }
-}
-
-async function handleSubmitServiceReports( req ) {
-  try{
-      const queryToUpdateReports = {
-        primaryServiceReportId: req.body.primaryServiceReportId,
-        machine: req.params.machineId,
-        _id: { $ne: req.params.id },
-      };
-    await historyServiceReportValues( req );
-    await ProductServiceReports.updateMany(queryToUpdateReports, { $set: { isHistory: true } });
-
-    return;
-  } catch (e) {
-    console.log(e);
-    throw new Error('Update previous service reports Failed!');
-  }
-}
-
-async function historyServiceReportValues( req ) {
-  try{
-
-    const draftServiceReportValues = await ProductServiceReportValue.find({ serviceReport: req.params.id }).lean();
-
-    if( Array.isArray( draftServiceReportValues ) && draftServiceReportValues?.length > 0 ){
-
-      const conditions = draftServiceReportValues?.map(pair => ({
-        machineCheckItem: pair.machineCheckItem,
-        checkItemListId: pair.checkItemListId,
-        primaryServiceReportId: req.body.primaryServiceReportId,
-        serviceReport: { $ne: req.params.id }
-      }));
-      
-      await ProductServiceReportValue.updateMany(
-        { $or: conditions },
-        { $set: { isHistory: true } }
-      );
-    }
-    return;
-  } catch (e) {
-    console.log(e);
-    throw new Error('Update service report Values failed!');
-  }
-}
 
 async function getToken(req){
   try {
@@ -913,10 +807,10 @@ async function getToken(req){
 
 function getDocumentFromReq(req, reqType){
   const { 
-    serviceReportTemplate, serviceReportUID, primaryServiceReportId, serviceDate, status, versionNo, customer, site, 
-    technician, params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly,
-    serviceNote, recommendationNote, internalComments, checkItemLists, suggestedSpares, internalNote, operators, operatorNotes,
-    technicianNotes, decoilers, textBeforeCheckItems, textAfterCheckItems, isHistory, loginUser, isActive, isArchived
+    serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
+    params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
+    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators,
+    // technicianNotes, textBeforeCheckItems, textAfterCheckItems, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
   
   let doc = {};
@@ -933,16 +827,12 @@ function getDocumentFromReq(req, reqType){
     doc.serviceReportUID = serviceReportUID;
   }
 
-  if ("customer" in req.body){
-    doc.customer = customer;
+  if ("status" in req.body){
+    doc.status = status;
   }
 
-  if ("primaryServiceReportId" in req.body){
-    doc.primaryServiceReportId = primaryServiceReportId;
-  }
-  
-  if ("versionNo" in req.body){
-    doc.versionNo = versionNo;
+  if ("customer" in req.body){
+    doc.customer = customer;
   }
   
   if ("site" in req.body){
@@ -981,49 +871,49 @@ function getDocumentFromReq(req, reqType){
     doc.checkItemLists = checkItemLists;
   }
 
-  if ("serviceNote" in req.body){
-    doc.serviceNote = serviceNote;
-  }
+  // if ("serviceNote" in req.body){
+  //   doc.serviceNote = serviceNote;
+  // }
 
   if ("serviceDate" in req.body){
     doc.serviceDate = serviceDate;
   }
 
-  if ("recommendationNote" in req.body){
-    doc.recommendationNote = recommendationNote;
-  }
+  // if ("recommendationNote" in req.body){
+  //   doc.recommendationNote = recommendationNote;
+  // }
 
-  if ("internalComments" in req.body){
-    doc.internalComments = internalComments;
-  }
+  // if ("internalComments" in req.body){
+  //   doc.internalComments = internalComments;
+  // }
 
-  if ("suggestedSpares" in req.body){
-    doc.suggestedSpares = suggestedSpares;
-  }
+  // if ("suggestedSpares" in req.body){
+  //   doc.suggestedSpares = suggestedSpares;
+  // }
 
-  if ("internalNote" in req.body){
-    doc.internalNote = internalNote;
-  }
+  // if ("internalNote" in req.body){
+  //   doc.internalNote = internalNote;
+  // }
 
   if ("operators" in req.body){
     doc.operators = operators;
   }
 
-  if ("operatorNotes" in req.body){
-    doc.operatorNotes = operatorNotes;
-  }
+  // if ("operatorNotes" in req.body){
+  //   doc.operatorNotes = operatorNotes;
+  // }
 
-  if ("technicianNotes" in req.body){
-    doc.technicianNotes = technicianNotes;
-  }
+  // if ("technicianNotes" in req.body){
+  //   doc.technicianNotes = technicianNotes;
+  // }
 
-  if ("textBeforeCheckItems" in req.body){
-    doc.textBeforeCheckItems = textBeforeCheckItems;
-  }
+  // if ("textBeforeCheckItems" in req.body){
+  //   doc.textBeforeCheckItems = textBeforeCheckItems;
+  // }
   
-  if ("textAfterCheckItems" in req.body){
-    doc.textAfterCheckItems = textAfterCheckItems;
-  }
+  // if ("textAfterCheckItems" in req.body){
+  //   doc.textAfterCheckItems = textAfterCheckItems;
+  // }
 
   if("isReportDocsOnly" in req.body ){
     doc.isReportDocsOnly = isReportDocsOnly;
@@ -1039,10 +929,6 @@ function getDocumentFromReq(req, reqType){
   
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
-  }
-
-  if ("status" in req.body){
-    doc.status = status;
   }
   
   if (reqType == "new" && "loginUser" in req.body ){

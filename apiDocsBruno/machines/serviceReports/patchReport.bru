@@ -1,0 +1,15 @@
+meta {
+  name: patchReport
+  type: http
+  seq: 4
+}
+
+patch {
+  url: Report{{baseUrl}}/products/machines/66acc461e216570d2a07286a/serviceReports/6734ab4ec05e1610f8eff7f4
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

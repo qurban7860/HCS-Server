@@ -13,9 +13,6 @@ const docSchema = new Schema({
   serviceReport: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport', required: true},
   // service Report id.
 
-  primaryServiceReportId: { type: Schema.Types.ObjectId , ref: 'MachineServiceReport' , required: true},
-  // purpose is to maintain parent service Report uuid
-  
   machineCheckItem: {type: Schema.Types.ObjectId , ref: 'MachineCheckItem', required: true},
   //checkitem reference id
   

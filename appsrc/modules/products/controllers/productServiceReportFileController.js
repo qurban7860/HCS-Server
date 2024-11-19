@@ -82,7 +82,6 @@ exports.postServiceReportFiles = async (req, res, next) => {
         }
   
         const processedFile = await processFile(file, req.body.loginUser.userId);
-        req.body.primaryServiceReportId = serviceReport?.primaryServiceReportId;
         req.body.path = processedFile.s3FilePath;
         req.body.fileType = req.body.type = processedFile.type;
         req.body.extension = processedFile.fileExt;
@@ -270,7 +269,7 @@ async function getToken(req){
 
 function getServiceReportFileFromReq(req, reqType) {
 
-  const { machineServiceReport, primaryServiceReportId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
+  const { machineServiceReport, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -280,10 +279,6 @@ function getServiceReportFileFromReq(req, reqType) {
 
   if ("machineServiceReport" in req.body) {
     doc.machineServiceReport = machineServiceReport;
-  }
-
-  if ("primaryServiceReportId" in req.body) {
-    doc.primaryServiceReportId = primaryServiceReportId;
   }
 
   if ("name" in req.body) {
