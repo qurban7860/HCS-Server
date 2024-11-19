@@ -445,28 +445,17 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
         delete req.body[field];
       }
     });
-    
-    if(req.body?.status?.toUpperCase() === "SUBMITTED"){
+    const statusVal = await ProductServiceReportStatuses.findById(req.body?.status )
+    if(!statusVal){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
+    }
+    if(statusVal && statusVal?.name?.toUpperCase() === "SUBMITTED"){
       const result = await ProductServiceReportNote.updateMany(
         {
-          type: { $in: Array.from(
-            [ 
-              "technicianNotes",
-              "textBeforeCheckItems", 
-              "textAfterCheckItems", 
-              "serviceNote", 
-              "recommendationNote", 
-              "internalComments", 
-              "suggestedSpares", 
-              "internalNote", 
-              "operatorNotes"
-            ]
-          ) },
           serviceReport: req.params.id,
         },
-        { $set: { isHistory: true } }
+        { $set: { isHistory: true, updatedBy: req.body?.loginUser?.userId } }
       );
-      console.log("result : ",result)
     }
     
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
