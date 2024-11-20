@@ -449,14 +449,14 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
     if(!statusVal){
       return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
     }
-    if(statusVal && statusVal?.name?.toUpperCase() === "SUBMITTED"){
-      const result = await ProductServiceReportNote.updateMany(
-        {
-          serviceReport: req.params.id,
-        },
-        { $set: { isHistory: true, updatedBy: req.body?.loginUser?.userId } }
-      );
-    }
+    // if(statusVal && statusVal?.name?.toUpperCase() === "SUBMITTED"){
+    //   const result = await ProductServiceReportNote.updateMany(
+    //     {
+    //       serviceReport: req.params.id,
+    //     },
+    //     { $set: { isHistory: true, updatedBy: req.body?.loginUser?.userId } }
+    //   );
+    // }
     
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.OK).send("Service report status updated successfully!");
@@ -798,8 +798,8 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
     params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
-    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators,
-    // technicianNotes, textBeforeCheckItems, textAfterCheckItems, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
+    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems,
+    // technicianNotes, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
   
   let doc = {};
@@ -896,13 +896,13 @@ function getDocumentFromReq(req, reqType){
   //   doc.technicianNotes = technicianNotes;
   // }
 
-  // if ("textBeforeCheckItems" in req.body){
-  //   doc.textBeforeCheckItems = textBeforeCheckItems;
-  // }
+  if ("textBeforeCheckItems" in req.body){
+    doc.textBeforeCheckItems = textBeforeCheckItems;
+  }
   
-  // if ("textAfterCheckItems" in req.body){
-  //   doc.textAfterCheckItems = textAfterCheckItems;
-  // }
+  if ("textAfterCheckItems" in req.body){
+    doc.textAfterCheckItems = textAfterCheckItems;
+  }
 
   if("isReportDocsOnly" in req.body ){
     doc.isReportDocsOnly = isReportDocsOnly;
