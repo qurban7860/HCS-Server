@@ -449,14 +449,14 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
     if(!statusVal){
       return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
     }
-    if(statusVal && statusVal?.name?.toUpperCase() === "SUBMITTED"){
-      const result = await ProductServiceReportNote.updateMany(
-        {
-          serviceReport: req.params.id,
-        },
-        { $set: { isHistory: true, updatedBy: req.body?.loginUser?.userId } }
-      );
-    }
+    // if(statusVal && statusVal?.name?.toUpperCase() === "SUBMITTED"){
+    //   const result = await ProductServiceReportNote.updateMany(
+    //     {
+    //       serviceReport: req.params.id,
+    //     },
+    //     { $set: { isHistory: true, updatedBy: req.body?.loginUser?.userId } }
+    //   );
+    // }
     
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.OK).send("Service report status updated successfully!");
