@@ -62,18 +62,6 @@ this.populateObject = [
       }
     ]
   },
-  {path: 'textBeforeCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
-    populate: [
-      { path: 'createdBy', select: 'name' },
-      { path: 'updatedBy', select: 'name' }
-    ]
-  },
-  {path: 'textAfterCheckItems', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
-    populate: [
-      { path: 'createdBy', select: 'name' },
-      { path: 'updatedBy', select: 'name' }
-    ]
-  },
   {path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
       { path: 'createdBy', select: 'name' },
