@@ -20,9 +20,7 @@ this.populate = [
 ];
 
 this.serviceNotes = new Set([ 
-  "technicianNotes",
-  "textBeforeCheckItems", 
-  "textAfterCheckItems", 
+  "technicianNotes", 
   "serviceNote", 
   "recommendationNote", 
   "internalComments", 
