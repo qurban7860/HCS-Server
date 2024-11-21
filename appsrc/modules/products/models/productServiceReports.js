@@ -40,10 +40,10 @@ const docSchema = new Schema({
   technicianNotes: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   // operator comments against this Report.
 
-  textBeforeCheckItems: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
+  textBeforeCheckItems: { type: String,  },
   // display this text before fields. default will be copied from configurtation
   
-  textAfterCheckItems: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
+  textAfterCheckItems: { type: String, },
   // display this text before fields
   
   serviceNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],

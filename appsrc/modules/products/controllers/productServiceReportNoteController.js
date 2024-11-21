@@ -14,12 +14,12 @@ this.fields = {};
 this.query = { isActive: true, isArchived: false };
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  { path: 'serviceReportId', select: 'name ' },
+  { path: 'serviceReport', select: 'isActive' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
 
-this.serviceNotes = new Set([ 
+var serviceNotes = new Set([ 
   "technicianNotes", 
   "serviceNote", 
   "recommendationNote", 
@@ -29,6 +29,25 @@ this.serviceNotes = new Set([
   "operatorNotes"
 ]);
 
+const getServiceReportNote = async ( noteId ) => {
+  try{
+    const note = await this.dbservice.getObjectById(ProductServiceReportNote, this.fields, noteId, this.populate );
+    return note;
+  } catch( error ){
+    logger.error(new Error(error));
+    throw new Error(error)
+  }
+}
+
+exports.getProductServiceReportNote = async (req, res, next) => {
+  try{
+    const response = await getServiceReportNote( req.params.id )
+    res.json(response);
+  } catch ( error ){
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Note get failed!");
+  }
+}
 
 exports.getProductServiceReportNotes = async (req, res, next) => {
   try {
@@ -49,16 +68,15 @@ exports.getProductServiceReportNotes = async (req, res, next) => {
   }
 };
 
-async function newReportNotesHandler( req ){
+const newReportNotesHandler = async ( req ) => {
   try {
 
     const serviceReport = req.params.serviceReportId;
     const savedNoteIds = {};
-
     for (const field in req.body) {
       const noteValue = req.body[field];
 
-      if (this.serviceNotes.has(field) && field !== "loginUser" && typeof noteValue === "string" && noteValue?.trim() ) {
+      if ( serviceNotes?.has(field) && field !== "loginUser" && typeof noteValue === "string" && noteValue?.trim() ) {
          
             await ProductServiceReportNote.updateMany( { type: field, serviceReport }, { $set: { isHistory: true } } );
 
@@ -90,7 +108,8 @@ async function newReportNotesHandler( req ){
     }
 
     await this.dbservice.patchObject(ProductServiceReports, serviceReport, { $push: updateOperations });
-
+    const [firstKey, firstValue] = Object.entries(savedNoteIds || {})[0] || [];
+    return firstValue
   } catch (error) {
     logger.error(new Error(error));
     throw new Error(error)
@@ -106,8 +125,10 @@ exports.postProductServiceReportNote = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     
-    await newReportNotesHandler( req );
-    res.status(StatusCodes.CREATED).send("Note saved successfully!");
+    const note = await newReportNotesHandler( req );
+    console.log("note : ",note)
+    const response = await getServiceReportNote( note )
+    res.status(StatusCodes.ACCEPTED).json(response);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Add Note failed!");
@@ -126,14 +147,15 @@ exports.patchProductServiceReportNote = async (req, res, next) => {
     //   return res.status(StatusCodes.FORBIDDEN).send("Only the note author can modify this Note");
     // }
 
-    const response = await this.dbservice.patchObject(ProductServiceReportNote, req.params.id, getDocumentFromReq(req));
-
+    await this.dbservice.patchObject(ProductServiceReportNote, req.params.id, getDocumentFromReq(req));
     // this.serviceReportId = req.params.serviceReportId;
     // this.query = { serviceReportId: this.serviceReportId, isActive: true, isArchived: false };
     // const NotesList = await this.dbservice.getObjectList(req, ProductServiceReportNote, this.fields, this.query, this.orderBy, this.populate);
-
+    
     // broadcastNotes(this.serviceReportId, NotesList);
     // res.status(StatusCodes.ACCEPTED).json({ updatedNote: response, NotesList });
+
+    const response = await getServiceReportNote( req.params.id )
     res.status(StatusCodes.ACCEPTED).json( response );
   } catch (error) {
     logger.error(new Error(error));
