@@ -1,9 +1,6 @@
 const { validationResult } = require('express-validator');
 const { StatusCodes, getReasonPhrase } = require('http-status-codes');
-// const bcrypt = require('bcryptjs');
-// const jwt = require('jsonwebtoken');
-// const mongoose = require('mongoose');
-
+const LZString = require('lz-string');
 const logger = require('../../config/logger');
 const clients = new Map();
 
@@ -136,11 +133,11 @@ exports.streamProductServiceReportComments = async (req, res) => {
 };
 
 function broadcastComments(serviceReport, comments) {
+  const jsonString = JSON.stringify(comments);
+  const compressed = LZString.compressToUTF16(jsonString);
   clients.forEach((client, clientId) => {
-      // console.log("clientId in loop: ", clientId);
       if (clientId.includes(serviceReport)) {
-          // console.log("clientId before streaming Data: ", clientId);
-          client.write(`data: ${JSON.stringify(comments)}\n\n`);
+          client.write(`data: ${compressed}\n\n`);
       }
   });
 }
