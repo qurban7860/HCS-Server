@@ -16,7 +16,17 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'serviceReport', select: 'isActive' },
   { path: 'createdBy', select: 'name' },
-  { path: 'updatedBy', select: 'name' }
+  { path: 'updatedBy', select: 'name' },
+  { path: 'technician', select: 'firstName lastName',
+    populate: [
+      { path: 'customer', select: 'name'}
+    ]
+  },
+  { path: 'operators', select: 'firstName lastName',
+    populate: [
+      { path: 'customer', select: 'name'}
+    ]
+  }
 ];
 
 var serviceNotes = new Set([ 
