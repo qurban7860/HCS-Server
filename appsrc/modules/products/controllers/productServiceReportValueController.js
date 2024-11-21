@@ -27,17 +27,24 @@ this.populate = [
   {path: 'updatedBy', select: 'name'}
 ];
 
-exports.getProductServiceReportValue = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductServiceReportValue, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
+async function getReportValue( valueId ){
+  try{
+    const value = await this.dbservice.getObjectById(ProductServiceReportValue, this.fields, valueId, this.populate);
+    return value
+  } catch( error ){
+    logger.error(new Error(error));
+    throw new Error(error)
   }
+};
 
+exports.getProductServiceReportValue = async (req, res, next) => {
+  try{
+    const response = await getReportValue( req.params.id )
+    res.json(response);
+  } catch( error ){
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send( error?.message );
+  }
 };
 
 exports.getProductServiceReportValues = async (req, res, next) => {
@@ -66,8 +73,7 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
     if (!response) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report Not Found!");
     }
-    const activeValues = await fetchServiceReportValues(response.serviceReport, false);
-    const historicalValues = await fetchServiceReportValues(response.serviceReport, true);
+    const values = await fetchServiceReportValues( response.serviceReport );
     const responseData = JSON.parse(JSON.stringify(response?.serviceReportTemplate));
     
     if (response?.serviceReportTemplate && Array.isArray(response?.serviceReportTemplate?.checkItemLists)) {
@@ -75,7 +81,7 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
         if (Array.isArray(checkParam?.checkItems)) {
           const checkItems = await fetchCheckItems(checkParam.checkItems);
           for (let checkItem of checkItems) {
-            await updateCheckItemWithValues( checkItem, checkParam._id, activeValues, historicalValues, response, req?.query?.highQuality || false );
+            await updateCheckItemWithValues( checkItem, checkParam._id, values, response, req?.query?.highQuality || false );
           }
           responseData.checkItemLists[index].checkItems = checkItems
         }
@@ -89,10 +95,10 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
   }
 };
 
-async function fetchServiceReportValues( serviceReport, isHistory) {
+async function fetchServiceReportValues( serviceReport ) {
   try{
     const productServiceReportValues = await  ProductServiceReportValue.find(
-      { serviceReport, isHistory, isActive: true, isArchived: false },
+      { serviceReport, isActive: true, isArchived: false },
       { checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
     ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport', select: ' status', populate: { path: 'status', select: 'name type displayOrderNo' }}])
     .sort({ createdAt: -1 })
@@ -120,48 +126,40 @@ async function fetchCheckItems(checkItemIds) {
     throw e;
   }
 }
-async function updateCheckItemWithValues( item, checkItemListId, activeValues, historicalValues, Report, isHighQuality ) {
+async function updateCheckItemWithValues( item, checkItemListId, values, Report, isHighQuality ) {
   try {
-
-    const isDraft = Report?.status?.type?.toLowerCase() === 'draft';
-    const isHistoryReport = Report?.isHistory;
-    let draftValue = null;
-    let activeValue = null;
+    // activeValues, historicalValues,
+    // const isDraft = Report?.status?.type?.toLowerCase() === 'draft';
+    // const isHistoryReport = Report?.isHistory;
+    // let draftValue = null;
+    let value = null;
     let historyReportValue = null;
-    if( isDraft ){
-      draftValue = activeValues.find(val =>
-        val?.machineCheckItem?.toString() === item._id.toString() &&
-        val?.checkItemListId?.toString() === checkItemListId.toString() && 
-        val?.serviceReport?._id?.toString() === Report?._id?.toString()
-      );
-    }
+
+    // if( isDraft ){
+    //   draftValue = values.find(val =>
+    //     val?.machineCheckItem?.toString() === item._id.toString() &&
+    //     val?.checkItemListId?.toString() === checkItemListId.toString() && 
+    //     val?.serviceReport?._id?.toString() === Report?._id?.toString()
+    //   );
+    // }
     
-    if( isHistoryReport ){
-      historyReportValue = historicalValues.find(val =>
+    if( values ) {
+      value = values.find(val =>
         val?.machineCheckItem?.toString() === item._id.toString() &&
-        val?.checkItemListId?.toString() === checkItemListId.toString() && 
-        val?.serviceReport?._id?.toString() === Report?._id?.toString()
-      );
-    } else {
-      activeValue = activeValues.find(val =>
-        val?.machineCheckItem?.toString() === item._id.toString() &&
-        val?.checkItemListId?.toString() === checkItemListId.toString() && 
-        val?.serviceReport?.status?.type?.toLowerCase() !== 'draft'
+        val?.checkItemListId?.toString() === checkItemListId.toString()
       );
     }
 
-    const checkItemFiles = await fetchCheckItemFiles( Report?._id, item._id, checkItemListId, isHighQuality );
+    // const checkItemFiles = await fetchCheckItemFiles( Report?._id, item._id, checkItemListId, isHighQuality );
 
     // if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
-      item.reportValue = { files: checkItemFiles };
+    //   item.reportValue = { files: checkItemFiles };
     // }
 
     const historicalData = await Promise.all(
-      historicalValues
-        .filter(val =>
+      values?.filter(val =>
           val.machineCheckItem.toString() === item._id.toString() &&
-          val.checkItemListId.toString() === checkItemListId.toString() &&
-          val?.serviceReport?.status?.type?.toLowerCase() !== 'draft'
+          val.checkItemListId.toString() === checkItemListId.toString()
         )
         .map(async (val) => ({
           ...val,
@@ -169,57 +167,58 @@ async function updateCheckItemWithValues( item, checkItemListId, activeValues, h
         }))
     );
 
-      if (isDraft && draftValue ) {
+      // if (isDraft && draftValue ) {
+      //   item.reportValue = {
+      //     ...item?.reportValue,
+      //     _id: draftValue._id,
+      //     serviceReport: draftValue.serviceReport,
+      //     checkItemValue: draftValue.checkItemValue,
+      //     comments: draftValue.comments,
+      //     createdBy: draftValue.createdBy,
+      //     createdAt: draftValue.createdAt,
+      //   };
+      // } else if ( isHistoryReport && historyReportValue ){
+      //   item.reportValue = {
+      //     ...item?.reportValue,
+      //     _id: historyReportValue._id,
+      //     serviceReport: historyReportValue.serviceReport,
+      //     checkItemValue: historyReportValue.checkItemValue,
+      //     comments: historyReportValue.comments,
+      //     createdBy: historyReportValue.createdBy,
+      //     createdAt: historyReportValue.createdAt,
+      //   };
+      // } else 
+      if ( value ){
         item.reportValue = {
           ...item?.reportValue,
-          _id: draftValue._id,
-          serviceReport: draftValue.serviceReport,
-          checkItemValue: draftValue.checkItemValue,
-          comments: draftValue.comments,
-          createdBy: draftValue.createdBy,
-          createdAt: draftValue.createdAt,
-        };
-      } else if ( isHistoryReport && historyReportValue ){
-        item.reportValue = {
-          ...item?.reportValue,
-          _id: historyReportValue._id,
-          serviceReport: historyReportValue.serviceReport,
-          checkItemValue: historyReportValue.checkItemValue,
-          comments: historyReportValue.comments,
-          createdBy: historyReportValue.createdBy,
-          createdAt: historyReportValue.createdAt,
-        };
-      } else if ( !isDraft && !isHistoryReport && activeValue ){
-        item.reportValue = {
-          ...item?.reportValue,
-          _id: activeValue._id,
-          serviceReport: activeValue.serviceReport,
-          checkItemValue: activeValue.checkItemValue,
-          comments: activeValue.comments,
-          createdBy: activeValue.createdBy,
-          createdAt: activeValue.createdAt,
+          _id: value._id,
+          serviceReport: value.serviceReport,
+          checkItemValue: value.checkItemValue,
+          comments: value.comments,
+          createdBy: value.createdBy,
+          createdAt: value.createdAt,
         };
       }
 
-      if ( isDraft && activeValue ) {
+      if ( value ) {
         const activeFiles = await fetchCheckItemFiles(
-          activeValue.serviceReport?._id,
-          activeValue?.machineCheckItem,
-          activeValue?.checkItemListId,
+          value.serviceReport?._id,
+          value?.machineCheckItem,
+          value?.checkItemListId,
           isHighQuality
         );
         item.historicalData = [{
-          _id: activeValue._id,
+          _id: value._id,
           files: activeFiles,
-          serviceReport: activeValue.serviceReport,
-          machineCheckItem: activeValue?.machineCheckItem, 
-          checkItemListId: activeValue?.checkItemListId,
-          checkItemValue: activeValue.checkItemValue,
-          comments: activeValue.comments,
-          createdBy: activeValue.createdBy,
-          createdAt: activeValue.createdAt,
+          serviceReport: value.serviceReport,
+          machineCheckItem: value?.machineCheckItem, 
+          checkItemListId: value?.checkItemListId,
+          checkItemValue: value.checkItemValue,
+          comments: value.comments,
+          createdBy: value.createdBy,
+          createdAt: value.createdAt,
         }, ...historicalData];
-      } else if ( historicalData.length > 0 && !isHistoryReport ) {
+      } else if ( historicalData.length > 0 ) {
         item.historicalData = historicalData;
       }
 
@@ -272,26 +271,9 @@ exports.postProductServiceReportValue = async (req, res, next) => {
     }
     req.body.machineId = req.params.machineId;
 
-    // Check if the Report already exists
-    const existingReport = await ProductServiceReportValue.findOne({
-      serviceReport: req.body.serviceReport,
-      machineCheckItem: req.body.machineCheckItem,
-      checkItemListId: req.body.checkItemListId
-    });
-
-    if (existingReport) {
-      // If it exists, patch the existing Report
-      req.params.id = existingReport._id; // Set the ID to the existing Report's ID
-      return await exports.patchProductServiceReportValue(req, res, next);
-    } else {
-      // If it doesn't exist, create a new Report
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
 
       response.machineId = req.params.machineId;
-
-      // const checkItemFiles = await ProductServiceReportValueFile.find(findQuery)
-      //   .select('_id name extension fileType thumbnail path')
-      //   .lean();
 
       let newResponse = { ...response?._doc, files: [] };
 
@@ -305,7 +287,7 @@ exports.postProductServiceReportValue = async (req, res, next) => {
       }
 
       return res.status(StatusCodes.CREATED).json(newResponse);
-    }
+
   } catch (e) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }

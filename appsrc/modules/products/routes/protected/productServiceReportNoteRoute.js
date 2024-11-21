@@ -15,6 +15,8 @@ router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceReportNotes);
 
+router.get(`${baseRouteForObject}/:id`, controller.getProductServiceReportNote);
+
 router.post(`${baseRouteForObject}/`,  controller.postProductServiceReportNote);
 
 router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceReportNote);

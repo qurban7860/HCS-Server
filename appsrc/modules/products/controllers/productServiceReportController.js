@@ -53,6 +53,7 @@ this.populateObject = [
   {path: 'site', select: 'name'},
   {path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
       { path: 'technician', select: 'firstName lastName',
@@ -64,36 +65,42 @@ this.populateObject = [
   },
   {path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' }
     ]
   },
   {path: 'recommendationNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' }
     ]
   },
   {path: 'internalComments', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' }
     ]
   },
   {path: 'suggestedSpares', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' }
     ]
   },
   {path: 'internalNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' }
     ]
   },
   {path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
     populate: [
+      { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
       { path: 'operators', select: 'firstName lastName',
