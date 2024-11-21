@@ -65,7 +65,6 @@ exports.postServiceReportFiles = async (req, res, next) => {
       }
 
       const machine = req.params.machineId;
-      const machineServiceReport = req.params.id;
 
       let files = [];
             
@@ -88,7 +87,7 @@ exports.postServiceReportFiles = async (req, res, next) => {
         req.body.awsETag = processedFile.awsETag;
         req.body.eTag = processedFile.eTag;
         req.body.machine = machine;
-        req.body.machineServiceReport = machineServiceReport;
+        req.body.serviceReport = req.params.id;
         req.body.name = processedFile.name;
   
         if (processedFile.base64thumbNailData) {
@@ -269,7 +268,7 @@ async function getToken(req){
 
 function getServiceReportFileFromReq(req, reqType) {
 
-  const { machineServiceReport, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
+  const { serviceReport, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -277,8 +276,8 @@ function getServiceReportFileFromReq(req, reqType) {
     doc = new ProductServiceReportFiles({});
   }
 
-  if ("machineServiceReport" in req.body) {
-    doc.machineServiceReport = machineServiceReport;
+  if ("serviceReport" in req.body) {
+    doc.serviceReport = serviceReport;
   }
 
   if ("name" in req.body) {
