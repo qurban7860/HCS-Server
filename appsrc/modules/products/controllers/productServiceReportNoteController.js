@@ -177,8 +177,16 @@ exports.deleteProductServiceReportNote = async (req, res, next) => {
   try {
     const existingNote = await this.dbservice.getObjectById(ProductServiceReportNote, {}, req.params.id, this.populate);
 
-    if (existingNote.createdBy._id.toString() !== req.body.loginUser.userId) {
-      return res.status(StatusCodes.FORBIDDEN).send("Only the Note author can delete this Note");
+    // if (existingNote.createdBy._id.toString() !== req.body.loginUser.userId) {
+    //   return res.status(StatusCodes.FORBIDDEN).send("Only the Note author can delete this Note");
+    // }
+
+    if (existingNote?.serviceReport?._id) {
+      await this.dbservice.patchObject(
+          ProductServiceReports,
+          existingNote.serviceReport._id,
+          { $pull: { [existingNote.type]: req.params.id } }
+      );
     }
 
     await this.dbservice.patchObject(ProductServiceReportNote, req.params.id, getDocumentFromReq(req, "delete"));

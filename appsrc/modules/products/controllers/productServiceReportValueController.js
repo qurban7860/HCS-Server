@@ -27,7 +27,7 @@ this.populate = [
   {path: 'updatedBy', select: 'name'}
 ];
 
-async function getReportValue( valueId ){
+const getReportValue = async ( valueId ) => {
   try{
     const value = await this.dbservice.getObjectById(ProductServiceReportValue, this.fields, valueId, this.populate);
     return value
@@ -73,7 +73,7 @@ exports.getProductServiceReportCheckItems = async (req, res) => {
     if (!response) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report Not Found!");
     }
-    const values = await fetchServiceReportValues( response.serviceReport );
+    const values = await fetchServiceReportValues( req.params.serviceReportId );
     const responseData = JSON.parse(JSON.stringify(response?.serviceReportTemplate));
     
     if (response?.serviceReportTemplate && Array.isArray(response?.serviceReportTemplate?.checkItemLists)) {
@@ -126,114 +126,106 @@ async function fetchCheckItems(checkItemIds) {
     throw e;
   }
 }
-async function updateCheckItemWithValues( item, checkItemListId, values, Report, isHighQuality ) {
+
+async function updateCheckItemWithValues(item, checkItemListId, values, Report, isHighQuality) {
   try {
-    // activeValues, historicalValues,
-    // const isDraft = Report?.status?.type?.toLowerCase() === 'draft';
-    // const isHistoryReport = Report?.isHistory;
-    // let draftValue = null;
-    let value = null;
-    let historyReportValue = null;
 
-    // if( isDraft ){
-    //   draftValue = values.find(val =>
-    //     val?.machineCheckItem?.toString() === item._id.toString() &&
-    //     val?.checkItemListId?.toString() === checkItemListId.toString() && 
-    //     val?.serviceReport?._id?.toString() === Report?._id?.toString()
-    //   );
-    // }
-    
-    if( values ) {
-      value = values.find(val =>
-        val?.machineCheckItem?.toString() === item._id.toString() &&
-        val?.checkItemListId?.toString() === checkItemListId.toString()
-      );
-    }
-
-    // const checkItemFiles = await fetchCheckItemFiles( Report?._id, item._id, checkItemListId, isHighQuality );
-
-    // if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
-    //   item.reportValue = { files: checkItemFiles };
-    // }
-
+    // Filter values to get historical data for the current check item
+    const matchingValues = values.filter(val => 
+      val.machineCheckItem.toString() === item._id.toString() &&
+      val.checkItemListId.toString() === checkItemListId.toString()
+    );
     const historicalData = await Promise.all(
-      values?.filter(val =>
-          val.machineCheckItem.toString() === item._id.toString() &&
-          val.checkItemListId.toString() === checkItemListId.toString()
-        )
-        .map(async (val) => ({
-          ...val,
-          files: await fetchCheckItemFiles(val.serviceReport?._id, val?.machineCheckItem, val?.checkItemListId, isHighQuality ),
-        }))
+      matchingValues.map(async (val) => ({
+        ...val,
+        files: await fetchCheckItemFiles(
+          val.serviceReport?._id, 
+          val.machineCheckItem, 
+          val.checkItemListId, 
+          val._id,
+          isHighQuality
+        ),
+      }))
     );
 
-      // if (isDraft && draftValue ) {
-      //   item.reportValue = {
-      //     ...item?.reportValue,
-      //     _id: draftValue._id,
-      //     serviceReport: draftValue.serviceReport,
-      //     checkItemValue: draftValue.checkItemValue,
-      //     comments: draftValue.comments,
-      //     createdBy: draftValue.createdBy,
-      //     createdAt: draftValue.createdAt,
-      //   };
-      // } else if ( isHistoryReport && historyReportValue ){
-      //   item.reportValue = {
-      //     ...item?.reportValue,
-      //     _id: historyReportValue._id,
-      //     serviceReport: historyReportValue.serviceReport,
-      //     checkItemValue: historyReportValue.checkItemValue,
-      //     comments: historyReportValue.comments,
-      //     createdBy: historyReportValue.createdBy,
-      //     createdAt: historyReportValue.createdAt,
-      //   };
-      // } else 
-      if ( value ){
-        item.reportValue = {
-          ...item?.reportValue,
-          _id: value._id,
-          serviceReport: value.serviceReport,
-          checkItemValue: value.checkItemValue,
-          comments: value.comments,
-          createdBy: value.createdBy,
-          createdAt: value.createdAt,
-        };
-      }
-
-      if ( value ) {
-        const activeFiles = await fetchCheckItemFiles(
-          value.serviceReport?._id,
-          value?.machineCheckItem,
-          value?.checkItemListId,
-          isHighQuality
-        );
-        item.historicalData = [{
-          _id: value._id,
-          files: activeFiles,
-          serviceReport: value.serviceReport,
-          machineCheckItem: value?.machineCheckItem, 
-          checkItemListId: value?.checkItemListId,
-          checkItemValue: value.checkItemValue,
-          comments: value.comments,
-          createdBy: value.createdBy,
-          createdAt: value.createdAt,
-        }, ...historicalData];
-      } else if ( historicalData.length > 0 ) {
-        item.historicalData = historicalData;
-      }
+    // Set historicalData to the check item, with the latest records first
+    item.historicalData = historicalData;
 
     return item;
-
   } catch (e) {
     logger.error(e);
     throw e;
   }
 }
 
-async function fetchCheckItemFiles(serviceReport, machineCheckItem, checkItemListId, isHighQuality ) {
+// async function updateCheckItemWithValues(item, checkItemListId, values, Report, isHighQuality) {
+//   try {
+//     let currentValue = null;
+
+//     // Find the latest value for the current `checkItem` and `checkItemListId`
+//     currentValue = values.find(val => 
+//       val?.machineCheckItem?.toString() === item._id.toString() && 
+//       val?.checkItemListId?.toString() === checkItemListId.toString()
+//     );
+
+//     // Fetch all historical data for the current check item
+//     const historicalData = await Promise.all(
+//       values.filter(val => 
+//         val.machineCheckItem.toString() === item._id.toString() &&
+//         val.checkItemListId.toString() === checkItemListId.toString()
+//       ).map(async (val) => ({
+//         ...val,
+//         files: await fetchCheckItemFiles(
+//           val.serviceReport?._id, 
+//           val.machineCheckItem, 
+//           val.checkItemListId, 
+//           val._id,
+//           isHighQuality
+//         ),
+//       }))
+//     );
+
+//     // Add the latest value to `reportValue`
+//     if (currentValue) {
+//       item.reportValue = {
+//         ...item?.reportValue,
+//         _id: currentValue._id,
+//         serviceReport: currentValue.serviceReport,
+//         checkItemValue: currentValue.checkItemValue,
+//         comments: currentValue.comments,
+//         createdBy: currentValue.createdBy,
+//         createdAt: currentValue.createdAt,
+//       };
+//     }
+
+//     // Include active files in `historicalData`
+//     const activeFiles = currentValue ? await fetchCheckItemFiles(
+//       currentValue.serviceReport?._id,
+//       currentValue.machineCheckItem,
+//       currentValue.checkItemListId,
+//       currentValue._id,
+//       isHighQuality
+//     ) : [];
+
+//     item.historicalData = currentValue
+//       ? [{ 
+//           ...currentValue, 
+//           files: activeFiles 
+//         }, ...historicalData]
+//       : historicalData;
+
+//     return item;
+//   } catch (e) {
+//     logger.error(e);
+//     throw e;
+//   }
+// }
+
+
+async function fetchCheckItemFiles(serviceReport, machineCheckItem, checkItemListId, checkItemValueId, isHighQuality ) {
   try{
     let productServiceReportValueFiles = await ProductServiceReportValueFile.find(
-      { serviceReport, machineCheckItem, checkItemListId, isActive: true, isArchived: false }
+      { serviceReport, machineCheckItem, checkItemListId, checkItemValueId, isActive: true, isArchived: false }
     ).select('_id serviceReport name extension fileType thumbnail path').lean();
     if( isHighQuality ){
       productServiceReportValueFiles = await Promise.all(
@@ -271,15 +263,11 @@ exports.postProductServiceReportValue = async (req, res, next) => {
     }
     req.body.machineId = req.params.machineId;
 
-      const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-
+      const valueData = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+      const response = await getReportValue(valueData?._id)
       response.machineId = req.params.machineId;
 
       let newResponse = { ...response?._doc, files: [] };
-
-      // if (Array.isArray(checkItemFiles) && checkItemFiles.length > 0) {
-      //   newResponse.files.push(...checkItemFiles);
-      // }
 
       const savedFiles = await handleServiceReportValueFiles(response, req, res);
       if (savedFiles?.length) {
@@ -306,6 +294,7 @@ exports.patchProductServiceReportValue = async (req, res, next) => {
       serviceReport: req.params?.serviceReportId, 
       machineCheckItem: req.params?.machineCheckItem, 
       checkItemListId: req.params?.checkItemListId, 
+      checkItemValueId: req.params.id,
       isActive: true, 
       isArchived: false 
     }
@@ -315,7 +304,7 @@ exports.patchProductServiceReportValue = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
       } else {
-        const response = await ProductServiceReportValue.findById( req.params.id ); 
+        const response = await getReportValue( req.params.id ); 
         const checkItemFiles= await ProductServiceReportValueFile.find( findQuery ).select('_id name extension fileType thumbnail path').lean()
         let newResponse = { ...response?._doc, files: [] };
 
@@ -335,9 +324,6 @@ exports.patchProductServiceReportValue = async (req, res, next) => {
 
 async function handleServiceReportValueFiles(checkitem, req, res) {
   try {
-    const machine = checkitem.machineId;
-    const machineServiceReport = checkitem.id;
-
     let files = [];
     if (req?.files?.images) {
       files = req.files.images;
@@ -356,8 +342,9 @@ async function handleServiceReportValueFiles(checkitem, req, res) {
       req.body.extension = processedFile.fileExt;
       req.body.awsETag = processedFile.awsETag;
       req.body.eTag = processedFile.eTag;
-      req.body.machine = machine;
-      req.body.machineServiceReport = machineServiceReport;
+      req.body.machine = checkitem.machineId;
+      req.body.serviceReport = checkitem?.serviceReport?._id;
+      req.body.checkItemValueId = checkitem?._id;;
       req.body.name = processedFile.name;
 
       if (processedFile.base64thumbNailData) {
@@ -410,47 +397,52 @@ function getThumbnailPath(filePath) {
 }
 
 async function processFile(file, userId) {
-  const { name, ext } = path.parse(file.originalname);
-  const fileExt = ext.slice(1);
-  let thumbnailPath;
-  let base64thumbNailData;
+  try{
+    const { name, ext } = path.parse(file.originalname);
+    const fileExt = ext.slice(1);
+    let thumbnailPath;
+    let base64thumbNailData;
 
-  let base64fileData = null;
-  if(file.buffer)
-    base64fileData = file.buffer;
-  else 
-    base64fileData = await readFileAsBase64(file.path);
+    let base64fileData = null;
+    if(file.buffer)
+      base64fileData = file.buffer;
+    else 
+      base64fileData = await readFileAsBase64(file.path);
 
-  if(file.mimetype.includes('image')){
-    thumbnailPath = await generateThumbnail(file.path);
-    if(thumbnailPath)
-      base64thumbNailData = await readFileAsBase64(thumbnailPath);
-  }
-  
-  const fileName = userId+"-"+new Date().getTime();
-  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
-  s3Data.eTag = await awsService.generateEtag(file.path);
+    if(file.mimetype.includes('image')){
+      thumbnailPath = await generateThumbnail(file.path);
+      if(thumbnailPath)
+        base64thumbNailData = await readFileAsBase64(thumbnailPath);
+    }
 
-  fs.unlinkSync(file.path);
-  if(thumbnailPath){
-    fs.unlinkSync(thumbnailPath);
-  }
-  
-  if (!s3Data || s3Data === '') {
-    throw new Error('AWS file saving failed');
-  }
-  else{
-    return {
-      fileName,
-      name,
-      fileExt,
-      s3FilePath: s3Data.Key, 
-      awsETag: s3Data.awsETag,
-      eTag: s3Data.eTag,
-      type: file.mimetype,
-      physicalPath: file.path,
-      base64thumbNailData
-    };
+    const fileName = userId+"-"+new Date().getTime();
+    const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+    s3Data.eTag = await awsService.generateEtag(file.path);
+
+    fs.unlinkSync(file.path);
+    if(thumbnailPath){
+      fs.unlinkSync(thumbnailPath);
+    }
+
+    if (!s3Data || s3Data === '') {
+      throw new Error('AWS file saving failed');
+    }
+    else{
+      return {
+        fileName,
+        name,
+        fileExt,
+        s3FilePath: s3Data.Key, 
+        awsETag: s3Data.awsETag,
+        eTag: s3Data.eTag,
+        type: file.mimetype,
+        physicalPath: file.path,
+        base64thumbNailData
+      };
+    }
+  } catch( error ){
+    logger.error(new Error(error));
+    throw new Error("File process failed!")
   }
 }
 
@@ -555,7 +547,7 @@ async function fetchFileFromAWS(file) {
 
 function getServiceReportValueFileFromReq(req, reqType) {
 
-  const { serviceReport, machineCheckItem, checkItemListId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
+  const { serviceReport, machineCheckItem, checkItemListId, checkItemValueId, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, user, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
 
@@ -573,6 +565,10 @@ function getServiceReportValueFileFromReq(req, reqType) {
 
   if ("checkItemListId" in req.body) {
     doc.checkItemListId = checkItemListId;
+  }
+
+  if ("checkItemValueId" in req.body) {
+    doc.checkItemValueId = checkItemValueId;
   }
 
   if ("name" in req.body) {

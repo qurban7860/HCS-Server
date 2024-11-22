@@ -325,7 +325,9 @@ exports.getProductServiceReports = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
   if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
     return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-  this.query.machine = req.params.machineId;
+  if( req.params.machineId ){
+    this.query.machine = req.params.machineId;
+  }
   if(this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
