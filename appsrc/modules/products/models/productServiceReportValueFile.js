@@ -19,6 +19,9 @@ const docSchema = new Schema({
         checkItemListId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportTemplate.checkItemLists', required: true }, 
         //this will refer to the list to which checkitem is belong to,
 
+        checkItemValueId: {type: Schema.Types.ObjectId , ref: 'MachineServiceReportValue', required: true }, 
+        //this will refer to the list to which checkitem is belong to,
+
         name: { type: String },
         // name/title of field
 
