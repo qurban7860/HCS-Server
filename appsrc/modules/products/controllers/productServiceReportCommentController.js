@@ -155,8 +155,8 @@ function getDocumentFromReq(req, reqType){
     doc.comment = comment;
   }
 
-  if ("serviceReport" in req.body){
-    doc.serviceReport = serviceReport;
+  if (req?.params?.serviceReportId){
+    doc.serviceReport = req?.params?.serviceReportId || serviceReport;
   }
 
   if ("isActive" in req.body){
