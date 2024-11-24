@@ -99,8 +99,8 @@ async function fetchServiceReportValues( serviceReport ) {
   try{
     const productServiceReportValues = await  ProductServiceReportValue.find(
       { serviceReport, isActive: true, isArchived: false },
-      { checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }
-    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport', select: ' status', populate: { path: 'status', select: 'name type displayOrderNo' }}])
+      { checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, updatedBy: 1, createdAt: 1, updatedAt: 1 }
+    ).populate([{ path: 'createdBy', select: 'name' }, { path: 'updatedBy', select: 'name' }, { path: 'serviceReport', select: ' status', populate: { path: 'status', select: 'name type displayOrderNo' }}])
     .sort({ createdAt: -1 })
     .lean();
     return productServiceReportValues
@@ -157,70 +157,6 @@ async function updateCheckItemWithValues(item, checkItemListId, values, Report, 
     throw e;
   }
 }
-
-// async function updateCheckItemWithValues(item, checkItemListId, values, Report, isHighQuality) {
-//   try {
-//     let currentValue = null;
-
-//     // Find the latest value for the current `checkItem` and `checkItemListId`
-//     currentValue = values.find(val => 
-//       val?.machineCheckItem?.toString() === item._id.toString() && 
-//       val?.checkItemListId?.toString() === checkItemListId.toString()
-//     );
-
-//     // Fetch all historical data for the current check item
-//     const historicalData = await Promise.all(
-//       values.filter(val => 
-//         val.machineCheckItem.toString() === item._id.toString() &&
-//         val.checkItemListId.toString() === checkItemListId.toString()
-//       ).map(async (val) => ({
-//         ...val,
-//         files: await fetchCheckItemFiles(
-//           val.serviceReport?._id, 
-//           val.machineCheckItem, 
-//           val.checkItemListId, 
-//           val._id,
-//           isHighQuality
-//         ),
-//       }))
-//     );
-
-//     // Add the latest value to `reportValue`
-//     if (currentValue) {
-//       item.reportValue = {
-//         ...item?.reportValue,
-//         _id: currentValue._id,
-//         serviceReport: currentValue.serviceReport,
-//         checkItemValue: currentValue.checkItemValue,
-//         comments: currentValue.comments,
-//         createdBy: currentValue.createdBy,
-//         createdAt: currentValue.createdAt,
-//       };
-//     }
-
-//     // Include active files in `historicalData`
-//     const activeFiles = currentValue ? await fetchCheckItemFiles(
-//       currentValue.serviceReport?._id,
-//       currentValue.machineCheckItem,
-//       currentValue.checkItemListId,
-//       currentValue._id,
-//       isHighQuality
-//     ) : [];
-
-//     item.historicalData = currentValue
-//       ? [{ 
-//           ...currentValue, 
-//           files: activeFiles 
-//         }, ...historicalData]
-//       : historicalData;
-
-//     return item;
-//   } catch (e) {
-//     logger.error(e);
-//     throw e;
-//   }
-// }
-
 
 async function fetchCheckItemFiles(serviceReport, machineCheckItem, checkItemListId, checkItemValueId, isHighQuality ) {
   try{

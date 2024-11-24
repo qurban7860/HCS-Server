@@ -323,9 +323,7 @@ exports.getProductServiceReportWithIndividualDetails = async (req, res, next) =>
 
 exports.getProductServiceReports = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};  
-  if(!mongoose.Types.ObjectId.isValid(req.params.machineId))
-    return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
-  if( req.params.machineId ){
+  if( req?.params?.machineId && mongoose.Types.ObjectId.isValid(req.params.machineId)){
     this.query.machine = req.params.machineId;
   }
   if(this.query.orderBy) {
@@ -382,7 +380,7 @@ exports.postProductServiceReport = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
-      return res.status(StatusCodes.BAD_REQUEST).send({message:"Invalid Machine ID"});
+      return res.status(StatusCodes.BAD_REQUEST).send("Service Report can be added in machine module only!");
     }
 
     if (!errors.isEmpty()) {
@@ -413,6 +411,7 @@ exports.postProductServiceReport = async (req, res, next) => {
         res.status(StatusCodes.CREATED).json( response );
 
   } catch( error ){
+    logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( error.message || "Service report save failed!" );
   }
 }
@@ -420,32 +419,36 @@ exports.postProductServiceReport = async (req, res, next) => {
 
 exports.changeProductServiceReportStatus = async (req, res, next) => {
   try{
-    const errors = validationResult(req);
+    // const errors = validationResult(req);
 
-    if (!errors.isEmpty()) {
-      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    }
+    // if (!errors.isEmpty()) {
+    //   res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    // }
 
-    if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
-      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Machine ID");
-    } 
     const productServiceReport = await ProductServiceReports.findById(req.params.id);
     if(!productServiceReport?._id){
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
     }
+
     if(!productServiceReport?.isActive){
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
     }
 
+    const statusVal = await ProductServiceReportStatuses.findById(req.body?.status )
+    if(!statusVal){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
+    }
+ 
+    if( !req.params.machineId && productServiceReport?.status?.name?.toLowerCase() !== "submitted" && statusVal?.name?.toLowerCase() !== "under review" ){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service report status can be changed to under review only!");
+    } 
+    delete req.params.machineId
     Object.keys(req.body)?.forEach(field => {
       if ( field !== "loginUser" && field !== "status" ) {
         delete req.body[field];
       }
     });
-    const statusVal = await ProductServiceReportStatuses.findById(req.body?.status )
-    if(!statusVal){
-      return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
-    }
+
     // if(statusVal && statusVal?.name?.toUpperCase() === "SUBMITTED"){
     //   const result = await ProductServiceReportNote.updateMany(
     //     {
@@ -458,6 +461,7 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.OK).send("Service report status updated successfully!");
   }catch(error) {
+    logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!" ); 
   }
 }
@@ -523,6 +527,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       try {
         await awsService.sendEmailWithRawData(params, file_);
       } catch(e) {
+        logger.error(new Error( e ));
         res.status(StatusCodes.OK).send('Email Send Fails!');
       }
 
@@ -593,6 +598,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
           );
           return { success: true, emailData: { subject: params.subject, htmlData: params.htmlData, to: params.to } };
         } catch (emailError) {
+          logger.error(new Error(emailError));
           console.error("Error sending email:", emailError);
           return { success: false, emailData: null };
         }
@@ -624,6 +630,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
           }
         }
       } catch (e) {
+        logger.error(new Error(e));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(e);
       }
     } else {
@@ -717,6 +724,11 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
 exports.patchProductServiceReport = async (req, res ) => {
   try {
     const errors = validationResult(req);
+
+    if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service Report can be edit in machine module only!");
+    }
+
     if (!errors.isEmpty() || !mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
