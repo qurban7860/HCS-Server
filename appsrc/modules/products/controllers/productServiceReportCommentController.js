@@ -44,6 +44,7 @@ exports.postProductServiceReportComment = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+      logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     
@@ -65,6 +66,7 @@ exports.patchProductServiceReportComment = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+    logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
@@ -104,7 +106,7 @@ exports.deleteProductServiceReportComment = async (req, res, next) => {
     // await this.dbservice.deleteObject(ProductServiceReportComment, req.params.id, res,);
     broadcastComments(this.serviceReport, commentsList);
     res.status(StatusCodes.OK).json({ commentsList });
-  } catch (e) {
+  } catch ( error ) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Delete Comment failed!");
   }
@@ -155,7 +157,7 @@ function getDocumentFromReq(req, reqType){
     doc.comment = comment;
   }
 
-  if (req?.params?.serviceReportId){
+  if (req?.params?.serviceReportId || serviceReport ){
     doc.serviceReport = req?.params?.serviceReportId || serviceReport;
   }
 
