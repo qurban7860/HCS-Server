@@ -807,7 +807,7 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
     params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
-    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems,
+    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems, reportSubmission,
     // technicianNotes, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
   
@@ -911,6 +911,10 @@ function getDocumentFromReq(req, reqType){
   
   if ("textAfterCheckItems" in req.body){
     doc.textAfterCheckItems = textAfterCheckItems;
+  }
+
+  if ("reportSubmission" in req.body){
+    doc.reportSubmission = reportSubmission;
   }
 
   if("isReportDocsOnly" in req.body ){
