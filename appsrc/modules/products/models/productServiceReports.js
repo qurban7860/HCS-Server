@@ -48,6 +48,9 @@ const docSchema = new Schema({
   
   serviceNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //some notes regarding service/installation/training,
+
+  reportSubmission: { type: String, },
+  // is service report submitted online or offline?
   
   recommendationNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //recommendations if required
