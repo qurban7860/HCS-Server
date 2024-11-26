@@ -116,7 +116,6 @@ exports.getDocuments = async (req, res, next) => {
     let listProducts;
     let isVersionNeeded = true;
     let isDrawing = false;
-    let searchInDocType = false;
 
   try {
     this.query = req.query != "undefined" ? req.query : {};
@@ -137,7 +136,6 @@ exports.getDocuments = async (req, res, next) => {
         this.query[parentField] = {
           [childField]: regexCondition
         };
-        if (parentField === "docType") searchInDocType = true;
       } else {
         this.query[this.query.searchColumn] = regexCondition;
       }
@@ -173,7 +171,7 @@ exports.getDocuments = async (req, res, next) => {
       else if(this.query.forDrawing) 
         query = { drawing:true };
       if(query) {
-        let docCats = await DocumentCategory.find({...query, ...(this.query.docCategory ? this.query.docCategory : {})}).select('_id').lean();
+        let docCats = await DocumentCategory.find({...query, ...(this.query.docCategory ? { _id: this.query.docCategory } : {})}).select('_id').lean();
         if (Array.isArray(docCats) && docCats.length > 0) {
           let docCatIds = docCats.map((dc) => dc._id.toString());
           this.query.docCategory = { $in: docCatIds };
@@ -261,7 +259,7 @@ exports.getDocuments = async (req, res, next) => {
       .select(this.fields)
       .lean();
 
-    let documents = searchInDocType ? assemblyDrawings : assemblyDrawings.concat(otherDocuments);
+    let documents = assemblyDrawings.concat(otherDocuments);
 
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
