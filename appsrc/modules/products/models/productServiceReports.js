@@ -49,7 +49,7 @@ const docSchema = new Schema({
   serviceNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //some notes regarding service/installation/training,
 
-  reportSubmission: { type: String, },
+  reportSubmission: { type: Boolean, default: true },
   // is service report submitted online or offline?
   
   recommendationNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
@@ -58,7 +58,6 @@ const docSchema = new Schema({
   internalComments: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //Internal comments in machine service Report. this comments will not be printed at PDF and not visible to customer
 
-  
   suggestedSpares: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //detail of suggested spares
 
