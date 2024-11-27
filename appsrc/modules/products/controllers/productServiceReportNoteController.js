@@ -14,10 +14,10 @@ this.fields = {};
 this.query = { isActive: true, isArchived: false };
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  { path: 'serviceReport', select: 'isActive' },
-  { path: 'createdBy', select: 'name' },
+  // { path: 'serviceReport', select: 'isActive' },
+  // { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'technician', select: 'firstName lastName',
+  { path: 'technicians', select: 'firstName lastName',
     populate: [
       { path: 'customer', select: 'name'}
     ]
@@ -80,29 +80,27 @@ exports.getProductServiceReportNotes = async (req, res, next) => {
 
 const newReportNotesHandler = async ( req ) => {
   try {
-
     const serviceReport = req.params.serviceReportId;
     const savedNoteIds = {};
     for (const field in req.body) {
       const noteValue = req.body[field];
-
-      if ( serviceNotes?.has(field) && field !== "loginUser" && typeof noteValue === "string" && noteValue?.trim() ) {
-         
-            await ProductServiceReportNote.updateMany( { type: field, serviceReport }, { $set: { isHistory: true } } );
-
+      if ( serviceNotes?.has(field) && field !== "loginUser" && typeof noteValue?.note === "string" && noteValue?.note?.trim() ) {
+          await ProductServiceReportNote.updateMany( { type: field, serviceReport }, { $set: { isHistory: true } } );
             const noteData = {
               body:{
-                type: field,
-                note: noteValue.trim(),
-                loginUser: req.body.loginUser,
                 serviceReport,
+                type: field,
+                note: noteValue?.note,
+                isPublic: noteValue?.isPublic,
+                loginUser: req.body.loginUser,
               }
             };
-            if(field === "operatorNotes" && req.body?.operators){
-              noteData.body.operators = req.body?.operators;
+            if( Array.isArray( noteValue?.operators ) && noteValue?.operators?.length > 0 ){
+              noteData.body.operators = noteValue?.operators;
             }
-            if(field === "technicianNotes" && req.body?.technician ){
-              noteData.body.technician = req.body.technician;
+            
+            if( Array.isArray( noteValue?.technicians ) && noteValue?.technicians?.length > 0 ){
+              noteData.body.technicians = noteValue?.technicians;
             }
 
             const savedNote = await this.dbservice.postObject(getDocumentFromReq(noteData, "new"));
@@ -136,7 +134,6 @@ exports.postProductServiceReportNote = async (req, res, next) => {
     }
     
     const note = await newReportNotesHandler( req );
-    console.log("note : ",note)
     const response = await getServiceReportNote( note )
     res.status(StatusCodes.ACCEPTED).json(response);
   } catch (error) {
@@ -239,7 +236,7 @@ function broadcastNotes(serviceReportId, Notes) {
 
 
 function getDocumentFromReq(req, reqType){
-  const { note, serviceReport, type, technician, operators, isActive, isArchived, loginUser } = req.body;
+  const { note, serviceReport, type, technicians, operators, isPublic, isHistory, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
 
@@ -259,8 +256,8 @@ function getDocumentFromReq(req, reqType){
     doc.serviceReport = serviceReport;
   }
 
-  if ("technician" in req.body){
-    doc.technician = technician;
+  if ("technicians" in req.body){
+    doc.technicians = technicians;
   }
 
   if ("operators" in req.body){
@@ -273,6 +270,14 @@ function getDocumentFromReq(req, reqType){
 
   if ("isArchived" in req.body){
     doc.isArchived = isArchived;
+  }
+
+  if ("isPublic" in req.body){
+    doc.isPublic = isPublic;
+  }
+
+  if ("isHistory" in req.body){
+    doc.isHistory = isHistory;
   }
 
   if (reqType == "new" && "loginUser" in req.body ){

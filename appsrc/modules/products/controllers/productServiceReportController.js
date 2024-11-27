@@ -40,7 +40,7 @@ this.populate = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'machine', select: 'name serialNo'},
-  {path: 'technician', select: 'firstName lastName'},
+  {path: 'technicians', select: 'firstName lastName'},
   {path: 'operators', select: 'firstName lastName'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -56,7 +56,7 @@ this.populateObject = [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
-      { path: 'technician', select: 'firstName lastName',
+      { path: 'technicians', select: 'firstName lastName',
         populate: [
           { path: 'customer', select: 'name'}
         ]
