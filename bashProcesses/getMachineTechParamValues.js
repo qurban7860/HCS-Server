@@ -19,7 +19,7 @@ async function connectDB() {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     useCreateIndex: true,
-    dbName: "howickDB",
+    dbName: process.env.MONGODB_NAME,
   };
 
   await mongoose.connect(process.env.MONGODB_URI, mongoOptions);
@@ -81,7 +81,7 @@ function escapeCSVValue(value) {
 }
 
 async function generateCSV(data) {
-  const headers = ["serialNo", "machineModelName", "customerName", ...TECH_PARAMS_CONFIG.map((config) => config.displayName)];
+  const headers = ["Serial No.", "Machine Model", "Customer", ...TECH_PARAMS_CONFIG.map((config) => config.displayName)];
 
   const csvRows = [headers];
 
