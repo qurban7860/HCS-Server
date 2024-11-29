@@ -15,7 +15,11 @@ const TECH_PARAMS_CONFIG = [
 ];
 
 async function connectDB() {
-    await mongoose.connect(process.env.MONGODB_URI);
+    await mongoose.connect(process.env.MONGODB_URI, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+        useCreateIndex: true
+    });
     console.log('Connected to MongoDB');
 }
 
@@ -28,17 +32,20 @@ async function getMachinesWithVersions() {
         .lean()
         .then(machines => machines.filter(m => m.status?.name !== 'Transferred' || m.status?.name !== 'Decommissioned'));
 
+    console.log(`Found ${machines.length} machines`);
+
     const techParams = await MachineTechParam.find({
         code: { $in: TECH_PARAMS_CONFIG.map(config => config.code) }
     }).lean();
-    // const techParams = await MachineTechParam.find({
-    //     code: { $in: ['HLCSoftwareVersion', 'PLCSWVersion'] }
-    // }).lean();
+
+    console.log(`Found ${techParams.length} tech params`);
 
     const paramValues = await MachineTechParamValue.find({
         machine: { $in: machines.map(m => m._id) },
         techParam: { $in: techParams.map(tp => tp._id) }
     }).lean();
+
+    console.log(`Found ${paramValues.length} param values`);
 
     const result = machines.map(machine => {
         const machineValues = paramValues.filter(pv => pv.machine.toString() === machine._id.toString());
@@ -61,28 +68,6 @@ async function getMachinesWithVersions() {
         });
 
         return baseData;
-        
-        // const hlcVersion = machineValues.find(mv => 
-        //     techParams.find(tp => 
-        //         tp._id.toString() === mv.techParam.toString() && 
-        //         tp.code.includes('HLCSoftwareVersion')
-        //     )
-        // )?.techParamValue;
-
-        // const plcVersion = machineValues.find(mv => 
-        //     techParams.find(tp => 
-        //         tp._id.toString() === mv.techParam.toString() && 
-        //         tp.code.includes('PLCSWVersion')
-        //     )
-        // )?.techParamValue;
-
-        // return {
-        //     serialNo: machine.serialNo,
-        //     machineModelName: machine.machineModel?.name,
-        //     customerName: machine.customer?.name,
-        //     HLCSoftwareVersion: hlcVersion || null,
-        //     PLCSoftwareVersion: plcVersion || null
-        // };
     });
 
     return result;
