@@ -125,8 +125,8 @@ exports.getLogsGraph = async (req, res, next) => {
     switch ( periodType && periodType?.toLowerCase()) {
       case 'daily':
         groupBy = { $dateToString: { format: "%m/%d", date: "$date" } };
-        dateRange = new Date(currentDate.setDate(currentDate.getDate() - 7));
-        limit = 7;
+        dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
+        limit = 30;
         break;
       case 'monthly':
         groupBy = { $dateToString: { format: "%Y-%m", date: "$date" } };
