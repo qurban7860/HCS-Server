@@ -58,3 +58,5 @@ package-lock.json
 .vscode
 .csv
 .csv#
+
+generatedReports
