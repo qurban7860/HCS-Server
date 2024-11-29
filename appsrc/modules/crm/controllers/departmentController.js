@@ -10,7 +10,7 @@ const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
-let customerDBService = require('../service/customerDBService')
+let customerDBService = require('../services/customerDBService')
 this.dbservice = new customerDBService();
 const ObjectId = require('mongoose').Types.ObjectId;
 
@@ -157,7 +157,7 @@ exports.patchDepartment = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType){
-  const { departmentName, forCustomer, isDefault, isActive, isArchived, loginUser } = req.body;
+  const { departmentName, departmentType, forCustomer, isDefault, isActive, isArchived, loginUser } = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -166,6 +166,9 @@ function getDocumentFromReq(req, reqType){
 
   if ("departmentName" in req.body){
     doc.departmentName = departmentName.trim();
+  }
+  if ("departmentType" in req.body){
+    doc.departmentType = departmentType.trim();
   }
 
   if ("forCustomer" in req.body){

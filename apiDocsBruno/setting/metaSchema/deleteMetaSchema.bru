@@ -1,0 +1,15 @@
+meta {
+  name: deleteMetaSchema
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/configs/metaSchemas/6576f8421e9618b3e304a03e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

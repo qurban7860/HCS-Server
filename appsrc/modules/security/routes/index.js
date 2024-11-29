@@ -5,6 +5,7 @@ const securityModuleRoute = require('./securityModuleRoute');
 const securityRoleRoute = require('./securityRoleRoute');
 const securityConfigRoute = require('./securityConfigRoute');
 const securityAuthenticationRoute = require('./securityAuthenticationRoute');
+const customerAuthenticationRoute = require('./customerAuthenticationRoute');
 
 const securityUserRoute = require('./securityUserRoute');
 const securityAuditLogRoute = require('./securityAuditLogRoute');
@@ -26,6 +27,9 @@ exports.registerSecurityRoutes = (app, apiPath) => {
 
     // localhost://api/1.0.0/security/
     app.use(`${rootPathForModule}`, securityAuthenticationRoute);
+
+    // localhost://api/1.0.0/customer/
+    app.use(`${rootPathForModule}`, customerAuthenticationRoute);
 
     // localhost://api/1.0.0/security/
     app.use(`${rootPathForModule}`, securityModuleRoute);

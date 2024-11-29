@@ -1,0 +1,38 @@
+meta {
+  name: transferMachine
+  type: http
+  seq: 8
+}
+
+post {
+  url: {{baseUrl}}/products/machines/transferMachine
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "machine": "65daf3493ef67935a82d6299",
+      "customer": "65cbcca5a04eb58888ffdd7a",
+      "financialCompany": null,
+      "billingSite": null,
+      "installationSite": null,
+      "shippingDate": null,
+      "installationDate": null,
+      "status": "64ab4ebe77d4143ddef6b9ea",
+      "isAllSettings": false,
+      "isAllTools": false,
+      "isAllDrawings": false,
+      "isAllProfiles": false,
+      "isAllINIs": false,
+      "machineConnections": [
+          "65daf3493ef67935a82d62a7",
+          "65daf3493ef67935a82d62a2"
+      ],
+      "machineDocuments": []
+  }
+}

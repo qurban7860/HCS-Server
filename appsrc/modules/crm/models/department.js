@@ -11,6 +11,8 @@ const docSchema = new Schema({
 
         forCustomer: { type: Boolean, default:false },
 
+        departmentType: { type: String, default: null, required: false },
+
         isDefault: { type: Boolean, default:false }
 },
 {

@@ -1,0 +1,22 @@
+meta {
+  name: Update Log Information
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/productLogs/65277f33a5d3a51cc05566ac
+  body: json
+  auth: none
+}
+
+headers {
+  Authorization: Bearer {{token}}
+  Content-Type: application/json
+}
+
+body:json {
+  {
+      "time": "Sample Time1"
+  }
+}

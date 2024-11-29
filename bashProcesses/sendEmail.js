@@ -9,10 +9,8 @@ async function main() {
 	};
 
 	let response = await awsService.sendEmail(params);
-	console.log(response);
 
 	let buckets = await awsService.listBuckets({});
-	console.log(buckets);
 }
 
 main();

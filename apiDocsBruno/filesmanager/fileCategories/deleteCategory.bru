@@ -1,0 +1,15 @@
+meta {
+  name: deleteCategory
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/filemanager/categories/6461fbc4561d088c0335428d
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

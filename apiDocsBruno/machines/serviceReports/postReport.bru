@@ -1,0 +1,15 @@
+meta {
+  name: postReport
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/machines/66acc461e216570d2a07286a/serviceReports/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

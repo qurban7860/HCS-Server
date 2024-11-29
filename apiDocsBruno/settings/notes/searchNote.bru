@@ -1,0 +1,25 @@
+meta {
+  name: searchNote
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/security/users/64eedee2c26f210abe124745/securityNotes/64ef1feb8465f76cbed27048?note=
+  body: json
+  auth: bearer
+}
+
+params:query {
+  note: 
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "note":"User notes ...."
+  }
+}

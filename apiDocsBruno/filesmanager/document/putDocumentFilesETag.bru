@@ -1,0 +1,21 @@
+meta {
+  name: putDocumentFilesETag
+  type: http
+  seq: 6
+}
+
+put {
+  url: {{baseUrl}}/documents/document/putDocumentFilesETag
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  { 
+      "isArchived": true
+  }
+}

@@ -53,6 +53,10 @@ exports.getProductConfiguration = async (req, res, next) => {
 exports.getProductConfigurations = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.orderBy = { createdAt: -1 };
+  if(this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
   this.dbservice.getObjectList(req, ProductConfiguration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -66,7 +70,6 @@ exports.getProductConfigurations = async (req, res, next) => {
 
 exports.deleteProductConfiguration = async (req, res, next) => {
   this.dbservice.deleteObject(ProductConfiguration, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -111,7 +114,6 @@ exports.postProductConfiguration = async (req, res, next) => {
         const propertyValues = [];
 
         for (const element of code) {
-          console.log(productConfObjec?.configuration, element)
           const value = productConfObjec?.configuration[element];
           if (value) {
             propertyValues.push(value);

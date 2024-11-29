@@ -12,7 +12,7 @@ const _ = require('lodash');
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductCheckItem, ProductServiceRecordsConfig } = require('../models');
+const { ProductCheckItem, ProductServiceReportTemplate } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -37,8 +37,8 @@ exports.getProductCheckItem = async (req, res, next) => {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
       response = JSON.parse(JSON.stringify(response));
-      let serviceRecordConfigs = await ProductServiceRecordsConfig.find({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{'docTitle':1, 'docVersionNo': 1});
-      response.serviceRecordConfigs = serviceRecordConfigs;
+      let serviceReportTemplates = await ProductServiceReportTemplate.find({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{'reportTitle':1, 'docVersionNo': 1});
+      response.serviceReportTemplates = serviceReportTemplates;
       
       return res.json(response);
     }
@@ -115,8 +115,8 @@ exports.patchProductCheckItems = async (req, res, next) => {
     
     
     if(req.body.isArchived==true) {
-      let serviceRecordConfigs = await ProductServiceRecordsConfig.findOne({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{_id:1});
-      if(serviceRecordConfigs) {
+      let serviceReportTemplates = await ProductServiceReportTemplate.findOne({"checkItemLists.checkItems":req.params.id, isArchived:false, isActive:true},{_id:1});
+      if(serviceReportTemplates) {
         return res.status(StatusCodes.BAD_REQUEST).send('Can not delete check item as its used in configurations doc');
       }
     }

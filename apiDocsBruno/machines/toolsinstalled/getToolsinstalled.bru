@@ -1,0 +1,15 @@
+meta {
+  name: getToolsinstalled
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/profiles/64db0df9560174368fb4e2a2/toolsinstalled/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

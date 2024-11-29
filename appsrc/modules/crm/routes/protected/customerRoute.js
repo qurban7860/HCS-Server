@@ -1,0 +1,46 @@
+const express = require('express');
+const { check } = require('express-validator');
+
+const checkAuth = require('../../../../middleware/check-auth');
+const roleCheck = require('../../../../middleware/role-check');
+const checkCustomer = require('../../../../middleware/check-customer');
+const verifyDelete = require('../../../../middleware/verifyDelete');
+
+const controllers = require('../../controllers');
+const controller = controllers.customerController;
+
+const router = express.Router();
+
+//  - base route for module
+// - /api/1.0.0/crm/
+const baseRouteForObject = `/customers`; 
+
+
+router.use(checkAuth, checkCustomer, roleCheck);
+
+// - /api/1.0.0/crm/sites/export
+router.get(`${baseRouteForObject}/export`, controller.exportCustomersJSONForCSV);
+
+// - /api/1.0.0/crm/customers/get/:flag/:id
+router.get(`${baseRouteForObject}/:id`, controller.getCustomer);
+
+// - /api/1.0.0/crm/customers/
+router.get(`${baseRouteForObject}/`, controller.getCustomers);
+
+// - /api/1.0.0/crm/customers/
+router.post(`${baseRouteForObject}/`, controller.postCustomer);
+
+// - /api/1.0.0/crm/customers/:id
+router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchCustomer);
+
+// - /api/1.0.0/crm/customers/:id
+router.delete(`${baseRouteForObject}/:id`, controller.deleteCustomer);
+
+// - /api/1.0.0/crm/customers/getRegionCustomers
+router.get(`/getCustomersAgainstCountries`, controller.getCustomersAgainstCountries);
+
+// - /api/1.0.0/crm/customers/search
+// router.get(`/customers/search`, controller.searchCustomers);
+
+
+module.exports = router;

@@ -1,0 +1,21 @@
+meta {
+  name: patchDocument
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/documents/document/6569dfb9413fe030b059a187
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  { 
+      "isArchived": true
+  }
+}

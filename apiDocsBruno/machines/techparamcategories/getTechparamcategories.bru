@@ -1,0 +1,15 @@
+meta {
+  name: getTechparamcategories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/techparamcategories/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

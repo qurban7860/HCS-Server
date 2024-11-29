@@ -1,0 +1,29 @@
+meta {
+  name: getDocuments
+  type: http
+  seq: 2
+}
+
+get {
+  url: http://localhost:5002/api/1.0.0/documents/document/?isArchived=false&basic=true&forDrawing=true&pagination[page]=0&pagination[pageSize]=100&searchString=16680
+  body: json
+  auth: bearer
+}
+
+params:query {
+  isArchived: false
+  basic: true
+  forDrawing: true
+  pagination[page]: 0
+  pagination[pageSize]: 100
+  searchString: 16680
+  ~includeMachines: true
+  ~includeDrawings: true
+  ~customer: 6592884c229ae548b2566ae4
+  ~includeCustomers: true
+  ~documentId: 65c367552a9b1e054d316eeb
+}
+
+auth:bearer {
+  token: {{token}}
+}

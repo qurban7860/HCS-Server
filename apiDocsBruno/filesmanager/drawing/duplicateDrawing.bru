@@ -1,0 +1,21 @@
+meta {
+  name: duplicateDrawing
+  type: http
+  seq: 1
+}
+
+patch {
+  url: {{baseUrl}}/documents/dublicateDrawings/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+     
+  }
+}

@@ -1,0 +1,66 @@
+meta {
+  name: patchServiceRecordConfigs
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/products/serviceRecordsConfig/6541d1bc93f41c3794a1774e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "recordType": "SERVICE",
+      "machineCategory": "64ae5c0cdc483f373399901b",
+      "machineModel": "64ae5c0ddc483f373399907d",
+      "status": "SUBMITTED",
+      "parentConfig": "6538c9629499d61254bbdd24",
+      "docVersionNo": 1,
+      "textBeforeCheckItems": "Text Before Params",
+      "checkItemLists": [
+          {
+              "ListTitle": "List A",
+              "checkItems": [
+                  "652d15e9c0a4423d84061dad",
+                  "652d15fbc0a4423d84061e1e",
+                  "652d160cc0a4423d84061e8f"
+              ]
+          },
+          {
+              "ListTitle": "List B",
+              "checkItems": [
+                  "652d161bc0a4423d84061f00",
+                  "652d1701c0a4423d840620dd"
+              ]
+          }
+      ],
+      "textAfterCheckItems": "text after field",
+      "isOperatorSignatureRequired": false,
+      "enableNote": false,
+      "enableMaintenanceRecommendations": false,
+      "enableSuggestedSpares": false,
+      "header": {
+          "type": "text",
+          "leftText": "Left Header",
+          "centerText": "Center Header",
+          "rightText": "Right Header"
+      },
+      "footer": {
+          "type": "text",
+          "leftText": "Left Footer",
+          "centerText": "Center Footer",
+          "rightText": "Right Footer"
+      },
+      "noOfVerificationsRequired": 30,
+      "verifications": [
+      ],
+      "isActive": true,
+      "isArchived": false
+  }
+}

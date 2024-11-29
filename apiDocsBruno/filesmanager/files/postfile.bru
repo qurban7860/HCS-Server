@@ -1,0 +1,25 @@
+meta {
+  name: postfile
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/documents/document/
+  body: multipartForm
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  images: @file(/C:/Users/haris/Downloads/CustomerSites.csv)
+  documentCategory: 647d8375e85ca661138046b9
+  documentType: 6479f14d1d15656415e29fe1
+  customer: 64afc3be170fdcb2f9a7e783
+  machine: 65510f1ea4d8246f87466f32
+  name: file name
+  ~path: path1
+}

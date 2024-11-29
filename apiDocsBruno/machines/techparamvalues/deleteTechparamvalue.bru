@@ -1,0 +1,15 @@
+meta {
+  name: deleteTechparamvalue
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/techparamvalues/63eded3d5e823e502390e754
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

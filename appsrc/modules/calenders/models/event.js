@@ -6,6 +6,11 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
+
+        isCustomerEvent: { type: Boolean, default: true },
+        
+        priority: { type: String },
+        
         customer: { type: Schema.Types.ObjectId, ref: 'Customer', required: true },
 
         contact: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
@@ -22,12 +27,12 @@ const docSchema = new Schema({
 
         notifyContacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact', required: true }], // All Contacts Howick
 
-        status: {
-                type: String,
-                enum: ['SCHEDULED', 'IN_PROCESS', 'COMPLETED', 'CANCELLED'],
-                default: 'SCHEDULED'
-        },
+        status: {  type: String },
 
+        // status: {  type: String,
+        //         enum: ['SCHEDULED', 'IN_PROCESS', 'COMPLETED', 'CANCELLED'],
+        //         default: 'SCHEDULED'
+        // },
 
         description: { type: String, maxlength: 500 },
 

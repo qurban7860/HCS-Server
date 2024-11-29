@@ -1,0 +1,15 @@
+meta {
+  name: getServiceCategory
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/CheckItemCategories/64f82c1ac4a4bd34e4bd6b57
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -4,6 +4,7 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 let rtnMsg = require('../modules/config/static/static')
 const { SecurityUser } = require('../modules/security/models');
 const _ = require('lodash');
+const logger = require('../modules/config/logger');
 
 module.exports = (req, res, next) => {
   try {    
@@ -18,11 +19,10 @@ module.exports = (req, res, next) => {
         if (!loggedInUser) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.loggedInUserCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer not found!', true));
         } else { 
-          if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && (req.body.isArchived === true || req.body.isArchived === 'true')){ 
+          if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && (req.body.isArchived === true || req.body.isArchived === 'true' ) && req.body?.status?.toLowerCase() !== 'draft' ){ 
             return res.status(StatusCodes.BAD_REQUEST).send("Only administration can archive a record!");
           }
           
-          const isSuperAdmin = loggedInUser?.roles?.some(role => role.roleType === 'SuperAdmin');
           const disableDelete = loggedInUser?.roles?.some(role => role?.disableDelete === true);
           if(disableDelete){
             return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User is not authorized to delete!', true));
@@ -32,12 +32,10 @@ module.exports = (req, res, next) => {
         }
       });
     }else{
-      next();
-      
-      // return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'User not found!', true));      
+      next();     
     }
   } catch (err) {
-    console.log(err);
+    logger.error(new Error(err));
     const error = new HttpError('Verify Delete middleware failed!', 403);
     return next(error);
   }

@@ -1,0 +1,28 @@
+meta {
+  name: getTypes
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/documents/documentType/?isArchived=false&isActive=true&machine=true&docCategory=658d11ad8daf844b4c148b77
+  body: multipartForm
+  auth: bearer
+}
+
+params:query {
+  isArchived: false
+  isActive: true
+  machine: true
+  docCategory: 658d11ad8daf844b4c148b77
+  ~customer: true
+  ~drawing: true
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:multipart-form {
+  query: {"customer": "Muzna"}
+}

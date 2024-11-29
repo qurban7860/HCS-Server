@@ -61,23 +61,22 @@ const docSchema = new Schema({
             { type: Schema.Types.ObjectId, ref: 'Machine' }
         ],
         
+        registrationRequest:  { type: Schema.Types.ObjectId, ref: 'PortalRegistration' },
+
         whiteListIPs: [{ type: String}],
         // list of white IPs
         
         token: {
-          accessToken: {type: Object},
-          
-          tokenCreation: { type: Date},
-          // Date/Time for token  creation.
-          tokenExpiry: { type: Date}
-          // Date/Time for token expiry.
+            accessToken: {type: Object},
+            tokenCreation: { type: Date},
+            // Date/Time for token  creation.
+            tokenExpiry: { type: Date}
+            // Date/Time for token expiry.
         },
-
 
         lockUntil : {type: Date},
         lockedBy: {type: String, enum: ['SYSTEM','ADMIN']},
         loginFailedCounts: {type: Number, default: 0}
-                                  
 },
 {
         collection: 'SecurityUsers'

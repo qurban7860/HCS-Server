@@ -9,16 +9,19 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const logger = require('../../config/logger');
 const awsService = require('../../../../appsrc/base/aws');
 let rtnMsg = require('../../config/static/static')
-let securityDBService = require('../service/securityDBService')
 const { Config } = require('../../config/models');
-this.dbservice = new securityDBService();
-
+const { renderEmail } = require('../../email/utils');
+const path = require('path');
 const { SecurityUser, SecurityUserInvite } = require('../models');
 const { Customer, CustomerContact } = require('../../crm/models');
 const { Product } = require('../../products/models');
-
 const ObjectId = require('mongoose').Types.ObjectId;
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
+let securityDBService = require('../service/securityDBService')
+this.dbservice = new securityDBService();
+const emailService = require('../service/userEmailService');
+const userEmailService = this.userEmailService = new emailService();
+
 
 this.fields = {};
 this.query = {};
@@ -56,27 +59,6 @@ this.populate = [
     }
   };
 
-  // exports.postUserInvitation = async (req, res, next) => {
-  //   const errors = validationResult(req);
-  //   if (!errors.isEmpty()) {
-  //     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  //   } else {
-  //     let inviteData = getDocumentFromReq(req, 'new');
-  //     await inviteData.save();
-  //     this.dbservice.postObject(inviteData, callbackFunc);
-  //     function callbackFunc(error, response) {
-  //       if (error) {
-  //         logger.error(new Error(error));
-  //         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-  //           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-  //           );
-  //       } else {
-  //         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
-  //       }
-  //     }
-  //   }
-  // };
-
 
   exports.patchUserInvitation = async (req, res, next) => {
     const errors = validationResult(req);
@@ -94,69 +76,11 @@ this.populate = [
   };
 
   exports.sendUserInvite = async (req, res, next) =>{
-    let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
-
-    if(user) {
-      user.invitationStatus = true;
-      user.save();
-      let userInvite = new SecurityUserInvite({});
-      userInvite.senderInvitationUser = req.body.loginUser.userId;
-      userInvite.receiverInvitationUser = req.params.id;
-      userInvite.receiverInvitationEmail = user.email;
-      userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
-
-      if(isNaN(inviteCodeExpireHours))
-        inviteCodeExpireHours = 48;
-      
-      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
-      userInvite.inviteExpireTime = expireAt;
-      userInvite.invitationStatus = 'PENDING';
-      await userInvite.save();
-    
-      let emailSubject = "User Invite - HOWICK Portal";
-      const regex = new RegExp("^USER-INVITE-SUBJECT$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-      if(configObject && configObject?.value)
-        emailSubject = configObject.value;
-
-      let emailContent = `Dear ${user.name},<br><br>Howick has invited you to join howick cloud. Please click on below link and enter password for joining.<br><br>`;
-    
-      // emailContent+=`${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${userInvite.inviteExpireTime}`;
-      
-      emailContent += `<a href="${process.env.CLIENT_APP_URL}invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}">Click here</a>`;
-
-      let params = {
-        to: `${user.email}`,
-        subject: emailSubject,
-        html: true
-      };
-
-      let username = user.name;
-
-      let hostName = 'portal.howickltd.com';
-
-      if(process.env.CLIENT_HOST_NAME)
-        hostName = process.env.CLIENT_HOST_NAME;
-      
-      let hostUrl = "https://portal.howickltd.com";
-
-      if(process.env.CLIENT_APP_URL)
-        hostUrl = process.env.CLIENT_APP_URL;
-
-        fs.readFile(__dirname+'/../../email/templates/footer.html','utf8', async function(err,data) {
-          let footerContent = render(data,{ username, emailSubject, emailContent, hostName, hostUrl })
-
-          fs.readFile(__dirname+'/../../email/templates/emailTemplate.html','utf8', async function(err,data) {
-            let htmlData = render(data,{ emailSubject, emailContent, hostName, hostUrl, username, footerContent })
-            params.htmlData = htmlData;
-            let response = await awsService.sendEmail(params);
-            res.status(StatusCodes.OK).json({ message: 'Invitation Sent Successfully.' });
-          })
-        })
-
-
-    } else {
-      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    try{
+      await this.userEmailService.sendUserInviteEmail(req, res );
+    } catch(err){
+      logger.error(new Error(err));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Sending user invite failed!");
     }
   }
   
@@ -174,6 +98,7 @@ this.populate = [
       .populate('customer')
       .populate('contact');
       let customerName = '';
+      let customerType = '';
       let contactName = '';
       let contactId = '';
       
@@ -181,20 +106,9 @@ this.populate = [
         customerName = user.customer.name;
       }
       
-      // if(user && !user.contact) {
-      //   let contact = await CustomerContact.create({
-      //     customer:user.customer,
-      //     firstName:user.name,
-      //     phone:user.phone,
-      //     email:user.email
-      //   });
-        
-      //   if(contact) {
-
-      //     user.contact = contact.id;
-      //     user = await user.save();
-      //   }
-      // }
+      if(user && user?.customer && user?.customer?.type) {
+        customerType = user?.customer?.type;
+      }
 
       if(user && user.contact && user.contact.firstName) {
         contactName = user.contact.firstName +' '+ user.contact.lastName;
@@ -204,6 +118,7 @@ this.populate = [
       return res.status(StatusCodes.OK).json({ 
         valid:true, 
         customerName,
+        customerType,
         contactName,
         contactId,
         fullName:user.name,
@@ -234,7 +149,7 @@ this.populate = [
             loginUser.password = await bcrypt.hash(req.body.password, 12);
             loginUser.name = req.body.fullName?req.body.fullName:'';
             loginUser.phone = req.body.phone?req.body.phone:'';
-            
+            loginUser.isActive = true;
             loginUser.invitationStatus = false;            
 
             if(!loginUser.contact) {

@@ -1,0 +1,22 @@
+meta {
+  name: patchModel
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/models/63e9993652b7dc27ccff302e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Decoiler rtrertertrer 2",
+      "description":"Decoiler for testing rtrtr1"
+  }
+}

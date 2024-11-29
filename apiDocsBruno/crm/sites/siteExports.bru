@@ -1,0 +1,21 @@
+meta {
+  name: siteExports
+  type: http
+  seq: 2
+}
+
+get {
+  url: https://dev.portal.server.howickltd.com/api/1.0.0/products/drawings?isArchived=false&machine=65d8426a06cd2123e7f9ac14
+  body: json
+  auth: bearer
+}
+
+params:query {
+  isArchived: false
+  machine: 65d8426a06cd2123e7f9ac14
+  ~fetchAllSites: true
+}
+
+auth:bearer {
+  token: {{token}}
+}

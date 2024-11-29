@@ -1,0 +1,15 @@
+meta {
+  name: getType
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/filemanager/documentNames/646b30d3683e93064dc2e7ed
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

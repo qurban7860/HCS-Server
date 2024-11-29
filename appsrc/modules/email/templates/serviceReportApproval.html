@@ -1,0 +1,33 @@
+<tr>
+  <td align="left" style="padding:0;Margin:0">
+    <h2 style="Margin:0;line-height:43px;mso-line-height-rule:exactly;font-family:'Space Grotesk', sans-serif;font-size:24px;font-style:normal;font-weight:normal;color:#051923">
+      Hi, <strong>{{ approvalOfficer }}</strong>
+    </h2>
+    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
+      A service report has been submitted for your review. Here are the details:
+      <br>
+      <strong>Customer:</strong> {{ customer }}<br>
+      <strong>Machine:</strong> {{ serialNo }}<br>
+      <strong>Service Report Date:</strong> {{ serviceDate }}<br>
+      <strong>Service Report Id:</strong> {{ serviceReportId }}<br>
+      <strong>Version No:</strong> {{ versionNo }}<br>
+      <strong>Request Submitted By:</strong> {{ submittedBy }}<br>
+      <strong>Request Submitted At:</strong> {{ submittedAt }}<br>
+    </p>
+    <br>
+    <br>
+    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px;">
+      To review the full service Report and make your decision, please click the button below:
+    </p>
+    <br>
+    <table width="100%" cellspacing="0" cellpadding="0" role="presentation" style="mso-table-lspace:0pt;mso-table-rspace:0pt;border-collapse:collapse;border-spacing:0px">
+      <tr>
+        <td align="center" style="padding:10px;Margin:0">
+          <span class="es-button-border" style="border-style:solid;border-color:#2CB543;background:#10079f;border-width:0px;display:inline-block;border-radius:5px;width:auto">
+            <a href="{{ viewServiceReportUrl }}" class="es-button" target="_blank" style="mso-style-priority:100 !important;text-decoration:none;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;color:#FFFFFF;font-size:18px;border-style:solid;border-color:#10079f;border-width:10px 20px 10px 20px;display:inline-block;background:#10079f;border-radius:5px;font-family:arial, 'helvetica neue', helvetica, sans-serif;font-weight:normal;font-style:normal;line-height:22px;width:auto;text-align:center">View Service Report</a>
+          </span>
+        </td>
+      </tr>
+    </table>
+  </td>
+</tr>

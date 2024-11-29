@@ -18,7 +18,6 @@ async function main() {
         { _id: { $in: contactIds } },
         { $set: { formerEmployee: true } }
     );
-    console.log({ updatedRecords });
 }
 
 

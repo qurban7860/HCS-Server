@@ -1,0 +1,22 @@
+meta {
+  name: getLogs
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/logs/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      
+      
+  }
+}

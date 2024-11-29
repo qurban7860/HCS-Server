@@ -283,7 +283,6 @@ exports.postDocumentFile = async (req, res, next) => {
           mach = await dbservice.getObjectById(Machine, this.fields, machine);
           if(!mach || mach.isActive==false || mach.isArchived==true) {
             console.error("Invalid machine for documentFile");
-
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
@@ -293,7 +292,6 @@ exports.postDocumentFile = async (req, res, next) => {
         
         if(!documentVersion || documentVersion.isArchived) {
           console.error("Invalid documentVersion for documentFile");
-
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
           
@@ -464,7 +462,8 @@ exports.downloadDocumentFile = async (req, res, next) => {
                 
                   console.log("file.fileType", file.fileType);
                   const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
-                  const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
+                  const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); 
+                  let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
                   const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
                   console.log("fileSizeInMegabytes", fileSizeInMegabytes);
                   if (isImage && configObject && fileSizeInMegabytes > 2) {
@@ -655,6 +654,5 @@ function getDocumentFromReq(req, reqType) {
   return doc;
 
 }
-
 
 exports.getDocumentFromReq = getDocumentFromReq;

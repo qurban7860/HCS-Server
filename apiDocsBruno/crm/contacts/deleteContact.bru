@@ -1,0 +1,15 @@
+meta {
+  name: deleteContact
+  type: http
+  seq: 8
+}
+
+delete {
+  url: {{baseUrl}}/crm/customers/655b52acf49c034e22cf20a5/contacts/655b5879e542e355cd0d027b
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

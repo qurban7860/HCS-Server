@@ -8,7 +8,6 @@ async function main() {
 	};
 
 	let response = await awsService.listBuckets(params);
-	console.log(response);
 
 }
 

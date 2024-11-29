@@ -1,0 +1,64 @@
+meta {
+  name: postMachine
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{baseUrl}}/products/machines/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "serialNo": "ABS1233",
+      "name": "0003",
+      "description": "first machine",
+      "status": "63ed99092f965840a8bb6511",
+      "supplier": "63ed9e042f965840a8bb651f",
+      "machineModel": "63e9b847ae43ac31f3049756",
+      // "installationDate": "2024-02-27T19:00:00.000Z",
+      // "transferredDate": "2024-02-28T19:00:00.000Z",
+      "machineConnections": [
+          "65b39c9fbdc81175e43fa9f3"
+      ],
+      "newConnectedMachines": [
+          {
+              "serialNo": "1957-AB1",
+              "name": "0003",
+              "category": "663c1823233f835ccc6ad44c",
+              "model": "663c1849233f835ccc6ad4a1"
+          },
+          {
+              "serialNo": "1957-BB2",
+              "name": "0003",
+              "category": "663c1823233f835ccc6ad44c",
+              "model": "663c1849233f835ccc6ad4a1"
+          }
+      ],
+      "workOrderRef": "workorder001",
+      "customer": "658be0d4b37e4142d8aa7ef9",
+      "instalationSite": "63e9bb294cca96340261450a",
+      "billingSite": "63e9bb294cca96340261450a",
+      "operators": [],
+      "accountManager": "63e9bb294cca96340261450a",
+      "projectManager": "63e9bb294cca96340261450a",
+      "supportManager": "63e9bb294cca96340261450a",
+      "license": "63e9bb294cca96340261450a",
+      "logo": "63e9bb294cca96340261450a",
+      "tools": [],
+      "internalTags": [
+          "123",
+          "124"
+      ],
+      "customerTags": [
+          "431",
+          "567"
+      ]
+  }
+}

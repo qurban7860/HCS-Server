@@ -1,3 +1,4 @@
 module.exports = {
-    eventController: require('./evetController')
+    eventController: require('./eventController'),
+    eventFileController: require('./eventFileController')
 }

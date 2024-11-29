@@ -1,8 +1,6 @@
 const { body, validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const { ReasonPhrases, StatusCodes, getReasonPhrase } = require('http-status-codes');
 
 const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
@@ -11,7 +9,6 @@ let rtnMsg = require('../../config/static/static')
 const { fDateTime } = require('../../../../utils/formatTime');
 let backupDBService = require('../service/backupDBService')
 this.dbservice = new backupDBService();
-
 const { Backup } = require('../models');
 const { render } = require('template-file');
 const awsService = require('../../../../appsrc/base/aws');
@@ -21,6 +18,8 @@ const s3 = new AWS.S3();
 const cron = require('node-cron');
 const { exec } = require('child_process');
 const fs = require('fs');
+const path = require('path');
+const { renderEmail } = require('../../email/utils');
 const archiver = require('archiver');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -38,16 +37,7 @@ this.populate = [
 exports.getBackup = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(Backup, this.fields, req.params.id, this.populate);
-    let updatedResponse = response;
-    if (response.countries.length > 0) {
-      const updatedCountries = response.countries.map((country) => ({
-        ...country.toObject(),
-        name: country.country_name,
-      }));
-      updatedResponse = { ...response.toObject(), countries: updatedCountries };
-    }
-
-    res.json(updatedResponse);
+    res.json(response);
 
   } catch (error) {
     logger.error(new Error(error));
@@ -133,21 +123,28 @@ exports.patchBackup = async (req, res, next) => {
   }
 };
 
-const cronJobConfiguration = process.env.DB_CRON_JOB && process.env.DB_CRON_JOB?.trim().length > 0 ? process.env.DB_CRON_JOB : '0 23 * * *';
-cron.schedule(cronJobConfiguration, () => {
-  try {
-    console.log('Cron job from .env or default', cronJobConfiguration);
-    exports.backupMongoDB();
-  } catch (error) {
-    console.error('Error occurred while running backupMongoDB:', error);
-  }
-});
+const dbCronTime = process.env.DB_CRON_TIME && process.env.DB_CRON_TIME.trim().length > 0 ? process.env.DB_CRON_TIME : null;
+const dbS3Bucket = process.env.DB_BACKUP_S3_BUCKET && process.env.DB_BACKUP_S3_BUCKET.trim().length > 0 ? process.env.DB_BACKUP_S3_BUCKET : null;
+const dbCronJob =  process.env.DB_CRON_JOB === 'true' || process.env.DB_CRON_JOB === true;
+
+if (dbCronTime && dbCronJob && dbS3Bucket ) {
+  cron.schedule(dbCronTime, async () => {
+    try {
+      await exports.dbBackup();
+    } catch (error) {
+      console.error('Error occurred while running DB backup:', error);
+    }
+  });
+  console.log(`Cron job scheduled with configuration: ${dbCronTime}`);
+} else {
+  console.log('Cron job not scheduled. Either DB_CRON_JOB or DB_CRON_JOB parameter is missing or incorrect');
+}
 
 
 exports.sendEmailforBackup = async (req, res, next) => {
- 
-  const emailToSend = process.env.ADMIN_EMAIL; 
-  let emailSubject = "MONGO DB BACKUP";
+
+  const emailToSend = process.env.DB_BACKUP_NOTIFY_TO; 
+  let emailSubject = "Database Backup";
 
   const {
     name,
@@ -168,36 +165,27 @@ exports.sendEmailforBackup = async (req, res, next) => {
     html: true
   };
 
-  let username = process.env.APP_NAME?.trim().length > 0 ? process.env.APP_NAME : 'Howick Cloud Services Backend'; 
-  let hostName = process.env.ENV?.trim().length > 0 ? process.env.ENV : 'Howick Cloud Services'; 
 
-  if (process.env.CLIENT_HOST_NAME)
-    hostName = process.env.CLIENT_HOST_NAME;
+  const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/databaseBackup.html'), 'utf8');
+  const content = render(contentHTML, { backupTime, name, databaseName, backupSize, backupLocation });
+  const htmlData =  await renderEmail(emailSubject, content )
+  params.htmlData = htmlData;
 
-  let hostUrl = "https://portal.howickltd.com";
-
-  if (process.env.CLIENT_APP_URL)
-    hostUrl = process.env.CLIENT_APP_URL;
-
-  fs.readFile(__dirname + '/../../email/templates/footer.html', 'utf8', async function (err, data) {
-    let footerContent = render(data, { hostName, hostUrl, username })
-
-    fs.readFile(__dirname + '/../../email/templates/data-base-backup.html', 'utf8', async function (err, data) {
-
-      let htmlData = render(data, { hostName, hostUrl, footerContent, name, databaseName, backupSize, backupTime, backupLocation })
-      params.htmlData = htmlData;
-      let response = await awsService.sendEmail(params);
-    })
-  });
+  try{
+    await awsService.sendEmail(params);
+  }catch(e){
+    return e.message;
+  }
 };
 
-exports.backupMongoDB = async (req, res, next) => {
+exports.dbBackup = async (req, res, next) => {
+  
   const startTime = performance.now();
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
-  const outputFolder = "db-backups";
-
-  const collectionToImport = process.env.BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.BACKUP_COLLECTIONS}` : ''; 
-  const cmdToExecute = `mongodump --out ${outputFolder} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
+  const s3Bucket = process.env.DB_BACKUP_S3_BUCKET?.trim().length > 0 ? process.env.DB_BACKUP_S3_BUCKET : "db-backups";
+  const backupNotifyTo = process.env.DB_BACKUP_NOTIFY_TO?.trim()?.length > 0
+  const collectionToImport = process.env.DB_DB_BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.DB_BACKUP_COLLECTIONS}` : ''; 
+  const cmdToExecute = `mongodump --out ${s3Bucket} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
   exec(cmdToExecute,
     (error, stdout, stderr) => {
       if (error) {
@@ -222,7 +210,7 @@ exports.backupMongoDB = async (req, res, next) => {
       });
       const totalZipSizeInkb = totalZipSizeInBytes / 1024;
       archive.pipe(output);
-      archive.directory(`${outputFolder}/`, false);
+      archive.directory(`${s3Bucket}/`, false);
       archive.finalize();
 
       output.on('close', () => {
@@ -232,7 +220,7 @@ exports.backupMongoDB = async (req, res, next) => {
         if (totalZipSizeInkb > 0) {
           uploadToS3(pathToZip, fileNameZip, S3Path)
             .then(() => {
-              fs.rm(outputFolder, { recursive: true }, (err) => {
+              fs.rm(s3Bucket, { recursive: true }, (err) => {
                 if (err) {
                   console.error('Error removing directory:', err);
                   return;
@@ -272,10 +260,10 @@ exports.backupMongoDB = async (req, res, next) => {
             backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} GB`,
             backupTime: endDateTime
           };
-          if(process.env.ADMIN_EMAIL?.trim().length > 0)
+          if( s3Bucket && backupNotifyTo )
             exports.sendEmailforBackup(req);
           else {
-            console.error("ADMIN_EMAIL Configuration is missing in .env");
+            console.error("ADMIN EMAIL for db backup is missing in .env");
           }
           exports.postBackup(req, res, next);
         } else {

@@ -57,6 +57,17 @@ function fTimestamp(date) {
   }
   return date
 }
+function customTimestamp(date){
+  const padZero = (num) => (num < 10 ? '0' + num : num);
+  
+  const year = date.getFullYear();
+  const month = padZero(date.getMonth() + 1);
+  const day = padZero(date.getDate());
+  const hours = padZero(date.getHours());
+  const minutes = padZero(date.getMinutes());
+
+  return `${year}${month}${day}${hours}${minutes}`;
+};
 
 function fToNow(date) {
   return date
@@ -82,6 +93,11 @@ function convertTimeToMilliseconds(timeString) {
   }, 0);
 }
 
+function validateYear(year) {
+  const currentYear = new Date().getFullYear();
+  return year >= 1900 && year <= currentYear;
+};
+
 module.exports = {
     isValidDate,
     fDate,
@@ -89,6 +105,8 @@ module.exports = {
     fQuarterYearDate,
     fDateTime,
     fTimestamp,
+    customTimestamp,
     fToNow,
-    convertTimeToMilliseconds
+    convertTimeToMilliseconds,
+    validateYear,
 };

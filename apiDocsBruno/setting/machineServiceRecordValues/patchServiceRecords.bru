@@ -1,0 +1,23 @@
+meta {
+  name: patchServiceRecords
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/serviceRecords/64f1adf99e9bdf093cd4fef5
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+     "isArchived": true,
+     "maintenanceRecommendation": "Maintenance recommendations11..."
+  }
+  
+}

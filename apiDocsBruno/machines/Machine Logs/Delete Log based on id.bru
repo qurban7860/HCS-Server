@@ -1,0 +1,31 @@
+meta {
+  name: Delete Log based on id
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/productLogs/:id
+  body: json
+  auth: none
+}
+
+params:path {
+  id: 
+}
+
+body:json {
+  {
+    "type": "erp"
+  }
+}
+
+docs {
+  ### Response body
+  
+  `Record cannot be deleted. It should be archived first!`
+  
+  or
+  
+  `Record Deleted Successfully`
+}

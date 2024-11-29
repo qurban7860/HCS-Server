@@ -1,0 +1,15 @@
+meta {
+  name: getStatus
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/statuses/63ed988e2f965840a8bb650a
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

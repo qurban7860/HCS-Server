@@ -1,0 +1,15 @@
+meta {
+  name: getReportNotes
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/66acc461e216570d2a07286a/serviceReports/notes
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -94,8 +94,6 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
-  let listCustomers;
-  let listProducts;
   
   //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
@@ -114,10 +112,11 @@ exports.getDocuments = async (req, res, next) => {
   //   }
   // }
 
+    let listCustomers;
+    let listProducts;
+    let isVersionNeeded = true;
+    let isDrawing = false;
 
-
-  let isVersionNeeded = true;
-  let isDrawing = false;
   try {
     this.query = req.query != "undefined" ? req.query : {};
     if(this.query.orderBy) {
@@ -125,28 +124,38 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    if(this.query && (this.query.isVersionNeeded==false || this.query.isVersionNeeded=='false')) {
+    if( this.query && ( this.query.isVersionNeeded == false || this.query.isVersionNeeded == 'false')) {
       isVersionNeeded = false;
       delete this.query.isVersionNeeded;
     }
 
-    let basicInfo = false;
+    if (this.query.searchKey && this.query.searchColumn) {
+      const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
+      if (this.query.searchColumn.includes(".")) {
+        const [parentField, childField] = this.query.searchColumn.split(".");
+        this.query[parentField] = {
+          [childField]: regexCondition
+        };
+      } else {
+        this.query[this.query.searchColumn] = regexCondition;
+      }
+      delete this.query.searchKey;
+      delete this.query.searchColumn;
+    }
 
-    if(this.query && (this.query.basic==true || this.query.basic=='true')) {
+      let basicInfo = false;
+
+    if( this.query && ( this.query.basic == true || this.query.basic == 'true' )) {
       basicInfo = true;
       delete this.query.basic;
     }
 
-
     if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
-      if (this.query.forDrawing) isDrawing = true;
-
-      let query;
+      if (this.query.forDrawing) 
+        isDrawing = true;
+        let query;
       if(this.query.forCustomer && this.query.forMachine) {
-        query = { $or : [ { customer : true } ,{ machine : true } ] };
-        // this.query.customer = { $exists : false }; 
-        // this.query.machine = { $exists : false }; 
-
+          query = { $or : [ { customer : true } ,{ machine : true } ] };
         if(!listCustomers || listCustomers.length == 0) {
           this.query.$or = [
             {customer: { '$exists': true }}, 
@@ -157,57 +166,52 @@ exports.getDocuments = async (req, res, next) => {
       
       else if(this.query.forCustomer) 
         query = { customer:true };
-      
       else if(this.query.forMachine) 
         query = { machine:true };
-      
       else if(this.query.forDrawing) 
         query = { drawing:true };
-      
       if(query) {
-
-        let docCats = await DocumentCategory.find(query).select('_id').lean();
-
-        if(Array.isArray(docCats) && docCats.length>0) {
-          let docCatIds = docCats.map((dc)=>dc._id.toString());
-          this.query.docCategory = {'$in':docCatIds};
+        let docCats = await DocumentCategory.find({...query, ...(this.query.docCategory ? { _id: this.query.docCategory } : {})}).select('_id').lean();
+        if (Array.isArray(docCats) && docCats.length > 0) {
+          let docCatIds = docCats.map((dc) => dc._id.toString());
+          this.query.docCategory = { $in: docCatIds };
           delete this.query.forCustomer;
           delete this.query.forMachine;
           delete this.query.forDrawing;
         }
-      
       }
     }
-
-    if(this.query.isArchived=='true')
-      this.query.isArchived = true;
 
     if(this.query.isArchived=='false')
       this.query.isArchived = false;
 
+    if(this.query.isArchived=='true')
+      this.query.isArchived = true;
+
+
     if(this.query.isActive=='true')
       this.query.isActive = true;
-    
+
     if(this.query.isActive=='false')
       this.query.isActive = false;
-
 
     this.populate = [
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
       { path: 'docType', select: 'name' },
+      { path: 'previousDocType', select: 'name' },
       { path: 'docCategory', select: 'name drawing' },
       { path: 'customer', select: 'name' },
       { path: 'machine', select: 'name serialNo' }
     ];
 
     let andString = [];
-    if(listCustomers && listCustomers.length > 0) {
-      andString.push({ customer: {$in: listCustomers} });
+    if( listCustomers && listCustomers.length > 0 ) {
+      andString.push({ customer: { $in: listCustomers } });
     }
 
-    if(listProducts && listProducts.length > 0) {
-      andString.push({ machine: {$in: listProducts} });
+    if( listProducts && listProducts.length > 0 ) {
+      andString.push({ machine: { $in: listProducts } });
     }
     if(andString && andString.length > 0) {
       if(!this.query.$or || !this.query.$or.length == 0) {
@@ -215,19 +219,26 @@ exports.getDocuments = async (req, res, next) => {
       }
       this.query.$or.push(...andString);
     }
-
-
+    if (this.query.machine) {
+      let docMachines = await Product.find(this.query.machine).select('_id').lean();
+      if (Array.isArray(docMachines) && docMachines.length > 0) {
+        let docMachinesIds = docMachines.map((dc) => dc._id.toString());
+        this.query.machine = { $in: docMachinesIds };
+      } else delete this.query.machine;
+    }
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
-    let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
-
-    let assemblyDrawings = await Document.find({ ...this.query, docType: { $in: docTypes_ } })
+    let docTypes_ = await DocumentType.find({ ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true }) }).select('_id').lean();
+    if (Array.isArray(docTypes_) && docTypes_.length > 0) {
+      let docTypeIds = docTypes_.map((dc) => dc._id.toString());
+      this.query.docType = { $in: docTypeIds };
+    } else delete this.query.docType
+    let assemblyDrawings = await Document.find(this.query)
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
 
-      const orCondition = [
-      ];
+      const orCondition = [];
   
       if (this.query?.searchString) {
         const regexCondition = { '$regex': escapeRegExp(this.query.searchString), '$options': 'i' };
@@ -235,7 +246,6 @@ exports.getDocuments = async (req, res, next) => {
         orCondition.push({ displayName: regexCondition });
         orCondition.push({ referenceNumber: regexCondition });
         orCondition.push({ stockNumber: regexCondition });
-        
         delete this.query.searchString;
 
         if(orCondition?.length > 0) {
@@ -243,19 +253,13 @@ exports.getDocuments = async (req, res, next) => {
         }
       }
 
-
-
-      console.log("this.query.$or", this.query);
-
     let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
       .populate(this.populate)
       .sort({ "createdAt": -1 })
       .select(this.fields)
       .lean();
 
-
     let documents = assemblyDrawings.concat(otherDocuments);
-    
 
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
@@ -311,9 +315,13 @@ exports.getDocuments = async (req, res, next) => {
               documentVersions = [documentVersion]
             }
 
-            if(isDrawing) {
-              document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
-              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item?.machine?.serialNo).join(', ');
+            if (isDrawing) {
+              document_.productDrawings = await ProductDrawing.find({ document: document_._id, isActive: true, isArchived: false }, { machine: 1, serialNo: 1 }).populate({
+                path: "machine",
+                select: "serialNo",
+              });
+              
+              // document_.productDrawings.serialNumbers = document_.productDrawings.map((item) => item?.machine?.serialNo).join(", ");
             }
             document_.documentVersions = documentVersions;
           }
@@ -590,7 +598,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
 };
 
 
-exports.getdublicateDrawings = async (req, res, next) => {
+exports.getduplicateDrawings = async (req, res, next) => {
   try {
     const filteredFiles = await DocumentFile.aggregate([
       {

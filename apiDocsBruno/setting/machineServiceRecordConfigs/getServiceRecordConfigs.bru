@@ -1,0 +1,19 @@
+meta {
+  name: getServiceRecordConfigs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/serviceRecordsConfig?status=SUBMITTED
+  body: none
+  auth: bearer
+}
+
+params:query {
+  status: SUBMITTED
+}
+
+auth:bearer {
+  token: {{token}}
+}

@@ -6,14 +6,11 @@ const { Product, ProductCategory, ProductModel, ProductTechParamValue, ProductTe
 const mongoose = require('../appsrc/modules/db/dbConnection');
 
 const filePath = path.resolve(__dirname, "migration3.xlsx");
-// console.log(filePath)
 const workbook = xlsx.readFile(filePath);
 const sheetNames = workbook.SheetNames;
-console.log(sheetNames)
 // Get the data of "Sheet1"
 const machines = xlsx.utils.sheet_to_json(workbook.Sheets['Export']);
 
-console.log(machines);
 async function main() {
 
   	let createdByUser = await SecurityUser.findOne({login:'naveed@terminustech.co.nz'});
@@ -26,7 +23,6 @@ async function main() {
 			if(typeof serialNo == 'string')
 				serialNo = machine.EquipmentID.trim();
 			
-			console.log(serialNo);
 			let customerType = 'Customer';
 
 			let customerName = machine.customerName;

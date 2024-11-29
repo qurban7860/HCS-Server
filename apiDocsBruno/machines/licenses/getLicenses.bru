@@ -1,0 +1,15 @@
+meta {
+  name: getLicenses
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/64f1c2849e9bdf093cd50073/licenses
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
