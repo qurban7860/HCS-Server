@@ -390,9 +390,14 @@ exports.postProductServiceReport = async (req, res, next) => {
         req.body.loginUser = await getToken(req);
     }
     const machine = await Product.findById(req.params.machineId)
-    const serviceReportStatus = await findDraftServiceReportStatus( res )
+    if( req.body?.status?.toLowerCase() === 'submitted' ){
+      const serviceReportSubmitStatus = await findSubmitServiceReportStatus( res )
+      req.body.status = serviceReportSubmitStatus?._id;
+    } else {
+      const serviceReportDraftStatus = await findDraftServiceReportStatus( res )
+      req.body.status = serviceReportDraftStatus?._id;
+    }
     let productServiceReportObject = await getDocumentFromReq(req, 'new');
-    productServiceReportObject.status = serviceReportStatus?._id;
     productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
     productServiceReportObject.customer = machine?.customer;
     let response = await this.dbservice.postObject(productServiceReportObject);
