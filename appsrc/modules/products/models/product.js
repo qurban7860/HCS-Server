@@ -4,7 +4,6 @@ const uniqueValidator = require('mongoose-unique-validator');
 const baseSchema = require('../../../base/baseSchema');
 
 const GUID = require('mongoose-guid')(mongoose);
-const mongooseAutopopulate = require('mongoose-autopopulate');
 
 const Schema = mongoose.Schema;
 
@@ -146,9 +145,8 @@ const docSchema = new Schema({
         createdIP: { type: String, default: null },
         createdBy: { 
             type: Schema.Types.ObjectId,
-            ref: 'SecurityUser',
-            autopopulate: { select: 'name' }
-        },
+            ref: 'SecurityUser'
+        }
     }],
 
     computerGUID: { type: String, default: null },
@@ -184,9 +182,19 @@ docSchema.index({"isArchived":1})
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
+docSchema.pre('find', function() {
+    this.populate('portalKey.createdBy', 'name');
+  });
+  
+  docSchema.pre('findOne', function() {
+    this.populate('portalKey.createdBy', 'name');
+  });
+  
+  docSchema.pre('findById', function() {
+    this.populate('portalKey.createdBy', 'name');
+  });
 
 docSchema.plugin(uniqueValidator);
-docSchema.plugin(mongooseAutopopulate);
 
 // Method to add a new portal key
 docSchema.methods.addPortalKey = function ({ key, createdIP, createdAt = new Date(), createdBy }) {
