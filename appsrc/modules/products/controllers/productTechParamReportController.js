@@ -23,17 +23,17 @@ this.populate = [
 ];
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
-exports.getProductTechParam = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductTechParam, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
-  }
-};
+// exports.getProductTechParam = async (req, res, next) => {
+//   this.dbservice.getObjectById(ProductTechParam, this.fields, req.params.id, this.populate, callbackFunc);
+//   function callbackFunc(error, response) {
+//     if (error) {
+//       logger.error(new Error(error));
+//       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+//     } else {
+//       res.json(response);
+//     }
+//   }
+// };
 
 exports.getProductTechParamReport = async (req, res) => {
   const techParamCodes = req?.query?.codes || ["HLCSoftwareVersion", "PLCSWVersion"];
@@ -222,6 +222,139 @@ exports.getProductTechParamReport = async (req, res) => {
       });
     }
   }
+};
+
+exports.exportProductTechParamReportCsv = async (req, res) => {
+  const techParamCodes = req?.query?.codes || [
+    { display: "HLC Software Version", code: "HLCSoftwareVersion" },
+    { display: "PLC Software Version", code: "PLCSWVersion" },
+  ];
+
+  const aggregatePipeline = [
+    {
+      $lookup: {
+        from: 'MachineStatuses',
+        localField: 'status',
+        foreignField: '_id',
+        as: 'status'
+      }
+    },
+    {
+      $unwind: '$status'
+    },
+    {
+      $match: {
+        'status.name': { $nin: ['Transferred', 'Decommissioned'] }
+      }
+    },
+    {
+      $lookup: {
+        from: 'MachineModels',
+        localField: 'machineModel',
+        foreignField: '_id',
+        as: 'machineModel'
+      }
+    },
+    {
+      $unwind: {
+        path: '$machineModel',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: 'Customers',
+        localField: 'customer',
+        foreignField: '_id',
+        as: 'customer'
+      }
+    },
+    {
+      $unwind: {
+        path: '$customer',
+        preserveNullAndEmptyArrays: true
+      }
+    },
+    {
+      $lookup: {
+        from: 'MachineTechParamValues',
+        let: { machineId: '$_id' },
+        pipeline: [
+          {
+            $match: {
+              $expr: { $eq: ['$machine', '$$machineId'] }
+            }
+          },
+          {
+            $lookup: {
+              from: 'MachineTechParams',
+              localField: 'techParam',
+              foreignField: '_id',
+              as: 'techParam'
+            }
+          },
+          {
+            $unwind: '$techParam'
+          },
+          {
+            $match: {
+              'techParam.code': {
+                $in: techParamCodes.map(tp => tp.code)
+              }
+            }
+          }
+        ],
+        as: 'techParamValues'
+      }
+    },
+    {
+      $project: {
+        serialNo: 1,
+        machineId: '$_id',
+        machineModel: {
+          _id: '$machineModel._id',
+          name: '$machineModel.name'
+        },
+        customer: {
+          _id: '$customer._id',
+          name: '$customer.name'
+        },
+        techParamValues: {
+          $map: {
+            input: '$techParamValues',
+            as: 'tpv',
+            in: {
+              code: '$$tpv.techParam.code',
+              value: '$$tpv.techParamValue'
+            }
+          }
+        }
+      }
+    },
+  ];
+
+  const params = {};
+
+  this.dbservice.getObjectListWithAggregate(Product, aggregatePipeline, params, (error, results) => {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      const formattedData = results.map(machine => ({
+        'Serial Number': machine.serialNo,
+        'Machine Model': machine.machineModel.name,
+        'Customer': machine.customer.name,
+        ...techParamCodes.reduce((acc, param) => ({
+          ...acc,
+          [param.display]: machine.techParamValues.find(tpv => 
+            tpv.code.includes(param.code)
+          )?.value || ''
+        }), {})
+      }));
+
+      res.json(formattedData);
+    }
+  });
 };
 
 // exports.getProductTechParamReport = async (req, res, next) => {

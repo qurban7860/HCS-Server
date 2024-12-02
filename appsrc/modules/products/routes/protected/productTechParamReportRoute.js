@@ -12,8 +12,10 @@ const baseRouteForObject = `/techparamReport`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProductTechParam);
+// router.get(`${baseRouteForObject}/:id`, controller.getProductTechParam);
 
 router.get(`${baseRouteForObject}/`, controller.getProductTechParamReport);
+
+router.get(`${baseRouteForObject}/exportCSV`,  controller.exportProductTechParamReportCsv);
 
 module.exports = router;
