@@ -20,6 +20,7 @@ const protectedRoutes = {
   techParamCategories: require("./protected/productTechParamCategoryRoute"),
   techParams: require("./protected/productTechParamRoute"),
   techParamValues: require("./protected/productTechParamValueRoute"),
+  techParamReport: require("./protected/productTechParamReportRoute"),
   toolsInstalled: require("./protected/productToolInstalledRoute"),
   tools: require("./protected/productToolRoute"),
   checkItems: require("./protected/productCheckItemsRoute"),

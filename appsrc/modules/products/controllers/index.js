@@ -27,4 +27,5 @@ module.exports = {
     productServiceReportStatusController: require('./productServiceReportStatusController'),
     categoryGroupController: require('./categoryGroupController'),
     productIntegrationController: require('./productIntegrationController'),
+    productTechParamReportController: require('./productTechParamReportController'),
 }
