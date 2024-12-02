@@ -52,6 +52,7 @@ this.populateObject = [
   {path: 'customer', select: 'name'},
   {path: 'site', select: 'name'},
   {path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
@@ -64,6 +65,7 @@ this.populateObject = [
     ]
   },
   {path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
@@ -71,6 +73,7 @@ this.populateObject = [
     ]
   },
   {path: 'recommendationNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
@@ -78,6 +81,7 @@ this.populateObject = [
     ]
   },
   {path: 'internalComments', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
@@ -85,6 +89,7 @@ this.populateObject = [
     ]
   },
   {path: 'suggestedSpares', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
@@ -92,6 +97,7 @@ this.populateObject = [
     ]
   },
   {path: 'internalNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
@@ -99,6 +105,7 @@ this.populateObject = [
     ]
   },
   {path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+    options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
