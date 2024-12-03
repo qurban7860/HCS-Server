@@ -37,8 +37,14 @@ this.populate = [
 
 exports.getProductTechParamReport = async (req, res) => {
   const techParamCodes = req?.query?.codes || ["HLCSoftwareVersion", "PLCSWVersion"];
-  const page = parseInt(req.body?.pagination?.page) || 1;
-  const pageSize = parseInt(req.body?.pagination?.pageSize) || 100;
+
+  let machineStatus = null;
+  if (req.query?.machineStatus && !["Transferred", "Decommissioned"].includes(req.query.machineStatus)) {
+    machineStatus = req.query.machineStatus;
+  }
+
+  const page = parseInt(req.body?.page) || 0;
+  const pageSize = parseInt(req.body?.pageSize) || 100;
 
   const searchKey = req.query.search?.key;
   const searchColumn = req.query.search?.column;
@@ -85,7 +91,9 @@ exports.getProductTechParamReport = async (req, res) => {
       $unwind: '$status'
     },
     {
-      $match: {
+      $match: machineStatus ? {
+        'status.name': machineStatus
+      } : {
         'status.name': { $nin: ['Transferred', 'Decommissioned'] }
       }
     },
@@ -124,7 +132,7 @@ exports.getProductTechParamReport = async (req, res) => {
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ['$machine', '$$machineId'] }
+              $expr: { $eq: ['$machine', '$machineId'] }
             }
           },
           {
@@ -166,8 +174,8 @@ exports.getProductTechParamReport = async (req, res) => {
             input: '$techParamValues',
             as: 'tpv',
             in: {
-              code: '$$tpv.techParam.code',
-              value: '$$tpv.techParamValue'
+              code: '$tpv.techParam.code',
+              value: '$tpv.techParamValue'
             }
           }
         }
@@ -223,7 +231,6 @@ exports.getProductTechParamReport = async (req, res) => {
     }
   }
 };
-
 exports.exportProductTechParamReportCsv = async (req, res) => {
   const techParamCodes = req?.query?.codes || [
     { display: "HLC Software Version", code: "HLCSoftwareVersion" },
