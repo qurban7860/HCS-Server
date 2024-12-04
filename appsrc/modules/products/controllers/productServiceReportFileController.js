@@ -99,9 +99,9 @@ exports.postServiceReportFiles = async (req, res, next) => {
         return this.dbservice.postObject(serviceReportFileObject);
       });
   
-      await Promise.all(fileProcessingPromises);
-      const serviceReportData = await getProductServiceReportData( req );
-      return res.status(StatusCodes.OK).send(serviceReportData);
+      const savedFiles = await Promise.all(fileProcessingPromises);
+      // const serviceReportData = await getProductServiceReportData( req );
+      return res.status(StatusCodes.OK).send({ files: savedFiles });
     }
   }catch(e) {
     console.log(e);
