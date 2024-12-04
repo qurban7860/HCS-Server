@@ -49,7 +49,7 @@ exports.getProductTechParamReport = async (req, res) => {
     }
   }
 
-  const page = parseInt(req.body?.page) || 1;
+  const page = parseInt(req.body?.page) + 1 || 1;
   const pageSize = parseInt(req.body?.pageSize) || 100;
 
   const searchKey = req.query.search?.key;
@@ -138,7 +138,7 @@ exports.getProductTechParamReport = async (req, res) => {
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ['$machine', '$machineId'] }
+              $expr: { $eq: ['$machine', '$$machineId'] }
             }
           },
           {
@@ -180,8 +180,8 @@ exports.getProductTechParamReport = async (req, res) => {
             input: '$techParamValues',
             as: 'tpv',
             in: {
-              code: '$tpv.techParam.code',
-              value: '$tpv.techParamValue'
+              code: '$$tpv.techParam.code',
+              value: '$$tpv.techParamValue'
             }
           }
         }
@@ -195,7 +195,7 @@ exports.getProductTechParamReport = async (req, res) => {
   countPipeline.push({ 
     $count: 'totalCount' 
   });
-  
+
   if (page > 0 && pageSize > 0) {
     aggregatePipeline.push(
       { $skip: (page - 1) * pageSize },
@@ -238,6 +238,7 @@ exports.getProductTechParamReport = async (req, res) => {
     }
   }
 };
+
 exports.exportProductTechParamReportCsv = async (req, res) => {
   const techParamCodes = req?.query?.codes || [
     { display: "HLC Software Version", code: "HLCSoftwareVersion" },
