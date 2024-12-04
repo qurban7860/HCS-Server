@@ -39,8 +39,14 @@ exports.getProductTechParamReport = async (req, res) => {
   const techParamCodes = req?.query?.codes || ["HLCSoftwareVersion", "PLCSWVersion"];
 
   let machineStatus = null;
-  if (req.query?.machineStatus && !["Transferred", "Decommissioned"].includes(req.query.machineStatus)) {
-    machineStatus = req.query.machineStatus;
+  if (req.query?.machineStatus && req.query?.machineStatus?.length > 0) {
+    const statusArray = req.query.machineStatus?.split(',')
+      .map(status => status.trim())
+      .filter(status => !["Transferred", "Decommissioned"].includes(status));
+      
+    if (statusArray.length > 0) {
+      machineStatus = statusArray;
+    }
   }
 
   const page = parseInt(req.body?.page) || 0;
@@ -92,7 +98,7 @@ exports.getProductTechParamReport = async (req, res) => {
     },
     {
       $match: machineStatus ? {
-        'status.name': machineStatus
+        'status.name': { $in: machineStatus }
       } : {
         'status.name': { $nin: ['Transferred', 'Decommissioned'] }
       }
