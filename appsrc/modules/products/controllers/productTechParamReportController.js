@@ -49,7 +49,7 @@ exports.getProductTechParamReport = async (req, res) => {
     }
   }
 
-  const page = parseInt(req.body?.page) || 0;
+  const page = parseInt(req.body?.page) || 1;
   const pageSize = parseInt(req.body?.pageSize) || 100;
 
   const searchKey = req.query.search?.key;
@@ -191,6 +191,11 @@ exports.getProductTechParamReport = async (req, res) => {
     ...searchStage
   ];
 
+  const countPipeline = [...aggregatePipeline];
+  countPipeline.push({ 
+    $count: 'totalCount' 
+  });
+  
   if (page > 0 && pageSize > 0) {
     aggregatePipeline.push(
       { $skip: (page - 1) * pageSize },
@@ -198,10 +203,6 @@ exports.getProductTechParamReport = async (req, res) => {
     );
   }
 
-  const countPipeline = [...aggregatePipeline];
-  countPipeline.push({ 
-    $count: 'totalCount' 
-  });
 
   const params = {};
 
