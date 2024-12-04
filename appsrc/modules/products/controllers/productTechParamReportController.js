@@ -185,17 +185,17 @@ exports.getProductTechParamReport = async (req, res) => {
     ...searchStage
   ];
 
-  const countPipeline = [...aggregatePipeline];
-  countPipeline.push({ 
-    $count: 'totalCount' 
-  });
-
   if (page > 0 && pageSize > 0) {
     aggregatePipeline.push(
       { $skip: (page - 1) * pageSize },
       { $limit: pageSize }
     );
   }
+
+  const countPipeline = [...aggregatePipeline];
+  countPipeline.push({ 
+    $count: 'totalCount' 
+  });
 
   const params = {};
 
