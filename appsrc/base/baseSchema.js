@@ -13,6 +13,30 @@ let docAuditSchema = {
     //user ip address
 }
 
+let docAuditSchemaForPublic = {
+    createdBy: { 
+        type: Schema.Types.Mixed, 
+        refPath: 'createdByModel'
+    },
+    createdByModel: {
+        type: String,
+        enum: ['SecurityUser', 'String'],
+        default: 'SecurityUser'
+    },
+    createdIP: {type: String},
+    
+    updatedBy: { 
+        type: Schema.Types.Mixed,
+        refPath: 'updatedByModel'
+    },
+    updatedByModel: {
+        type: String,
+        enum: ['SecurityUser', 'String'],
+        default: 'SecurityUser'
+    },
+    updatedIP: {type: String}
+}
+
 let  docVisibilitySchema = {
     isActive: { type: Boolean, default: true },
     // a document can be disabled. A disabled document can not be used to 
@@ -73,6 +97,6 @@ let  docContactSchema = {
     // website address of organization / site . 
 }
 
- module.exports = {docAuditSchema, docVisibilitySchema, docAddressSchema, docContactSchema };
+ module.exports = {docAuditSchema, docVisibilitySchema, docAddressSchema, docContactSchema, docAuditSchemaForPublic };
 
  

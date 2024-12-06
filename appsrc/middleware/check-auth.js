@@ -5,6 +5,9 @@ const { SecuritySession } = require('../modules/security/models');
 const logger = require('../modules/config/logger');
 
 module.exports = async (req, res, next) => {
+  if (req.headers["x-portal-key"] && req.headers["x-machine-serial-no"] && req.headers["x-ipc-serial-no"] && req.headers["x-computer-guid"]) {
+    return next();
+  }
   if (req.method === 'OPTIONS' || 
   req.url.toLowerCase() === '/gettoken' || 
   req.url.toLowerCase() === '/forgetpassword' || 

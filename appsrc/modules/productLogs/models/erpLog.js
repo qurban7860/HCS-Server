@@ -66,6 +66,6 @@ const docSchema = new Schema({
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
-docSchema.add(baseSchema.docAuditSchema);
+docSchema.add(baseSchema.docAuditSchemaForPublic);
 
 module.exports = mongoose.model('ErpLog', docSchema);

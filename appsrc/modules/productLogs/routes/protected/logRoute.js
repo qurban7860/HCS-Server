@@ -1,9 +1,9 @@
 const express = require('express');
 const { check } = require('express-validator');
-const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
+const checkAuth = require('../../../../middleware/check-auth');
+const checkCustomer = require('../../../../middleware/check-customer');
 
-const controllers = require('../controllers');
+const controllers = require('../../controllers');
 const controller = controllers.logController;
 
 const router = express.Router();
