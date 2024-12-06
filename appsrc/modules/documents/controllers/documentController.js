@@ -95,7 +95,7 @@ exports.getDocument = async (req, res, next) => {
 
 exports.getDocuments = async (req, res, next) => {
   
-  //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
+ //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
   //   if(user && ((user.regions && user.regions.length > 0)) ) {
   //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
@@ -229,40 +229,50 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
-    let docTypes_ = await DocumentType.find({ ...(this.query.docType ? { _id: this.query.docType, isActive: true, isArchived: false } : { isPrimaryDrawing: true, isActive: true, isArchived: false }) }).select('_id').lean();
+    let docTypes_ = await DocumentType.find({
+      ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true })
+    }).select('_id').lean();
+    
     if (Array.isArray(docTypes_) && docTypes_.length > 0) {
       let docTypeIds = docTypes_.map((dc) => dc._id.toString());
       this.query.docType = { $in: docTypeIds };
-    } else delete this.query.docType
+    } else {
+      delete this.query.docType;
+    }
+    
     let assemblyDrawings = await Document.find(this.query)
       .populate(this.populate)
-      .sort({ "createdAt": -1 })
+      .sort({ createdAt: -1 })
       .select(this.fields)
       .lean();
-
-      const orCondition = [];
-  
-      if (this.query?.searchString) {
-        const regexCondition = { '$regex': escapeRegExp(this.query.searchString), '$options': 'i' };
-        orCondition.push({ name: regexCondition });
-        orCondition.push({ displayName: regexCondition });
-        orCondition.push({ referenceNumber: regexCondition });
-        orCondition.push({ stockNumber: regexCondition });
-        delete this.query.searchString;
-
-        if(orCondition?.length > 0) {
-          this.query.$or = orCondition;
-        }
+    
+    const orCondition = [];
+    
+    if (this.query?.searchString) {
+      const regexCondition = { $regex: escapeRegExp(this.query.searchString), $options: 'i' };
+      orCondition.push({ name: regexCondition });
+      orCondition.push({ displayName: regexCondition });
+      orCondition.push({ referenceNumber: regexCondition });
+      orCondition.push({ stockNumber: regexCondition });
+      delete this.query.searchString;
+    
+      if (orCondition?.length > 0) {
+        this.query.$or = orCondition;
       }
-
-    let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
+    }
+    
+    let otherDocuments = await Document.find({
+      ...this.query,
+      docType: { $nin: docTypes_.map((dc) => dc._id.toString()) }
+    })
       .populate(this.populate)
-      .sort({ "createdAt": -1 })
+      .sort({ createdAt: -1 })
       .select(this.fields)
       .lean();
-
-    let documents = assemblyDrawings.concat(otherDocuments);
-
+    
+    // Combine and remove duplicates
+    let documents = [...new Map([...assemblyDrawings, ...otherDocuments].map(doc => [doc._id.toString(), doc])).values()];
+    
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       const totalPages = Math.ceil(documents.length / pageSize);
@@ -270,8 +280,8 @@ exports.getDocuments = async (req, res, next) => {
       let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
       documents = documents.slice(skip, skip + pageSize);
-      
-      let listDocuments = {
+    
+      documents = {
         data: documents,
         ...(req.body.page && {
           totalPages: totalPages,
@@ -279,9 +289,8 @@ exports.getDocuments = async (req, res, next) => {
           pageSize: pageSize,
           totalCount: totalCount
         })
-      }
-      documents = listDocuments;
-    }
+      };
+    }    
 
     const documents__ = documents;
     documents = documents.data;
