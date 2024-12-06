@@ -93,6 +93,8 @@ exports.getDocument = async (req, res, next) => {
   }
 };
 
+exports.getDocuments = async (req, res, next) => {
+  
  //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
   //   if(user && ((user.regions && user.regions.length > 0)) ) {
@@ -109,8 +111,6 @@ exports.getDocument = async (req, res, next) => {
   //     }
   //   }
   // }
-  
-exports.getDocuments = async (req, res, next) => {
 
     let listCustomers;
     let listProducts;
