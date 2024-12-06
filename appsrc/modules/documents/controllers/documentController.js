@@ -171,7 +171,8 @@ exports.getDocuments = async (req, res, next) => {
       else if(this.query.forDrawing) 
         query = { drawing:true };
       if(query) {
-        let docCats = await DocumentCategory.find({...query, ...(this.query.docCategory ? { _id: this.query.docCategory } : {})}).select('_id').lean();
+        let docCats = await DocumentCategory.find({...query, ...( this.query.docCategory ? { _id: this.query.docCategory, isActive: true, isArchived: false } : { isActive: true, isArchived: false })}).select('_id').lean();
+
         if (Array.isArray(docCats) && docCats.length > 0) {
           let docCatIds = docCats.map((dc) => dc._id.toString());
           this.query.docCategory = { $in: docCatIds };
@@ -226,6 +227,7 @@ exports.getDocuments = async (req, res, next) => {
         this.query.machine = { $in: docMachinesIds };
       } else delete this.query.machine;
     }
+
     // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
     let docTypes_ = await DocumentType.find({
       ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true })
