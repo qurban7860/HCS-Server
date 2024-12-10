@@ -220,32 +220,7 @@ exports.getDocuments = async (req, res, next) => {
       }
       this.query.$or.push(...andString);
     }
-    if (this.query.machine) {
-      let docMachines = await Product.find(this.query.machine).select('_id').lean();
-      if (Array.isArray(docMachines) && docMachines.length > 0) {
-        let docMachinesIds = docMachines.map((dc) => dc._id.toString());
-        this.query.machine = { $in: docMachinesIds };
-      } else delete this.query.machine;
-    }
 
-    // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
-    let docTypes_ = await DocumentType.find({
-      ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true })
-    }).select('_id').lean();
-    
-    if (Array.isArray(docTypes_) && docTypes_.length > 0) {
-      let docTypeIds = docTypes_.map((dc) => dc._id.toString());
-      this.query.docType = { $in: docTypeIds };
-    } else {
-      delete this.query.docType;
-    }
-    
-    let assemblyDrawings = await Document.find(this.query)
-      .populate(this.populate)
-      .sort({ createdAt: -1 })
-      .select(this.fields)
-      .lean();
-    
     const orCondition = [];
     
     if (this.query?.searchString) {
@@ -260,18 +235,54 @@ exports.getDocuments = async (req, res, next) => {
         this.query.$or = orCondition;
       }
     }
+
+    // if (this.query.machine) {
+    //   let docMachines = await Product.find(this.query.machine).select('_id').lean();
+    //   if (Array.isArray(docMachines) && docMachines.length > 0) {
+    //     let docMachinesIds = docMachines.map((dc) => dc._id.toString());
+    //     this.query.machine = { $in: [this.query.machine] };
+    //   } else delete this.query.machine;
+    // }
+
+    // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
+    // let docTypes_ = await DocumentType.find({
+    //   ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true })
+    // }).select('_id').lean();
     
-    let otherDocuments = await Document.find({
-      ...this.query,
-      docType: { $nin: docTypes_.map((dc) => dc._id.toString()) }
-    })
-      .populate(this.populate)
-      .sort({ createdAt: -1 })
-      .select(this.fields)
-      .lean();
-    
-    // Combine and remove duplicates
-    let documents = [...new Map([...assemblyDrawings, ...otherDocuments].map(doc => [doc._id.toString(), doc])).values()];
+    // if (Array.isArray(docTypes_) && docTypes_.length > 0) {
+    //   let docTypeIds = docTypes_.map((dc) => dc._id.toString());
+    //   this.query.docType = { $in: docTypeIds };
+    // } else {
+    //   delete this.query.docType;
+    // }
+    let docTypeIds = this.query.docType ? [this.query.docType] : [];
+    if (docTypeIds.length > 0) {
+      this.query.docType = { $in: docTypeIds };
+    } else {
+      delete this.query.docType;
+    }
+
+    let documents;
+
+    if (this.query.docType) {
+      // Single query for when when docType is specified
+      documents = await Document.find(this.query).populate(this.populate).sort({ createdAt: -1 }).select(this.fields).lean();
+    } else {
+      // This section is done to get all the documents of type assembly drawing at the front
+      let assemblyDrawings = await Document.find(this.query).populate(this.populate).sort({ createdAt: -1 }).select(this.fields).lean();
+
+      let otherDocuments = await Document.find({
+        ...this.query,
+        docType: { $nin: [...docTypeIds] },
+      })
+        .populate(this.populate)
+        .sort({ createdAt: -1 })
+        .select(this.fields)
+        .lean();
+
+      // Combine and remove duplicates for all results.
+      documents = [...new Map([...assemblyDrawings, ...otherDocuments].map((doc) => [doc._id.toString(), doc])).values()];
+    }
     
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
