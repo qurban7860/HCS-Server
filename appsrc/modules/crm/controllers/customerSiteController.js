@@ -13,7 +13,7 @@ let customerDBService = require('../services/customerDBService')
 this.dbservice = new customerDBService();
 
 const { CustomerSite, CustomerContact, Customer, CustomerNote } = require('../models');
-const { ProductServiceRecords } = require('../../products/models');
+const { ProductServiceReports } = require('../../products/models');
 const { Event } = require('../../calenders/models');
 
 const { Document } = require('../../documents/models');
@@ -200,14 +200,14 @@ exports.patchCustomerSite = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product"); 
       }
 
-      const productServiceRecord = await ProductServiceRecords.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(productServiceRecord) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Record"); 
+      const productServiceReport = await ProductServiceReports.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
+      if(productServiceReport) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Report"); 
       }
 
       const eventRecord = await Event.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
       if(eventRecord) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Record"); 
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Report"); 
       }
     }
     if("isArchived" in req.body){

@@ -1,0 +1,27 @@
+meta {
+  name: getuser
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/security/configs/blockedusers/?blockedUser=653a33d1678ebe3224732363&isActive=true&isArchived=false
+  body: json
+  auth: bearer
+}
+
+params:query {
+  blockedUser: 653a33d1678ebe3224732363
+  isActive: true
+  isArchived: false
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name" : "Naveed Ilyas"
+  }
+}

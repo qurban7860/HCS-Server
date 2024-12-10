@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node app.js"
+    "start": "node app.js",
+    "debug": "npx nodemon --inspect app.js"
   },
   "plugins": [
     "react-hooks"
@@ -34,6 +35,7 @@
     "json2csv": "^6.0.0-alpha.2",
     "jsonwebtoken": "^9.0.0",
     "lodash": "^4.17.21",
+    "lz-string": "^1.5.0",
     "mailcomposer": "^4.0.2",
     "mongodb": "^6.1.0",
     "mongoose": "^5.13.20",
@@ -45,14 +47,14 @@
     "pdf-parse": "^1.1.1",
     "pm2": "^5.4.0",
     "sharp": "^0.32.1",
-    "soft-delete-plugin-mongoose": "^1.0.15",
     "swagger-ui-express": "^4.6.0",
     "template-file": "^6.0.1",
     "util": "^0.12.5",
     "uuid": "^3.4.0",
     "winston": "^3.8.2",
     "ws": "^8.14.2",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yup": "^1.4.0"
   },
   "devDependencies": {
     "@types/body-parser": "^1.19.2",

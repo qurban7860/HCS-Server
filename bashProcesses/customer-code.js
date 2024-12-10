@@ -23,7 +23,6 @@ async function main() {
       if(customer__) {
         customer__.clientCode = customer.Code;
         customer__ = await customer__.save();
-        console.log(customer__.clientCode)
       }
     }
   }

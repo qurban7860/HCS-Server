@@ -1,33 +1,29 @@
 //'use strict'
 
-const apiPath = process.env.API_ROOT;
-const customerRoute = require('./customerRoute');
-const customerSiteRoute = require('./customerSiteRoute');
-const customerContactRoute = require('./customerContactRoute');
-const customerNoteRoute = require('./customerNoteRoute');
-const departmentRoute = require('./departmentRoute');
-const customerRegistration = require('./customerRegistration');
+const publicRoutes = {
+    portalRegistrationRequestRoute: require('./public/portalRegistrationRequest'),
+}
+
+const protectedRoutes = {
+    portalRegistration: require('./protected/portalRegistration'),
+    customerRoute: require('./protected/customerRoute'),
+    customerSiteRoute: require('./protected/customerSiteRoute'),
+    customerContactRoute: require('./protected/customerContactRoute'),
+    customerNoteRoute: require('./protected/customerNoteRoute'),
+    departmentRoute: require('./protected/departmentRoute'),
+}
 
 exports.registerCustomerRoutes = (app, apiPath) => {
-    
-    const rootPathForModule = `${apiPath}/crm`
-
-    // localhost://api/1.0.0/crm
-    app.use(`${rootPathForModule}`, customerRegistration);
-
-    // localhost://api/1.0.0/crm/
-    app.use(`${rootPathForModule}`, customerRoute);
-    
-    // localhost://api/1.0.0/crm
-    app.use(`${rootPathForModule}`, customerSiteRoute);
-    
-    // localhost://api/1.0.0/crm
-    app.use(`${rootPathForModule}`, customerContactRoute);
-
-    // localhost://api/1.0.0/crm
-    app.use(`${rootPathForModule}`, customerNoteRoute);
-
-    // localhost://api/1.0.0/crm
-    app.use(`${rootPathForModule}`, departmentRoute);
-
-}
+    const rootPathForModule = `${apiPath}/crm`;
+  
+    // public/nonAuth routes mounted
+    Object.entries(publicRoutes).forEach(([name, router]) => {
+      app.use(`${rootPathForModule}/public`, router);
+    });
+  
+    // Mount protected routes with auth middleware
+    Object.entries(protectedRoutes).forEach(([name, router]) => {
+      app.use(`${rootPathForModule}`, router);
+    });
+  
+  };

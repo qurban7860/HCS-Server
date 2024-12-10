@@ -1,0 +1,23 @@
+meta {
+  name: MachineTechParamReports
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/techparamReport?pagination[page]=0&pagination[pageSize]=100&orderBy[machineModel.name]=-1&search[key]=ABU DHABI PRECAST&search[column]=customer.name
+  body: none
+  auth: bearer
+}
+
+params:query {
+  pagination[page]: 0
+  pagination[pageSize]: 100
+  orderBy[machineModel.name]: -1
+  search[key]: ABU DHABI PRECAST
+  search[column]: customer.name
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}

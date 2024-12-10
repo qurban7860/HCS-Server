@@ -1,0 +1,15 @@
+meta {
+  name: deleteTool
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/tools/64cc8c2224cc41af21aef1b4
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

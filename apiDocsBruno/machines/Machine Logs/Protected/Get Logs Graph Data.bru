@@ -1,0 +1,26 @@
+meta {
+  name: Get Logs Graph Data
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/productLogs/graph?type=erp&customer=64ae5b41ced4733723e0016a&periodType=Monthly
+  body: none
+  auth: bearer
+}
+
+params:query {
+  type: erp
+  customer: 64ae5b41ced4733723e0016a
+  periodType: Monthly
+  ~machine: 64ae5b41ced4733723e0016a
+}
+
+headers {
+  Authorization: Bearer {{token}}
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}

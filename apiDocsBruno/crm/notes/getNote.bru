@@ -1,0 +1,15 @@
+meta {
+  name: getNote
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/643651d65a1dfb01885fc6ea/notes/6439023250e670e4b2d8fb2d
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

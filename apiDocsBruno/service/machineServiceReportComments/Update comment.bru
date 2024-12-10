@@ -1,0 +1,23 @@
+meta {
+  name: Update comment
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/products/serviceReport/673336fbe588903ef2083841/serviceReportComments/67333a9d14f7e5814d07c0fa
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}
+
+body:json {
+  {
+      "comment": "fsdvsavgae",
+      "isActive": true,
+      "isArchived": false
+  }
+}

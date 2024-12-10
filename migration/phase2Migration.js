@@ -13,7 +13,6 @@ const sheetNames = workbook.SheetNames;
 // Get the data of "Sheet1"
 const machines = xlsx.utils.sheet_to_json(workbook.Sheets['Export']);
 
-console.log(machines);
 async function main() {
 
   	let createdByUser = await SecurityUser.findOne({login:'naveed@terminustech.co.nz'});
@@ -23,7 +22,6 @@ async function main() {
 			let serialNo = machine.EquipmentID;
 			if(typeof serialNo == 'string')
 				serialNo = machine.EquipmentID.trim();
-			console.log(serialNo);
 			if(!serialNo)
 				continue;
 			let name = machine.EquipmentDescription;
@@ -191,11 +189,7 @@ async function main() {
 				}				
 
 				insertMachine.status = "642607ab7ce0781e19dc2b22"
-				console.log(insertMachine);
-				// if(serialNo=='21039')
-				// 	process.exit();
 				dbMachine = await Product.create(insertMachine);
-
 
 			}
 			let keys = Object.keys(machine);

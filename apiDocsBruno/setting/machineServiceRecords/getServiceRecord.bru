@@ -1,0 +1,15 @@
+meta {
+  name: getServiceRecord
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/64ae5c68dc483f373399ba95/serviceRecords/65531834bf974e3534d53d60
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

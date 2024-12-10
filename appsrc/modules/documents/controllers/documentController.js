@@ -95,7 +95,7 @@ exports.getDocument = async (req, res, next) => {
 
 exports.getDocuments = async (req, res, next) => {
   
-  //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
+ //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
   //   if(user && ((user.regions && user.regions.length > 0)) ) {
   //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
@@ -129,6 +129,20 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.isVersionNeeded;
     }
 
+    if (this.query.searchKey && this.query.searchColumn) {
+      const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
+      if (this.query.searchColumn.includes(".")) {
+        const [parentField, childField] = this.query.searchColumn.split(".");
+        this.query[parentField] = {
+          [childField]: regexCondition
+        };
+      } else {
+        this.query[this.query.searchColumn] = regexCondition;
+      }
+      delete this.query.searchKey;
+      delete this.query.searchColumn;
+    }
+
       let basicInfo = false;
 
     if( this.query && ( this.query.basic == true || this.query.basic == 'true' )) {
@@ -157,10 +171,11 @@ exports.getDocuments = async (req, res, next) => {
       else if(this.query.forDrawing) 
         query = { drawing:true };
       if(query) {
-        let docCats = await DocumentCategory.find(query).select('_id').lean();
-        if(Array.isArray(docCats) && docCats.length>0) {
-          let docCatIds = docCats.map((dc)=>dc._id.toString());
-          this.query.docCategory = {'$in':docCatIds};
+        let docCats = await DocumentCategory.find({...query, ...( this.query.docCategory ? { _id: this.query.docCategory, isActive: true, isArchived: false } : { isActive: true, isArchived: false })}).select('_id').lean();
+
+        if (Array.isArray(docCats) && docCats.length > 0) {
+          let docCatIds = docCats.map((dc) => dc._id.toString());
+          this.query.docCategory = { $in: docCatIds };
           delete this.query.forCustomer;
           delete this.query.forMachine;
           delete this.query.forDrawing;
@@ -205,39 +220,70 @@ exports.getDocuments = async (req, res, next) => {
       }
       this.query.$or.push(...andString);
     }
+
+    const orCondition = [];
     
-    // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
-    let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
-
-    let assemblyDrawings = await Document.find({ ...this.query, docType: { $in: docTypes_ } })
-      .populate(this.populate)
-      .sort({ "createdAt": -1 })
-      .select(this.fields)
-      .lean();
-
-      const orCondition = [];
-  
-      if (this.query?.searchString) {
-        const regexCondition = { '$regex': escapeRegExp(this.query.searchString), '$options': 'i' };
-        orCondition.push({ name: regexCondition });
-        orCondition.push({ displayName: regexCondition });
-        orCondition.push({ referenceNumber: regexCondition });
-        orCondition.push({ stockNumber: regexCondition });
-        delete this.query.searchString;
-
-        if(orCondition?.length > 0) {
-          this.query.$or = orCondition;
-        }
+    if (this.query?.searchString) {
+      const regexCondition = { $regex: escapeRegExp(this.query.searchString), $options: 'i' };
+      orCondition.push({ name: regexCondition });
+      orCondition.push({ displayName: regexCondition });
+      orCondition.push({ referenceNumber: regexCondition });
+      orCondition.push({ stockNumber: regexCondition });
+      delete this.query.searchString;
+    
+      if (orCondition?.length > 0) {
+        this.query.$or = orCondition;
       }
+    }
 
-    let otherDocuments = await Document.find({ ...this.query, docType: { $nin: docTypes_ } })
-      .populate(this.populate)
-      .sort({ "createdAt": -1 })
-      .select(this.fields)
-      .lean();
+    // if (this.query.machine) {
+    //   let docMachines = await Product.find(this.query.machine).select('_id').lean();
+    //   if (Array.isArray(docMachines) && docMachines.length > 0) {
+    //     let docMachinesIds = docMachines.map((dc) => dc._id.toString());
+    //     this.query.machine = { $in: [this.query.machine] };
+    //   } else delete this.query.machine;
+    // }
 
-    let documents = assemblyDrawings.concat(otherDocuments);
+    // let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
+    // let docTypes_ = await DocumentType.find({
+    //   ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true })
+    // }).select('_id').lean();
+    
+    // if (Array.isArray(docTypes_) && docTypes_.length > 0) {
+    //   let docTypeIds = docTypes_.map((dc) => dc._id.toString());
+    //   this.query.docType = { $in: docTypeIds };
+    // } else {
+    //   delete this.query.docType;
+    // }
+    let docTypeIds = this.query.docType ? [this.query.docType] : [];
+    if (docTypeIds.length > 0) {
+      this.query.docType = { $in: docTypeIds };
+    } else {
+      delete this.query.docType;
+    }
 
+    let documents;
+
+    if (this.query.docType) {
+      // Single query for when when docType is specified
+      documents = await Document.find(this.query).populate(this.populate).sort({ createdAt: -1 }).select(this.fields).lean();
+    } else {
+      // This section is done to get all the documents of type assembly drawing at the front
+      let assemblyDrawings = await Document.find(this.query).populate(this.populate).sort({ createdAt: -1 }).select(this.fields).lean();
+
+      let otherDocuments = await Document.find({
+        ...this.query,
+        docType: { $nin: [...docTypeIds] },
+      })
+        .populate(this.populate)
+        .sort({ createdAt: -1 })
+        .select(this.fields)
+        .lean();
+
+      // Combine and remove duplicates for all results.
+      documents = [...new Map([...assemblyDrawings, ...otherDocuments].map((doc) => [doc._id.toString(), doc])).values()];
+    }
+    
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       const totalPages = Math.ceil(documents.length / pageSize);
@@ -245,8 +291,8 @@ exports.getDocuments = async (req, res, next) => {
       let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
       documents = documents.slice(skip, skip + pageSize);
-      
-      let listDocuments = {
+    
+      documents = {
         data: documents,
         ...(req.body.page && {
           totalPages: totalPages,
@@ -254,9 +300,8 @@ exports.getDocuments = async (req, res, next) => {
           pageSize: pageSize,
           totalCount: totalCount
         })
-      }
-      documents = listDocuments;
-    }
+      };
+    }    
 
     const documents__ = documents;
     documents = documents.data;
@@ -292,9 +337,13 @@ exports.getDocuments = async (req, res, next) => {
               documentVersions = [documentVersion]
             }
 
-            if(isDrawing) {
-              document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1, serialNo: 1}).populate({ path: "machine", select: "serialNo" });
-              document_.productDrawings.serialNumbers = document_.productDrawings.map(item => item?.machine?.serialNo).join(', ');
+            if (isDrawing) {
+              document_.productDrawings = await ProductDrawing.find({ document: document_._id, isActive: true, isArchived: false }, { machine: 1, serialNo: 1 }).populate({
+                path: "machine",
+                select: "serialNo",
+              });
+              
+              // document_.productDrawings.serialNumbers = document_.productDrawings.map((item) => item?.machine?.serialNo).join(", ");
             }
             document_.documentVersions = documentVersions;
           }
@@ -571,7 +620,7 @@ exports.putDocumentFilesETag = async (req, res, next) => {
 };
 
 
-exports.getdublicateDrawings = async (req, res, next) => {
+exports.getduplicateDrawings = async (req, res, next) => {
   try {
     const filteredFiles = await DocumentFile.aggregate([
       {

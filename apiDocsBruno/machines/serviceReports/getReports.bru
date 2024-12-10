@@ -1,0 +1,19 @@
+meta {
+  name: getReports
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/66acc461e216570d2a07286a/serviceReports?isArchived=false
+  body: none
+  auth: bearer
+}
+
+params:query {
+  isArchived: false
+}
+
+auth:bearer {
+  token: {{token}}
+}

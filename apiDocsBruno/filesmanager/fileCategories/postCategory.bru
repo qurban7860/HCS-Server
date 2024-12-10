@@ -1,0 +1,21 @@
+meta {
+  name: postCategory
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/filemanager/categories/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  { 
+      "name": "Category A"
+  }
+}

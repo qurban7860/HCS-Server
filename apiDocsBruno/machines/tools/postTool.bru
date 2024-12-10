@@ -1,0 +1,24 @@
+meta {
+  name: postTool
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/tools/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "4t2h Tool",
+      "description": "Description",
+      "isActive": true,
+      "isArchived": true
+  }
+}

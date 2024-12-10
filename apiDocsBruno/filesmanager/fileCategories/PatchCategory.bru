@@ -1,0 +1,21 @@
+meta {
+  name: PatchCategory
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/filemanager/categories/647d8375e85ca661138046b9
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Category C"
+  }
+}

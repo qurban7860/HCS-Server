@@ -24,7 +24,7 @@ const docSchema = new Schema({
         customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
         // customer
 
-        apiType: {type: String, enum: ['INI', 'OTHER'], default: 'OTHER'},
+        apiType: {type: String, enum: ['INI', 'MACHINE-INTEGRATION', 'MACHINE-LOGS', 'OTHER'], default: 'OTHER'},
 
         refUUID: { type: Schema.Types.ObjectId},
 

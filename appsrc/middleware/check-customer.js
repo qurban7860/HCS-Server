@@ -4,8 +4,13 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 let rtnMsg = require('../modules/config/static/static')
 const { SecurityUser } = require('../modules/security/models');
 const _ = require('lodash');
+const logger = require('../modules/config/logger');
+
 
 module.exports = (req, res, next) => {
+  if (req.headers["x-portal-key"] && req.headers["x-machine-serial-no"] && req.headers["x-ipc-serial-no"] && req.headers["x-computer-guid"]) {
+    return next();
+  }
   if (req.method === 'OPTIONS' || 
   req.url.toLowerCase() === '/gettoken' || 
   req.url.toLowerCase() === '/forgetpassword' || 
@@ -30,7 +35,7 @@ module.exports = (req, res, next) => {
         if (!record) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer not found!', true));
         } else {
-            if (_.isEmpty(record.customer) || record.customer.type != 'SP' || record.customer.isActive == false || record.customer.isArchived == true) {
+            if (_.isEmpty(record.customer) || record.customer.isActive == false || record.customer.isArchived == true) {
               res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer verifcation failed!', true));
             }else{
               next();
@@ -39,8 +44,7 @@ module.exports = (req, res, next) => {
       });
     }    
   } catch (err) {
-    console.log(err);
-    console.log('middleware 21---------------------------');
+    logger.error(new Error(err));
     const error = new HttpError('Authentication failed!', 403);
     return next(error);
   }

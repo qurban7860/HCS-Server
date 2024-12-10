@@ -86,13 +86,23 @@ exports.deleteEmail = async (req, res, next) => {
   }
 };
 
+const newEmailLog = async (req) => {
+    try {
+      return await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+    } catch (error) {
+      throw new Error("Email Log Save Failed!");
+    }
+};
+
+exports.newEmailLog = newEmailLog;
+
 exports.postEmail = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+      const response = await newEmailLog( req );
       res.status(StatusCodes.CREATED).json({ Email: response });
     } catch (error) {
       logger.error(new Error(error));

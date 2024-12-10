@@ -1,0 +1,15 @@
+meta {
+  name: getContact
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/640f20882b6cfb6f0a58eb87/contacts/655c3f360ea7904d88fc5651
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

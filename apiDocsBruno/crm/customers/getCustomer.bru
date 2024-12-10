@@ -1,0 +1,19 @@
+meta {
+  name: getCustomer
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/640f20882b6cfb6f0a58eb87?flag=basic
+  body: none
+  auth: bearer
+}
+
+params:query {
+  flag: basic
+}
+
+auth:bearer {
+  token: {{token}}
+}

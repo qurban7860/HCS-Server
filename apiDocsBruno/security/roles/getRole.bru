@@ -1,0 +1,15 @@
+meta {
+  name: getRole
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/security/roles/63ee11e1fc59555968adae96
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

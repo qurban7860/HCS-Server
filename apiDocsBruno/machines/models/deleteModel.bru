@@ -1,0 +1,15 @@
+meta {
+  name: deleteModel
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/models/63e59a4d51cfdba990e9368d
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

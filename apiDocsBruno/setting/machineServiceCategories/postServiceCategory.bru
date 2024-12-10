@@ -1,0 +1,24 @@
+meta {
+  name: postServiceCategory
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/CheckItemCategories/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Category C",
+      "description":"Description for category B",
+      "isActive" : true,
+      "isArchived" : false
+  }
+}

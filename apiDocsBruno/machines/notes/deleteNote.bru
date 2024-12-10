@@ -1,0 +1,15 @@
+meta {
+  name: deleteNote
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/machines/64202a86ebad86149771a32a/notes/6461c466b3b0a643f4658b0e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

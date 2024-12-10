@@ -13,7 +13,6 @@ const sheetNames = workbook.SheetNames;
 // Get the data of "Sheet1"
 const machines = xlsx.utils.sheet_to_json(workbook.Sheets['Export']);
 
-console.log(machines);
 async function main() {
 
 	for(let machine of machines) {

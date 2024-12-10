@@ -1,0 +1,20 @@
+meta {
+  name: getUsers
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/security/users/?roleType=Support&roleType=Support
+  body: none
+  auth: bearer
+}
+
+params:query {
+  roleType: Support
+  roleType: Support
+}
+
+auth:bearer {
+  token: {{token}}
+}

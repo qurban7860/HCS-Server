@@ -1,0 +1,33 @@
+meta {
+  name: patchSupplier
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/suppliers/63ed9e102f965840a8bb6523
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Howick Limited test 122",
+      "contactName":"Naveed Alyas test",
+      "contactTitle": "Team Lead",
+      "phone": "3455354543543;78787",
+      "email": "naveed.alyas@howickltd.com",
+      "website": "www.howickltd.com",
+      "address":{
+          "street": "118 vincent street",
+          "suburb": "howick",
+          "city": "auckland",
+          "region": "auckland",
+          "country": "NZ"
+      }
+  }
+}

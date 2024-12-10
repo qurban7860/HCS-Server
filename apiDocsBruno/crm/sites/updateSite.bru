@@ -1,0 +1,37 @@
+meta {
+  name: updateSite
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/crm/customers/63ef5f45d1ae7c308ce73720/sites/63f51351adb70d3ee84f03fd
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name": "Site ffff",
+      "phone": "+92-345-7399098",
+      "email": "harisahmaad@gmail.com",
+      "fax": "+92 65 2556028",
+      "website": "www.gmail.com",
+      "address": {
+          "street": "12",
+          "suburb": "13",
+          "city": "NJ",
+          "region": "NJ",
+          "postcode": "58150",
+          "country": "USA",
+          "latitude" : "120898",
+          "longitude" : "77989"
+      },
+      "isActive": false,
+      "isArchived": false
+  }
+}

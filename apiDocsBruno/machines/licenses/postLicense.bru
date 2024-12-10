@@ -1,0 +1,33 @@
+meta {
+  name: postLicense
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/products/machines/64f1c2849e9bdf093cd50073/licenses/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "machine": "64f1c2849e9bdf093cd50073",
+      "licenseKey": "your_license_key_here",
+      "licenseDetail": {
+          "version": "license_version_here",
+          "type": "license_type_here",
+          "deviceName": "device_name_here",
+          "deviceGUID": "device_guid_here",
+          "production": 123,
+          "waste": 456,
+          "extensionTime": "2023-09-04T12:00:00Z",
+          "requestTime": "2023-09-04T12:00:00Z"
+      }
+  }
+  
+}

@@ -130,7 +130,7 @@ class App {
     this.app.use(errorHandler);
   }
 
-  registerRoutes(){    
+  registerRoutes(){
     productRoutes.registerProductRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);

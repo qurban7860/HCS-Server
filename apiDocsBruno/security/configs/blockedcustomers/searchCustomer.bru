@@ -1,0 +1,25 @@
+meta {
+  name: searchCustomer
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/security/configs/blockedcustomers/
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~name: Naveed Ilyas
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name" : "Naveed Ilyas"
+  }
+}

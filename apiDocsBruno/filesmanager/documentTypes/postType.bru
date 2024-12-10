@@ -1,0 +1,22 @@
+meta {
+  name: postType
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/filemanager/documentType/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "name" : "Parts Catalogs",
+      "desc" : ""
+  }
+}

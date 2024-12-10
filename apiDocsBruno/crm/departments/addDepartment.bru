@@ -1,0 +1,21 @@
+meta {
+  name: addDepartment
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/crm/departments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "departmentName": "BSCS"
+  }
+}

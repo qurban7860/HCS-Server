@@ -1,0 +1,15 @@
+meta {
+  name: deleteStatus
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/products/statuses/63ed988e2f965840a8bb650a
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

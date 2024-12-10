@@ -25,9 +25,6 @@ async function main() {
 					country: parsedNumber.country
 				}
 				parsedNumbers.push(phoneNumber);
-				console.log("Country Code:", parsedNumber.countryCallingCode);
-				console.log("Number:", parsedNumber.nationalNumber);
-				console.log();
 				let arrayList = [];
 				arrayList.push(phoneNumber);
 				await CustomerSite.updateOne({_id: site._id},{$set: {phoneNumbers: arrayList}});
@@ -38,15 +35,9 @@ async function main() {
 					phone: site.phone
 				}
 				unparsedNumbers.push(phoneNumber_);
-				console.log("********", site.phone);
 			}
-
-			// const { countryCode, phoneNumber } = splitPhoneNumber(site.phone.replace(/-/g, ' '));
-			// console.log(site.phone);
 		}
  	 }
-	  console.log(parsedNumbers.length, parsedNumbers);
-	  console.log(unparsedNumbers.length, unparsedNumbers);
 	 
   
 
@@ -63,21 +54,7 @@ function splitPhoneNumber(phone) {
 		phoneNumber: match[2]
 	  };
 	} else {
-        // if (phone.length >= 12) {
-		// 	console.log("phone ---****", phone);
-        //     return {
-        //         countryCode: phone.substring(0, 3),
-        //         phoneNumber: phone.substring(3)
-        //     };
-        // } else {
-		// 	console.log("phone --->", phone);
-        //     return {
-        //         countryCode: '',
-        //         phoneNumber: ''
-        //     };
-        // }
-
-		            return {
+		    return {
                 countryCode: '',
                 phoneNumber: ''
             };

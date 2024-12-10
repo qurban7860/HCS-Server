@@ -24,11 +24,12 @@ this.populate = [
 
 
 this.populateList = [
-  {path: 'user', select: 'name email login roles', 
-    populate: {
-      path: 'roles',
-      select: '_id name'
-    }
+  {path: 'user', select: 'name email login customer contact roles', 
+    populate: [
+      { path: "customer", select: "name type " },
+      { path: "contact", select: "firstName lastName" },
+      { path: 'roles', contact: '_id name' }
+    ] 
   }
 ];
 
@@ -46,52 +47,42 @@ exports.getSecuritySignInLog = async (req, res, next) => {
 };
 
 exports.getSecuritySignInLogs = async (req, res, next) => {
+  this.query = req.query != "undefined" ? req.query : {};
 
-  // this.populateList = [
-  //   {path: 'user', select: 'name email login roles', 
-  //     populate: {
-  //       path: 'roles',
-  //       select: '_id name'
+  // var aggregate = [
+  //   {
+  //     $lookup: {
+  //       from: "SecurityUsers",
+  //       localField: "user",
+  //       foreignField: "_id",
+  //       as: "user"
+  //     },
+  //   },
+  //   {
+  //     $unwind: "$user"
+  //   },
+  //   {
+  //     $lookup: {
+  //       from: "SecurityRoles",
+  //       localField: "user.roles",
+  //       foreignField: "_id",
+  //       as: "user.roles"
+  //     }
+  //   },
+  //   {
+  //     $match: {
+  //       "user.roles.name": { $nin: ["Developer", "developer"] }
+  //     }
+  //   },
+  //   {
+  //     $sort: {
+  //       "loginTime": -1
   //     }
   //   }
   // ];
-
-  var aggregate = [
-    {
-      $lookup: {
-        from: "SecurityUsers",
-        localField: "user",
-        foreignField: "_id",
-        as: "user"
-      },
-    },
-    {
-      $unwind: "$user"
-    },
-    {
-      $lookup: {
-        from: "SecurityRoles",
-        localField: "user.roles",
-        foreignField: "_id",
-        as: "user.roles"
-      }
-    },
-    {
-      $match: {
-        "user.roles.name": { $nin: ["Developer", "developer"] }
-      }
-    },
-    {
-      $sort: {
-        "loginTime": -1
-      }
-    }
-  ];
   
-  
-  var params = {};
-  // this.dbservice.getObjectList(req, SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
-  this.dbservice.getObjectListWithAggregate(SecuritySignInLog, aggregate, params, callbackFunc);
+  this.dbservice.getObjectList(req, SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  // this.dbservice.getObjectListWithAggregate(SecuritySignInLog, aggregate, params, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -138,7 +129,6 @@ exports.searchSignInLogs = async (req, res, next) => {
           
           for(let signInLog of signInLogs) {
             let name = signInLog.user.name.toLowerCase();
-            console.log(name,searchName,name.search(searchName.toLowerCase()));
             if(name.search(searchName.toLowerCase())>-1) {
               filterSignInLogs.push(signInLog);
             }

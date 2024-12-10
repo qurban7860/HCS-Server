@@ -1,0 +1,25 @@
+meta {
+  name: getblacklistip
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/security/configs/blacklistips/
+  body: json
+  auth: bearer
+}
+
+params:query {
+  ~name: Naveed Ilyas
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      
+  }
+}

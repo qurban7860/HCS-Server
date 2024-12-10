@@ -27,12 +27,12 @@ const docSchema = new Schema({
 
         notifyContacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact', required: true }], // All Contacts Howick
 
-        status: {
-                type: String,
-                enum: ['SCHEDULED', 'IN_PROCESS', 'COMPLETED', 'CANCELLED'],
-                default: 'SCHEDULED'
-        },
+        status: {  type: String },
 
+        // status: {  type: String,
+        //         enum: ['SCHEDULED', 'IN_PROCESS', 'COMPLETED', 'CANCELLED'],
+        //         default: 'SCHEDULED'
+        // },
 
         description: { type: String, maxlength: 500 },
 

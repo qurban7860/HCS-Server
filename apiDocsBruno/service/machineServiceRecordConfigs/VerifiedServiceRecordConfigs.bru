@@ -1,0 +1,21 @@
+meta {
+  name: VerifiedServiceRecordConfigs
+  type: http
+  seq: 6
+}
+
+patch {
+  url: {{baseUrl}}/products/serviceRecordsConfig/6544abd4ff4f1559dcb86f91
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+  "isVerified": true
+  }
+}

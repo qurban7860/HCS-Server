@@ -1,0 +1,24 @@
+meta {
+  name: postuser
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/security/configs/blockedusers
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "blockedUser": "6434d58fdff6eb0d216aeaa0",
+      "isActive": true,
+      "isArchived": false
+  }
+  
+}

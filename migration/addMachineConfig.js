@@ -27,7 +27,6 @@ async function main() {
 	let createdByUser = await SecurityUser.findOne({login:'naveed@terminustech.co.nz'});
 	for(let machine of machines) {
 		let machineDB = await Product.findOne({serialNo:machine.SerialNumber});
-		console.log(machineDB.serialNo,machineDB.id);
 		if(machineDB) {
 			for(let validConfig of validConfigs) {
 				let configValue = machine[validConfig.name];

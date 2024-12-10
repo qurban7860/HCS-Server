@@ -1,0 +1,15 @@
+meta {
+  name: logout
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/security/logout/6524d944b2f49f06297364ce
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

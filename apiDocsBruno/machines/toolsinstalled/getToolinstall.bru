@@ -1,0 +1,15 @@
+meta {
+  name: getToolinstall
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/machines/6555c00b7889406abce19b4d/toolsinstalled/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

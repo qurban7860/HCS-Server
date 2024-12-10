@@ -1,0 +1,24 @@
+meta {
+  name: postblacklistip
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/security/configs/Blacklistips
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "blackListIP": "212.163.76.55",
+      "isActive": true,
+      "isArchived": false
+  }
+  
+}
