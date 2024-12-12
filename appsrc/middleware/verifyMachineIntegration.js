@@ -8,10 +8,10 @@ const verifyMachineAuth = async (req, res, next) => {
   }
   try {
     const { 
-      "x-machine-serial-no": machineSerialNo,
-      "x-computer-guid": computerGUID,
-      "x-ipc-serial-no": IPCSerialNo,
-      "x-portal-key": howickPortalKey
+      "x-machineSerialNo": machineSerialNo,
+      "x-computerGUID": computerGUID,
+      "x-IPCSerialNo": IPCSerialNo,
+      "x-howickPortalKey": howickPortalKey
     } = req.headers;
     const transferredStatus = await ProductStatus.findOne({ name: 'Transferred' });
     const decommissionedStatus = await ProductStatus.findOne({ name: 'Decommissioned' });
