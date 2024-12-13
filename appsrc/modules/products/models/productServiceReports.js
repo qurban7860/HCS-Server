@@ -49,7 +49,7 @@ const docSchema = new Schema({
   serviceNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
   //some notes regarding service/installation/training,
 
-  reportSubmission: { type: Boolean, default: true },
+  reportSubmition: { type: Boolean, default: true },
   // is service report submitted online or offline?
   
   recommendationNote: [{ type: Schema.Types.ObjectId , ref: 'MachineServiceReportNotes' }],
@@ -83,12 +83,12 @@ const docSchema = new Schema({
     approvingContacts: [{ type: Schema.Types.ObjectId, ref: "CustomerContact", default: [] }],
     // contacts who are approving this Report. They have been sent an approving email
 
-    approvalLogs: {
+    approvalHistory: {
       type: [{
-        evaluatedBy: { type: Schema.Types.ObjectId, ref: "CustomerContact", default: null },
+        updatedBy: { type: Schema.Types.ObjectId, ref: "CustomerContact", default: null },
         // contact who approved/rejected the service Report
 
-        evaluationDate: { type: Date, default: null },
+        updatedAt: { type: Date, default: null },
         // date when the service Report was approved/rejected 
         
         comments: { type: String, default: "" },
@@ -121,19 +121,19 @@ docSchema.index({"isArchived":1})
 
 // Virtual for currentApprovalStatus
 docSchema.virtual('currentApprovalStatus').get(function() {
-  if (this.approval?.approvalLogs?.length > 0) {
-    return this.approval.approvalLogs[0].status;
+  if (this.approval?.approvalHistory?.length > 0) {
+    return this.approval.approvalHistory[0].status;
   }
   return "PENDING";
 });
 
 // Method to add a new approval log
-docSchema.methods.addApprovalLog = function ({ evaluatedBy, status, comments = "", evaluationDate = new Date() }) {
-  if (!evaluatedBy || !["APPROVED", "REJECTED", "PENDING"].includes(status)) {
-    throw new Error("Invalid logData: evaluatedBy and valid status are required");
+docSchema.methods.addApprovalLog = function ({ updatedBy, status, comments = "", updatedAt = new Date() }) {
+  if (!updatedBy || !["APPROVED", "REJECTED", "PENDING"].includes(status)) {
+    throw new Error("Invalid logData: updatedBy and, valid status is required");
   }
 
-  this.approval.approvalLogs.unshift({ evaluatedBy, status, comments, evaluationDate });
+  this.approval.approvalHistory.unshift({ updatedBy, status, comments, updatedAt });
   return this.save();
 };
 

@@ -154,8 +154,8 @@ const getProductServiceReportData = async ( req ) => {
 
 
     const completeEvaluationHistory = await ProductServiceReports.findById( req.params.id )
-      .select("approval.approvalLogs")
-      .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
+      .select("approval.approvalHistory")
+      .populate("approval.approvalHistory.updatedBy", "firstName lastName")
       .lean()
 
     parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
@@ -173,7 +173,7 @@ const getProductServiceReportData = async ( req ) => {
     }
 
     await ProductServiceReports.populate(parsedResponse, {
-      path: 'approval.approvalLogs.evaluatedBy',
+      path: 'approval.approvalHistory.updatedBy',
       select: 'firstName lastName',
     });
 
@@ -652,22 +652,27 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
 };
 
 exports.evaluateServiceReport = async (req, res, next) => {
+  try{
   const errors = validationResult(req);
-  const evaluationData = req.body?.evaluationData;
+  const evaluationData = {
+    updatedBy: req.body?.updatedBy,
+    updatedAt: req.body?.updatedAt,
+
+  }
   let reqError = true;
 
   const productServiceReport = await ProductServiceReports.findById(req.params.id);
 
-  const evaluationUserEmail = await customerContact.findById(evaluationData.evaluatedBy, "email");
+  const evaluationUserEmail = await customerContact.findById(evaluationData.updatedBy, "email");
   const contactsWithApproval = await Config.findOne({
     name: "Approving_Contacts",
   });
-
+  console.log('evaluationUserEmail : ',evaluationUserEmail)
   const spCustomerContacts = await getAllSPCustomerContacts()
 
   if (
     productServiceReport?.approval?.approvingContacts?.length > 0 &&
-    productServiceReport?.approval?.approvingContacts?.includes(evaluationData?.evaluatedBy) &&
+    productServiceReport?.approval?.approvingContacts?.includes(evaluationData?.updatedBy) &&
     (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
       spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
   ) {
@@ -684,6 +689,10 @@ exports.evaluateServiceReport = async (req, res, next) => {
     res.status(StatusCodes.OK).send(response);
   } else {
     res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Report template not found!", true));
+  }
+  } catch( error ){
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 };
 
@@ -819,7 +828,7 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
     params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
-    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems, reportSubmission,
+    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems, reportSubmition,
     // technicianNotes, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
   
@@ -925,8 +934,8 @@ function getDocumentFromReq(req, reqType){
     doc.textAfterCheckItems = textAfterCheckItems;
   }
 
-  if ("reportSubmission" in req.body){
-    doc.reportSubmission = reportSubmission;
+  if ("reportSubmition" in req.body){
+    doc.reportSubmition = reportSubmition;
   }
 
   if("isReportDocsOnly" in req.body ){
