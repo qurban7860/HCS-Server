@@ -653,43 +653,34 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
 
 exports.evaluateServiceReport = async (req, res, next) => {
   try{
-  const errors = validationResult(req);
-  const evaluationData = {
-    updatedBy: req.body?.updatedBy,
-    updatedAt: req.body?.updatedAt,
+    let reqError = true;
+    const errors = validationResult(req);
+    const evaluationData = req.body?.evaluationData;
+    const productServiceReport = await ProductServiceReports.findById(req.params.id);
+    const evaluationUserEmail = await customerContact.findById(evaluationData.updatedBy, "email");
+    const contactsWithApproval = await Config.findOne({ name: "Approving_Contacts" });
+    const spCustomerContacts = await getAllSPCustomerContacts();
 
-  }
-  let reqError = true;
+    if (
+      productServiceReport?.approval?.approvingContacts?.length > 0 &&
+      productServiceReport?.approval?.approvingContacts?.includes(evaluationData?.updatedBy) &&
+      (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
+        spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
+    ) {
+      reqError = false;
+    }
 
-  const productServiceReport = await ProductServiceReports.findById(req.params.id);
+    if (!errors.isEmpty() || reqError) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
 
-  const evaluationUserEmail = await customerContact.findById(evaluationData.updatedBy, "email");
-  const contactsWithApproval = await Config.findOne({
-    name: "Approving_Contacts",
-  });
-  console.log('evaluationUserEmail : ',evaluationUserEmail)
-  const spCustomerContacts = await getAllSPCustomerContacts()
-
-  if (
-    productServiceReport?.approval?.approvingContacts?.length > 0 &&
-    productServiceReport?.approval?.approvingContacts?.includes(evaluationData?.updatedBy) &&
-    (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
-      spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
-  ) {
-    reqError = false;
-  }
-
-  if (!errors.isEmpty() || reqError) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
-
-  if (productServiceReport) {
-    await productServiceReport.addApprovalLog({ ...evaluationData });
-    const response = await getProductServiceReportData( req )
-    res.status(StatusCodes.OK).send(response);
-  } else {
-    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Report template not found!", true));
-  }
+    if (productServiceReport) {
+      await productServiceReport.addApprovalLog({ ...evaluationData });
+      const response = await getProductServiceReportData( req )
+      res.status(StatusCodes.OK).send(response);
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Report template not found!", true));
+    }
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
