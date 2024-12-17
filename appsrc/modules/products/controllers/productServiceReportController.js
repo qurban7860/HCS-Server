@@ -152,14 +152,6 @@ const getProductServiceReportData = async ( req ) => {
     
     let parsedResponse = JSON.parse(JSON.stringify(response));
 
-
-    const completeEvaluationHistory = await ProductServiceReports.findById( req.params.id )
-      .select("approval.approvalHistory")
-      .populate("approval.approvalHistory.updatedBy", "firstName lastName")
-      .lean()
-
-    parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
-
     if (parsedResponse && Array.isArray(parsedResponse.decoilers) && parsedResponse.decoilers.length > 0) {
       parsedResponse.decoilers = await Product.find({ _id: { $in: parsedResponse.decoilers }, isActive: true, isArchived: false });
     }
