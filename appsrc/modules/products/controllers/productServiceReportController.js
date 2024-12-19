@@ -437,7 +437,7 @@ exports.sendToDraftServiceReport = async (req, res, next) => {
     
     await productServiceReport.updateOne({ status: draftStatus?.[0]?._id, "approval.isEdited": true });
 
-    const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject);
+    const response = await getProductServiceReportData(req);
 
     return res.status(StatusCodes.OK).json({ message: "Service report status updated successfully!", data: response });
   } catch(error) {
