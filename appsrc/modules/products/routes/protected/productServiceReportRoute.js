@@ -28,6 +28,8 @@ router.post(`${baseRouteForObject}/:id/sendApprovalEmail`, controller.sendServic
 
 router.post(`${baseRouteForObject}/:id/approveReport`, controller.evaluateServiceReport);
 
+router.get(`${baseRouteForObject}/:id/sendToDraft`, controller.sendToDraftServiceReport);
+
 router.patch(`${baseRouteForObject}/:id/status/`, controller.changeProductServiceReportStatus);
 
 router.patch(`${baseRouteForObject}/:id`, [verifyDelete,upload.single('document')], controller.patchProductServiceReport);
