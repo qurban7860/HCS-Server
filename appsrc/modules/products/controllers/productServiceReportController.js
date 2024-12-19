@@ -152,14 +152,6 @@ const getProductServiceReportData = async ( req ) => {
     
     let parsedResponse = JSON.parse(JSON.stringify(response));
 
-
-    const completeEvaluationHistory = await ProductServiceReports.findById( req.params.id )
-      .select("approval.approvalLogs")
-      .populate("approval.approvalLogs.evaluatedBy", "firstName lastName")
-      .lean()
-
-    parsedResponse.completeEvaluationHistory = completeEvaluationHistory;
-
     if (parsedResponse && Array.isArray(parsedResponse.decoilers) && parsedResponse.decoilers.length > 0) {
       parsedResponse.decoilers = await Product.find({ _id: { $in: parsedResponse.decoilers }, isActive: true, isArchived: false });
     }
@@ -173,8 +165,8 @@ const getProductServiceReportData = async ( req ) => {
     }
 
     await ProductServiceReports.populate(parsedResponse, {
-      path: 'approval.approvalLogs.evaluatedBy',
-      select: 'firstName lastName',
+      path: 'approval.approvalHistory.updatedBy',
+      select: 'name',
     });
 
     const serviceReportDocsQuery = { serviceReport: { $in: req.params.id }, isArchived: false, isReportDoc: true };
@@ -429,6 +421,31 @@ exports.postProductServiceReport = async (req, res, next) => {
 }
 
 
+exports.sendToDraftServiceReport = async (req, res, next) => {
+  try{
+
+    const productServiceReport = await ProductServiceReports.findById(req.params.id);
+    if(!productServiceReport?._id){
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
+    }
+
+    if(!productServiceReport?.isActive){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
+    }
+
+    const draftStatus = await ProductServiceReportStatuses.find({ name: "Draft" }).lean();
+    
+    await productServiceReport.updateOne({ status: draftStatus?.[0]?._id, "approval.isEdited": true });
+
+    const response = await getProductServiceReportData(req);
+
+    return res.status(StatusCodes.OK).json({ message: "Service report status updated successfully!", data: response });
+  } catch(error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!" ); 
+  }
+}
+
 exports.changeProductServiceReportStatus = async (req, res, next) => {
   try{
     // const errors = validationResult(req);
@@ -451,9 +468,9 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
     }
  
-    if( !req.params.machineId && productServiceReport?.status?.name?.toLowerCase() !== "submitted" && statusVal?.name?.toLowerCase() !== "under review" ){
-      return res.status(StatusCodes.BAD_REQUEST).send("Service report status can be changed to under review only!");
-    } 
+    // if( !req.params.machineId && productServiceReport?.status?.name?.toLowerCase() !== "submitted" && statusVal?.name?.toLowerCase() !== "under review" ){
+    //   return res.status(StatusCodes.BAD_REQUEST).send("Service report status can be changed to under review only!");
+    // } 
     delete req.params.machineId
     Object.keys(req.body)?.forEach(field => {
       if ( field !== "loginUser" && field !== "status" ) {
@@ -652,38 +669,43 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
 };
 
 exports.evaluateServiceReport = async (req, res, next) => {
-  const errors = validationResult(req);
-  const evaluationData = req.body?.evaluationData;
-  let reqError = true;
+  try{
+    let reqError = true;
+    const errors = validationResult(req);
+    const userId = req.body?.loginUser?.userId
+    const evaluationData = req.body?.evaluationData;
+    const productServiceReport = await ProductServiceReports.findById(req.params.id);
+    const userContact = await SecurityUser.findById(userId).populate({
+      path: 'contact',
+      select: 'email'
+    }).select("contact").lean();
+    const contactsWithApproval = await Config.findOne({ name: "Approving_Contacts" });
+    const spCustomerContacts = await getAllSPCustomerContacts();
 
-  const productServiceReport = await ProductServiceReports.findById(req.params.id);
+    if (
+      productServiceReport?.approval?.approvingContacts?.length > 0 &&
+      productServiceReport?.approval?.approvingContacts?.includes(userContact?.contact?._id) &&
+      (contactsWithApproval?.value?.toLowerCase().includes(userContact?.contact?.email.toLowerCase()) ||
+        spCustomerContacts.some((contact) => contact.email.toLowerCase() === userContact?.contact?.email.toLowerCase()))
+    ) {
+      reqError = false;
+    }
 
-  const evaluationUserEmail = await customerContact.findById(evaluationData.evaluatedBy, "email");
-  const contactsWithApproval = await Config.findOne({
-    name: "Approving_Contacts",
-  });
+    if (!errors.isEmpty() || reqError) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
 
-  const spCustomerContacts = await getAllSPCustomerContacts()
-
-  if (
-    productServiceReport?.approval?.approvingContacts?.length > 0 &&
-    productServiceReport?.approval?.approvingContacts?.includes(evaluationData?.evaluatedBy) &&
-    (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
-      spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
-  ) {
-    reqError = false;
-  }
-
-  if (!errors.isEmpty() || reqError) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
-
-  if (productServiceReport) {
-    await productServiceReport.addApprovalLog({ ...evaluationData });
-    const response = await getProductServiceReportData( req )
-    res.status(StatusCodes.OK).send(response);
-  } else {
-    res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Report template not found!", true));
+    if (productServiceReport) {
+      await productServiceReport.addApprovalLog({ ...evaluationData, updatedBy: userId, updatedAt: new Date() });
+      await productServiceReport.updateOne({ "approval.isEdited": false });
+      const response = await getProductServiceReportData( req )
+      res.status(StatusCodes.OK).send(response);
+    } else {
+      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Report template not found!", true));
+    }
+  } catch( error ){
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 };
 
@@ -819,7 +841,7 @@ function getDocumentFromReq(req, reqType){
   const { 
     serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
     params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
-    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems, reportSubmission,
+    decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems, reportSubmition,
     // technicianNotes, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
   
@@ -925,8 +947,8 @@ function getDocumentFromReq(req, reqType){
     doc.textAfterCheckItems = textAfterCheckItems;
   }
 
-  if ("reportSubmission" in req.body){
-    doc.reportSubmission = reportSubmission;
+  if ("reportSubmition" in req.body){
+    doc.reportSubmition = reportSubmition;
   }
 
   if("isReportDocsOnly" in req.body ){
