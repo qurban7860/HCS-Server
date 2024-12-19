@@ -85,8 +85,8 @@ const docSchema = new Schema({
 
     approvalHistory: {
       type: [{
-        updatedBy: { type: Schema.Types.ObjectId, ref: "CustomerContact", default: null },
-        // contact who approved/rejected the service Report
+        updatedBy: { type: Schema.Types.ObjectId, ref: "SecurityUser", default: null },
+        // user who approved/rejected the service Report
 
         updatedAt: { type: Date, default: null },
         // date when the service Report was approved/rejected 
@@ -98,7 +98,9 @@ const docSchema = new Schema({
         // current approval status of the service Report
       }],
       default: []
-    } 
+    },
+    isEdited: { type: Boolean, default: false },
+    // indicates if the report has been edited
   },
   // approval status of this Report.
 },
@@ -121,7 +123,7 @@ docSchema.index({"isArchived":1})
 
 // Virtual for currentApprovalStatus
 docSchema.virtual('currentApprovalStatus').get(function() {
-  if (this.approval?.approvalHistory?.length > 0) {
+  if (this.approval?.approvalHistory?.length > 0 && !this.approval.isEdited) {
     return this.approval.approvalHistory[0].status;
   }
   return "PENDING";
@@ -130,7 +132,7 @@ docSchema.virtual('currentApprovalStatus').get(function() {
 // Method to add a new approval log
 docSchema.methods.addApprovalLog = function ({ updatedBy, status, comments = "", updatedAt = new Date() }) {
   if (!updatedBy || !["APPROVED", "REJECTED", "PENDING"].includes(status)) {
-    throw new Error("Invalid logData: updatedBy and, valid status is required");
+    throw new Error("Invalid logData: updatedBy and valid status is required");
   }
 
   this.approval.approvalHistory.unshift({ updatedBy, status, comments, updatedAt });

@@ -166,7 +166,7 @@ const getProductServiceReportData = async ( req ) => {
 
     await ProductServiceReports.populate(parsedResponse, {
       path: 'approval.approvalHistory.updatedBy',
-      select: 'firstName lastName',
+      select: 'name',
     });
 
     const serviceReportDocsQuery = { serviceReport: { $in: req.params.id }, isArchived: false, isReportDoc: true };
@@ -421,6 +421,31 @@ exports.postProductServiceReport = async (req, res, next) => {
 }
 
 
+exports.sendToDraftServiceReport = async (req, res, next) => {
+  try{
+
+    const productServiceReport = await ProductServiceReports.findById(req.params.id);
+    if(!productServiceReport?._id){
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
+    }
+
+    if(!productServiceReport?.isActive){
+      return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
+    }
+
+    const draftStatus = await ProductServiceReportStatuses.find({ name: "Draft" }).lean();
+    
+    await productServiceReport.updateOne({ status: draftStatus?.[0]?._id, "approval.isEdited": true });
+
+    const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject);
+
+    return res.status(StatusCodes.OK).json({ message: "Service report status updated successfully!", data: response });
+  } catch(error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!" ); 
+  }
+}
+
 exports.changeProductServiceReportStatus = async (req, res, next) => {
   try{
     // const errors = validationResult(req);
@@ -443,9 +468,9 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
     }
  
-    if( !req.params.machineId && productServiceReport?.status?.name?.toLowerCase() !== "submitted" && statusVal?.name?.toLowerCase() !== "under review" ){
-      return res.status(StatusCodes.BAD_REQUEST).send("Service report status can be changed to under review only!");
-    } 
+    // if( !req.params.machineId && productServiceReport?.status?.name?.toLowerCase() !== "submitted" && statusVal?.name?.toLowerCase() !== "under review" ){
+    //   return res.status(StatusCodes.BAD_REQUEST).send("Service report status can be changed to under review only!");
+    // } 
     delete req.params.machineId
     Object.keys(req.body)?.forEach(field => {
       if ( field !== "loginUser" && field !== "status" ) {
@@ -647,17 +672,21 @@ exports.evaluateServiceReport = async (req, res, next) => {
   try{
     let reqError = true;
     const errors = validationResult(req);
+    const userId = req.body?.loginUser?.userId
     const evaluationData = req.body?.evaluationData;
     const productServiceReport = await ProductServiceReports.findById(req.params.id);
-    const evaluationUserEmail = await customerContact.findById(evaluationData.updatedBy, "email");
+    const userContact = await SecurityUser.findById(userId).populate({
+      path: 'contact',
+      select: 'email'
+    }).select("contact").lean();
     const contactsWithApproval = await Config.findOne({ name: "Approving_Contacts" });
     const spCustomerContacts = await getAllSPCustomerContacts();
 
     if (
       productServiceReport?.approval?.approvingContacts?.length > 0 &&
-      productServiceReport?.approval?.approvingContacts?.includes(evaluationData?.updatedBy) &&
-      (contactsWithApproval?.value?.toLowerCase().includes(evaluationUserEmail?.email.toLowerCase()) ||
-        spCustomerContacts.some((contact) => contact.email.toLowerCase() === evaluationUserEmail?.email.toLowerCase()))
+      productServiceReport?.approval?.approvingContacts?.includes(userContact?.contact?._id) &&
+      (contactsWithApproval?.value?.toLowerCase().includes(userContact?.contact?.email.toLowerCase()) ||
+        spCustomerContacts.some((contact) => contact.email.toLowerCase() === userContact?.contact?.email.toLowerCase()))
     ) {
       reqError = false;
     }
@@ -667,7 +696,8 @@ exports.evaluateServiceReport = async (req, res, next) => {
     }
 
     if (productServiceReport) {
-      await productServiceReport.addApprovalLog({ ...evaluationData });
+      await productServiceReport.addApprovalLog({ ...evaluationData, updatedBy: userId, updatedAt: new Date() });
+      await productServiceReport.updateOne({ "approval.isEdited": false });
       const response = await getProductServiceReportData( req )
       res.status(StatusCodes.OK).send(response);
     } else {

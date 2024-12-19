@@ -15,7 +15,7 @@ const docSchema = new Schema({
     description: { type: String },
     // description of Status
     
-    displayOrderNo: { type: Number, unique: true },
+    displayOrderNo: { type: Number },
     // order to display in dropdown lists
 
     isDefault: { type: Boolean, default:false }
@@ -31,6 +31,18 @@ docSchema.index({"name":1})
 docSchema.index({"type":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
+
+docSchema.index({ 
+    "displayOrderNo": 1, 
+    "isArchived": 1, 
+    "isActive": 1 
+  }, { 
+    unique: true,
+    partialFilterExpression: { 
+      isArchived: false,
+      isActive: true 
+    }
+  });
 
 docSchema.plugin(uniqueValidator);
 
