@@ -610,18 +610,20 @@ exports.putDocumentFilesETag = async (req, res, next) => {
               { _id: fileObj._id },
               { $set: { awsETag: fileData.ETag.replace(/"/g, ''), eTag: ETagGenerated.replace(/"/g, '') } }
             );
-            console.log(`ETag updated for file with _id: ${fileObj._id}`);
+            logger.error(new Error(`ETag updated for file with _id: ${fileObj._id}`));
           } else {
-            console.log(`ETag not found for file with _id: ${fileObj._id}`);
+            logger.error(new Error(`ETag not found for file with _id: ${fileObj._id}`));
           }
         } catch (error) {
-          console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
+          logger.error(new Error(`Error fetching ETag for file with _id: ${fileObj._id}`));
+          logger.error(new Error(error));
         }
       })
     );
     res.status(200).json({ message: 'ETags patched successfully' });
   } catch (error) {
-    console.error('Error patching ETags:', error);
+    logger.error(new Error('Error while patching ETags'));
+    logger.error(new Error(error));
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -667,7 +669,8 @@ exports.getduplicateDrawings = async (req, res, next) => {
             return { fileObj, docVersions };
           }
         } catch (error) {
-          console.error(`Error fetching ETag for file with _id: ${fileObj._id}`, error);
+          logger.error(new Error(`Error fetching ETag for file with _id: ${fileObj._id}`));
+          logger.error(new Error(error));
         }
       })
     );
@@ -675,7 +678,8 @@ exports.getduplicateDrawings = async (req, res, next) => {
     // Now you have an array of objects with fileObj and associated docVersions
     res.status(200).json(fileObjWithDocVersions);
   } catch (error) {
-    console.error('Error patching ETags:', error);
+    logger.error(new Error('Error while patching ETags'));
+    logger.error(new Error(error));
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
@@ -710,7 +714,7 @@ exports.postDocument = async (req, res, next) => {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log(errors);
+      logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
 
@@ -739,14 +743,14 @@ exports.postDocument = async (req, res, next) => {
         let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
               
         if(!docType) {
-          console.error("Document Type Not Found");
+          logger.error(new Error("Document Type Not Found"));
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
 
         let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
               
         if(!docCategory) {
-          console.error("Document Category Not Found");
+          logger.error(new Error("Document Category Not Found"));
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
 
@@ -755,8 +759,7 @@ exports.postDocument = async (req, res, next) => {
         if(mongoose.Types.ObjectId.isValid(customer)) {
           cust = await dbservice.getObjectById(Customer,this.fields,customer);
           if(!cust || cust.isActive==false || cust.isArchived==true) {
-            console.error("Customer Not Found");
-
+            logger.error(new Error("Customer Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
@@ -766,8 +769,7 @@ exports.postDocument = async (req, res, next) => {
         if(mongoose.Types.ObjectId.isValid(site)) {
           site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
           if(!site_) {
-            console.error("Site Not Found");
-
+            logger.error(new Error("Site Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
@@ -778,8 +780,7 @@ exports.postDocument = async (req, res, next) => {
           mach = await dbservice.getObjectById(Product,this.fields,machine);
 
           if(!mach) {
-            console.error("Machine Not Found");
-
+            logger.error(new Error("Machine Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
@@ -791,8 +792,7 @@ exports.postDocument = async (req, res, next) => {
           mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
 
           if(!mModel) {
-            console.error("Machine Model Not Found");
-
+            logger.error(new Error("Machine Model Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
@@ -800,16 +800,14 @@ exports.postDocument = async (req, res, next) => {
         let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
 
         if(!docCat) {
-          console.error("Category Not Found");
-
+          logger.error(new Error("Category Not Found"));
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
         if(Array.isArray(files) && files.length>0) {
           let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
           if(!document_) {
-            console.error("Document saved failed!");
-
+            logger.error(new Error("Document saved failed!"));
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
         }
   
@@ -819,7 +817,6 @@ exports.postDocument = async (req, res, next) => {
             req.body.versionNo = 1;
   
           let documentVersion = createDocumentVersionObj(document_,req.body);
-          let documentFiles = [];
           let dbFiles = []
           for(let file of files) {
             
@@ -890,20 +887,18 @@ exports.postDocument = async (req, res, next) => {
 
         }
         else {
-          console.error("Files Not Found");
-
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          logger.error(new Error("Files Not Found"));
+          return res.status(StatusCodes.BAD_REQUEST).send('Files Not Found');
         }
       }
       else {
-        console.error("Invalid Data");
-
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        logger.error(new Error("Invalid Data"));
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Data!');
       }
 
     }
   }catch(e) {
-    console.log(e);
+    logger.error(new Error(e));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
 
   }
@@ -914,7 +909,7 @@ exports.postMultiDocument = async (req, res, next) => {
     const req_ = _.cloneDeep(req);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-      console.log(errors);
+      logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
       let documentCategory_ = [];
@@ -970,15 +965,15 @@ exports.postMultiDocument = async (req, res, next) => {
             let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
                   
             if(!docType) {
-              console.error("Document Type Not Found");
-              return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              logger.error(new Error("Document Type Not Found!"));
+              return res.status(StatusCodes.BAD_REQUEST).send("Document Type Not Found!");
             }
   
             let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
                   
             if(!docCategory) {
-              console.error("Document Category Not Found");
-              return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              logger.error(new Error("Document Category Not Found"));
+              return res.status(StatusCodes.BAD_REQUEST).send("Document Category Not Found!");
             }
   
             let cust = {}
@@ -986,9 +981,8 @@ exports.postMultiDocument = async (req, res, next) => {
             if(mongoose.Types.ObjectId.isValid(customer)) {
               cust = await dbservice.getObjectById(Customer,this.fields,customer);
               if(!cust || cust.isActive==false || cust.isArchived==true) {
-                console.error("Customer Not Found");
-  
-                return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+                logger.error(new Error("Customer Not Found!"));
+                return res.status(StatusCodes.BAD_REQUEST).send("Customer Not Found!");
               }
             }
   
@@ -997,8 +991,7 @@ exports.postMultiDocument = async (req, res, next) => {
             if(mongoose.Types.ObjectId.isValid(site)) {
               site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
               if(!site_) {
-                console.error("Site Not Found");
-  
+                logger.error(new Error("Site Not Found!"));
                 return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
               }
             }
@@ -1009,8 +1002,7 @@ exports.postMultiDocument = async (req, res, next) => {
               mach = await dbservice.getObjectById(Product,this.fields,machine);
   
               if(!mach) {
-                console.error("Machine Not Found");
-  
+                logger.error(new Error("Machine Not Found"));
                 return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
               }
             }
@@ -1022,24 +1014,22 @@ exports.postMultiDocument = async (req, res, next) => {
               mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
   
               if(!mModel) {
-                console.error("Machine Model Not Found");
-  
-                return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+                logger.error(new Error("Machine Model Not Found!"));
+                return res.status(StatusCodes.BAD_REQUEST).send("Machine Model Not Found!");
               }
             }
   
             let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
   
             if(!docCat) {
-              console.error("Category Not Found");
-              return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              logger.error(new Error("Category Not Found!"));
+              return res.status(StatusCodes.BAD_REQUEST).send("Category Not Found!");
             }
             if(Array.isArray(files) && files.length>0) {
               let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
   
               if(!document_) {
-                console.error("Document saved failed!");
-  
+                logger.error(new Error("Document saved failed!"));
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
               }
       
@@ -1111,21 +1101,16 @@ exports.postMultiDocument = async (req, res, next) => {
               }
   
               await createAuditLog(documentAuditLogObj,req);
-  
-              console.log("record added!", i);
               documentslist.push(document_);
-  
-  
             }
             else {
-              console.error("Files Not Found");
-  
-              return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+              logger.error(new Error("Files not found!"));
+              return res.status(StatusCodes.BAD_REQUEST).send("Files not found!");
             }
           }
           else {
-            console.error("Invalid Data");
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            logger.error(new Error("Invalid data found!"));
+            return res.status(StatusCodes.BAD_REQUEST).send("Invalid data found!");
           }
         }
       }
@@ -1137,7 +1122,7 @@ exports.postMultiDocument = async (req, res, next) => {
       }
     }
   }catch(e) {
-    console.log(e);
+    logger.error(new Error(e));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
 
   }
@@ -1145,7 +1130,8 @@ exports.postMultiDocument = async (req, res, next) => {
 
 async function createAuditLog(documentAuditLogObj,req) {
   if(!documentAuditLogObj.document)
-    return console.log('Document id not found');
+    logger.error(new Error("'Document not found'"));
+    return 
   
   if(!req.body.loginUser)
     req.body.loginUser = await getToken(req);
@@ -1282,25 +1268,24 @@ exports.patchDocument = async (req, res, next) => {
         let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
               
         if(!docType) {
-          console.error("Document Type Not Found");
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          logger.error(new Error("Document type not found!"));
+          return res.status(StatusCodes.BAD_REQUEST).send("Document type not found!");
         }
 
         let site_ = {}
         if(mongoose.Types.ObjectId.isValid(site)) {
           site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
           if(!site_) {
-            console.error("Site Not Found");
-
-            return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+            logger.error(new Error("Site not found!"));
+            return res.status(StatusCodes.BAD_REQUEST).send("Site not found!");
           }
         }
 
         let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
               
         if(!docCategory) {
-          console.error("Document Category Not Found");
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          logger.error(new Error("Document category not found!"));
+          return res.status(StatusCodes.BAD_REQUEST).send("Document category not found!");
         }
       }
       
@@ -1550,18 +1535,16 @@ exports.patchDocumentVersion = async (req, res, next) => {
       let queryString__ = { _id: {$ne: documentVersionsObj._id},  document: req.params.id, isActive: true, isArchived: false};
       const ltVersionNoValue = await DocumentVersion.findOne(queryString__).sort({versionNo: -1}).select('versionNo').exec();
 
-      console.log(requestedVersionNo , ltVersionNoValue?.versionNo);
-
       if(requestedVersionNo <= ltVersionNoValue?.versionNo) {
         return res.status(StatusCodes.BAD_REQUEST).send({"message": `Please input a version higher than ${ltVersionNoValue?.versionNo}`});  
       }
       else {
         DocumentVersion.updateOne({_id: documentVersionsObj._id}, {versionNo: requestedVersionNo}, function(err, result) {
-          if (err) {
-            console.error("Error updating document:", err);
+          if (error) {
+            logger.error(new Error("Error while updating document"));
+            logger.error(new Error(error));
             return;
           }
-          console.log("Document updated successfully:", result);
           return res.status(StatusCodes.ACCEPTED).send(getReasonPhrase(StatusCodes.ACCEPTED));
         });
       }
@@ -1577,7 +1560,8 @@ async function readFileAsBase64(filePath) {
     const base64Data = fileData.toString('base64');
     return base64Data;
   } catch (error) {
-    console.log('Error reading file as base64:', error);
+    logger.error(new Error('Error reading file as base64'));
+    logger.error(new Error(error));
     throw error;
   }
 }
@@ -1593,7 +1577,7 @@ async function generateThumbnail(filePath) {
     return thumbnailPath;
     
   } catch (error) {
-    console.log(error);
+    logger.error(new Error(errors));
   }
 }
 
@@ -1625,14 +1609,14 @@ async function processFile(file, userId) {
   const fileName = userId+"-"+new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
   s3Data.eTag = await awsService.generateEtag(file.path);
-
   try{
     fs.unlinkSync(file.path);
     if(thumbnailPath){
       fs.unlinkSync(thumbnailPath);
     }
-  } catch (e) {
-    console.error("Exception while deleting image: ", e);
+  } catch ( error ) {
+    logger.error(new Error("Exception while deleting image "));
+    logger.error(new Error( error ));
   }
 
   if (!s3Data || s3Data === '') {
@@ -1818,8 +1802,6 @@ function getDocumentProductDocumentFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 
-
-  //console.log("doc in http req: ", doc);
   return doc;
 }
 
