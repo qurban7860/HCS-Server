@@ -9,8 +9,7 @@ let securityDBService = require('../service/securityDBService');
 const dbService = this.dbservice = new securityDBService();
 const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models');
 
-async function generateRandomString() {
-    currentDate = new Date();
+  async function generateRandomString(){
     return new Promise((resolve) => {
       const length = 32;
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -42,10 +41,9 @@ async function generateRandomString() {
   };
   
   async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
-    const filteredRoles = roles.filter(role => role.isActive && !role.isArchived).map(role => role.roleType);
-  
     let token;
     let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
+    const filteredRoles = roles.filter(role => role.isActive && !role.isArchived).map(role => role.roleType);
   
     try {
       token = jwt.sign(
