@@ -149,7 +149,7 @@ class UserEmailService {
           <tr>
             <td align="left" style="padding:0;Margin:0">
               <p>
-                Dear ${toUser?.name || ''},<br>
+                ${toUser?.name || ''},<br>
                 <br>
                 Your password has been updated successfully.<br>
                 <br>
