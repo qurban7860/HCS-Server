@@ -6,6 +6,7 @@ const path = require('path');
 const { renderEmail } = require('../../email/utils');
 const { SecurityUser, SecurityUserInvite } = require('../models');
 const { generateRandomString, updateUserToken } = require('./authHelper');
+const authHelper = require('./authHelper');
 const logger = require('../../config/logger');
 const securityDBService = require('../service/securityDBService');
 const emailService = require('../../email/service/emailService');

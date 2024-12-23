@@ -4,7 +4,6 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const securitySignInLogController = require('../controllers/securitySignInLogController');
 const logger = require('../../config/logger');
 const _ = require('lodash');
-const { sendMfaEmail } = require('../service/userEmailService');
 let securityDBService = require('../service/securityDBService');
 const dbService = this.dbservice = new securityDBService();
 const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models');
@@ -42,8 +41,8 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
   
   async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
     let token;
-    let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
     const filteredRoles = roles.filter(role => role.isActive && !role.isArchived).map(role => role.roleType);
+    let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
   
     try {
       token = jwt.sign(
@@ -117,77 +116,6 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
     return res;
   }
   
-  async function validateAndLoginUser(req, res, existingUser) {
-    const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-    
-  if (accessToken) {
-    let updatedToken = updateUserToken(accessToken);
-      
-      dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-      async function callbackPatchFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-        }
-        let QuerysecurityLog = {
-          user: existingUser._id,
-          logoutTime: {$exists: false},
-          statusCode: 200
-        };
-  
-        await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
-          if (err) {
-            console.error(err);
-          } 
-        });
-  
-        const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-        const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
-  
-        dbService.postObject(loginLogResponse, callbackFunc);
-        async function callbackFunc(error, response) {
-          let session = await removeAndCreateNewSession(req, existingUser?._id?.toString());
-  
-          if (error || !session || !session.session || !session.session.sessionId) {
-            logger.error(new Error(error));
-            if(!error)
-              error = 'Unable to Start session.'
-        
-            return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-          } else {
-            const wss = getAllWebSockets();
-            wss.map((ws)=> {  
-              ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
-            });
-  
-            if ( existingUser.multiFactorAuthentication ) { 
-              return await sendMfaEmail( req, res, existingUser );
-            } else{
-              const userRes = {
-                  accessToken,
-                  userId: existingUser.id,
-                  // sessionId:session.session.sessionId,
-                user: {
-                  login: existingUser.login,
-                  email: existingUser.email,
-                  displayName: existingUser.name,
-                  customer: existingUser?.customer?._id,
-                  contact: existingUser?.contact?._id,
-                  roles: existingUser.roles,
-                  dataAccessibilityLevel: existingUser.dataAccessibilityLevel
-                }
-              }
-              return res.json( userRes );
-            }
-          }
-        }
-      }
-    }
-    else {
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    }
-  }
-
   async function removeSessions(userId) {
     await SecuritySession.deleteMany({"session.user":userId});
     await SecuritySession.deleteMany({"session.user":{$exists:false}});
@@ -280,11 +208,10 @@ module.exports = {
     issueToken,
     updateUserToken,
     addAccessLog,
-    validateAndLoginUser,
     removeSessions,
     removeAndCreateNewSession,
     isValidUser,
     isValidCustomer,
     isValidContact,
-    isValidRole,
+    isValidRole
 }
