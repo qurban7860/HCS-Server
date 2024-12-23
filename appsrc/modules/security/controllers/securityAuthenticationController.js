@@ -11,6 +11,7 @@ const {
   updateUserToken, 
   addAccessLog, 
   validateAndLoginUser,
+  removeSessions,
   removeAndCreateNewSession,
   isValidUser,
   isValidCustomer,
