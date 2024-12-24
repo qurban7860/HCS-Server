@@ -396,75 +396,88 @@ exports.verifyForgottenPassword = async (req, res, next) => {
   }
 };
 
-
 async function validateAndLoginUser(req, res, existingUser) {
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-  
-if (accessToken) {
-  let updatedToken = updateUserToken(accessToken);
-    
-    dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-    async function callbackPatchFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-      }
-      let QuerysecurityLog = {
-        user: existingUser._id,
-        logoutTime: {$exists: false},
-        statusCode: 200
-      };
+  try {
+    // Issue an access token for the user
+    const accessToken = await issueToken(
+      existingUser._id,
+      existingUser.login,
+      req.sessionID,
+      existingUser.roles,
+      existingUser.dataAccessibilityLevel
+    );
 
-      await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
-        if (err) {
-          console.error(err);
-        } 
-      });
-
-      const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
-
-      dbService.postObject(loginLogResponse, callbackFunc);
-      async function callbackFunc(error, response) {
-        let session = await removeAndCreateNewSession(req, existingUser?._id?.toString());
-
-        if (error || !session || !session.session || !session.session.sessionId) {
-          logger.error(new Error(error));
-          if(!error)
-            error = 'Unable to Start session.'
-      
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-        } else {
-          const wss = getAllWebSockets();
-          wss.map((ws)=> {  
-            ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
-          });
-
-          if ( existingUser.multiFactorAuthentication ) {
-            return await userEmailService.sendMfaEmail( req, res, existingUser );
-          } else{
-            const userRes = {
-                accessToken,
-                userId: existingUser.id,
-                // sessionId:session.session.sessionId,
-              user: {
-                login: existingUser.login,
-                email: existingUser.email,
-                displayName: existingUser.name,
-                customer: existingUser?.customer?._id,
-                contact: existingUser?.contact?._id,
-                roles: existingUser.roles,
-                dataAccessibilityLevel: existingUser.dataAccessibilityLevel
-              }
-            }
-            return res.json( userRes );
-          }
-        }
-      }
+    if (!accessToken) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-  }
-  else {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
+    // Update the user's token in the database
+    const updatedToken = updateUserToken(accessToken);
+    await dbService.patchObject(SecurityUser, existingUser._id, updatedToken);
+
+    // Update security logs to mark previous logouts
+    const querySecurityLog = {
+      user: existingUser._id,
+      logoutTime: { $exists: false },
+      statusCode: 200,
+    };
+
+    await SecuritySignInLog.updateMany(querySecurityLog, {
+      $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM" },
+    });
+
+    // Log the client IP and add access log
+    const clientIP =
+      req.headers["x-forwarded-for"]?.split(",").shift() ||
+      req.socket?.remoteAddress;
+    const loginLogResponse = await addAccessLog(
+      "login",
+      req.body.email,
+      existingUser._id,
+      clientIP
+    );
+    await dbService.postObject(loginLogResponse);
+
+    // Remove the existing session and create a new one
+    const session = await removeAndCreateNewSession(req, existingUser._id.toString());
+
+    if (!session || !session.session || !session.session.sessionId) {
+      throw new Error("Unable to start session.");
+    }
+
+    const wss = getAllWebSockets();
+    wss?.forEach(( ws ) => {
+      ws.send(
+        Buffer.from(
+          JSON.stringify({ eventName: "newUserLogin", userId: existingUser._id })
+      ));
+    });
+
+    if (existingUser.multiFactorAuthentication) {
+      return await userEmailService.sendMfaEmail(req, res, existingUser);
+    }
+    const userResponse = {
+      accessToken,
+      userId: existingUser._id,
+      user: {
+        login: existingUser.login,
+        email: existingUser.email,
+        displayName: existingUser.name,
+        customer: existingUser.customer?._id,
+        contact: existingUser.contact?._id,
+        roles: existingUser.roles,
+        dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+      },
+    };
+
+    return res.json(userResponse);
+  } catch (error) {
+    logger.error(error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(error.message || "An error occurred during login.");
   }
 }
 

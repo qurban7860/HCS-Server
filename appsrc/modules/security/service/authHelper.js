@@ -117,18 +117,21 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
   }
   
   async function removeSessions(userId) {
-    await SecuritySession.deleteMany({"session.user":userId});
-    await SecuritySession.deleteMany({"session.user":{$exists:false}});
+    await Promise.all([
+      SecuritySession.deleteMany({ "session.user": userId }),
+      SecuritySession.deleteMany({ "session.user": { $exists: false } })
+    ]);
+  
     const wss = getSocketConnectionByUserId(userId);
-    const sessionTimeout = setTimeout(()=>{
-      wss.map((ws)=> {  
-        if(ws.userId==userId) {
-          ws.send(Buffer.from(JSON.stringify({'eventName':'logout',userId})));
-          ws.terminate();
-        }
+    const logoutMessage = Buffer.from(
+      JSON.stringify({ eventName: "logout", userId })
+    );
+  
+    wss.filter((ws) => ws.userId === userId)
+      .forEach((ws) => {
+        ws.send(logoutMessage);
+        ws.terminate();
       });
-      clearTimeout(sessionTimeout);
-    }, 2000);
   }
 
   function delay(time) {
@@ -142,7 +145,6 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
         req.session.cookie.expires = false;
         let maxAge = process.env.TOKEN_EXP_TIME || "48h";
         maxAge = maxAge.replace(/\D/g,'');
-  
         req.session.cookie.maxAge =  maxAge * 60 * 60 * 1000;
         req.session.isLoggedIn = true;
         req.session.user = userId;
@@ -156,7 +158,6 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
       else {
         return false;
       }
-  
     } catch (err) {
       logger.error(new Error(err));
       return next(new Error('User session creation failed!'));
