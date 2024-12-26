@@ -133,10 +133,7 @@ exports.postIntegrationDetails = async (req, res, next) => {
 exports.syncMachineConnection = async (req, res, next) => {
   const startTime = Date.now();
   const clientIP = req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress;
-  const clientInfo = {
-    ip: req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress,
-    identifier: `${req.headers["user-agent"]}|${req.headers.origin || req.headers.referer || 'direct'}`
-  };
+  const clientInfo = `${req.headers["user-agent"]}|${req.headers.origin || req.headers.referer || 'direct'}`;
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -334,7 +331,7 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     responseStatusCode: responseData.statusCode,
     additionalContextualInformation: responseData.context,
     createdIP: req?.body?.loginUser?.userIP || createdIP,
-    createdBy: req?.body?.loginUser?.userId || createdBy || null,
+    createdByIdentifier: req?.body?.loginUser?.userId || createdBy || null,
   });
   return apiLog.save();
 };
