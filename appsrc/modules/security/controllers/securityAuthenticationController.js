@@ -270,40 +270,35 @@ exports.multifactorverifyCode = async (req, res, next) => {
 };
 
 exports.refreshToken = async (req, res, next) => {
-  const errors = validationResult(req);
-  var _this = this;
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
+  try{
+    var _this = this;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } 
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
-    if(existingUser){
+
+    if( !existingUser?._id ){
+      return res.status(StatusCodes.BAD_REQUEST).send('User not found');
+    }
     const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.dataAccessibilityLevel);
-    if (accessToken) {
-      updatedToken = updateUserToken(accessToken);
-      _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-      async function callbackPatchFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+    if ( accessToken ) {
+      const token =await updateUserToken( accessToken);
+      await this.dbservice.patchObject(SecurityUser, existingUser._id, { token } );
+      return res.json({
+        accessToken,
+        userId: existingUser._id,
+        user: {
+          login: existingUser.login,
+          email: existingUser.email,
+          displayName: existingUser.name,
+          roles: existingUser.roles
         }
-        else {
-          return res.json({
-            accessToken,
-            userId: existingUser.id,
-            user: {
-              login: existingUser.login,
-              email: existingUser.email,
-              displayName: existingUser.name,
-              roles: existingUser.roles
-            }
-          });
-        }
-      }
+      });
     }
-  }
-    else{
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found', true));
-    }
+  } catch (error){
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 };
 
@@ -398,7 +393,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   try {
-    // Issue an access token for the user
+    
     const accessToken = await issueToken(
       existingUser._id,
       existingUser.login,
@@ -413,11 +408,14 @@ async function validateAndLoginUser(req, res, existingUser) {
         .send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
-    // Update the user's token in the database
-    const updatedToken = updateUserToken(accessToken);
-    await dbService.patchObject(SecurityUser, existingUser._id, updatedToken);
+    const session = await removeAndCreateNewSession(req, existingUser._id.toString());
 
-    // Update security logs to mark previous logouts
+    if (!session || !session.session || !session.session.sessionId) {
+      throw new Error("Unable to start session.");
+    }
+    
+    const token = await updateUserToken( accessToken);
+    await dbService.patchObject(SecurityUser, existingUser._id, { token } );
     const querySecurityLog = {
       user: existingUser._id,
       logoutTime: { $exists: false },
@@ -428,24 +426,13 @@ async function validateAndLoginUser(req, res, existingUser) {
       $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM" },
     });
 
-    // Log the client IP and add access log
-    const clientIP =
-      req.headers["x-forwarded-for"]?.split(",").shift() ||
-      req.socket?.remoteAddress;
     const loginLogResponse = await addAccessLog(
       "login",
       req.body.email,
       existingUser._id,
-      clientIP
+      ( req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress )
     );
     await dbService.postObject(loginLogResponse);
-
-    // Remove the existing session and create a new one
-    const session = await removeAndCreateNewSession(req, existingUser._id.toString());
-
-    if (!session || !session.session || !session.session.sessionId) {
-      throw new Error("Unable to start session.");
-    }
 
     const wss = getAllWebSockets();
     wss?.forEach(( ws ) => {

@@ -214,41 +214,35 @@ exports.login = async (req, res, next) => {
 };
 
 exports.refreshToken = async (req, res, next) => {
-  const errors = validationResult(req);
-  var _this = this;
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
+  try{
+    var _this = this;
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } 
     let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
-    if(existingUser){
-    
-    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel);
-    if (accessToken) {
-      updatedToken = updateUserToken(accessToken);
-      _this.dbservice.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-      async function callbackPatchFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-        }
-        else {
-          return res.json({
-            accessToken,
-            userId: existingUser?._id || '',
-            user: {
-              login: existingUser?.login || '',
-              email: existingUser?.email || '',
-              displayName: existingUser?.name || '',
-              roles: existingUser?.roles || [],
-            }
-          });
-        }
-      }
+
+    if( !existingUser?._id ){
+      return res.status(StatusCodes.BAD_REQUEST).send('User not found');
     }
-  }
-    else{
-      res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'User not found', true));
+    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.dataAccessibilityLevel);
+    if ( accessToken ) {
+      const token = await updateUserToken( accessToken );
+      await _this.dbservice.patchObject(SecurityUser, existingUser._id, { token } );
+      return res.json({
+        accessToken,
+        userId: existingUser._id,
+        user: {
+          login: existingUser.login,
+          email: existingUser.email,
+          displayName: existingUser.name,
+          roles: existingUser.roles
+        }
+      });
     }
+  } catch (error){
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 };
 
@@ -284,72 +278,78 @@ exports.logout = async (req, res, next) => {
 
 
 async function validateAndLoginUser(req, res, existingUser) {
-  const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser.dataAccessibilityLevel );
-  
-if (accessToken) {
-  let updatedToken = updateUserToken(accessToken);
+  try {
     
-    dbService.patchObject(SecurityUser, existingUser._id, updatedToken, callbackPatchFunc);
-    async function callbackPatchFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-      }
-      let QuerysecurityLog = {
-        user: existingUser._id,
-        logoutTime: {$exists: false},
-        statusCode: 200
-      };
+    const accessToken = await issueToken(
+      existingUser._id,
+      existingUser.login,
+      req.sessionID,
+      existingUser.roles,
+      existingUser.dataAccessibilityLevel
+    );
 
-      await SecuritySignInLog.updateMany(QuerysecurityLog, { $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM"} }, (err, result) => {
-        if (err) {
-          console.error(err);
-        } 
-      });
-
-      const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
-      const loginLogResponse = await addAccessLog( 'login', req.body.email, existingUser._id, clientIP );
-
-      dbService.postObject(loginLogResponse, callbackFunc);
-      async function callbackFunc(error, response) {
-        let session = await removeAndCreateNewSession(req, existingUser?._id?.toString());
-
-        if (error || !session || !session.session || !session.session.sessionId) {
-          logger.error(new Error(error));
-          if(!error)
-            error = 'Unable to Start session.'
-      
-          return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-        } else {
-          const wss = getAllWebSockets();
-          wss.map((ws)=> {  
-            ws.send(Buffer.from(JSON.stringify({'eventName':'newUserLogin',userId: existingUser.id})));
-          });
-
-          if ( existingUser.multiFactorAuthentication ) {
-            return await userEmailService.sendMfaEmail( req, res, existingUser );
-          } else{
-            const userRes = {
-                accessToken,
-                userId: existingUser.id,
-                // sessionId:session.session.sessionId,
-              user: {
-                login: existingUser.login,
-                email: existingUser.email,
-                displayName: existingUser.name,
-                customer: existingUser?.customer?._id,
-                contact: existingUser?.contact?._id,
-                roles: existingUser.roles,
-                dataAccessibilityLevel: existingUser.dataAccessibilityLevel
-              }
-            }
-            return res.json( userRes );
-          }
-        }
-      }
+    if (!accessToken) {
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-  }
-  else {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
+
+    const session = await removeAndCreateNewSession(req, existingUser._id.toString());
+
+    if (!session || !session.session || !session.session.sessionId) {
+      throw new Error("Unable to start session.");
+    }
+
+    const token = await updateUserToken( accessToken );
+    await dbservice.patchObject(SecurityUser, existingUser._id, { token } );
+
+    const querySecurityLog = {
+      user: existingUser._id,
+      logoutTime: { $exists: false },
+      statusCode: 200,
+    };
+
+    await SecuritySignInLog.updateMany(querySecurityLog, {
+      $set: { logoutTime: new Date(), loggedOutBy: "SYSTEM" },
+    });
+
+    const loginLogResponse = await addAccessLog(
+      "login",
+      req.body.email,
+      existingUser._id,
+      ( req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress )
+    );
+    await dbService.postObject(loginLogResponse);
+
+    const wss = getAllWebSockets();
+    wss?.forEach(( ws ) => {
+      ws.send(
+        Buffer.from(
+          JSON.stringify({ eventName: "newUserLogin", userId: existingUser._id })
+      ));
+    });
+
+    if (existingUser.multiFactorAuthentication) {
+      return await userEmailService.sendMfaEmail(req, res, existingUser);
+    }
+    const userResponse = {
+      accessToken,
+      userId: existingUser._id,
+      user: {
+        login: existingUser.login,
+        email: existingUser.email,
+        displayName: existingUser.name,
+        customer: existingUser.customer?._id,
+        contact: existingUser.contact?._id,
+        roles: existingUser.roles,
+        dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+      },
+    };
+
+    return res.json(userResponse);
+  } catch (error) {
+    logger.error(error);
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message || "An error occurred during login.");
   }
 }

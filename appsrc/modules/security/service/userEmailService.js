@@ -115,9 +115,9 @@ class UserEmailService {
 
   resetPasswordEmail = async ( req, res, toUser ) => {
     try{
-      const token = await generateRandomString();
-      let updatedToken = await updateUserToken(token);
-      await this.dbservice.patchObject(SecurityUser, toUser._id, updatedToken );
+      const rToken = await generateRandomString();
+      const token = await updateUserToken( rToken );
+      await this.dbservice.patchObject(SecurityUser, toUser._id, { token } );
       const link = `${ toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/auth/new-password/${token}/${toUser._id}`;
 
           const emailSubject = "Reset Password";

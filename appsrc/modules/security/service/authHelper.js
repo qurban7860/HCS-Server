@@ -4,8 +4,8 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const securitySignInLogController = require('../controllers/securitySignInLogController');
 const logger = require('../../config/logger');
 const _ = require('lodash');
-let securityDBService = require('../service/securityDBService');
-const dbService = this.dbservice = new securityDBService();
+let securityDBService = require('./securityDBService');
+this.dbservice = new securityDBService();
 const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models');
 
   async function generateRandomString(){
@@ -58,18 +58,19 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
     return token;
   };
   
-  async function updateUserToken(accessToken) {
-    currentDate = new Date();
-    let doc = {};
-    let token = {
-      accessToken: accessToken,
-      tokenCreation: currentDate,
-      tokenExpiry: new Date(currentDate.getTime() + 60 * 60 * 1000)
+  async function updateUserToken( accessToken ) {
+    try {
+      const tokenCreation = new Date(); 
+      const token = {
+        accessToken,
+        tokenCreation,
+        tokenExpiry: new Date(tokenCreation.getTime() + 48 * 60 * 60 * 1000), 
+      };
+      return token;
+    } catch (error) {
+      throw error;
     }
-    doc.token = token;
-    return doc;
-  };
-
+  }
 
   async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
     let existsButNotAuthCode = 470;
@@ -119,7 +120,8 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
   async function removeSessions(userId) {
     await Promise.all([
       SecuritySession.deleteMany({ "session.user": userId }),
-      SecuritySession.deleteMany({ "session.user": { $exists: false } })
+      SecuritySession.deleteMany({ "session.user": { $exists: false } }),
+      SecurityUser.updateOne({ _id: userId }, { token: {} })
     ]);
   
     const wss = getSocketConnectionByUserId(userId);
