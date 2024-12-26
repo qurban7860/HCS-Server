@@ -9,6 +9,20 @@ class EmailService {
 
     constructor() {}
 
+    async isEmailOn( ){
+        try {
+            // EMAIL NOTIFICATIONS OFF
+            const isNotificationsDisabled = String( process.env.EMAIL_NOTIFICATIONS_DISABLED )?.toLowerCase() === 'true';
+        
+            if ( isNotificationsDisabled ) {
+                throw new Error('Email service is turned off.');
+            }
+        } catch (error) {
+            logger.error(new Error(`Failed to send email: ${error}`));
+            throw new Error('Email sending failed');
+        }
+    };
+
     async sendEmail( req ){
         try {
             const params = req.body;
