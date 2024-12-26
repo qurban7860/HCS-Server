@@ -14,26 +14,12 @@ let docAuditSchema = {
 }
 
 let docAuditSchemaForPublic = {
-    createdBy: { 
-        type: Schema.Types.Mixed, 
-        refPath: 'createdByModel'
-    },
-    createdByModel: {
-        type: String,
-        enum: ['SecurityUser', 'String'],
-        default: 'SecurityUser'
-    },
+    createdBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+    createdByIdentifier: {type: String},
     createdIP: {type: String},
     
-    updatedBy: { 
-        type: Schema.Types.Mixed,
-        refPath: 'updatedByModel'
-    },
-    updatedByModel: {
-        type: String,
-        enum: ['SecurityUser', 'String'],
-        default: 'SecurityUser'
-    },
+    updatedBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+    updatedByIdentifier: {type: String},
     updatedIP: {type: String}
 }
 

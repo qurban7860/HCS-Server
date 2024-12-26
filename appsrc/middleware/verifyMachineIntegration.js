@@ -3,15 +3,15 @@ const { ProductStatus, Product } = require("../modules/products/models");
 
 
 const verifyMachineAuth = async (req, res, next) => {
-  if (!req.headers["x-portal-key"] || !req.headers["x-machine-serial-no"] || !req.headers["x-ipc-serial-no"] || !req.headers["x-computer-guid"]) {
+  if (!req.headers["x-howickportalkey"] || !req.headers["x-machineserialno"] || !req.headers["x-ipcserialno"] || !req.headers["x-computerguid"]) {
     return next();
   }
   try {
     const { 
-      "x-machineSerialNo": machineSerialNo,
-      "x-computerGUID": computerGUID,
-      "x-IPCSerialNo": IPCSerialNo,
-      "x-howickPortalKey": howickPortalKey
+      "x-machineserialno": machineSerialNo,
+      "x-computerguid": computerGUID,
+      "x-ipcserialno": IPCSerialNo,
+      "x-howickportalkey": howickPortalKey
     } = req.headers;
     const transferredStatus = await ProductStatus.findOne({ name: 'Transferred' });
     const decommissionedStatus = await ProductStatus.findOne({ name: 'Decommissioned' });
