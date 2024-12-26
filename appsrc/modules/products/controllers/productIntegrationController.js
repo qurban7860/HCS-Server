@@ -133,6 +133,10 @@ exports.postIntegrationDetails = async (req, res, next) => {
 exports.syncMachineConnection = async (req, res, next) => {
   const startTime = Date.now();
   const clientIP = req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress;
+  const clientInfo = {
+    ip: req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress,
+    identifier: `${req.headers["user-agent"]}|${req.headers.origin || req.headers.referer || 'direct'}`
+  };
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -145,6 +149,7 @@ exports.syncMachineConnection = async (req, res, next) => {
           context: "Validation Failed",
         },
         createdIP: clientIP,
+        createdBy: clientInfo,
       });
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
@@ -168,6 +173,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         },
         machine,
         createdIP: clientIP,
+        createdBy: clientInfo,
       });
       return res.status(StatusCodes.NOT_FOUND).json({ message: "Machine not found or has been transferred or decommissioned" });
     }
@@ -185,6 +191,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         },
         machine,
         createdIP: clientIP,
+        createdBy: clientInfo,
       });
       return res.status(StatusCodes.UNAUTHORIZED).json({ message: "Invalid portal key" });
     }
@@ -218,6 +225,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         },
         machine,
         createdIP: clientIP,
+        createdBy: clientInfo,
       });
       return res.status(StatusCodes.OK).json({ message: "Machine connection synced successfully and machine details saved" });
     }
@@ -253,6 +261,7 @@ exports.syncMachineConnection = async (req, res, next) => {
         },
         machine,
         createdIP: clientIP,
+        createdBy: clientInfo,
       });
       return res.status(StatusCodes.OK).json({ message: "Machine connection verified successfully" });
     }
@@ -267,6 +276,7 @@ exports.syncMachineConnection = async (req, res, next) => {
       },
       machine,
       createdIP: clientIP,
+      createdBy: clientInfo,
     });
     return res.status(StatusCodes.CONFLICT).json({ message: "Machine connection details mismatch" });
   } catch (error) {
@@ -277,8 +287,9 @@ exports.syncMachineConnection = async (req, res, next) => {
         statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
         body: error.toString(),
         context: "Machine Sync Error",
-        createdIP: clientIP,
       },
+      createdIP: clientIP,
+      createdBy: clientInfo,
     });
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
