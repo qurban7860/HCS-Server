@@ -1,11 +1,7 @@
-const models = require('../models');
-const mongoose = require('mongoose');
-var async = require("async");
-
 let dbService = require('../../db/dbService');
 
 
-class ConfigService {
+class TicketService {
   constructor() {
     this.db = new dbService();
   }
@@ -74,5 +70,4 @@ class ConfigService {
   }
 }
 
-
-module.exports = ConfigService;
+module.exports = TicketService;
