@@ -1,0 +1,19 @@
+meta {
+  name: delete Ticket
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/tickets/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}
