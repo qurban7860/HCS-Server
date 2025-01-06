@@ -118,7 +118,7 @@ class UserEmailService {
       const rToken = await generateRandomString();
       const token = await updateUserToken( rToken );
       await this.dbservice.patchObject(SecurityUser, toUser._id, { token } );
-      const link = `${ toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/auth/new-password/${token}/${toUser._id}`;
+      const link = `${ toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/auth/new-password/${rToken}/${toUser._id}`;
 
           const emailSubject = "Reset Password";
           const username = toUser?.name;
