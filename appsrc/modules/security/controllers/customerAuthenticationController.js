@@ -81,9 +81,9 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-          if (!(_.isEmpty(existingUser)) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
-          (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
-          ) {
+          console.log('existingUser : ',existingUser )
+          if(!(_.isEmpty(existingUser)) && isValidUser(existingUser) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
+            (typeof existingUser?.lockUntil === "undefined" || existingUser?.lockUntil == null || new Date() >= existingUser?.lockUntil)) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
             if(blockedCustomer) {
               const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
@@ -105,7 +105,7 @@ exports.login = async (req, res, next) => {
                   }
                 }
                 return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
-              }  
+              }
             }
 
                 let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
@@ -174,8 +174,7 @@ exports.login = async (req, res, next) => {
                     } 
                   }
                 }
-          }
-          else {
+          } else {
             let securityLogs = null;
             if(existingUser) {
               securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser);
