@@ -83,7 +83,7 @@ exports.login = async (req, res, next) => {
           const existingUser = response;
           console.log('existingUser : ',existingUser )
           if(!(_.isEmpty(existingUser)) && isValidUser(existingUser) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
-            (typeof existingUser?.lockUntil === "undefined" || existingUser?.lockUntil == null || new Date() >= existingUser?.lockUntil)) {
+            (typeof existingUser?.lockUntil == "undefined" || existingUser?.lockUntil == null || new Date() >= existingUser?.lockUntil)) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
             if(blockedCustomer) {
               const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
@@ -300,7 +300,7 @@ async function validateAndLoginUser(req, res, existingUser) {
     }
 
     const token = await updateUserToken( accessToken );
-    await dbservice.patchObject(SecurityUser, existingUser._id, { token } );
+    await dbService.patchObject(SecurityUser, existingUser._id, { token } );
 
     const querySecurityLog = {
       user: existingUser._id,
