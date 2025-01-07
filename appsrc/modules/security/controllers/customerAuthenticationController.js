@@ -81,7 +81,6 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-          console.log('existingUser : ',existingUser )
           if(!(_.isEmpty(existingUser)) && isValidUser(existingUser) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
             (typeof existingUser?.lockUntil == "undefined" || existingUser?.lockUntil == null || new Date() >= existingUser?.lockUntil)) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
