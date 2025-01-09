@@ -1,4 +1,14 @@
 'use strict'
 module.exports = {
-    Ticket: require('./ticket')
+    TicketChangeReason: require('./changeReason'),
+    TicketChangeType: require('./changeType'),
+    TicketImpact: require('./impact'),
+    TicketInvestigationReason: require('./investigationReason'),
+    TicketIssueType: require('./issueType'),
+    TicketPriority: require('./priority'),
+    TicketStatus: require('./status'),
+    Ticket: require('./ticket'),
+    TicketChangeHistory: require('./ticketChangeHistory'),
+    TicketComment: require('./ticketComment'),
+    TicketFile: require('./ticketFile'),
 }

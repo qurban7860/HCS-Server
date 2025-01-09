@@ -124,7 +124,7 @@ module.exports = {
             const response = {
                 isError: "true", 
                 MessageCode: code,
-                Message: `${parent} ID not found!`
+                Message: `${parent} not found!`
             };
 
             return response;

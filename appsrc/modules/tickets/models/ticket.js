@@ -5,27 +5,33 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
+        ticketNo: { type: String, required: true },
+
         customer: { type: Schema.Types.ObjectId, required: true, ref: 'Customer' },
 
         machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
 
-        issueType: { type: String , required: true },
+        issueType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketIssueType' },
+
+        reporter: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
+
+        assignee: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
         
         description: { type: String  },
 
         summary: { type: String  },
 
-        changeType: { type: String  },
+        changeType: { type: Schema.Types.ObjectId, ref: 'TicketChangeType' },
 
-        impact: { type: String  },
+        impact: { type: Schema.Types.ObjectId, ref: 'TicketImpact' },
 
-        priority: { type: String  },
+        priority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
 
-        status: { type: String  },
+        status: { type: Schema.Types.ObjectId, ref: 'TicketStatus' },
 
-        // files: [{ type: Schema.Types.ObjectId, ref: 'File' }],
+        files: [{ type: Schema.Types.ObjectId, ref: 'TicketFile' }],
 
-        changeReason: { type: String  },
+        changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
 
         implementationPlan: { type: String  },
 
@@ -33,13 +39,11 @@ const docSchema = new Schema({
 
         testPlan: { type: String  },
 
-        components: { type: String  },
-
         groups: { type: String  },
 
-        shareWith: { type: String  },
+        shareWith: { type: Boolean },
 
-        investigationReason: { type: String  },
+        investigationReason: { type: Schema.Types.ObjectId, ref: 'TicketInvestigationReason' },
 
         rootCause: { type: String  },
 
@@ -48,6 +52,7 @@ const docSchema = new Schema({
         plannedStartDate: { type: Date  },
 
         plannedEndDate: { type: Date  },
+        
 },
 {
         collection: 'Tickets'
@@ -58,5 +63,7 @@ docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
 docSchema.index({"customer":1})
 docSchema.index({"machine":1})
+docSchema.index({ "history.updatedBy": 1, "history.updatedAt": -1 });
+
 
 module.exports = mongoose.model('Ticket', docSchema);

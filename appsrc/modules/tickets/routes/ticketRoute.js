@@ -1,24 +1,22 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
+const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../middleware/file-upload');
 const controllers = require('../controllers');
 const controller = controllers.ticketController;
 const router = express.Router();
 
-const baseRoute = `/tickets`; 
+router.use( checkAuth );
 
-router.use(checkAuth, checkCustomer);
+// router.get(`/search`, controller.searchTickets );
 
-// router.get(`${baseRoute}/search`, controller.searchTickets );
+router.get(`/:id`, controller.getTicket );
 
-router.get(`${baseRoute}/:id`, controller.getTicket );
+router.get(`/`, controller.getTickets );
 
-router.get(`${baseRoute}/`, controller.getTickets );
+router.post(`/`, uploadHandler, checkMaxCount, imageOptimization, controller.postTicket );
 
-router.post(`${baseRoute}/`, controller.postTicket );
+router.patch(`/:id`, uploadHandler, checkMaxCount, imageOptimization, controller.patchTicket );
 
-router.patch(`${baseRoute}/:id`, controller.patchTicket );
-
-router.delete(`${baseRoute}/:id`, controller.deleteTicket );
+router.delete(`/:id`, controller.deleteTicket );
 
 module.exports = router;
