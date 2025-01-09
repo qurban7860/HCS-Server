@@ -285,14 +285,19 @@ exports.refreshToken = async (req, res, next) => {
     if ( accessToken ) {
       const token =await updateUserToken( accessToken);
       await this.dbservice.patchObject(SecurityUser, existingUser._id, { token } );
+      const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
       return res.json({
         accessToken,
         userId: existingUser._id,
+        sessionId: userSession.session.sessionId,
         user: {
           login: existingUser.login,
           email: existingUser.email,
           displayName: existingUser.name,
-          roles: existingUser.roles
+          roles: existingUser.roles,
+          customer: existingUser?.customer?._id,
+          contact: existingUser?.contact?._id,
+          dataAccessibilityLevel: existingUser.dataAccessibilityLevel
         }
       });
     }
@@ -445,9 +450,11 @@ async function validateAndLoginUser(req, res, existingUser) {
     if (existingUser.multiFactorAuthentication) {
       return await userEmailService.sendMfaEmail(req, res, existingUser);
     }
+    const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
     const userResponse = {
       accessToken,
       userId: existingUser._id,
+      sessionId: userSession.session.sessionId,
       user: {
         login: existingUser.login,
         email: existingUser.email,

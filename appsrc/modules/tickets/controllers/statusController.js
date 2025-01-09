@@ -1,11 +1,12 @@
 const { validationResult } = require('express-validator');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const logger = require('../../config/logger');
+let rtnMsg = require('../../config/static/static')
+
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
-const ticketFileController = require('./ticketFileController');
-const { Ticket } = require('../models');
+const { TicketStatus } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -14,26 +15,14 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  { path: 'customer', select: 'name'  },
-  { path: 'machine', select: 'serialNo name' },
-  { path: 'reporter', select: 'firstName lastName' },
-  { path: 'assignee', select: 'firstName lastName' },
-  { path: 'issueType', select: 'name icon' },
-  { path: 'changeType', select: 'name icon'  },
-  { path: 'impact', select: 'name icon'  },
-  { path: 'priority', select: 'name icon'  },
-  { path: 'status', select: 'name icon'  },
-  { path: 'changeReason', select: 'name icon'  },
-  { path: 'investigationReason', select: 'name icon' },
-  { path: 'files', select: 'name fileType extension thumbnail eTag' },
-  { path: 'createdBy', select: 'name' },
-  { path: 'updatedBy', select: 'name' }
+  {path: 'createdBy', select: 'name'},
+  {path: 'updatedBy', select: 'name'}
 ];
 
 
-async function getTicket(req, res, next){
+exports.getTicketStatus = async (req, res, next) => {
   try{
-    const result = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
+    const result = await this.dbservice.getObjectById(TicketStatus, this.fields, req.params.id, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -41,39 +30,7 @@ async function getTicket(req, res, next){
   }
 };
 
-exports.getTicket = getTicket;
-
-const getCountsByGroups = async () => {
-  const pipeline = [
-    { $match: { isArchived: false, isActive: true } },
-    {
-      $facet: {
-        byIssueType: [
-          { $group: { _id: "$issueType", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byType: [
-          { $group: { _id: "$changeType", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byPriority: [
-          { $group: { _id: "$priority", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byStatus: [
-          { $group: { _id: "$status", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-      },
-    },
-  ];
-
-  const result = await Ticket.aggregate(pipeline);
-  return result;
-};
-
-
-exports.getTickets = async (req, res, next) => {
+exports.getTicketStatuses = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};  
     this.orderBy = { name: 1 };  
@@ -81,7 +38,7 @@ exports.getTickets = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.populate);
+    let result = await this.dbservice.getObjectList(req, TicketStatus, this.fields, this.query, this.orderBy, this.populate);
     const countsResult = await getCountsByGroups();
     if(Array.isArray(result)){
       result = {
@@ -98,7 +55,7 @@ exports.getTickets = async (req, res, next) => {
   }
 };
 
-exports.searchTickets = async (req, res, next) => {
+exports.searchTicketStatuses = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -108,7 +65,7 @@ exports.searchTickets = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    const result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.populate );
+    const result = await this.dbservice.getObjectList(req, TicketStatus, this.fields, this.query, this.orderBy, this.populate );
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -116,43 +73,40 @@ exports.searchTickets = async (req, res, next) => {
   }
 };
 
-exports.postTicket = async (req, res, next) => {
+exports.postTicketStatus = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    await this.dbservice.postObject(getDocFromReq(req, 'new'));
-    await ticketFileController.saveTicketFiles( req );
-    return res.status(StatusCodes.ACCEPTED).send("Ticket saved successfully!");;
+    const result = await this.dbservice.postObject(getDocFromReq(req, 'new'));
+    return res.status(StatusCodes.ACCEPTED).json(result);;
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
   }
 };
 
-exports.patchTicket = async (req, res, next) => {
+exports.patchTicketStatus = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    await this.dbservice.patchObject(Ticket, req.params.id, getDocFromReq(req));
-    await ticketFileController.saveTicketFiles( req );
-
-    return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
+    const result = await this.dbservice.patchObject(TicketStatus, req.params.id, getDocFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send("Ticket status updated successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
   }
 };
 
-exports.deleteTicket = async (req, res, next) => {
+exports.deleteTicketStatus = async (req, res, next) => {
   try{
-    await this.dbservice.deleteObject( Ticket, req.params.id, res );
-    return res.status(StatusCodes.BAD_REQUEST).send("Ticket deleted successfully!");
+    await this.dbservice.deleteObject( TicketStatus, req.params.id, res );
+    return res.status(StatusCodes.BAD_REQUEST).send("Ticket status deleted successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
@@ -161,14 +115,8 @@ exports.deleteTicket = async (req, res, next) => {
 
 function getDocFromReq(req, reqType){
   const { loginUser } = req.body;
-  const doc = reqType === "new" ? new Ticket({}) : {};
-
-  const allowedFields = [
-    "customer", "machine", "issueType", "description", "summary", "changeType", "reporter",
-    "impact", "priority", "status", "changeReason", "implementationPlan", "assignee",
-    "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
-    "rootCause", "workaround", "plannedStartDate", "plannedEndDate", "isActive", "isArchived"
-  ];
+  const doc = reqType === "new" ? new TicketStatus({}) : {};
+  const allowedFields = [ "name", "description", "slug", "displayOrderNo", "isDefault", "icon", "isActive", "isArchived" ];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {
@@ -177,7 +125,6 @@ function getDocFromReq(req, reqType){
   });
 
   if (reqType == "new" && "loginUser" in req.body ){
-    doc.reporter = loginUser.user?.contact;
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
