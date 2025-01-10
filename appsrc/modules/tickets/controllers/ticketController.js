@@ -129,9 +129,9 @@ exports.postTicket = async (req, res, next) => {
     }
     const userData = await this.dbservice.getObjectById( SecurityUser, this.fields, req.body?.loginUser?.userId );
     req.body.reporter = userData?.contact;
-    await this.dbservice.postObject(getDocFromReq(req, 'new'));
+    const ticketData = await this.dbservice.postObject(getDocFromReq(req, 'new'));
     await ticketFileController.saveTicketFiles( req );
-    return res.status(StatusCodes.ACCEPTED).send("Ticket saved successfully!");;
+    return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
