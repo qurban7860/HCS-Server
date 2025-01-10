@@ -1,13 +1,17 @@
 meta {
-  name: post Ticket
+  name: post Ticket Comment
   type: http
   seq: 3
 }
 
 post {
-  url: {{baseUrl}}/tickets/
+  url: {{baseUrl}}/tickets/:ticketId/comments/
   body: json
   auth: bearer
+}
+
+params:path {
+  ticketId: 
 }
 
 auth:bearer {
@@ -18,21 +22,21 @@ body:json {
   {
     "customer": "662f10f3018c887351ae793e",
     "machine": "662f117e018c887351ae7da8",
-    "assignee": "664ed6e12e4733e023cb6ad6",
-    "issueType": "6780f3c4dc488409754fab7a",
+    "issueType": "Request",
     "description": "description",
     "summary": "summary",
-    "changeType": "6780f413dc488409754fab92",
-    "impact": "6780f400dc488409754fab8b",
-    "priority": "6780f3aedc488409754fab70",
-    "status": "6780f22a06dd904dff2ff8e3",
-    "changeReason": "6780f425dc488409754fab98",
+    "changeType": "Problem",
+    "impact": "impact",
+    "priority": "priority",
+    "status": "Done",
+    "changeReason": "changeReason",
     "implementationPlan": "implementation",
     "backoutPlan": "backout",
     "testPlan": "test",
+    "components": "components",
     "groups": "groups",
-    "shareWith": "true",
-    "investigationReason": "6780f3f0dc488409754fab83",
+    "shareWith": "share",
+    "investigationReason": "investigationReason",
     "rootCause": "cause",
     "workaround": "work",
     "plannedStartDate": "2024-04-29T03:18:09.614Z",

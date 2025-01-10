@@ -1,0 +1,26 @@
+meta {
+  name: patch Ticket comment
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/tickets/:ticketId/comments/:id
+  body: json
+  auth: bearer
+}
+
+params:path {
+  ticketId: 
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "issueType": "Change"
+  }
+}

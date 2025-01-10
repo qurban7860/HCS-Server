@@ -1,0 +1,26 @@
+meta {
+  name: post Ticket Investigation Reason
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/tickets/settings/investigationReasons/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "icon": "mdi:investigation",
+    "name": "Review",
+    "slug": "slug",
+    "description": "description!",
+    "displayOrderNo": "1",
+    "isDefault": true
+  }
+}

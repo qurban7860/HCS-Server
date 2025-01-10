@@ -6,6 +6,7 @@ this.dbservice = new ticketDBService();
 const _ = require('lodash');
 const ticketFileController = require('./ticketFileController');
 const { Ticket } = require('../models');
+const { SecurityUser } = require('../../security/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -31,7 +32,7 @@ this.populate = [
 ];
 
 
-async function getTicket(req, res, next){
+exports.getTicket = async (req, res, next) => {
   try{
     const result = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
     return res.status(StatusCodes.OK).json(result);
@@ -41,7 +42,6 @@ async function getTicket(req, res, next){
   }
 };
 
-exports.getTicket = getTicket;
 
 const getCountsByGroups = async () => {
   const pipeline = [
@@ -82,6 +82,7 @@ exports.getTickets = async (req, res, next) => {
       delete this.query.orderBy;
     }
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.populate);
+    console.log('result : ', result )
     const countsResult = await getCountsByGroups();
     if(Array.isArray(result)){
       result = {
@@ -123,6 +124,11 @@ exports.postTicket = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    if( !req.body?.loginUser?.userId ){
+      return res.status(StatusCodes.BAD_REQUEST).send( "User not found!" );
+    }
+    const userData = await this.dbservice.getObjectById( SecurityUser, this.fields, req.body?.loginUser?.userId );
+    req.body.reporter = userData?.contact;
     await this.dbservice.postObject(getDocFromReq(req, 'new'));
     await ticketFileController.saveTicketFiles( req );
     return res.status(StatusCodes.ACCEPTED).send("Ticket saved successfully!");;
@@ -170,14 +176,13 @@ function getDocFromReq(req, reqType){
     "rootCause", "workaround", "plannedStartDate", "plannedEndDate", "isActive", "isArchived"
   ];
 
-  allowedFields.forEach((field) => {
-    if (field in req.body) {
-      doc[field] = req.body[field];
+  allowedFields.forEach((f) => {
+    if (f in req.body) {
+      doc[f] = req.body[f];
     }
   });
 
   if (reqType == "new" && "loginUser" in req.body ){
-    doc.reporter = loginUser.user?.contact;
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -186,6 +191,5 @@ function getDocFromReq(req, reqType){
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   } 
-
   return doc;
 }

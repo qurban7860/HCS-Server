@@ -9,9 +9,10 @@ router.use( checkAuth );
 
 // router.get(`/search`, controller.searchTickets );
 
-router.get(`/:id`, controller.getTicket );
 
 router.get(`/`, controller.getTickets );
+
+router.get(`/:id`, controller.getTicket );
 
 router.post(`/`, uploadHandler, checkMaxCount, imageOptimization, controller.postTicket );
 

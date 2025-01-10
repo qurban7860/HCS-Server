@@ -1,0 +1,21 @@
+meta {
+  name: patch Ticket Change Reason
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/tickets/settings/changeReasons/6780f432dc488409754fab9e
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Fault in Lip Roller"
+  }
+}

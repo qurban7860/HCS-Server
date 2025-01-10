@@ -1,0 +1,19 @@
+meta {
+  name: get Ticket Comments
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/tickets/:ticketId/comments/
+  body: none
+  auth: bearer
+}
+
+params:path {
+  ticketId: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

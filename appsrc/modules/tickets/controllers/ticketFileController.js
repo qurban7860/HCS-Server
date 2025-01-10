@@ -69,7 +69,7 @@ exports.getTicketFiles = async (req, res, next) => {
   }
 };
 
-async function saveTicketFiles( req ){
+const saveTicketFiles = async ( req ) => {
   try{
     if (!req?.files?.images?.length) {
       return [];

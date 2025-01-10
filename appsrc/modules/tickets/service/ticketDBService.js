@@ -11,7 +11,7 @@ class TicketService {
       const response = await this.db.getObject(model, query, populate);
       return response;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -20,7 +20,7 @@ class TicketService {
       const response = await this.db.getObjectById(model, fields, id, populate);
       return response;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -29,7 +29,7 @@ class TicketService {
       const response = await this.db.getObjectList(req, model, fields, query, orderBy, populate);
       return response;
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
@@ -45,7 +45,7 @@ class TicketService {
         return await this.db.deleteObject(model, id, res);
       }
     } catch(error) {
-      return error;
+      throw error;
     }
   }
 
@@ -55,7 +55,7 @@ class TicketService {
       return response;
     }
     catch(error){
-      return error;
+      throw error;
     }
   }
   
@@ -65,7 +65,7 @@ class TicketService {
       return response;
     }
     catch(error){
-      return error;
+      throw error;
     }
   }
 }

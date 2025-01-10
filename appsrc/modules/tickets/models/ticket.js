@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-        ticketNo: { type: String, required: true },
+        // ticketNo: { type: String, required: true },
 
         customer: { type: Schema.Types.ObjectId, required: true, ref: 'Customer' },
 
@@ -15,7 +15,7 @@ const docSchema = new Schema({
 
         reporter: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
 
-        assignee: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
+        assignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         
         description: { type: String  },
 
