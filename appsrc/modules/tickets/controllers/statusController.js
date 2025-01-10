@@ -39,15 +39,6 @@ exports.getTicketStatuses = async (req, res, next) => {
       delete this.query.orderBy;
     }
     let result = await this.dbservice.getObjectList(req, TicketStatus, this.fields, this.query, this.orderBy, this.populate);
-    const countsResult = await getCountsByGroups();
-    if(Array.isArray(result)){
-      result = {
-        data: result,
-        groupCounts: countsResult
-      }
-    } else {
-      result.groupCounts = countsResult
-    }
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));

@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Investigation Reasons
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/investigationReasons/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

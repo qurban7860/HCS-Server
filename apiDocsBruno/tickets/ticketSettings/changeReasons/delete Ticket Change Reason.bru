@@ -1,0 +1,15 @@
+meta {
+  name: delete Ticket Change Reason
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/tickets/settings/changeReasons/6780f432dc488409754fab9e
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

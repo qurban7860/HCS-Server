@@ -1,0 +1,26 @@
+meta {
+  name: post Ticket Priority
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/tickets/settings/priorities/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "icon": "mdi:priority",
+    "name": "Priority",
+    "slug": "slug",
+    "description": "description!",
+    "displayOrderNo": "1",
+    "isDefault": true
+  }
+}
