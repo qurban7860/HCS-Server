@@ -27,6 +27,7 @@ const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
 const customerContact = require('../../crm/models/customerContact');
 const getAllSPCustomerContacts = require('../../crm/utils/fetchAllSPContacts');
+const CounterController = require('../../counter/controllers/counterController');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -397,7 +398,8 @@ exports.postProductServiceReport = async (req, res, next) => {
       req.body.status = serviceReportDraftStatus?._id;
     }
     let productServiceReportObject = await getDocumentFromReq(req, 'new');
-    productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${customTimestamp( new Date())?.toString()}`;
+    const nextServiceReportCounterId = await CounterController.getPaddedCounterSequence('serviceReport');
+    productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${nextServiceReportCounterId}`;
     productServiceReportObject.customer = machine?.customer;
     let response = await this.dbservice.postObject(productServiceReportObject);
     req.params.serviceReportId = response?._id;
