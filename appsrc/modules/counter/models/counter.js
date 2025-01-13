@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const Schema = mongoose.Schema;
+const baseSchema = require('../../../base/baseSchema');
 
 const counterSchema = new Schema({
 
@@ -18,8 +19,8 @@ const counterSchema = new Schema({
     collection: 'Counters'
 });
 
-docSchema.add(baseSchema.docAuditSchema);
-docSchema.add(baseSchema.docVisibilitySchema);
+counterSchema.add(baseSchema.docVisibilitySchema);
+counterSchema.add(baseSchema.docAuditSchema);
 
 counterSchema.plugin(uniqueValidator);
 
