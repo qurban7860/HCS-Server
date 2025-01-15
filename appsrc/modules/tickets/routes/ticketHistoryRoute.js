@@ -1,17 +1,17 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkParentID = require('../../../middleware/check-parentID');
+const checkIDs = require('../../../middleware/validateParamIDs');
 const controllers = require('../controllers');
 const controller = controllers.ticketHistoryController;
 const router = express.Router();
-const { Ticket } = require('../models');
+const validate = require('../utils/validate');
 
 const baseRoute = `/:ticketId/history`; 
 
-router.use( checkAuth, checkParentID( "ticket", Ticket) );
+router.use( checkAuth );
 
-router.get(`${baseRoute}/:id`, controller.getTicketHistory );
+router.get(`${baseRoute}/:id`, checkIDs( validate.ticketIdAndId ), controller.getTicketHistory );
 
-router.get(`${baseRoute}/`, controller.getTicketHistories );
+router.get(`${baseRoute}/`, checkIDs( validate.ticketId ), controller.getTicketHistories );
 
 module.exports = router;

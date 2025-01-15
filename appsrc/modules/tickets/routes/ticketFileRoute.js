@@ -1,23 +1,22 @@
 const express = require('express');
 const router = express.Router();
-
 const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../middleware/file-upload');
 const checkAuth = require('../../../middleware/check-auth');
-const checkParentID = require('../../../middleware/check-parentID');
+const checkIDs = require('../../../middleware/validateParamIDs');
 const controllers = require('../controllers');
 const controller = controllers.ticketFileController;
 const { Ticket } = require('../models');
-
+const validate = require('../utils/validate');
 const baseRoute = `/:ticketId/files`; 
 
-router.use(checkAuth, checkParentID( "ticket", Ticket));
+router.use(checkAuth);
 
-router.post(`${baseRoute}/`, uploadHandler, checkMaxCount, imageOptimization, controller.postTicketFile );
+router.post(`${baseRoute}/`, checkIDs( validate.ticket ), uploadHandler, checkMaxCount, imageOptimization, controller.postTicketFile );
 
-router.get(`${baseRoute}/:id`, controller.getTicketFile);
+router.get(`${baseRoute}/:id`, checkIDs( validate.ticketIdAndId ), controller.getTicketFile );
 
-router.get(`${baseRoute}/`, controller.getTicketFiles);
+router.get(`${baseRoute}/`, checkIDs( validate.ticketId), controller.getTicketFiles );
 
-router.delete(`${baseRoute}/:id/`, controller.deleteTicketFile );
+router.delete(`${baseRoute}/:id/`, checkIDs( validate.ticketIdAndId ), controller.deleteTicketFile );
 
 module.exports = router;

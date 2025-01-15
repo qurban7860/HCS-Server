@@ -21,7 +21,12 @@ this.populate = [
 
 exports.getTicketComment = async (req, res, next) => {
   try{
-    const result = await this.dbservice.getObjectById(TicketComment, this.fields, req.params.id, this.populate);
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.query.ticket = req.params.ticketId;
+      this.query._id = req.params.id;
+    }
+    const result = await this.dbservice.getObject(TicketComment, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -36,7 +41,7 @@ exports.getTicketComments = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    this.query.ticketId = req.params.ticketId;
+    this.query.ticket = req.params.ticketId;
     this.query.isActive = true;
     this.query.isArchived = false;
 
@@ -55,7 +60,7 @@ exports.postTicketComment = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    
+    req.body.ticket = req.params?.ticketId;
     const response = await this.dbservice.postObject(getDocumentFromReq(req, "new"));
 
     this.ticketId = req.params.ticketId;
@@ -78,6 +83,8 @@ exports.patchTicketComment = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
+    req.body.ticket = req.params?.ticketId;
+    
     const existingComment = await this.dbservice.getObjectById(TicketComment, {}, req.params.id, this.populate);
     if (existingComment.createdBy._id.toString() !== req.body.loginUser.userId) {
       return res.status(StatusCodes.FORBIDDEN).send("Only the comment author can modify this comment");

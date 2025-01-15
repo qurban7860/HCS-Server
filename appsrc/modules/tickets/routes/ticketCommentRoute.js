@@ -2,27 +2,28 @@ const express = require('express');
 
 const checkAuth = require('../../../middleware/check-auth');
 const verifyDelete = require('../../../middleware/verifyDelete');
-const checkParentID = require('../../../middleware/check-parentID');
+const checkIDs = require('../../../middleware/validateParamIDs');
 const { Ticket } = require('../models');
 const controllers = require('../controllers');
+const validate = require('../utils/validate');
 const controller = controllers.ticketCommentController;
 
-const router = express.Router();
+const router = express.Router({ mergeParams: true });
 
-const baseRouteForObject = `/:ticketId/comments`; 
+const baseRoute = `/:ticketId/comments`; 
 
-router.use(checkAuth, checkParentID( "ticket", Ticket));
+router.use(checkAuth );
 
-router.get(`${baseRouteForObject}/:id`, controller.getTicketComment );
+router.get(`${baseRoute}/:id`, checkIDs( validate.ticketIdAndId ), controller.getTicketComment );
 
-router.get(`${baseRouteForObject}/`, controller.getTicketComments);
+router.get(`${baseRoute}/`, checkIDs( validate.ticketId ), controller.getTicketComments);
 
-router.post(`${baseRouteForObject}/`,  controller.postTicketComment);
+router.post(`${baseRoute}/`, checkIDs( validate.ticket ), controller.postTicketComment);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchTicketComment);
+router.patch(`${baseRoute}/:id`, checkIDs( validate.ticketIdAndId ), verifyDelete, controller.patchTicketComment);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteTicketComment);
+router.delete(`${baseRoute}/:id`, checkIDs( validate.ticketIdAndId ), controller.deleteTicketComment);
 
-router.get(`${baseRouteForObject}/stream`, controller.streamTicketComments);
+router.get(`${baseRoute}/stream`, checkIDs( validate.ticketId ), controller.streamTicketComments);
 
 module.exports = router;
