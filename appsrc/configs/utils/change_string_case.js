@@ -1,5 +1,5 @@
 
-export function paramCase(str) {
+function paramCase(str) {
   return str
     .toLowerCase()
     .replace(/\s+/g, '-')
@@ -8,7 +8,7 @@ export function paramCase(str) {
 
 // ----------------------------------------------------------------------
 
-export function snakeCase(str) {
+function snakeCase(str) {
   return str
     .toLowerCase()
     .replace(/\s+/g, '_')
@@ -17,6 +17,12 @@ export function snakeCase(str) {
 
 // ----------------------------------------------------------------------
 
-export function sentenceCase(string) {
+function sentenceCase(string) {
   return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+module.exports = {
+  sentenceCase,
+  snakeCase,
+  paramCase
 }

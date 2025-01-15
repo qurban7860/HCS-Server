@@ -23,7 +23,12 @@ this.populate = [
 
 exports.getTicketFile = async (req, res, next) => {
   try{
-    const file = await this.dbservice.getObjectById(TicketFile, this.fields, req.params.id, this.populate);
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.query.ticket = req.params.ticketId;
+      this.query._id = req.params.id;
+    }
+    const file = await this.dbservice.getObject(TicketFile, this.query, this.populate);
 
     if( !file?._id ){
       return res.status(StatusCodes.BAD_REQUEST).send('File not found!');
@@ -117,7 +122,7 @@ exports.postTicketFile = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-
+    req.body.ticket = req.params?.ticketId;
     const files = await saveTicketFiles( req )
     return res.status(StatusCodes.OK).json( files );
   } catch( error ){

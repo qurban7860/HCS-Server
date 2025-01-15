@@ -5,13 +5,9 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/tickets/:ticketId/comments/
+  url: {{baseUrl}}/tickets/6784ec6b143c6d854f092f46/comments
   body: json
   auth: bearer
-}
-
-params:path {
-  ticketId: 
 }
 
 auth:bearer {
@@ -20,27 +16,7 @@ auth:bearer {
 
 body:json {
   {
-    "customer": "662f10f3018c887351ae793e",
-    "machine": "662f117e018c887351ae7da8",
-    "issueType": "Request",
-    "description": "description",
-    "summary": "summary",
-    "changeType": "Problem",
-    "impact": "impact",
-    "priority": "priority",
-    "status": "Done",
-    "changeReason": "changeReason",
-    "implementationPlan": "implementation",
-    "backoutPlan": "backout",
-    "testPlan": "test",
-    "components": "components",
-    "groups": "groups",
-    "shareWith": "share",
-    "investigationReason": "investigationReason",
-    "rootCause": "cause",
-    "workaround": "work",
-    "plannedStartDate": "2024-04-29T03:18:09.614Z",
-    "plannedEndDate": "2024-04-29T03:18:09.614Z"
+    "comment": "Test Comment"
   }
   
 }

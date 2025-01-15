@@ -5,14 +5,9 @@ meta {
 }
 
 patch {
-  url: {{baseUrl}}/tickets/:ticketId/comments/:id
+  url: {{baseUrl}}/tickets/6784ec6b143c6d854f092f46/comments/678666419a1a61e8b5d4bc4f
   body: json
   auth: bearer
-}
-
-params:path {
-  ticketId: 
-  id: 
 }
 
 auth:bearer {
@@ -21,6 +16,6 @@ auth:bearer {
 
 body:json {
   {
-    "issueType": "Change"
+    "comment": "update Test Comment"
   }
 }

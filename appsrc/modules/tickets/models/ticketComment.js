@@ -9,7 +9,7 @@ const docSchema = new Schema({
     
     comment: { type: String, required: true },
     
-    isInternal: { type: Boolean },
+    isInternal: { type: Boolean, default: false },
     
 },
 {

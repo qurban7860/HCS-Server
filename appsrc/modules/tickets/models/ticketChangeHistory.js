@@ -7,11 +7,11 @@ const docSchema = new Schema({
 
         ticket: { type: String, required: true, ref: 'Ticket' },
 
-        previousReporter: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
-        newReporter: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
+        previousReporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        newReporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
 
-        previousAssignee: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
-        newAssignee: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
+        previousAssignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        newAssignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
 
         previousPriority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
         newPriority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },

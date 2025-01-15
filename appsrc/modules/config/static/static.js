@@ -51,12 +51,12 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordMissingParamsMessage(code, parent) {
+    recordMissingParamsMessage(code, parameter) {
         if (code == 400) {
             const response = {
                 isError: "true", 
                 MessageCode: code,
-                Message: `Insufficients params received. ${parent} ID required!`
+                Message: `Insufficients params received. ${parameter} required!`
             };
 
             return response;
@@ -119,12 +119,12 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    invalidIdMessage(code, parent) {
+    invalidIdMessage(code, parameter) {
         if (code == 404) {
             const response = {
                 isError: "true", 
                 MessageCode: code,
-                Message: `${parent} not found!`
+                Message: `${parameter} not found!`
             };
 
             return response;

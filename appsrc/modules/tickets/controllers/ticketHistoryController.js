@@ -12,17 +12,27 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  { path: 'reporter', select: 'firstName lastName' },
-  { path: 'assignee', select: 'firstName lastName' },
-  { path: 'priority', select: 'name icon'  },
-  { path: 'status', select: 'name icon'  },
+  { path: 'ticket', select: 'ticketNo' },
+  { path: 'newReporter', select: 'firstName lastName' },
+  { path: 'previousReporter', select: 'firstName lastName' },
+  { path: 'newAssignee', select: 'firstName lastName' },
+  { path: 'previousAssignee', select: 'firstName lastName' },
+  { path: 'newPriority', select: 'name icon'  },
+  { path: 'previousPriority', select: 'name icon'  },
+  { path: 'newStatus', select: 'name icon'  },
+  { path: 'previousStatus', select: 'name icon'  },
   { path: 'updatedBy', select: 'name' }
 ];
 
 
 exports.getTicketHistory = async (req, res, next) => {
   try{
-    const result = await this.dbservice.getObjectById( TicketChangeHistory, this.fields, req.params.id, this.populate);
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.query.ticket = req.params.ticketId;
+      this.query._id = req.params.id;
+    }
+    const result = await this.dbservice.getObject( TicketChangeHistory, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -38,6 +48,7 @@ exports.getTicketHistories = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
+    this.query.ticket =req.params?.ticketId;
     let result = await this.dbservice.getObjectList(req, TicketChangeHistory, this.fields, this.query, this.orderBy, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
@@ -46,24 +57,20 @@ exports.getTicketHistories = async (req, res, next) => {
   }
 };
 
-exports.postTicketChange = async (req, res, next) => {
+exports.postTicketChange = async ( obj ) => {
   try{
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      logger.error(new Error(errors));
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    }
-    const result = await this.dbservice.postObject(getDocFromReq( req ));
-    return res.status(StatusCodes.ACCEPTED).json(result);;
+    await this.dbservice.postObject(getDocFromReq( obj ));
+    return
   } catch( error ){
     logger.error(new Error(error));
-    return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
+    throw error
   }
 };
 
-function getDocFromReq( req ){
-  const { loginUser } = req.body;
+function getDocFromReq( obj ){
+  const { loginUser } = obj;
   const doc = new TicketChangeHistory({});
+
   const allowedFields = [ 
     "ticket", 
     "previousReporter", 
@@ -77,12 +84,12 @@ function getDocFromReq( req ){
   ];
 
   allowedFields.forEach((f) => {
-    if (f in req.body){
-      doc[f] = req.body[f];
+    if (f in obj ){
+      doc[f] = obj[f];
     }
   });
 
-  if ("loginUser" in req.body ){
+  if ( "loginUser" in obj ){
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   }

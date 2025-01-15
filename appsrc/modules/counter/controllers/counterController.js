@@ -11,8 +11,7 @@ class CounterController {
             isActive: true,
             counters: {
                 serviceReport: 0,
-                document: 0,
-                customer: 0
+                supportTicket: 0
             }
         });
     }
@@ -35,8 +34,7 @@ class CounterController {
         isActive: true,
         counters: {
           serviceReport: 0,
-          document: 0,
-          customer: 0,
+          supportTicket: 0
         },
       }));
 

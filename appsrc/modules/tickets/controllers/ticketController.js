@@ -5,9 +5,11 @@ let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
 const ticketFileController = require('./ticketFileController');
+const ticketChangeController = require('./ticketHistoryController');
 const { Ticket } = require('../models');
 const { SecurityUser } = require('../../security/models');
-
+const CounterController = require('../../counter/controllers/counterController');
+const { sentenceCase } = require('../../../configs/utils/change_string_case');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -82,7 +84,7 @@ exports.getTickets = async (req, res, next) => {
       delete this.query.orderBy;
     }
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.populate);
-    console.log('result : ', result )
+    
     const countsResult = await getCountsByGroups();
     if(Array.isArray(result)){
       result = {
@@ -124,13 +126,30 @@ exports.postTicket = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+
     if( !req.body?.loginUser?.userId ){
       return res.status(StatusCodes.BAD_REQUEST).send( "User not found!" );
     }
-    const userData = await this.dbservice.getObjectById( SecurityUser, this.fields, req.body?.loginUser?.userId );
-    req.body.reporter = userData?.contact;
-    const ticketData = await this.dbservice.postObject(getDocFromReq(req, 'new'));
-    await ticketFileController.saveTicketFiles( req );
+
+    if( !req.body.reporter ){
+      const userData = await this.dbservice.getObjectById( SecurityUser, this.fields, req.body?.loginUser?.userId );
+      req.body.reporter = userData?.contact;
+    }
+    
+    let ticketData = await getDocFromReq(req, 'new')
+    const nextTicketNumber = await CounterController.getPaddedCounterSequence('supportTicket');
+    ticketData.ticketNo = nextTicketNumber;
+    ticketData = await this.dbservice.postObject(ticketData);
+    req.params.ticketId = ticketData?._id;
+
+    try {
+      await ticketFileController.saveTicketFiles(req);
+    } catch (error) {
+      if (ticketData) {
+        await Ticket.deleteObjectById(ticketData._id);
+      }
+      throw new Error("Failed to complete the ticket creation process: " + error.message);
+    }
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch( error ){
     logger.error(new Error(error));
@@ -145,7 +164,26 @@ exports.patchTicket = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    const oldObj = await this.dbservice.getObjectById( Ticket, this.fields, req.params.id );
     await this.dbservice.patchObject(Ticket, req.params.id, getDocFromReq(req));
+     const fields = [ "reporter", "assignee", "priority", "status" ];
+    const changedFields = {};
+
+    fields.forEach((field) => {
+      if( req.body?.[field] && req.body?.[field] !== oldObj?.[field] ){
+        const newField = sentenceCase(field);
+        changedFields[`previous${newField}`] = oldObj?.[field];
+        changedFields[`new${newField}`] = req.body?.[field];
+      }
+    });
+
+    if( Object.keys( changedFields ).length > 0 ){
+      changedFields.loginUser = req.body?.loginUser
+      changedFields.ticket = req.params.id
+      console.log(" changedFields : ",changedFields)
+      await ticketChangeController.postTicketChange( changedFields );
+    }
+
     await ticketFileController.saveTicketFiles( req );
 
     return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");

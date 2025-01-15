@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-        // ticketNo: { type: String, required: true },
+        ticketNo: { type: String },
 
         customer: { type: Schema.Types.ObjectId, required: true, ref: 'Customer' },
 
