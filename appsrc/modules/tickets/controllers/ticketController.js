@@ -6,7 +6,16 @@ this.dbservice = new ticketDBService();
 const _ = require('lodash');
 const ticketFileController = require('./ticketFileController');
 const ticketChangeController = require('./ticketHistoryController');
-const { Ticket } = require('../models');
+const { 
+  Ticket, 
+  TicketChangeReason, 
+  TicketChangeType, 
+  TicketImpact,
+  TicketInvestigationReason,
+  TicketIssueType,
+  TicketPriority,
+  TicketStatus
+} = require('../models');
 const { SecurityUser } = require('../../security/models');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
@@ -33,6 +42,7 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
+this.settingFields = "name slug icon";
 
 exports.getTicket = async (req, res, next) => {
   try{
@@ -50,19 +60,31 @@ const getCountsByGroups = async () => {
     { $match: { isArchived: false, isActive: true } },
     {
       $facet: {
-        byIssueType: [
-          { $group: { _id: "$issueType", count: { $sum: 1 } } },
+        byChangeReasons: [
+          { $group: { _id: "$changeReason", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
         ],
-        byType: [
+        byChangeTypes: [
           { $group: { _id: "$changeType", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
         ],
-        byPriority: [
+        byImpacts: [
+          { $group: { _id: "$impact", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ],
+        byInvestigationReasons: [
+          { $group: { _id: "$investigationReason", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ],
+        byIssueTypes: [
+          { $group: { _id: "$issueType", count: { $sum: 1 } } },
+          { $sort: { count: -1 } },
+        ],
+        byPriorities: [
           { $group: { _id: "$priority", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
         ],
-        byStatus: [
+        byStatuses: [
           { $group: { _id: "$status", count: { $sum: 1 } } },
           { $sort: { count: -1 } },
         ],
@@ -74,6 +96,43 @@ const getCountsByGroups = async () => {
   return result;
 };
 
+exports.getTicketSettings = async (req, res, next) => {
+  try{
+
+    this.query = req.query != "undefined" ? req.query : {};  
+    this.orderBy = { name: 1 };  
+    this.query.isActive = true;
+    this.query.isArchived = false;
+
+    if(this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
+
+    const changeReasons = await this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy );
+    const changeTypes = await this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy );
+    const impacts = await this.dbservice.getObjectList(req, TicketImpact, this.settingFields, this.query, this.orderBy );
+    const investigationReasons = await this.dbservice.getObjectList(req, TicketInvestigationReason, this.settingFields, this.query, this.orderBy );
+    const issueTypes = await this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy );
+    const priorities = await this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy );
+    const statuses = await this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy );
+
+    const result = {
+      changeReasons,
+      changeTypes,
+      impacts,
+      investigationReasons,
+      issueTypes,
+      priorities,
+      statuses
+    }
+
+    return res.status(StatusCodes.OK).json(result);
+  } catch( error ){
+    logger.error(new Error(error));
+    return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
+  }
+};
 
 exports.getTickets = async (req, res, next) => {
   try{

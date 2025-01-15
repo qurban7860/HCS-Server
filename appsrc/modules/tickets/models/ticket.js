@@ -11,47 +11,47 @@ const docSchema = new Schema({
 
         machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
 
-        issueType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketIssueType' },
-
         reporter: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
 
         assignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+
+        changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
         
-        description: { type: String  },
-
-        summary: { type: String  },
-
         changeType: { type: Schema.Types.ObjectId, ref: 'TicketChangeType' },
-
+        
         impact: { type: Schema.Types.ObjectId, ref: 'TicketImpact' },
+        
+        investigationReason: { type: Schema.Types.ObjectId, ref: 'TicketInvestigationReason' },
+
+        issueType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketIssueType' },
 
         priority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
 
         status: { type: Schema.Types.ObjectId, ref: 'TicketStatus' },
 
-        files: [{ type: Schema.Types.ObjectId, ref: 'TicketFile' }],
-
-        changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
-
         implementationPlan: { type: String  },
-
-        backoutPlan: { type: String  },
-
-        testPlan: { type: String  },
-
-        groups: { type: String  },
-
-        shareWith: { type: Boolean },
-
-        investigationReason: { type: Schema.Types.ObjectId, ref: 'TicketInvestigationReason' },
-
-        rootCause: { type: String  },
-
-        workaround: { type: String  },
 
         plannedStartDate: { type: Date  },
 
         plannedEndDate: { type: Date  },
+
+        backoutPlan: { type: String  },
+
+        description: { type: String  },
+        
+        workaround: { type: String  },
+
+        rootCause: { type: String  },
+
+        shareWith: { type: Boolean },
+
+        testPlan: { type: String  },
+        
+        summary: { type: String  },
+
+        groups: { type: String  },
+
+        files: [{ type: Schema.Types.ObjectId, ref: 'TicketFile' }],
         
 },
 {

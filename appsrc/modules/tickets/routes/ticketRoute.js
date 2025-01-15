@@ -11,6 +11,8 @@ router.use( checkAuth );
 
 // router.get(`/search`, controller.searchTickets );
 
+router.get(`/settings`, controller.getTicketSettings );
+
 router.get(`/`, controller.getTickets );
 
 router.get(`/:id`, controller.getTicket );
