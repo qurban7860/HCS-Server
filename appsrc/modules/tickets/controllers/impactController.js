@@ -6,7 +6,7 @@ let rtnMsg = require('../../config/static/static')
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
-const { TicketImpact } = require('../models');
+const { Ticket, TicketImpact } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -85,8 +85,17 @@ exports.patchTicketImpact = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    if ( req.body?.isArchived || req.body?.isActive ) {
+      this.query.impact = req.params.id;
+      this.query.isArchived = false;
+      const result = await this.dbservice.getObject( Ticket, this.query );
+      if( result?._id ){
+        logger.info(new Error(errors));
+        return res.status(StatusCodes.BAD_REQUEST).send( "Impact used in the Ticket can't be inactive or archived!" );
+      }
+    }
     const result = await this.dbservice.patchObject(TicketImpact, req.params.id, getDocFromReq(req));
-    return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
+    return res.status(StatusCodes.ACCEPTED).send(`Impact ${ req.body?.isArchived ? "archived" : "updated" } successfully!`);
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
@@ -96,7 +105,7 @@ exports.patchTicketImpact = async (req, res, next) => {
 exports.deleteTicketImpact = async (req, res, next) => {
   try{
     await this.dbservice.deleteObject( TicketImpact, req.params.id, res );
-    return res.status(StatusCodes.BAD_REQUEST).send("Ticket impact deleted successfully!");
+    return res.status(StatusCodes.BAD_REQUEST).send("Impact deleted successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );

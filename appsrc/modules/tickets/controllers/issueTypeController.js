@@ -6,7 +6,7 @@ let rtnMsg = require('../../config/static/static')
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
-const { TicketIssueType } = require('../models');
+const { Ticket, TicketIssueType } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -86,8 +86,17 @@ exports.patchTicketIssueType = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    const result = await this.dbservice.patchObject(TicketIssueType, req.params.id, getDocFromReq(req));
-    return res.status(StatusCodes.ACCEPTED).send("Ticket issue type updated successfully!");
+    if ( req.body?.isArchived || !req.body?.isActive ) {
+      this.query.issueType = req.params.id;
+      this.query.isArchived = false;
+      const result = await this.dbservice.getObject( Ticket, this.query );
+      if( result?._id ){
+        logger.info(new Error(errors));
+        return res.status(StatusCodes.BAD_REQUEST).send( "Issue Type used in the Ticket can't be inactive or archived!" );
+      }
+    }
+    await this.dbservice.patchObject(TicketIssueType, req.params.id, getDocFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send(`Issue Type ${ req.body?.isArchived ? "archived" : "updated" } successfully!`);
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
@@ -97,7 +106,7 @@ exports.patchTicketIssueType = async (req, res, next) => {
 exports.deleteTicketIssueType = async (req, res, next) => {
   try{
     await this.dbservice.deleteObject( TicketIssueType, req.params.id, res );
-    return res.status(StatusCodes.BAD_REQUEST).send("Ticket issue type deleted successfully!");
+    return res.status(StatusCodes.BAD_REQUEST).send("Issue Type deleted successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
