@@ -6,7 +6,7 @@ let rtnMsg = require('../../config/static/static')
 let TicketChangeReasonDBService = require('../service/ticketDBService')
 this.dbservice = new TicketChangeReasonDBService();
 const _ = require('lodash');
-const { TicketChangeReason } = require('../models');
+const { Ticket, TicketChangeReason } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -80,13 +80,23 @@ exports.postTicketChangeReason = async (req, res, next) => {
 
 exports.patchTicketChangeReason = async (req, res, next) => {
   try{
+    this.query = req.query != "undefined" ? req.query : {}; 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    const result = await this.dbservice.patchObject(TicketChangeReason, req.params.id, getDocFromReq(req));
-    return res.status(StatusCodes.ACCEPTED).send("Ticket change reason updated successfully!");
+    if ( req.body?.isArchived || !req.body?.isActive ) {
+      this.query.changeReason = req.params.id;
+      this.query.isArchived = false;
+      const result = await this.dbservice.getObject( Ticket, this.query );
+      if( result?._id ){
+        logger.info(new Error(errors));
+        return res.status(StatusCodes.BAD_REQUEST).send( "Change reason used in the Ticket can't be inactive or archived!" );
+      }
+    }
+    await this.dbservice.patchObject(TicketChangeReason, req.params.id, getDocFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send(`Ticket change reason ${ req.body?.isArchived ? "archived" : "updated" } successfully!`);
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
@@ -96,7 +106,7 @@ exports.patchTicketChangeReason = async (req, res, next) => {
 exports.deleteTicketChangeReason = async (req, res, next) => {
   try{
     await this.dbservice.deleteObject( TicketChangeReason, req.params.id, res );
-    return res.status(StatusCodes.BAD_REQUEST).send("Ticket change reason deleted successfully!");
+    return res.status(StatusCodes.BAD_REQUEST).send("Change Reason deleted successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
