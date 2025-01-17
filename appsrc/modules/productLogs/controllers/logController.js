@@ -92,6 +92,18 @@ exports.getLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
+    if (this.query?.customer && !this.query?.machine) {
+      const activeMachines = await Product.find({ 
+        customer: this.query.customer,
+        isActive: true,
+        isArchived: false 
+      }).select('_id');
+      
+      this.query.machine = { 
+        $in: activeMachines.map(machine => machine._id) 
+      };
+    }
+
     let response = await this.dbservice.getObjectList(req, Model, this.fields, this.query, this.orderBy, this.populate);
 
     if( !Array.isArray(response) && this.query?.customer && !this.query?.machine ){
@@ -114,6 +126,18 @@ exports.getLogsGraph = async (req, res, next) => {
     const match = {};
     if (mongoose.Types.ObjectId.isValid(customer)) {
       match.customer = new mongoose.Types.ObjectId(customer);
+
+      if (!machine) {
+        const activeMachines = await Product.find({ 
+          customer: match.customer,
+          isActive: true,
+          isArchived: false 
+        }).select('_id');
+        
+        match.machine = { 
+          $in: activeMachines.map(machine => machine._id) 
+        };
+      }
     }
     if (mongoose.Types.ObjectId.isValid(machine)) {
       match.machine = new mongoose.Types.ObjectId(machine);
