@@ -13,6 +13,10 @@ const verifyMachineAuth = async (req, res, next) => {
       "x-ipcserialno": IPCSerialNo,
       "x-howickportalkey": howickPortalKey
     } = req.headers;
+
+    const clientIP = req.headers["x-clientip"];
+    const clientIdentifier = req.headers["x-clientidentifier"];
+
     const transferredStatus = await ProductStatus.findOne({ name: 'Transferred' });
     const decommissionedStatus = await ProductStatus.findOne({ name: 'Decommissioned' });
 
@@ -48,8 +52,8 @@ const verifyMachineAuth = async (req, res, next) => {
     req.machine = machine;
     req.customer = machine.customer;
     req.clientInfo = {
-      ip: req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress,
-      identifier: `${req.headers["user-agent"]}|${req.headers.origin || req.headers.referer || 'direct'}`
+      ip: clientIP,
+      identifier: clientIdentifier
     };
 
     next();
