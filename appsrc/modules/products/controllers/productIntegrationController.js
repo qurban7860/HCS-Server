@@ -132,8 +132,17 @@ exports.postIntegrationDetails = async (req, res, next) => {
 
 exports.syncMachineConnection = async (req, res, next) => {
   const startTime = Date.now();
-  const clientIP = req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress;
-  const clientInfo = `${req.headers["user-agent"]}|${req.headers.origin || req.headers.referer || 'direct'}`;
+  
+  const {
+    "x-machineserialno": machineSerialNo,
+    "x-computerguid": computerGUID,
+    "x-ipcserialno": IPCSerialNo,
+    "x-howickportalkey": howickPortalKey
+  } = req.headers;
+
+  const clientIP = req.headers["x-clientip"];
+  const clientInfo = req.headers["x-clientidentifier"];
+
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -150,8 +159,6 @@ exports.syncMachineConnection = async (req, res, next) => {
       });
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-
-    const { machineSerialNo, howickPortalKey, computerGUID, IPCSerialNo } = req.body;
 
     const machine = await Product.findOne({
       serialNo: machineSerialNo,
