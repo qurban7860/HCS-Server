@@ -66,8 +66,10 @@ exports.searchTicketIssueTypes = async (req, res, next) => {
 
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
-    await this.dbservice.getObject( TicketIssueType, { isDefault: true } );
-    throw new Error("Default issue type already exist!");
+    const isDefaultExist = await this.dbservice.getObject( TicketIssueType, { isDefault: true } );
+    if( isDefaultExist?._id ){
+      throw new Error("Default issue type already exist!");
+    }
   }
 }
 

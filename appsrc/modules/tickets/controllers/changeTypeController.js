@@ -66,8 +66,10 @@ exports.searchTicketChangeTypes = async (req, res, next) => {
 
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
-    await this.dbservice.getObject( TicketChangeType, { isDefault: true } );
-    throw new Error("Default change type already exist!");
+    const isDefaultExist = await this.dbservice.getObject( TicketChangeType, { isDefault: true } );
+    if( isDefaultExist?._id ){
+      throw new Error("Default change type already exist!");
+    }
   }
 }
 

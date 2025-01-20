@@ -65,8 +65,10 @@ exports.searchTicketImpacts = async (req, res, next) => {
 
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
-    await this.dbservice.getObject( TicketImpact, { isDefault: true } );
-    throw new Error("Default impact already exist!");
+    const isDefaultExist = await this.dbservice.getObject( TicketImpact, { isDefault: true } );
+    if( isDefaultExist?._id ){
+      throw new Error("Default impact already exist!");
+    }
   }
 }
 
