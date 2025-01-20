@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const uniqueValidator = require('mongoose-unique-validator');
 
 const baseSchema = require('../../../base/baseSchema');
 
@@ -7,10 +6,13 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-    icon: { type: String , required: true },
 
     name: { type: String , required: true },
     
+    icon: { type: String },
+
+    color: { type: String },
+
     description: { type: String },
 
     slug: { type: String },
@@ -26,11 +28,7 @@ docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
-docSchema.index({"name":1})
-docSchema.index({"slug":1})
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
-
-docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('TicketChangeType', docSchema);

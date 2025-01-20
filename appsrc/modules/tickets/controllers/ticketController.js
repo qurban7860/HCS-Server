@@ -195,6 +195,11 @@ exports.postTicket = async (req, res, next) => {
       req.body.reporter = userData?.contact;
     }
     
+    if( !req.body.status ){
+      const statusData = await this.dbservice.getObject( TicketStatus, { isDefault: true } );
+      req.body.status = statusData?._id;
+    }
+
     let ticketData = await getDocFromReq(req, 'new')
     const nextTicketNumber = await CounterController.getPaddedCounterSequence('supportTicket');
     ticketData.ticketNo = nextTicketNumber;
