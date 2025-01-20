@@ -66,8 +66,10 @@ exports.searchTicketStatuses = async (req, res, next) => {
 
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
-    await this.dbservice.getObject( TicketStatus, { isDefault: true } );
-    throw new Error("Default status already exist!");
+    const isDefaultExist = await this.dbservice.getObject( TicketStatus, { isDefault: true } );
+    if( isDefaultExist?._id ){
+      throw new Error("Default status already exist!");
+    }
   }
 }
 

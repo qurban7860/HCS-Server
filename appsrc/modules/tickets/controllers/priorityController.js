@@ -66,8 +66,10 @@ exports.searchTicketPriorities = async (req, res, next) => {
 
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
-    await this.dbservice.getObject( TicketPriority, { isDefault: true } );
-    throw new Error("Default priority already exist!");
+    const isDefaultExist = await this.dbservice.getObject( TicketPriority, { isDefault: true } );
+    if( isDefaultExist?._id ){
+      throw new Error("Default priority already exist!");
+    }
   }
 }
 
