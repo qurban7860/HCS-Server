@@ -91,7 +91,6 @@ const fileUpload = multer({
       cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-      // const ext = validExtensions[file.mimetype];
       const { ext } = path.parse(file.originalname);
       let fileExt = ext.slice(1);
       if(fileExt)
@@ -99,9 +98,9 @@ const fileUpload = multer({
       cb(null, uuid() + '.' + fileExt);
     }
   }),
+  
   fileFilter: (req, file, cb) => {
     let errorMessage = '';
-    // const isValid = !!validExtensions[file.mimetype];
     const { ext } = path.parse(file.originalname);
     let fileExt = ext.slice(1);
 
@@ -118,6 +117,7 @@ const fileUpload = multer({
 });
 
 const uploadHandler = (req, res, next) => {
+  const loginUser = req.body.loginUser
   fileUpload.fields([{ name: 'images' }])(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       logger.error(new Error(err));
@@ -126,6 +126,7 @@ const uploadHandler = (req, res, next) => {
       logger.error(new Error(err));
       return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     }
+    req.body.loginUser = loginUser;
     next();
   });
 };
@@ -169,4 +170,4 @@ const imageOptimization = async (req, res, next) => {
 };
 
 
-module.exports = {fileUpload, uploadHandler, checkMaxCount, imageOptimization }
+module.exports = { fileUpload, uploadHandler, checkMaxCount, imageOptimization }

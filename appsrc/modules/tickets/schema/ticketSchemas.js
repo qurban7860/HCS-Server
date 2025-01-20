@@ -105,7 +105,8 @@ const ticketSchema = (reqType ) => {
             return ObjectId.isValid( investigationReasonId );
         }),
 
-        images: Yup.mixed().nullable().notRequired(),
+        files: Yup.mixed().label("Files").nullable().notRequired(),
+        images: Yup.mixed().label("Files").nullable().notRequired(),
 
         description: Yup.string().label('Description').max(10000).nullable().notRequired(),
         summary: Yup.string().label('Summary').max(5000).nullable().notRequired(),
@@ -122,8 +123,7 @@ const ticketSchema = (reqType ) => {
         shareWith: Yup.boolean().nullable().notRequired(),
         isActive: Yup.boolean().nullable().notRequired(),
         isArchived: Yup.boolean().nullable().notRequired(),
-
-
+        
     });
 };
 

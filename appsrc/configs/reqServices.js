@@ -30,19 +30,20 @@ const validateRequest = (schema) => async (req, res, next) => {
         throw new Error("Request Validation Failed!")
     }
 
-    let body = req.body;
+    const { loginUser, ...otherFields } = req.body;
+
+    let body = otherFields;
 
     if (req.is("multipart/form-data")) {
       const formDataObject = {};
-      req.body.forEach((value, key) => {
-        formDataObject[key] = value;
-      });
+      for (const [key, value] of Object.entries(body)) {
+        formDataObject[key] = Array.isArray(value) ? value[0] : value;
+      }
       body = formDataObject;
     }
 
-    const { loginUser, ...otherFields } = body;
-    
-    const validatedBody = await schema.validate(otherFields, {
+
+    const validatedBody = await schema.validate(body, {
       abortEarly: false,
       stripUnknown: true,
       context: { req, res },
