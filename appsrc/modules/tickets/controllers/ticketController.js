@@ -207,7 +207,10 @@ exports.postTicket = async (req, res, next) => {
     req.params.ticketId = ticketData?._id;
 
     try {
-      await ticketFileController.saveTicketFiles(req);
+      const savedFiles = await ticketFileController.saveTicketFiles(req);
+      if( Array.isArray( savedFiles ) && savedFiles?.length > 0 ){
+        await this.dbservice.patchObject(Ticket, ticketData?._id, { files: savedFiles?.map( sf => sf?._id ) });
+      }
     } catch (error) {
       if (ticketData) {
         await Ticket.deleteObjectById(ticketData._id);
@@ -228,6 +231,7 @@ exports.patchTicket = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    req.params.ticketId = req.params.id;
     const oldObj = await this.dbservice.getObjectById( Ticket, this.fields, req.params.id );
     await this.dbservice.patchObject(Ticket, req.params.id, getDocFromReq(req));
      const fields = [ "reporter", "assignee", "priority", "status" ];
@@ -244,12 +248,14 @@ exports.patchTicket = async (req, res, next) => {
     if( Object.keys( changedFields ).length > 0 ){
       changedFields.loginUser = req.body?.loginUser
       changedFields.ticket = req.params.id
-      console.log(" changedFields : ",changedFields)
       await ticketChangeController.postTicketChange( changedFields );
     }
 
-    await ticketFileController.saveTicketFiles( req );
-
+    const savedFiles = await ticketFileController.saveTicketFiles( req );
+    if( Array.isArray( savedFiles ) && savedFiles?.length > 0 ){
+      const filesIds = savedFiles?.map( sf => sf?._id )
+      await this.dbservice.patchObject( Ticket, req.params.id, { $push: { files: { $each: filesIds } } } );
+    }
     return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
   } catch( error ){
     logger.error(new Error(error));
