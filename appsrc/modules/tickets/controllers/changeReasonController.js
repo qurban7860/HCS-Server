@@ -63,6 +63,13 @@ exports.searchTicketChangeReasons = async (req, res, next) => {
   }
 };
 
+const handleIsDefault = async ( req ) => {
+  if( req.body?.isDefault ){
+    await this.dbservice.getObject( TicketChangeReason, { isDefault: true } );
+    throw new Error("Default change reason already exist!");
+  }
+}
+
 exports.postTicketChangeReason = async (req, res, next) => {
   try{
     const errors = validationResult(req);
@@ -70,6 +77,7 @@ exports.postTicketChangeReason = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    await handleIsDefault( req );
     const result = await this.dbservice.postObject(getDocFromReq(req, 'new'));
     return res.status(StatusCodes.ACCEPTED).json(result);;
   } catch( error ){
@@ -86,6 +94,7 @@ exports.patchTicketChangeReason = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    await handleIsDefault( req );
     if ( req.body?.isArchived || !req.body?.isActive ) {
       this.query.changeReason = req.params.id;
       this.query.isArchived = false;
@@ -116,7 +125,7 @@ exports.deleteTicketChangeReason = async (req, res, next) => {
 function getDocFromReq(req, reqType){
   const { loginUser } = req.body;
   const doc = reqType === "new" ? new TicketChangeReason({}) : {};
-  const allowedFields = [ "name", "description", "slug", "displayOrderNo", "isDefault", "icon", "isActive", "isArchived" ];
+  const allowedFields = [ "name", "description", "slug", "displayOrderNo", "isDefault", "icon", "color", "isActive", "isArchived" ];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {

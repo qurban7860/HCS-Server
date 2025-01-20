@@ -64,6 +64,13 @@ exports.searchTicketPriorities = async (req, res, next) => {
   }
 };
 
+const handleIsDefault = async ( req ) => {
+  if( req.body.isDefault ){
+    await this.dbservice.getObject( TicketPriority, { isDefault: true } );
+    throw new Error("Default priority already exist!");
+  }
+}
+
 exports.postTicketPriority = async (req, res, next) => {
   try{
     const errors = validationResult(req);
@@ -71,6 +78,7 @@ exports.postTicketPriority = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    await handleIsDefault( req );
     const result = await this.dbservice.postObject(getDocFromReq(req, 'new'));
     return res.status(StatusCodes.ACCEPTED).json(result);;
   } catch( error ){
@@ -86,6 +94,7 @@ exports.patchTicketPriority = async (req, res, next) => {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+    await handleIsDefault( req );
     if ( req.body?.isArchived || !req.body?.isActive ) {
       this.query.priority = req.params.id;
       this.query.isArchived = false;
@@ -117,7 +126,7 @@ function getDocFromReq(req, reqType){
   const { loginUser } = req.body;
   const doc = reqType === "new" ? new TicketPriority({}) : {};
 
-  const allowedFields = [ "name", "description", "slug", "displayOrderNo", "isDefault", "icon", "isActive", "isArchived" ];
+  const allowedFields = [ "name", "description", "slug", "displayOrderNo", "isDefault", "icon",  "color", "isActive", "isArchived" ];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {
