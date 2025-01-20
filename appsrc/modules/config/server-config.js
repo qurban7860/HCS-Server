@@ -109,7 +109,7 @@ class App {
             //     res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
             //   }
             // }
-              callback(new Error('Not allowed by CORS'));
+              callback(new Error(`Not allowed by CORS by origin: ${origin}`));
           }
         }
     }));
