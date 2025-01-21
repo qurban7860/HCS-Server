@@ -27,7 +27,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
   { path: 'customer', select: 'name'  },
-  { path: 'machine', select: 'serialNo name' },
+  { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
   { path: 'reporter', select: 'firstName lastName' },
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
