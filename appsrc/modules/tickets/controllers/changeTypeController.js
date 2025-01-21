@@ -67,7 +67,7 @@ exports.searchTicketChangeTypes = async (req, res, next) => {
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
     const isDefaultExist = await this.dbservice.getObject( TicketChangeType, { isDefault: true, isArchived: false } );
-    if( isDefaultExist?._id ){
+    if( isDefaultExist?._id && req.params.id != isDefaultExist?._id ){
       throw new Error("Default change type already exist!");
     }
   }
