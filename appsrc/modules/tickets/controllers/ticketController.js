@@ -30,19 +30,19 @@ this.populate = [
   { path: 'machine', select: 'serialNo name' },
   { path: 'reporter', select: 'firstName lastName' },
   { path: 'assignee', select: 'firstName lastName' },
-  { path: 'issueType', select: 'name icon' },
-  { path: 'changeType', select: 'name icon'  },
-  { path: 'impact', select: 'name icon'  },
-  { path: 'priority', select: 'name icon'  },
-  { path: 'status', select: 'name icon'  },
-  { path: 'changeReason', select: 'name icon'  },
-  { path: 'investigationReason', select: 'name icon' },
+  { path: 'issueType', select: 'name icon color' },
+  { path: 'changeType', select: 'name icon color' },
+  { path: 'impact', select: 'name icon color' },
+  { path: 'priority', select: 'name icon color' },
+  { path: 'status', select: 'name icon color' },
+  { path: 'changeReason', select: 'name icon color' },
+  { path: 'investigationReason', select: 'name icon color' },
   { path: 'files', select: 'name fileType extension thumbnail eTag' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
 
-this.settingFields = "name slug icon";
+this.settingFields = "name slug icon color";
 
 exports.getTicket = async (req, res, next) => {
   try{
