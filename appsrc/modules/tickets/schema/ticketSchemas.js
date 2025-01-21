@@ -6,10 +6,8 @@ const ticketSchema = (reqType ) => {
     return Yup.object().shape({
 
         customer: Yup.string().label('Customer')
-        .test('is-objectid', 'Invalid Customer ID!', ( customerId ) => {
-            if(!customerId) {
-                return true;
-            }
+        .test('is-objectid', 'Invalid Customer!', ( customerId ) => {
+            if (customerId == "null" ) return true;
             return ObjectId.isValid(customerId);
         }).when([], {
             is: () => isNewRequest,
@@ -18,10 +16,9 @@ const ticketSchema = (reqType ) => {
         }), 
 
         machine: Yup.string().label('Machine')
-        .test('is-objectid', 'Invalid Machine ID!', ( machineId ) => {
-            if( !machineId ) {
+        .test('is-objectid', 'Invalid Machine!', ( machineId ) => {
+            if (machineId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(machineId);
         }).when([], {
             is: () => isNewRequest,
@@ -30,10 +27,9 @@ const ticketSchema = (reqType ) => {
         }), 
 
         issueType: Yup.string().label('Issue Type')
-        .test('is-objectid', 'Invalid Issue Type ID!', ( issueTypeId ) => {
-            if(!issueTypeId) {
+        .test('is-objectid', 'Invalid Issue Type!', ( issueTypeId ) => {
+            if ( issueTypeId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid( issueTypeId );
         }).when([], {
             is: () => isNewRequest,
@@ -42,66 +38,58 @@ const ticketSchema = (reqType ) => {
         }), 
 
         reporter: Yup.string().nullable().label('Reporter')
-        .test('is-objectid', 'Invalid Reporter ID!', (reporterId) => {
-            if(!reporterId) {
+        .test('is-objectid', 'Invalid Reporter!', (reporterId) => {
+            if (reporterId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(reporterId);
         }),
 
         assignee: Yup.string().nullable().label('Assignee')
-        .test('is-objectid', 'Invalid Assignee ID!', (assigneeId) => {
-            if(!assigneeId) {
+        .test('is-objectid', 'Invalid Assignee!', (assigneeId) => {
+            if (assigneeId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(assigneeId);
         }),
 
         changeType: Yup.string().nullable().label('Change Type')
-        .test('is-objectid', 'Invalid Change Type ID!', (changeTypeId) => {
-            if(!changeTypeId) {
+        .test('is-objectid', 'Invalid Change Type!', (changeTypeId) => {
+            if (changeTypeId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(changeTypeId);
         }),
 
         impact: Yup.string().nullable().label('Impact')
-        .test('is-objectid', 'Invalid Impact ID!', (impactId) => {
-            if(!impactId) {
+        .test('is-objectid', 'Invalid Impact!', (impactId) => {
+            if (impactId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(impactId);
         }),
 
         priority: Yup.string().nullable().label('Priority')
-        .test('is-objectid', 'Invalid Priority ID!', (priorityId) => {
-            if(!priorityId) {
+        .test('is-objectid', 'Invalid Priority!', (priorityId) => {
+            if (priorityId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(priorityId);
         }),
 
         status: Yup.string().nullable().label('Status')
-        .test('is-objectid', 'Invalid Status ID!', (statusId) => {
-            if(!statusId) {
+        .test('is-objectid', 'Invalid Status!', (statusId) => {
+            if (statusId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(statusId);
         }),
 
         changeReason: Yup.string().nullable().label('Change Reason')
-        .test('is-objectid', 'Invalid Change Reason ID!', (changeReasonId) => {
-            if(!changeReasonId) {
+        .test('is-objectid', 'Invalid Change Reason!', (changeReasonId) => {
+            if (changeReasonId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid(changeReasonId);
         }),
 
         investigationReason: Yup.string().nullable().label('Investigation Reason')
-        .test('is-objectid', 'Invalid Investigation Reason ID!', ( investigationReasonId ) => {
-            if(!investigationReasonId) {
+        .test('is-objectid', 'Invalid Investigation Reason!', ( investigationReasonId ) => {
+            if ( investigationReasonId == "null" ) 
                 return true;
-            }
             return ObjectId.isValid( investigationReasonId );
         }),
 
@@ -120,9 +108,9 @@ const ticketSchema = (reqType ) => {
         plannedStartDate: Yup.date().label("Planned Start Date").nullable().notRequired(),
         plannedEndDate: Yup.date().label("Planned End Date").nullable().notRequired(),
 
-        shareWith: Yup.boolean().nullable().notRequired(),
-        isActive: Yup.boolean().nullable().notRequired(),
-        isArchived: Yup.boolean().nullable().notRequired(),
+        shareWith: Yup.boolean().label("Share With").nullable().notRequired(),
+        isActive: Yup.boolean().label("Active").nullable().notRequired(),
+        isArchived: Yup.boolean().label("Archived").nullable().notRequired(),
         
     });
 };
