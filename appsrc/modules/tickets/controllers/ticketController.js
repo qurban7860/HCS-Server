@@ -6,6 +6,7 @@ this.dbservice = new ticketDBService();
 const _ = require('lodash');
 const ticketFileController = require('./ticketFileController');
 const ticketChangeController = require('./ticketHistoryController');
+const { ProductTechParamValue } = require('../../products/models');
 const { 
   Ticket, 
   TicketChangeReason, 
@@ -42,11 +43,50 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
+this.listPopulate = [
+  { path: 'customer', select: 'name'  },
+  { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
+  { path: 'reporter', select: 'firstName lastName' },
+  { path: 'assignee', select: 'firstName lastName' },
+  { path: 'issueType', select: 'name icon color' },
+  { path: 'changeType', select: 'name icon color' },
+  { path: 'impact', select: 'name icon color' },
+  { path: 'priority', select: 'name icon color' },
+  { path: 'status', select: 'name icon color' },
+  { path: 'changeReason', select: 'name icon color' },
+  { path: 'investigationReason', select: 'name icon color' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
+];
+
 this.settingFields = "name slug icon color";
 
+async function getLatestTechParamByCode( machine, code ){
+  try {
+    if( !( machine || code ) ){
+      throw new Error('Machine ID is required');
+    }
+    const record = await ProductTechParamValue.findOne({ machine })
+    .populate({ path: 'techParam', match: { code }, select: 'code' })
+    .sort({ createdAt: -1 }).lean(); 
+
+    if (record && record.techParam) {
+      return record; 
+    } else {
+      return null;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
 exports.getTicket = async (req, res, next) => {
   try{
-    const result = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
+    let result = await this.dbservice.getObjectById( Ticket, this.fields, req.params.id, this.populate );
+    result = result.toObject();
+    const getHLCSWVersion = await getLatestTechParamByCode( result?.machine?._id , "HLCSoftwareVersion" );
+    const getPLCSWVersion = await getLatestTechParamByCode( result?.machine?._id , "PLCSWVersion" );
+    result.hlc = getHLCSWVersion?.techParamValue || '';
+    result.plc = getPLCSWVersion?.techParamValue || '';
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -142,7 +182,7 @@ exports.getTickets = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.populate);
+    let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate );
     
     const countsResult = await getCountsByGroups();
     if(Array.isArray(result)){
