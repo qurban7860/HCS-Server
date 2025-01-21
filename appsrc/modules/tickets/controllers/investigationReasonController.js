@@ -67,7 +67,7 @@ exports.searchTicketInvestigationReasons = async (req, res, next) => {
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
     const isDefaultExist = await this.dbservice.getObject( TicketInvestigationReason, { isDefault: true, isArchived: false } );
-    if( isDefaultExist?._id ){
+    if( isDefaultExist?._id && req.params.id != isDefaultExist?._id ){
       throw new Error("Default investigation reason already exist!");
     }
   }
