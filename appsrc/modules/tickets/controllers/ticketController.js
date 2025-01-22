@@ -326,7 +326,11 @@ function getDocFromReq(req, reqType){
 
   allowedFields.forEach((f) => {
     if (f in req.body) {
-      doc[f] = req.body[f];
+      if( req.body[f] === "null" ){
+        doc[f] = null;
+      } else {
+        doc[f] = req.body[f];
+      }
     }
   });
 
