@@ -82,11 +82,6 @@ async function getLatestTechParamByCode( machine, code ){
 exports.getTicket = async (req, res, next) => {
   try{
     let result = await this.dbservice.getObjectById( Ticket, this.fields, req.params.id, this.populate );
-    result = result.toObject();
-    const getHLCSWVersion = await getLatestTechParamByCode( result?.machine?._id , "HLCSoftwareVersion" );
-    const getPLCSWVersion = await getLatestTechParamByCode( result?.machine?._id , "PLCSWVersion" );
-    result.hlc = getHLCSWVersion?.techParamValue || '';
-    result.plc = getPLCSWVersion?.techParamValue || '';
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -253,12 +248,13 @@ exports.postTicket = async (req, res, next) => {
       }
     } catch (error) {
       if (ticketData) {
-        await Ticket.deleteObjectById(ticketData._id);
+        await Ticket.deleteOne({ _id: ticketData._id });
       }
       throw new Error("Failed to complete the ticket creation process: " + error.message);
     }
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch( error ){
+    await CounterController.reversePaddedCounterSequence('supportTicket');
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
   }
