@@ -75,7 +75,7 @@ class UserEmailService {
       if(isNaN(inviteCodeExpireHours))
         inviteCodeExpireHours = 48;
       let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
-      const link = `${ adminPortalUrl }/invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
+      const link = `${ user?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
       user.invitationStatus = true;
       user.save();
       userInvite.senderInvitationUser = req.body.loginUser.userId;
