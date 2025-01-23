@@ -6,6 +6,7 @@ let { processFile } = require('../../files/utils')
 let { allowedMimeTypes } = require('../../files/constant')
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
+const awsService = require('../../../base/aws');
 const _ = require('lodash');
 const { Config } = require('../../config/models');
 const { Ticket, TicketFile } = require('../models');
@@ -107,6 +108,10 @@ const saveTicketFiles = async ( req ) => {
     });
 
     const savedFiles = await Promise.all(fileProcessingPromises);
+    if( Array.isArray( savedFiles ) && savedFiles?.length > 0 ){
+      const filesIds = savedFiles?.map( sf => sf?._id )
+      const isUpdated = await this.dbservice.patchObject( Ticket, req.params.ticketId, { $push: { files: { $each: filesIds } } } );
+    }
     return savedFiles;
   } catch( error ) {
     throw error
@@ -140,7 +145,7 @@ exports.deleteTicketFile = async (req, res, next) => {
     }
     await this.dbservice.patchObject( TicketFile, req.params.id, getDocFromReq(req) );
     await this.dbservice.patchObject( Ticket, req.params.ticketId, { $pull: { files: req.params.id } } );
-    return res.status(StatusCodes.BAD_REQUEST).send("Ticket file deleted successfully!");
+    return res.status(StatusCodes.OK).send("Ticket file deleted successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );

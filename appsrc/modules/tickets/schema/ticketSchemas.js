@@ -96,7 +96,8 @@ const ticketSchema = (reqType ) => {
 
         files: Yup.mixed().label("Files").nullable().notRequired(),
         images: Yup.mixed().label("Files").nullable().notRequired(),
-
+        hlc: Yup.string().label('HLC').max(500).nullable().notRequired(),
+        plc: Yup.string().label('PLC').max(500).nullable().notRequired(),
         description: Yup.string().label('Description').max(10000).nullable().notRequired(),
         summary: Yup.string().label('Summary').max(5000).nullable().notRequired(),
         implementationPlan: Yup.string().label('Implementation Plan').max(10000).nullable().notRequired(),

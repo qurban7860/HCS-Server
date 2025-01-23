@@ -96,7 +96,7 @@ exports.patchTicketImpact = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     await handleIsDefault( req );
-    if ( req.body?.isArchived || req.body?.isActive ) {
+    if ( req.body?.isArchived ) {
       this.query.impact = req.params.id;
       this.query.isArchived = false;
       const result = await this.dbservice.getObject( Ticket, this.query );

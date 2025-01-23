@@ -79,14 +79,10 @@ async function getLatestTechParamByCode( machine, code ){
     throw error;
   }
 }
+
 exports.getTicket = async (req, res, next) => {
   try{
     let result = await this.dbservice.getObjectById( Ticket, this.fields, req.params.id, this.populate );
-    result = result.toObject();
-    const getHLCSWVersion = await getLatestTechParamByCode( result?.machine?._id , "HLCSoftwareVersion" );
-    const getPLCSWVersion = await getLatestTechParamByCode( result?.machine?._id , "PLCSWVersion" );
-    result.hlc = getHLCSWVersion?.techParamValue || '';
-    result.plc = getPLCSWVersion?.techParamValue || '';
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -247,18 +243,16 @@ exports.postTicket = async (req, res, next) => {
     req.params.ticketId = ticketData?._id;
 
     try {
-      const savedFiles = await ticketFileController.saveTicketFiles(req);
-      if( Array.isArray( savedFiles ) && savedFiles?.length > 0 ){
-        await this.dbservice.patchObject(Ticket, ticketData?._id, { files: savedFiles?.map( sf => sf?._id ) });
-      }
+      await ticketFileController.saveTicketFiles(req);
     } catch (error) {
       if (ticketData) {
-        await Ticket.deleteObjectById(ticketData._id);
+        await Ticket.deleteOne({ _id: ticketData._id });
       }
       throw new Error("Failed to complete the ticket creation process: " + error.message);
     }
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch( error ){
+    await CounterController.reversePaddedCounterSequence('supportTicket');
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
   }
@@ -291,11 +285,7 @@ exports.patchTicket = async (req, res, next) => {
       await ticketChangeController.postTicketChange( changedFields );
     }
 
-    const savedFiles = await ticketFileController.saveTicketFiles( req );
-    if( Array.isArray( savedFiles ) && savedFiles?.length > 0 ){
-      const filesIds = savedFiles?.map( sf => sf?._id )
-      await this.dbservice.patchObject( Ticket, req.params.id, { $push: { files: { $each: filesIds } } } );
-    }
+    await ticketFileController.saveTicketFiles( req );
     return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
   } catch( error ){
     logger.error(new Error(error));
@@ -318,7 +308,7 @@ function getDocFromReq(req, reqType){
   const doc = reqType === "new" ? new Ticket({}) : {};
 
   const allowedFields = [
-    "customer", "machine", "issueType", "description", "summary", "changeType", "reporter",
+    "customer", "machine", "issueType", "description", "hlc", "plc", "summary", "changeType", "reporter",
     "impact", "priority", "status", "changeReason", "implementationPlan", "assignee",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
     "rootCause", "workaround", "plannedStartDate", "plannedEndDate", "isActive", "isArchived"

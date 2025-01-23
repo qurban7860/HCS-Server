@@ -29,6 +29,10 @@ const docSchema = new Schema({
 
         status: { type: Schema.Types.ObjectId, ref: 'TicketStatus' },
 
+        hlc: { type: String  },
+
+        plc: { type: String  },
+
         implementationPlan: { type: String  },
 
         plannedStartDate: { type: Date  },
