@@ -3,7 +3,7 @@ const awsService = require('../../base/aws');
 const path = require('path');
 const sharp = require('sharp');
 
-async function processFile(file, userId) {
+async function processFile(file, userId, folder = '' ) {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
   let thumbnailPath;
@@ -22,7 +22,7 @@ async function processFile(file, userId) {
       base64thumbNailData = await readFileAsBase64(thumbnailPath);
   }
   const fileName = userId+"-"+new Date().getTime();
-  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  const s3Data = await awsService.uploadFileS3( fileName, folder || 'uploads', base64fileData, fileExt, folder !== '' );
   s3Data.eTag = await awsService.generateEtag(file.path);
   fs.unlinkSync(file.path);
   if(thumbnailPath){
@@ -59,20 +59,17 @@ async function readFileAsBase64(filePath) {
 async function generateThumbnail(filePath) {
   try {
     const thumbnailSize = 80;
-    const thumbnailPath = getThumbnailPath(filePath);     
-    await sharp(filePath)
-      .resize(thumbnailSize, null)
-      .toFile(thumbnailPath);
+    const thumbnailPath = await getThumbnailPath(filePath);     
+    await sharp(filePath).resize(thumbnailSize, null).toFile(thumbnailPath);
 
     return thumbnailPath;
-    
   } catch (error) {
     console.log(error);
     throw error;
   }
 }
 
-function getThumbnailPath(filePath) {
+async function getThumbnailPath(filePath) {
   const thumbnailName = path.basename(filePath, path.extname(filePath)) + '_thumbnail.png';
   return path.join(process.env.UPLOAD_PATH, thumbnailName);
 }

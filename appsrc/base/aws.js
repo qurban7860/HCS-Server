@@ -80,13 +80,13 @@ async function copyFile(user) {
   }
 }
 
-async function uploadFileS3(filename, folder, content, ext = 'txt') {
+async function uploadFileS3(filename, folder, content, ext = 'txt', includeFolderInPath = true ) {
   let bucketName = process.env.AWS_S3_BUCKET;
   let data = null;
 
   const uploadFileParams = {
     Bucket: bucketName,
-    Key: `${folder}/${filename}.${ext}`,
+    Key: includeFolderInPath ? `${folder}/${filename}.${ext}` : `${filename}.${ext}`,
     Body: content,
     // ACL:'public-read'
   };
@@ -252,12 +252,11 @@ async function downloadFileS3(filePath) {
 }
 
 async function fetchAWSFileInfo(fileid, filePath) {
-  const params = {
-    Bucket: process.env.AWS_S3_BUCKET,
-    Key: filePath
-  };
-
   try {
+    const params = {
+      Bucket: process.env.AWS_S3_BUCKET,
+      Key: filePath
+    };
     return data = await s3.getObject(params).promise();
   } catch (err) {
     console.log("file fetch error", err.message);
