@@ -25,10 +25,9 @@ this.populate = [
 exports.getTicketFile = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};
-    if (this.query.orderBy) {
-      this.query.ticket = req.params.ticketId;
-      this.query._id = req.params.id;
-    }
+    this.query.ticket = req.params.ticketId;
+    this.query._id = req.params.id;
+    
     const file = await this.dbservice.getObject(TicketFile, this.query, this.populate);
 
     if( !file?._id ){
@@ -39,11 +38,12 @@ exports.getTicketFile = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send('Invalid file path!');
     }
 
-    const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-    const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
+    const data = await awsService.fetchAWSFileInfo(file._id, file.path );
+
+    const isImage = file?.fileType && allowedMimeTypes?.includes(file?.fileType);
     const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i"); 
     let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); 
-    configObject = configObject && configObject?.value?.trim()?.toLowerCase() === 'true' ? true : false;
+    configObject = configObject && configObject?.value?.trim()?.toLowerCase() == 'true' ? true : false;
     const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
     
     if( isImage && configObject && fileSizeInMegabytes > 2 ) {
@@ -88,7 +88,7 @@ const saveTicketFiles = async ( req ) => {
         throw new Error('File not found!');
       }
 
-      const processedFile = await processFile(file, req.body.loginUser.userId);
+      const processedFile = await processFile(file, req.body.loginUser.userId, process.env.SUPPORT_TICKET_FOLDER_NAME);
 
       req.body = {
         loginUser: req.body.loginUser,
