@@ -6,7 +6,7 @@ let rtnMsg = require('../../config/static/static')
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
-const { Ticket, TicketStatus } = require('../models');
+const { TicketStatus, TicketStatusType } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -15,15 +15,14 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
 this.populate = [
-  {path: 'type', select: 'name icon slug color'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
 
 
-exports.getTicketStatus = async (req, res, next) => {
+exports.getTicketStatusType = async (req, res, next) => {
   try{
-    const result = await this.dbservice.getObjectById(TicketStatus, this.fields, req.params.id, this.populate);
+    const result = await this.dbservice.getObjectById(TicketStatusType, this.fields, req.params.id, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -31,7 +30,7 @@ exports.getTicketStatus = async (req, res, next) => {
   }
 };
 
-exports.getTicketStatuses = async (req, res, next) => {
+exports.getTicketStatusTypes = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};  
     this.orderBy = { name: 1 };  
@@ -39,7 +38,7 @@ exports.getTicketStatuses = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    let result = await this.dbservice.getObjectList(req, TicketStatus, this.fields, this.query, this.orderBy, this.populate);
+    let result = await this.dbservice.getObjectList(req, TicketStatusType, this.fields, this.query, this.orderBy, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -47,7 +46,7 @@ exports.getTicketStatuses = async (req, res, next) => {
   }
 };
 
-exports.searchTicketStatuses = async (req, res, next) => {
+exports.searchTicketStatusTypes = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -57,7 +56,7 @@ exports.searchTicketStatuses = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    const result = await this.dbservice.getObjectList(req, TicketStatus, this.fields, this.query, this.orderBy, this.populate );
+    const result = await this.dbservice.getObjectList(req, TicketStatusType, this.fields, this.query, this.orderBy, this.populate );
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
     logger.error(new Error(error));
@@ -67,21 +66,21 @@ exports.searchTicketStatuses = async (req, res, next) => {
 
 const handleIsDefault = async ( req ) => {
   if( req.body.isDefault ){
-    const isDefaultExist = await this.dbservice.getObject( TicketStatus, { isDefault: true, isArchived: false } );
+    const isDefaultExist = await this.dbservice.getObject( TicketStatusType, { isDefault: true, isArchived: false } );
     if( isDefaultExist?._id && req.params.id != isDefaultExist?._id ){
-      throw new Error("Default status already exist!");
+      throw new Error("Default status type already exist!");
     }
   }
 }
 
-exports.postTicketStatus = async (req, res, next) => {
+exports.postTicketStatusType = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    await handleIsDefault( req );
+    // await handleIsDefault( req );
     const result = await this.dbservice.postObject(getDocFromReq(req, 'new'));
     return res.status(StatusCodes.ACCEPTED).json(result);;
   } catch( error ){
@@ -90,7 +89,7 @@ exports.postTicketStatus = async (req, res, next) => {
   }
 };
 
-exports.patchTicketStatus = async (req, res, next) => {
+exports.patchTicketStatusType = async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -101,24 +100,24 @@ exports.patchTicketStatus = async (req, res, next) => {
     if ( req.body?.isArchived ) {
       this.query.status = req.params.id;
       this.query.isArchived = false;
-      const result = await this.dbservice.getObject( Ticket, this.query );
+      const result = await this.dbservice.getObject( TicketStatus, this.query );
       if( result?._id ){
         logger.info(new Error(errors));
-        return res.status(StatusCodes.BAD_REQUEST).send( "Status used in the Ticket can't be inactive or archived!" );
+        return res.status(StatusCodes.BAD_REQUEST).send( "Status Type used in the Status can't be archived!" );
       }
     }
-    await this.dbservice.patchObject(TicketStatus, req.params.id, getDocFromReq(req));
-    return res.status(StatusCodes.ACCEPTED).send(`Status ${ req.body?.isArchived ? "archived" : "updated" } successfully!`);
+    await this.dbservice.patchObject(TicketStatusType, req.params.id, getDocFromReq(req));
+    return res.status(StatusCodes.ACCEPTED).send(`Status Type ${ req.body?.isArchived ? "archived" : "updated" } successfully!`);
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
   }
 };
 
-exports.deleteTicketStatus = async (req, res, next) => {
+exports.deleteTicketStatusType = async (req, res, next) => {
   try{
-    await this.dbservice.deleteObject( TicketStatus, req.params.id, res );
-    return res.status(StatusCodes.BAD_REQUEST).send("Status deleted successfully!");
+    await this.dbservice.deleteObject( TicketStatusType, req.params.id, res );
+    return res.status(StatusCodes.BAD_REQUEST).send("Status Type deleted successfully!");
   } catch( error ){
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
@@ -127,8 +126,8 @@ exports.deleteTicketStatus = async (req, res, next) => {
 
 function getDocFromReq(req, reqType){
   const { loginUser } = req.body;
-  const doc = reqType === "new" ? new TicketStatus({}) : {};
-  const allowedFields = [ "name", "description", "type", "slug", "displayOrderNo", "icon",  "color", "isDefault", "isActive", "isArchived" ];
+  const doc = reqType === "new" ? new TicketStatusType({}) : {};
+  const allowedFields = [ "name", "description", "slug", "displayOrderNo", "isDefault", "icon",  "color", "isActive", "isArchived" ];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {

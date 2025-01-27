@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Status Type
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/statusTypes/6780f22a06dd904dff2ff8e3
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

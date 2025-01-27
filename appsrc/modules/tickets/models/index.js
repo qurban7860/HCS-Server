@@ -7,6 +7,7 @@ module.exports = {
     TicketIssueType: require('./issueType'),
     TicketPriority: require('./priority'),
     TicketStatus: require('./status'),
+    TicketStatusType: require('./statusType'),
     Ticket: require('./ticket'),
     TicketChangeHistory: require('./ticketChangeHistory'),
     TicketComment: require('./ticketComment'),
