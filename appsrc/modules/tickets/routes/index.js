@@ -5,6 +5,7 @@ const investigationReasonRoute = require('./investigationReasonRoute');
 const issueTypeRoute = require('./issueTypeRoute');
 const priorityRoute = require('./priorityRoute');
 const statusRoute = require('./statusRoute');
+const statusTypeRoute = require('./statusTypeRoute');
 const ticketRoute = require('./ticketRoute');
 const ticketHistoryRoute = require('./ticketHistoryRoute');
 const ticketCommentRoute = require('./ticketCommentRoute');
@@ -19,6 +20,7 @@ exports.registerTicketRoutes = ( app, apiPath ) => {
     app.use(`${rootPath}`, issueTypeRoute);
     app.use(`${rootPath}`, priorityRoute);
     app.use(`${rootPath}`, statusRoute);
+    app.use(`${rootPath}`, statusTypeRoute);
     app.use(`${rootPath}`, ticketRoute);
     app.use(`${rootPath}`, ticketHistoryRoute);
     app.use(`${rootPath}`, ticketCommentRoute);

@@ -11,8 +11,6 @@ const docSchema = new Schema({
 
     color: { type: String },
 
-    type: { type: Schema.Types.ObjectId, ref: 'TicketStatusType' },
-
     description: { type: String },
 
     slug: { type: String },
@@ -22,7 +20,7 @@ const docSchema = new Schema({
     isDefault: { type: Boolean, default:false }
 },
 {
-    collection: 'TicketStatuses'
+    collection: 'TicketStatusTypes'
 });
 
 docSchema.set('timestamps', true);
@@ -31,4 +29,4 @@ docSchema.add(baseSchema.docAuditSchema);
 docSchema.index({"isActive":1})
 docSchema.index({"isArchived":1})
 
-module.exports = mongoose.model('TicketStatus', docSchema);
+module.exports = mongoose.model('TicketStatusType', docSchema);
