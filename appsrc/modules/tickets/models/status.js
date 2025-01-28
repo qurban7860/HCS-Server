@@ -11,7 +11,7 @@ const docSchema = new Schema({
 
     color: { type: String },
 
-    type: { type: Schema.Types.ObjectId, ref: 'TicketStatusType' },
+    statusType: { type: Schema.Types.ObjectId, ref: 'TicketStatusType', required: true },
 
     description: { type: String },
 
