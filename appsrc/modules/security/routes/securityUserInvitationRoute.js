@@ -17,6 +17,8 @@ router.get(`${baseRoute}/:id`, controller.getUserInvitation);
 
 router.get(`${baseRoute}/`, controller.getUserInvitations);
 
+router.post(`${baseRoute}/postUserInvite/`, controller.postUserInvite);
+
 router.get(`${baseRoute}/sendUserInvite/:id`, controller.sendUserInvite);
 
 router.get(`${baseRoute}/verifyInviteCode/:id/:code`, controller.verifyInviteCode);
