@@ -37,8 +37,12 @@ const docSchema = new Schema({
 
         plannedStartDate: { type: Date  },
 
+        plannedStartTime: { type: String },
+
         plannedEndDate: { type: Date  },
 
+        plannedEndTime: { type: String },
+        
         backoutPlan: { type: String  },
 
         description: { type: String  },
