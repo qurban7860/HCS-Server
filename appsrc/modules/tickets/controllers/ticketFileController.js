@@ -62,7 +62,6 @@ exports.getTicketFiles = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};  
     this.query.ticket = req.params.ticketId
-    this.orderBy = { name: 1 };  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;

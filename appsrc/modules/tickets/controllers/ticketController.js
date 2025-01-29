@@ -137,7 +137,7 @@ exports.getTicketSettings = async (req, res, next) => {
   try{
 
     this.query = req.query != "undefined" ? req.query : {};  
-    this.orderBy = { name: 1 };  
+    this.orderBy = { displayOrderNo: 1 };  
     this.query.isActive = true;
     this.query.isArchived = false;
 
