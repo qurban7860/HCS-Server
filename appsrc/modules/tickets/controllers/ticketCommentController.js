@@ -13,7 +13,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = { isActive: true, isArchived: false };
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { updatedAt: -1 };  
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
@@ -22,10 +22,9 @@ this.populate = [
 exports.getTicketComment = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};
-    if (this.query.orderBy) {
-      this.query.ticket = req.params.ticketId;
-      this.query._id = req.params.id;
-    }
+    this.query.ticket = req.params.ticketId;
+    this.query._id = req.params.id;
+    
     const result = await this.dbservice.getObject(TicketComment, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){

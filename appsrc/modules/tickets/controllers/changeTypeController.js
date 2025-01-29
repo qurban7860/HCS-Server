@@ -13,7 +13,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { displayOrderNo: 1 };  
 this.populate = [
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
@@ -32,8 +32,7 @@ exports.getTicketChangeType = async (req, res, next) => {
 
 exports.getTicketChangeTypes = async (req, res, next) => {
   try{
-    this.query = req.query != "undefined" ? req.query : {};  
-    this.orderBy = { name: 1 };  
+    this.query = req.query != "undefined" ? req.query : {};
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;

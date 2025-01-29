@@ -28,10 +28,9 @@ this.populate = [
 exports.getTicketHistory = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};
-    if (this.query.orderBy) {
-      this.query.ticket = req.params.ticketId;
-      this.query._id = req.params.id;
-    }
+    this.query.ticket = req.params.ticketId;
+    this.query._id = req.params.id;
+    
     const result = await this.dbservice.getObject( TicketChangeHistory, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch( error ){
@@ -43,7 +42,6 @@ exports.getTicketHistory = async (req, res, next) => {
 exports.getTicketHistories = async (req, res, next) => {
   try{
     this.query = req.query != "undefined" ? req.query : {};  
-    this.orderBy = { name: 1 };  
     if(this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
