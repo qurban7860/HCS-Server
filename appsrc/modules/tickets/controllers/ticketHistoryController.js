@@ -85,7 +85,15 @@ function getDocFromReq( obj ){
 
   allowedFields.forEach((f) => {
     if (f in obj ){
-      doc[f] = obj[f];
+      if( 
+        obj[f] !== null && 
+        obj[f] !== "null" && 
+        obj[f] !== undefined && 
+        obj[f] !== "undefined" && 
+        obj[f] !== "" 
+      ){
+        doc[f] = obj[f];
+      }
     }
   });
 

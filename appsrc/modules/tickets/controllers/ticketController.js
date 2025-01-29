@@ -36,7 +36,7 @@ this.populate = [
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
-  { path: 'status', select: 'name icon color type', populate: { path: 'type', select: ' name icon color slug ' } },
+  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug ' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'files', select: 'name fileType extension thumbnail eTag' },
@@ -53,7 +53,7 @@ this.listPopulate = [
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
-  { path: 'status', select: 'name icon color type', populate: { path: 'type', select: ' name icon color slug ' } },
+  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug ' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'createdBy', select: 'name' },
@@ -312,7 +312,7 @@ function getDocFromReq(req, reqType){
     "customer", "machine", "issueType", "description", "hlc", "plc", "summary", "changeType", "reporter",
     "impact", "priority", "status", "changeReason", "implementationPlan", "assignee",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
-    "rootCause", "workaround", "plannedStartDate", "plannedStartTime", "plannedEndDate", "plannedEndTime", "isActive", "isArchived"
+    "rootCause", "workaround", "plannedStartDate", "plannedEndDate", "isActive", "isArchived"
   ];
 
   allowedFields.forEach((f) => {
