@@ -108,9 +108,7 @@ const ticketSchema = (reqType ) => {
         workaround: Yup.string().label('Work Around').max(10000).nullable().notRequired(),
 
         plannedStartDate: Yup.date().label("Planned Start Date").nullable().notRequired(),
-        plannedStartTime: Yup.string().label('Planned Start Time').max(60).nullable(),
         plannedEndDate: Yup.date().label("Planned End Date").nullable().notRequired(),
-        plannedEndTime: Yup.string().label('Planned End Time').max(60).nullable(),
 
         shareWith: Yup.boolean().label("Share With").nullable().notRequired(),
         isActive: Yup.boolean().label("Active").nullable().notRequired(),

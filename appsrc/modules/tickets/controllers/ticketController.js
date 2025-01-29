@@ -312,7 +312,7 @@ function getDocFromReq(req, reqType){
     "customer", "machine", "issueType", "description", "hlc", "plc", "summary", "changeType", "reporter",
     "impact", "priority", "status", "changeReason", "implementationPlan", "assignee",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
-    "rootCause", "workaround", "plannedStartDate", "plannedStartTime", "plannedEndDate", "plannedEndTime", "isActive", "isArchived"
+    "rootCause", "workaround", "plannedStartDate", "plannedEndDate", "isActive", "isArchived"
   ];
 
   allowedFields.forEach((f) => {
