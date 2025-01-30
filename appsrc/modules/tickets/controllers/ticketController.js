@@ -226,15 +226,61 @@ exports.postTicket = async (req, res, next) => {
     if( !req.body?.loginUser?.userId ){
       return res.status(StatusCodes.BAD_REQUEST).send( "User not found!" );
     }
+    const queryObject = {
+      isDefault: true, 
+      isActive: true,
+      isArchived: false,
+    }
 
-    if( !req.body.reporter ){
+    
+    if( !req.body.hlc ){
+      const plcData = await getLatestTechParamByCode( req.body.machine, "HLCSoftwareVersion" );
+      req.body.plc = plcData?.techParamValue;
+    }
+
+    if( !req.body.plc ){
+      const plcData = await getLatestTechParamByCode( req.body.machine, "PLCSWVersion" );
+      req.body.plc = plcData?.techParamValue;
+    }
+
+    if( !req.body.reporter || req.body.reporter == 'null' ){
       const userData = await this.dbservice.getObjectById( SecurityUser, this.fields, req.body?.loginUser?.userId );
       req.body.reporter = userData?.contact;
     }
     
-    if( !req.body.status ){
-      const statusData = await this.dbservice.getObject( TicketStatus, { isDefault: true } );
+    if( !req.body.issueType || req.body.issueType == 'null' ){
+      const issueTypeData = await this.dbservice.getObject( TicketIssueType, queryObject );
+      req.body.issueType = issueTypeData?._id;
+    }
+
+    if( !req.body.priority || req.body.priority == 'null' ){
+      const priorityData = await this.dbservice.getObject( TicketPriority, queryObject );
+      req.body.priority = priorityData?._id;
+    }
+
+    if( !req.body.status || req.body.status == 'null' ){
+      const statusData = await this.dbservice.getObject( TicketStatus, queryObject );
       req.body.status = statusData?._id;
+    }
+
+    if( !req.body.investigationReason || req.body.investigationReason == 'null' ){
+      const investigationReasonData = await this.dbservice.getObject( TicketInvestigationReason, queryObject );
+      req.body.investigationReason = investigationReasonData?._id;
+    }
+
+    if( !req.body.changeType || req.body.changeType == 'null' ){
+      const changeTypeData = await this.dbservice.getObject( TicketChangeType, queryObject );
+      req.body.changeType = changeTypeData?._id;
+    }
+
+    if( !req.body.impact || req.body.impact == 'null' ){
+      const impactData = await this.dbservice.getObject( TicketImpact, queryObject );
+      req.body.impact = impactData?._id;
+    }
+
+    if( !req.body.changeReason || req.body.changeReason == 'null'  ){
+      const changeReasonData = await this.dbservice.getObject( TicketChangeReason, queryObject );
+      req.body.changeReason = changeReasonData?._id;
     }
 
     let ticketData = await getDocFromReq(req, 'new')
@@ -246,6 +292,7 @@ exports.postTicket = async (req, res, next) => {
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
+      console.error(error);
       if (ticketData) {
         await Ticket.deleteOne({ _id: ticketData._id });
       }
@@ -254,6 +301,7 @@ exports.postTicket = async (req, res, next) => {
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch( error ){
     await CounterController.reversePaddedCounterSequence('supportTicket');
+    console.error(error);
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
   }
