@@ -62,25 +62,6 @@ this.listPopulate = [
 
 this.settingFields = "name slug icon color";
 
-async function getLatestTechParamByCode( machine, code ){
-  try {
-    if( !( machine || code ) ){
-      throw new Error('Machine ID is required');
-    }
-    const record = await ProductTechParamValue.findOne({ machine })
-    .populate({ path: 'techParam', match: { code }, select: 'code' })
-    .sort({ createdAt: -1 }).lean(); 
-
-    if (record && record.techParam) {
-      return record; 
-    } else {
-      return null;
-    }
-  } catch (error) {
-    throw error;
-  }
-}
-
 exports.getTicket = async (req, res, next) => {
   try{
     let result = await this.dbservice.getObjectById( Ticket, this.fields, req.params.id, this.populate );
@@ -230,17 +211,6 @@ exports.postTicket = async (req, res, next) => {
       isDefault: true, 
       isActive: true,
       isArchived: false,
-    }
-
-    
-    if( !req.body.hlc ){
-      const plcData = await getLatestTechParamByCode( req.body.machine, "HLCSoftwareVersion" );
-      req.body.plc = plcData?.techParamValue;
-    }
-
-    if( !req.body.plc ){
-      const plcData = await getLatestTechParamByCode( req.body.machine, "PLCSWVersion" );
-      req.body.plc = plcData?.techParamValue;
     }
 
     if( !req.body.reporter || req.body.reporter == 'null' ){
