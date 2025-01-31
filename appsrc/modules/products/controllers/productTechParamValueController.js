@@ -27,6 +27,40 @@ this.populate = [
   {path: 'history', populate: { path: 'updatedBy', select: 'name' } }
 ];
 
+async function getLatestTechParamByCode( machine, code ){
+  try {
+    if( !( machine || code ) ){
+      throw new Error('Machine ID is required');
+    }
+    const record = await ProductTechParamValue.findOne({ machine })
+    .populate({ path: 'techParam', match: { code }, select: 'code' })
+    .sort({ createdAt: -1 }).lean(); 
+
+    if (record && record.techParam) {
+      return record; 
+    } else {
+      return null;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+exports.getSoftwareVersion = async (req, res, next) => {
+  try{
+    const plc = await getLatestTechParamByCode( req.params.machineId, "HLCSoftwareVersion" );
+    const hlc = await getLatestTechParamByCode( req.params.machineId, "PLCSWVersion" );
+    const data = {};
+    if( plc?.techParamValue )
+      data.plc = plc.techParamValue;
+    if( hlc?.techParamValue )
+      data.hlc = hlc.techParamValue;
+    res.json(data);
+  } catch( error ){
+    logger.error(new Error( error ));
+    res.status( StatusCodes.INTERNAL_SERVER_ERROR ).send( error?.message );
+  }
+};
 
 exports.getProductTechParamValue = async (req, res, next) => {
   this.dbservice.getObjectById(ProductTechParamValue, this.fields, req.params.id, this.populate, callbackFunc);
@@ -39,7 +73,6 @@ exports.getProductTechParamValue = async (req, res, next) => {
       res.json(response);
     }
   }
-
 };
 
 exports.getProductTechParamValues = async (req, res, next) => {
