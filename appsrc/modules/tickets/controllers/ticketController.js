@@ -32,6 +32,7 @@ this.populate = [
   { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
   { path: 'reporter', select: 'firstName lastName' },
   { path: 'assignee', select: 'firstName lastName' },
+  { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
@@ -49,6 +50,7 @@ this.listPopulate = [
   { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
   { path: 'reporter', select: 'firstName lastName' },
   { path: 'assignee', select: 'firstName lastName' },
+  { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
@@ -327,10 +329,10 @@ function getDocFromReq(req, reqType){
   const doc = reqType === "new" ? new Ticket({}) : {};
 
   const allowedFields = [
-    "customer", "machine", "issueType", "description", "hlc", "plc", "summary", "changeType", "reporter",
-    "impact", "priority", "status", "changeReason", "implementationPlan", "assignee",
+    "customer", "machine", "issueType", "description", "hlc", "plc", "summary", "changeType", 
+    "reporter", "assignee", "approvers", "impact", "priority", "status", "changeReason", "implementationPlan", 
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
-    "rootCause", "workaround", "plannedStartDate", "plannedEndDate", "isActive", "isArchived"
+    "rootCause", "workaround", "plannedStartDate", "startTime", "plannedEndDate", "endTime", "isActive", "isArchived"
   ];
 
   allowedFields.forEach((f) => {

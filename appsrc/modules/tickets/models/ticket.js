@@ -15,6 +15,8 @@ const docSchema = new Schema({
 
         assignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
 
+        approvers: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+
         changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
         
         changeType: { type: Schema.Types.ObjectId, ref: 'TicketChangeType' },
@@ -37,11 +39,11 @@ const docSchema = new Schema({
 
         plannedStartDate: { type: Date  },
 
-        plannedStartTime: { type: String },
+        startTime: { type: Date },
 
         plannedEndDate: { type: Date  },
 
-        plannedEndTime: { type: String },
+        endTime: { type: Date },
         
         backoutPlan: { type: String  },
 
