@@ -52,6 +52,13 @@ const ticketSchema = (reqType ) => {
             return ObjectId.isValid(assigneeId);
         }),
 
+        approvers: Yup.string().nullable().label('Assignee')
+        .test('is-objectid', 'Invalid Assignee!', (assigneeId) => {
+            if ( !assigneeId || assigneeId == "null" ) 
+                return true;
+            return ObjectId.isValid(assigneeId);
+        }),
+        
         changeType: Yup.string().nullable().label('Change Type')
         .test('is-objectid', 'Invalid Change Type!', (changeTypeId) => {
             if ( !changeTypeId || changeTypeId == "null" ) 
@@ -108,8 +115,34 @@ const ticketSchema = (reqType ) => {
         workaround: Yup.string().label('Work Around').max(10000).nullable().notRequired(),
 
         plannedStartDate: Yup.date().label("Planned Start Date").nullable().notRequired(),
+        startTime: Yup.date().label("Planned Start Time").nullable().notRequired(),
         plannedEndDate: Yup.date().label("Planned End Date").nullable().notRequired(),
+        endTime: Yup.date().label("Planned End Time").nullable().notRequired(),
 
+        // plannedStartDate: Yup.date().label("Planned Start Date").nullable()
+        // .test('plannedStartDate', 'Start Date must be earlier than End Date', ( value, context ) => {
+        //   const { plannedEndDate } = context.parent;
+        //   return value && (!plannedEndDate || value < plannedEndDate);
+        // }),
+
+        // startTime: Yup.date().label("Start Time").nullable()
+        // .test('startTime', 'Start Time must be earlier than End Time', ( value, context ) => {
+        //   const { plannedEndDate } = context.parent;
+        //   return value && (!plannedEndDate || value < plannedEndDate);
+        // }),
+
+        // plannedEndDate: Yup.date().label("Planned End Date").nullable()
+        // .test('plannedEndDate', 'End Date must be later than Start Date', ( value, context ) => {
+        //   const { plannedStartDate } = context.parent;
+        //   return value && (!plannedStartDate || value > plannedStartDate);
+        // }),
+
+        // endTime: Yup.date().label("End Time").nullable()
+        // .test('endTime', 'End Time must be later than Start Time', ( value, context ) => {
+        //   const { plannedStartDate } = context.parent;
+        //   return value && (!plannedStartDate || value > plannedStartDate);
+        // }),
+        
         shareWith: Yup.boolean().label("Share With").nullable().notRequired(),
         isActive: Yup.boolean().label("Active").nullable().notRequired(),
         isArchived: Yup.boolean().label("Archived").nullable().notRequired(),
