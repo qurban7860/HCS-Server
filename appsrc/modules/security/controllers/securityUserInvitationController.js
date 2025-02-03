@@ -168,7 +168,7 @@ this.populate = [
     return res.status(StatusCodes.OK).json({valid: true, ...invitedUserDetails});
   };
 
-  exports.updatePasswordUser = async (req, res, next) => {
+  exports.setInvitedUserPassword = async (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));

@@ -25,6 +25,6 @@ router.get(`${baseRoute}/verifyInviteCode/:id/:code`, controller.verifyInviteCod
 
 router.patch(`${baseRoute}/:id`, controller.patchUserInvitation);
 
-router.patch(`${baseRoute}/updatePasswordUserInvite/:id`, controller.updatePasswordUser);
+router.patch(`${baseRoute}/setInvitedUserPasswordDetails/:id`, controller.setInvitedUserPassword);
 
 module.exports = router;
