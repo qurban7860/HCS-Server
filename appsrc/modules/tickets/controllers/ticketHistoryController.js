@@ -17,10 +17,10 @@ this.populate = [
   { path: 'previousReporter', select: 'firstName lastName' },
   { path: 'newAssignee', select: 'firstName lastName' },
   { path: 'previousAssignee', select: 'firstName lastName' },
-  { path: 'newPriority', select: 'name icon'  },
-  { path: 'previousPriority', select: 'name icon'  },
-  { path: 'newStatus', select: 'name icon'  },
-  { path: 'previousStatus', select: 'name icon'  },
+  { path: 'newPriority', select: 'name icon color'  },
+  { path: 'previousPriority', select: 'name icon color'  },
+  { path: 'newStatus', select: 'name icon color'  },
+  { path: 'previousStatus', select: 'name icon color'  },
   { path: 'updatedBy', select: 'name' }
 ];
 
