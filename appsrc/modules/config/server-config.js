@@ -42,6 +42,7 @@ const productLogs  = require ('../productLogs/routes');
 const jiraRoute  = require ('../jira/routes');
 const ticketRoute  = require ('../tickets/routes');
 const backupRoute  = require ('../backups/routes');
+const customerPortalRoutes = require('../cp/routes');
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -144,6 +145,7 @@ class App {
     jiraRoute.registerJiraRoutes(this.app, apiPath);
     ticketRoute.registerTicketRoutes(this.app, apiPath);
     backupRoute.registerBackupRoutes(this.app, apiPath);
+    customerPortalRoutes.registerCustomerPortalRoutes(this.app, apiPath);
   }
 
 
