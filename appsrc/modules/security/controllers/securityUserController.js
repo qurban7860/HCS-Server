@@ -14,7 +14,7 @@ this.dbservice = new securityDBService();
 const emailService = require('../service/userEmailService');
 const userEmailService = this.userEmailService = new emailService();
 
-const { SecurityUser, SecurityRole, SecuritySignInLog, SecuritySession } = require('../models');
+const { SecurityUser, SecurityRole, SecuritySignInLog, SecuritySession, SecurityUserInvite } = require('../models');
 const { Customer } = require('../../crm/models');
 const { Product } = require('../../products/models');
 
@@ -191,7 +191,6 @@ exports.postSecurityUser = async ( req, res ) => {
 
     if(!req.body.email) req.body.email = req.body.login;
     if(!req.body.login) req.body.login = req.body.email;
-    if(req.body.isInvite) req.body.isActive = false;
     
     let queryString = { 
       isArchived: false, 
@@ -200,25 +199,16 @@ exports.postSecurityUser = async ( req, res ) => {
         { login: req.body.login?.toLowerCase()?.trim() }
       ]
     };
-    const user = await this.dbservice.getObject(SecurityUser, queryString, this.populate );
 
-    if(_.isEmpty(user)){
-      const doc = await getDocumentFromReq( req, "new"  );
-      const newUser = await this.dbservice.postObject( doc );
-      if( req?.body?.isInvite ){
-        if( req?.body?.registrationRequest ){
-          return newUser;
-        }
-        req.params.id = newUser?._id;
-        await this.userEmailService.sendUserInviteEmail( req, res );
-      } 
-        return res.status(StatusCodes.CREATED).json({ user: newUser }); 
-    }else if( user.invitationStatus ){
-      res.status(StatusCodes.CREATED).json({ user: user });
-    } else {
+    const existingUser = await SecurityUser.findOne(queryString);
+    if(existingUser) {
       return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
     }
-  } catch(error){
+
+    const doc = await getDocumentFromReq(req, "new");
+    const newUser = await this.dbservice.postObject(doc);
+    return res.status(StatusCodes.CREATED).json({ user: newUser });    
+  } catch(error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
     throw error;
@@ -426,6 +416,40 @@ exports.changeLockedStatus = async (req, res, next) => {
   }
 };
 
+exports.addSecurityUserForPortalRegistration = async (req, res) => {
+  try{
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } 
+
+    if(!req.body.email) req.body.email = req.body.login;
+    if(!req.body.login) req.body.login = req.body.email;
+    if(req.body.isInvite) req.body.isActive = false;
+    
+    let queryString = { 
+      isArchived: false, 
+      $or: [
+        { email: req.body.email?.toLowerCase()?.trim() },
+        { login: req.body.login?.toLowerCase()?.trim() }
+      ]
+    };
+    const user = await this.dbservice.getObject(SecurityUser, queryString, this.populate );
+
+    if(_.isEmpty(user)){
+      const doc = await getDocumentFromReq( req, "new"  );
+      const newUser = await this.dbservice.postObject( doc );
+      return newUser;
+    } else {
+      return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
+    }
+  } catch(error){
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
+    throw error;
+  }
+}
+
 
 async function comparePasswords(encryptedPass, textPass, next){
   let isValidPassword = false;
@@ -440,40 +464,79 @@ async function comparePasswords(encryptedPass, textPass, next){
 };
 
 
-async function getDocumentFromReq(req, reqType){
-  const { customer, customers, contact, name, phone, email, invitationStatus, currentEmployee, login, dataAccessibilityLevel, regions, machines,
-    password, registrationRequest, expireAt, roles, isActive, isArchived, multiFactorAuthentication, multiFactorAuthenticationCode,multiFactorAuthenticationExpireTime } = req.body;
-
+async function getDocumentFromReq(req, reqType) {
+  const {
+    customer,
+    customers,
+    contact,
+    name,
+    phone,
+    email,
+    currentEmployee,
+    login,
+    dataAccessibilityLevel,
+    regions,
+    machines,
+    password,
+    registrationRequest,
+    expireAt,
+    roles,
+    isActive,
+    isArchived,
+    multiFactorAuthentication,
+    multiFactorAuthenticationCode,
+    multiFactorAuthenticationExpireTime,
+  } = req.body;
 
   let doc = {};
-  
-  if (reqType && reqType == "new"){
+
+  if (reqType && reqType === "invite") {
+    doc = new SecurityUserInvite({});
+    // Add invitation specific fields
+    doc.inviteCode = (Math.random() + 1).toString(36).substring(7);
+    let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS) || 48;
+    doc.inviteExpireTime = new Date(Date.now() + inviteCodeExpireHours * 60 * 60 * 1000);
+    doc.senderUser = req.body.loginUser.userId;
+    doc.lastInviteSentAt = new Date();
+  }
+
+  if (reqType && reqType == "new") {
     doc = new SecurityUser({});
   }
-  if ("customer" in req.body){
-    doc.customer = customer;
-  }
-  if ("contact" in req.body){
-    doc.contact = contact;
-  }
+  
+  if ("customer" in req.body) doc.customer = customer;
+  if ("contact" in req.body) doc.contact = contact;
+  if ("name" in req.body) doc.name = name;
+  if ("phone" in req.body) doc.phone = phone;
+  if ("login" in req.body) doc.login = login?.toLowerCase()?.trim();
+  if ("email" in req.body) doc.email = email?.toLowerCase()?.trim();
+  if ("currentEmployee" in req.body) doc.currentEmployee = currentEmployee;
+  if ("roles" in req.body) doc.roles = roles;
+  if ("dataAccessibilityLevel" in req.body) doc.dataAccessibilityLevel = dataAccessibilityLevel;
+  if ("regions" in req.body) doc.regions = regions;
+  if ("customers" in req.body) doc.customers = customers;
+  if ("machines" in req.body) doc.machines = machines;
 
-  if ("name" in req.body){
-    doc.name = name;
-  }
 
-  if ("phone" in req.body){
-    doc.phone = phone;
-  }
-  if ("multiFactorAuthentication" in req.body){
+  if ("multiFactorAuthentication" in req.body) {
     doc.multiFactorAuthentication = multiFactorAuthentication;
   }
 
-  if ("multiFactorAuthenticationCode" in req.body){
+  if ("multiFactorAuthenticationCode" in req.body) {
     doc.multiFactorAuthenticationCode = multiFactorAuthenticationCode;
   }
-  if ("multiFactorAuthenticationExpireTime" in req.body){
+  if ("multiFactorAuthenticationExpireTime" in req.body) {
     doc.multiFactorAuthenticationExpireTime = multiFactorAuthenticationExpireTime;
   }
+
+  if ("registrationRequest" in req.body) doc.registrationRequest = registrationRequest;
+  if ("expireAt" in req.body) doc.expireAt = expireAt;
+
+  if ("isActive" in req.body) doc.isActive = isActive;
+  if ("isArchived" in req.body) doc.isArchived = isArchived;
+  if ("userLocked" in req.body) doc.userLocked = userLocked;
+  if ("lockUntil" in req.body) doc.lockUntil = lockUntil;
+  if ("lockedBy" in req.body) doc.lockedBy = lockedBy;
 
   if ("password" in req.body) {
     try {
@@ -485,88 +548,31 @@ async function getDocumentFromReq(req, reqType){
     }
   }
 
-  if ("login" in req.body){
-    doc.login = login?.toLowerCase()?.trim();
-  }
 
-  if ("email" in req.body){
-    doc.email = email?.toLowerCase()?.trim();
-  }
+  // if ("invitationStatus" in req.body) {
+  //   doc.invitationStatus = invitationStatus;
+  // }
 
-  if ("currentEmployee" in req.body){
-    doc.currentEmployee = currentEmployee;
-  }
-
-  if ("invitationStatus" in req.body){
-    doc.invitationStatus = invitationStatus;
-  }
-
-  if ("registrationRequest" in req.body){
-    doc.registrationRequest = registrationRequest;
-  }
-  
-  if ("expireAt" in req.body){
-    doc.expireAt = expireAt;
-  }
-
-  if ("roles" in req.body){
-    doc.roles = roles;
-  }
-
-  if ("dataAccessibilityLevel" in req.body){
-    doc.dataAccessibilityLevel = dataAccessibilityLevel;
-  }
-
-  if ("regions" in req.body){
-    doc.regions = regions;
-  }
-
-  if ("customers" in req.body){
-    doc.customers = customers;
-  }
-
-  if ( customer ){
+  if (customer) {
     const customerId = typeof customer === 'string' ? customer : customer?._id;
-    const uniqueCustomers = new Set(doc.customers);
+    const uniqueCustomers = new Set(doc.customers || []);
     if (typeof customerId === 'string' && !uniqueCustomers.has(customerId)) {
       uniqueCustomers.add(customerId);
       doc.customers = Array.from(uniqueCustomers);
     }
   }
 
-  if ("machines" in req.body){
-    doc.machines = machines;
+  if ("loginUser" in req.body) {
+    if (reqType === "new" || reqType === "invite") {
+      doc.createdBy = req.body.loginUser.userId;
+      doc.updatedBy = req.body.loginUser.userId;
+      doc.createdIP = req.body.loginUser.userIP;
+      doc.updatedIP = req.body.loginUser.userIP;
+    } else {
+      doc.updatedBy = req.body.loginUser.userId;
+      doc.updatedIP = req.body.loginUser.userIP;
+    }
   }
-
-  if ("isActive" in req.body){
-    doc.isActive = isActive;
-  }
-
-  if ("isArchived" in req.body){
-    doc.isArchived = isArchived;
-  }
-
-  if ("userLocked" in req.body){
-    doc.userLocked = userLocked;
-  }
-
-  if ("lockUntil" in req.body){
-    doc.lockUntil = lockUntil;
-  }
-
-  if ("lockedBy" in req.body){
-    doc.lockedBy = lockedBy;
-  }
-
-  if (reqType == "new" && "loginUser" in req.body ){
-    doc.createdBy = req.body.loginUser.userId;
-    doc.updatedBy = req.body.loginUser.userId;
-    doc.createdIP = req.body.loginUser.userIP;
-    doc.updatedIP = req.body.loginUser.userIP;
-  } else if ("loginUser" in req.body) {
-    doc.updatedBy = req.body.loginUser.userId;
-    doc.updatedIP = req.body.loginUser.userIP;
-  } 
 
   return doc;
 }
