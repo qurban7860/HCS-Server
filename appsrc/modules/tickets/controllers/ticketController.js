@@ -41,7 +41,7 @@ this.populate = [
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'files', select: 'name fileType extension thumbnail eTag' },
-  { path: 'createdBy', select: 'name' },
+  { path: 'createdBy', select: 'name contact', populate: { path: 'contact', select: 'firstName lastName' } },
   { path: 'updatedBy', select: 'name' }
 ];
 
