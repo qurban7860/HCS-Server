@@ -15,7 +15,7 @@ const docSchema = new Schema({
 
         assignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
 
-        approvers: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        approvers: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
 
         changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
         
