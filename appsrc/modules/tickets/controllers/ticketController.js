@@ -20,8 +20,8 @@ const { SecurityUser } = require('../../security/models');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
-const TicketEmailService = require('../service/ticketEmailService');
-this.ticketEmailService = new TicketEmailService();
+// const TicketEmailService = require('../service/ticketEmailService');
+// this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
@@ -238,7 +238,7 @@ exports.postTicket = async (req, res, next) => {
 
     req.params.id = ticketData._id;
     req.body.isNew = true;
-    await ticketEmailService.sendSupportTicketEmail( req );
+    // await ticketEmailService.sendSupportTicketEmail( req );
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
@@ -285,7 +285,7 @@ exports.patchTicket = async (req, res, next) => {
     }
 
     await ticketFileController.saveTicketFiles( req );
-    await ticketEmailService.sendSupportTicketEmail( req );
+    // await ticketEmailService.sendSupportTicketEmail( req );
     return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
   } catch( error ){
     logger.error(new Error(error));
