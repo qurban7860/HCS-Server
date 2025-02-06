@@ -52,7 +52,9 @@ exports.getSoftwareVersion = async (req, res, next) => {
   try{
     const regex = new RegExp("^Tech-Param_in_Ticket$", "i"); 
     const result = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value').lean()
+    console.log("result : ",result)
     const configObjectIds = result?.value?.split(',')?.map( coi => coi?.trim() );
+    console.log("configObjectIds : ",configObjectIds)
     const records = await ProductTechParamValue.find({ machine: req.params.machineId, isArchived: false, techParam: { $in: configObjectIds } })
     .populate({ path: 'techParam', select: 'code' }).lean(); 
     console.log(" records : ",records)
