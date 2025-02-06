@@ -6,7 +6,6 @@ this.dbservice = new ticketDBService();
 const _ = require('lodash');
 const ticketFileController = require('./ticketFileController');
 const ticketChangeController = require('./ticketHistoryController');
-const { ProductTechParamValue } = require('../../products/models');
 const { 
   Ticket, 
   TicketChangeReason, 
@@ -21,7 +20,8 @@ const { SecurityUser } = require('../../security/models');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
-
+// const TicketEmailService = require('../service/ticketEmailService');
+// this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
@@ -62,7 +62,7 @@ this.listPopulate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-this.settingFields = "name slug icon color";
+this.settingFields = "name slug icon color isDefault";
 
 exports.getTicket = async (req, res, next) => {
   try{
@@ -225,34 +225,9 @@ exports.postTicket = async (req, res, next) => {
       req.body.issueType = issueTypeData?._id;
     }
 
-    if( !req.body.priority || req.body.priority == 'null' ){
-      const priorityData = await this.dbservice.getObject( TicketPriority, queryObject );
-      req.body.priority = priorityData?._id;
-    }
-
     if( !req.body.status || req.body.status == 'null' ){
       const statusData = await this.dbservice.getObject( TicketStatus, queryObject );
       req.body.status = statusData?._id;
-    }
-
-    if( !req.body.investigationReason || req.body.investigationReason == 'null' ){
-      const investigationReasonData = await this.dbservice.getObject( TicketInvestigationReason, queryObject );
-      req.body.investigationReason = investigationReasonData?._id;
-    }
-
-    if( !req.body.changeType || req.body.changeType == 'null' ){
-      const changeTypeData = await this.dbservice.getObject( TicketChangeType, queryObject );
-      req.body.changeType = changeTypeData?._id;
-    }
-
-    if( !req.body.impact || req.body.impact == 'null' ){
-      const impactData = await this.dbservice.getObject( TicketImpact, queryObject );
-      req.body.impact = impactData?._id;
-    }
-
-    if( !req.body.changeReason || req.body.changeReason == 'null'  ){
-      const changeReasonData = await this.dbservice.getObject( TicketChangeReason, queryObject );
-      req.body.changeReason = changeReasonData?._id;
     }
 
     let ticketData = await getDocFromReq(req, 'new')
@@ -261,6 +236,9 @@ exports.postTicket = async (req, res, next) => {
     ticketData = await this.dbservice.postObject(ticketData);
     req.params.ticketId = ticketData?._id;
 
+    req.params.id = ticketData._id;
+    req.body.isNew = true;
+    // await ticketEmailService.sendSupportTicketEmail( req );
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
@@ -307,6 +285,7 @@ exports.patchTicket = async (req, res, next) => {
     }
 
     await ticketFileController.saveTicketFiles( req );
+    // await ticketEmailService.sendSupportTicketEmail( req );
     return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
   } catch( error ){
     logger.error(new Error(error));
