@@ -114,10 +114,10 @@ const ticketSchema = (reqType ) => {
         rootCause: Yup.string().label('Internal Note').max(10000).nullable().notRequired(),
         workaround: Yup.string().label('Work Around').max(10000).nullable().notRequired(),
 
-        plannedStartDate: Yup.date().label("Planned Start Date").nullable().notRequired(),
-        startTime: Yup.date().label("Planned Start Time").nullable().notRequired(),
-        plannedEndDate: Yup.date().label("Planned End Date").nullable().notRequired(),
-        endTime: Yup.date().label("Planned End Time").nullable().notRequired(),
+        plannedStartDate: Yup.mixed().label("Planned Start Date").nullable().notRequired(),
+        startTime: Yup.mixed().label("Planned Start Time").nullable().notRequired(),
+        plannedEndDate: Yup.mixed().label("Planned End Date").nullable().notRequired(),
+        endTime: Yup.mixed().label("Planned End Time").nullable().notRequired(),
 
         // plannedStartDate: Yup.date().label("Planned Start Date").nullable()
         // .test('plannedStartDate', 'Start Date must be earlier than End Date', ( value, context ) => {
