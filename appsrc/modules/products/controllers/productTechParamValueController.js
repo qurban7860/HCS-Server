@@ -55,15 +55,15 @@ exports.getSoftwareVersion = async (req, res, next) => {
     const configObjectIds = result?.value?.split(',')?.map( coi => coi?.trim() );
     const records = await ProductTechParamValue.find({ machine: req.params.machineId, isArchived: false, techParam: { $in: configObjectIds } })
     .populate({ path: 'techParam', select: 'code' }).lean(); 
-
+    console.log(" records : ",records)
     const data = {};
 
     for (const record of records) {
       const techParamCode = record?.techParam?.code;
-
+      console.log(" techParamCode : ",techParamCode)
       if (techParamCode) {
         const codes = Array.isArray(techParamCode) ? techParamCode : [techParamCode];
-
+        console.log(" codes : ",codes)
         if (codes.some((code) => typeof code === "string" && /hlc/i.test(code))) {
           data.hlc = record.techParamValue;
         }
@@ -72,6 +72,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
         }
       }
     }
+    console.log("data : ",data);
     res.json(data);
   } catch( error ){
     logger.error(new Error( error ));
