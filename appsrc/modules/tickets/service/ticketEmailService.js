@@ -52,22 +52,22 @@ class TicketEmailService {
       const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.id}/view" target="_blank">
         <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
       </a>`;
-
+      let text = "";
       // Default Email Text
-      let text = `Support Ticket ${adminTicketUri} has been created by <strong>${username || ""}</strong>.`;
+      // text = `Support Ticket ${adminTicketUri} has been created by <strong>${username || ""}</strong>.`;
 
       // Check for Updates
       if (!req.body?.isNew && oldObj ) {
 
-        if ( oldObj?.status && oldObj?.status !== ticketData.status?._id) {
+        if ( oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString() ) {
           text = `Support Ticket ${adminTicketUri} <strong>Status</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-        if ( oldObj?.priority && oldObj?.priority !== ticketData.priority?._id) {
+        if ( oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString() ) {
           text = `Support Ticket ${adminTicketUri} <strong>Priority</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-        if ( oldObj?.reporter && oldObj?.reporter !== ticketData.reporter?._id) {
+        if ( oldObj?.reporter && oldObj?.reporter?.toString() != ticketData.reporter?._id?.toString() ) {
           text = `Support Ticket ${adminTicketUri} <strong>Reporter</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
@@ -79,15 +79,12 @@ class TicketEmailService {
           text = `Support Ticket ${adminTicketUri} <strong>Description</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-console.log(" oldObj?.approvers : ",oldObj?.approvers);
-console.log(" ticketData.approvers : ",ticketData.approvers);
-
         if (
           Array.isArray(oldObj?.approvers) &&
           Array.isArray(ticketData?.approvers) &&
           (
             oldObj?.approvers?.length !== ticketData.approvers.length ||
-            !oldObj?.approvers?.every( id => ticketData?.approvers?.some(appr => appr._id == id ))
+            !oldObj?.approvers?.every( id => ticketData?.approvers?.some(appr => appr._id?.toString() == id?.toString() ))
           )
         ) {
           text = `Support Ticket ${adminTicketUri} <strong>Approvers</strong> have been updated by <strong>${username || ""}</strong>.`;
@@ -101,15 +98,20 @@ console.log(" ticketData.approvers : ",ticketData.approvers);
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
         }
 
-      } else {
-        // Collect Unique Email Addresses
-        if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
-        if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
-        if (ticketData.approvers?.length) {
-          ticketData?.approvers.forEach((approver) => {
-            if (approver.email) toEmails.add(approver.email);
-          });
-        }
+      } 
+      // else {
+      //   // Collect Unique Email Addresses
+      //   if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
+      //   if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+      //   if (ticketData.approvers?.length) {
+      //     ticketData?.approvers.forEach((approver) => {
+      //       if (approver.email) toEmails.add(approver.email);
+      //     });
+      //   }
+      // }
+
+      if( !text ){
+        return;
       }
 
       // Prepare Email Params
@@ -123,7 +125,7 @@ console.log(" ticketData.approvers : ",ticketData.approvers);
         path.join(__dirname, "../../email/templates/supportTicket.html"),
         "utf8"
       );
-
+      
       const content = render(contentHTML, { text });
       const htmlData = await renderEmail( subject, content );
 
