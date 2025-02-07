@@ -49,7 +49,7 @@ class TicketEmailService {
       }).select("value");
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a href="${adminPortalUrl}support/supportTickets/${req.params.id}/view" target="_blank">
+      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.id}/view" target="_blank">
         <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
       </a>`;
 
