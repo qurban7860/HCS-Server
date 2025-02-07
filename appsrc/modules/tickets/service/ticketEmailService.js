@@ -60,23 +60,23 @@ class TicketEmailService {
       if (!req.body.isNew) {
 
         if ( req.body.status && req.body.status !== ticketData.status?._id) {
-          text = `Support Ticket ${adminTicketUri} Status has been updated by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <strong>Status</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
         if ( req.body.priority && req.body.priority !== ticketData.priority?._id) {
-          text = `Support Ticket ${adminTicketUri} Priority has been updated by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <strong>Priority</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
         if ( req.body.reporter && req.body.reporter !== ticketData.reporter?._id) {
-          text = `Support Ticket ${adminTicketUri} Reporter has been updated by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <strong>Reporter</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
         if ( req.body.summary && req.body.summary?.trim() !== ticketData.summary?.trim()) {
-          text = `Support Ticket ${adminTicketUri} Summary has been updated by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <strong>Summary</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
         if ( req.body.description && req.body.description?.trim() !== ticketData.description?.trim()) {
-          text = `Support Ticket ${adminTicketUri} Description has been updated by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <strong>Description</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
         if (
@@ -87,7 +87,7 @@ class TicketEmailService {
             !req.body.approvers.every(id => ticketData.approvers.some(appr => appr._id === id ))
           )
         ) {
-          text = `Support Ticket ${adminTicketUri} Approvers have been updated by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <strong>Approvers</strong> have been updated by <strong>${username || ""}</strong>.`;
           ticketData.approvers.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
