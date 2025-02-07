@@ -116,7 +116,7 @@ class TicketEmailService {
 
       // Prepare Email Params
       let params = {
-        bccEmails: Array.from(toEmails),
+        toEmails: Array.from(toEmails),
         subject,
       };
 
