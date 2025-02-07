@@ -86,8 +86,8 @@ const saveTicketFiles = async ( req ) => {
         logger.error('File not found!');
         throw new Error('File not found!');
       }
-
-      const processedFile = await processFile(file, req.body.loginUser.userId, process.env.SUPPORT_TICKET_FOLDER_NAME);
+console.log(" req.body?.loginUser : ",req.body?.loginUser)
+      const processedFile = await processFile(file, req.body?.loginUser?.userId, process.env.SUPPORT_TICKET_FOLDER_NAME);
 
       req.body = {
         loginUser: req.body.loginUser,
@@ -113,6 +113,7 @@ const saveTicketFiles = async ( req ) => {
     }
     return savedFiles;
   } catch( error ) {
+    console.log( " error : ", error );
     throw error
   }
 }

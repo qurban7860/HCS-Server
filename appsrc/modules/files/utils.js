@@ -4,6 +4,7 @@ const path = require('path');
 const sharp = require('sharp');
 
 async function processFile(file, userId, folder = '' ) {
+  console.log(" userId : ",userId)
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
   let thumbnailPath;

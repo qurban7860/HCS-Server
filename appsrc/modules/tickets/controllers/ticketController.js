@@ -27,6 +27,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };  
+
 this.populate = [
   { path: 'customer', select: 'name'  },
   { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
@@ -238,7 +239,6 @@ exports.postTicket = async (req, res, next) => {
 
     req.params.id = ticketData._id;
     req.body.isNew = true;
-    await this.ticketEmailService.sendSupportTicketEmail( req );
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
@@ -248,6 +248,7 @@ exports.postTicket = async (req, res, next) => {
       }
       throw new Error("Failed to complete the ticket creation process: " + error.message);
     }
+    await this.ticketEmailService.sendSupportTicketEmail( req );
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch( error ){
     await CounterController.reversePaddedCounterSequence('supportTicket');
@@ -285,7 +286,7 @@ exports.patchTicket = async (req, res, next) => {
     }
 
     await ticketFileController.saveTicketFiles( req );
-    await this.ticketEmailService.sendSupportTicketEmail( req );
+    await this.ticketEmailService.sendSupportTicketEmail( req, oldObj );
     return res.status(StatusCodes.ACCEPTED).send("Ticket updated successfully!");
   } catch( error ){
     logger.error(new Error(error));
