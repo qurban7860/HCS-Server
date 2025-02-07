@@ -79,12 +79,15 @@ class TicketEmailService {
           text = `Support Ticket ${adminTicketUri} <strong>Description</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
+console.log(" oldObj?.approvers : ",oldObj?.approvers);
+console.log(" ticketData.approvers : ",ticketData.approvers);
+
         if (
           Array.isArray(oldObj?.approvers) &&
-          Array.isArray(ticketData.approvers) &&
+          Array.isArray(ticketData?.approvers) &&
           (
             oldObj?.approvers?.length !== ticketData.approvers.length ||
-            !oldObj?.approvers?.every(id => ticketData.approvers.some(appr => appr._id?.toString() === id?.toString() ))
+            !oldObj?.approvers?.every( id => ticketData?.approvers?.some(appr => appr._id == id ))
           )
         ) {
           text = `Support Ticket ${adminTicketUri} <strong>Approvers</strong> have been updated by <strong>${username || ""}</strong>.`;
