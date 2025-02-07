@@ -1,0 +1,15 @@
+meta {
+  name: Get Software Version
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/machines/65a8a465ef2c3f2feb609c1d/techparamvalues/softwareVersion/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
