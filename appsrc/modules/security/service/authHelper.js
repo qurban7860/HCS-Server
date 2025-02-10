@@ -4,9 +4,11 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const securitySignInLogController = require('../controllers/securitySignInLogController');
 const logger = require('../../config/logger');
 const _ = require('lodash');
+let securityDBService = require('./securityDBService');
+this.dbservice = new securityDBService();
+const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models');
 
-async function generateRandomString() {
-    currentDate = new Date();
+  async function generateRandomString(){
     return new Promise((resolve) => {
       const length = 32;
       const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -34,20 +36,15 @@ async function generateRandomString() {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       return next(error);
     }
-  
     return isValidPassword;
   };
   
   async function issueToken(userID, userEmail, sessionID, roles, dataAccessibilityLevel) {
-    const filteredRoles = roles
-    .filter(role => role.isActive && !role.isArchived)
-    .map(role => role.roleType);
-  
     let token;
+    const filteredRoles = roles.filter(role => role.isActive && !role.isArchived).map(role => role.roleType);
     let tokenData = { userId: userID, email: userEmail, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
   
     try {
-  
       token = jwt.sign(
         tokenData,
         process.env.JWT_SECRETKEY,
@@ -61,18 +58,19 @@ async function generateRandomString() {
     return token;
   };
   
-  async function updateUserToken(accessToken) {
-    currentDate = new Date();
-    let doc = {};
-    let token = {
-      accessToken: accessToken,
-      tokenCreation: currentDate,
-      tokenExpiry: new Date(currentDate.getTime() + 60 * 60 * 1000)
+  async function updateUserToken( accessToken ) {
+    try {
+      const tokenCreation = new Date(); 
+      const token = {
+        accessToken,
+        tokenCreation,
+        tokenExpiry: new Date(tokenCreation.getTime() + 48 * 60 * 60 * 1000), 
+      };
+      return token;
+    } catch (error) {
+      throw error;
     }
-    doc.token = token;
-    return doc;
-  };
-
+  }
 
   async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
     let existsButNotAuthCode = 470;
@@ -119,11 +117,104 @@ async function generateRandomString() {
     return res;
   }
   
+  async function removeSessions(userId) {
+    await Promise.all([
+      SecuritySession.deleteMany({ "session.user": userId }),
+      SecuritySession.deleteMany({ "session.user": { $exists: false } }),
+      SecurityUser.updateOne({ _id: userId }, { token: {} })
+    ]);
+  
+    const wss = getSocketConnectionByUserId(userId);
+    const logoutMessage = Buffer.from(
+      JSON.stringify({ eventName: "logout", userId })
+    );
+  
+    wss.filter((ws) => ws.userId === userId)
+      .forEach((ws) => {
+        ws.send(logoutMessage);
+        ws.terminate();
+      });
+  }
+
+  function delay(time) {
+    return new Promise(resolve => setTimeout(resolve, time));
+  } 
+  
+  async function removeAndCreateNewSession(req, userId) {
+    try {
+      await removeSessions(userId);
+      if(req.session) {
+        req.session.cookie.expires = false;
+        let maxAge = process.env.TOKEN_EXP_TIME || "48h";
+        maxAge = maxAge.replace(/\D/g,'');
+        req.session.cookie.maxAge =  maxAge * 60 * 60 * 1000;
+        req.session.isLoggedIn = true;
+        req.session.user = userId;
+        req.session.sessionId = req.sessionID;
+        
+        await req.session.save();
+        await delay(500);
+        let user = await SecuritySession.findOne({"session.user":userId});
+        return user;
+      }
+      else {
+        return false;
+      }
+    } catch (err) {
+      logger.error(new Error(err));
+      return next(new Error('User session creation failed!'));
+    }
+  }
+
+  function isValidCustomer(customer) {
+    if (_.isEmpty(customer) || 
+    customer.type != 'SP' || 
+    customer.isActive == false || 
+    customer.isArchived == true) {
+      return false;
+    }
+    return true;
+  }
+  
+  
+  function isValidUser(user) {
+    if (_.isEmpty(user) || 
+    user.isActive == false || 
+    user.isArchived == true) {
+      return false;
+    }
+    return true;
+  }
+  
+  function isValidContact(contact){
+    if (!_.isEmpty(contact)){
+      if(contact.isActive == false || contact.isArchived == true) {
+        return false;
+      }
+    }
+    return true;
+  }
+  
+  function isValidRole(roles) {
+    const isValidRole = roles.some(role => role.isActive === true && role.isArchived === false);
+  
+    if (_.isEmpty(roles) || !isValidRole) {
+      return false;
+    }
+    return true;
+  }
+  
 module.exports = {
     generateRandomString,
     isTokenExpired,
     comparePasswords,
     issueToken,
     updateUserToken,
-    addAccessLog
+    addAccessLog,
+    removeSessions,
+    removeAndCreateNewSession,
+    isValidUser,
+    isValidCustomer,
+    isValidContact,
+    isValidRole
 }

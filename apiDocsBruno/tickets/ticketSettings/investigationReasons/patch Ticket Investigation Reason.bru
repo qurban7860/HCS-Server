@@ -1,0 +1,21 @@
+meta {
+  name: patch Ticket Investigation Reason
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/tickets/settings/investigationReasons/6780f6b774ff68176cc7df68
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isArchived": true
+  }
+}

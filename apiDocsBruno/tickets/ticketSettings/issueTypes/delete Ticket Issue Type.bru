@@ -1,0 +1,15 @@
+meta {
+  name: delete Ticket Issue Type
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/tickets/settings/issueTypes/6780f71374ff68176cc7df99
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

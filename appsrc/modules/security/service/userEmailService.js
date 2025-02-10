@@ -6,6 +6,7 @@ const path = require('path');
 const { renderEmail } = require('../../email/utils');
 const { SecurityUser, SecurityUserInvite } = require('../models');
 const { generateRandomString, updateUserToken } = require('./authHelper');
+const authHelper = require('./authHelper');
 const logger = require('../../config/logger');
 const securityDBService = require('../service/securityDBService');
 const emailService = require('../../email/service/emailService');
@@ -56,52 +57,56 @@ class UserEmailService {
 
   sendUserInviteEmail = async (req, res ) => {
     try{
-      this.populate = [
-        { path: "customer", select: "name type isActive" },
-        { path: "contact", select: "firstName lastName email formerEmployee isActive" },
-      ];
-      let user = await this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate);
+      const invitation = await SecurityUserInvite.findById(req.params.id)
+      .populate('customer', 'name type')
+      .populate('contact', 'firstName lastName email');
 
-      if(!user?._id){
+      if (!invitation) {
         if (res) {
-          return res.status(StatusCodes.BAD_REQUEST).send('User not found!');
-        } 
-        throw new Error('User not found!');
+          return res.status(StatusCodes.BAD_REQUEST).send('Invitation not found!');
+        }
+        throw new Error('Invitation not found!');
       }
-      let userInvite = new SecurityUserInvite({});
-      userInvite.inviteCode = (Math.random() + 1).toString(36).substring(7);
-      let inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS);
-      if(isNaN(inviteCodeExpireHours))
-        inviteCodeExpireHours = 48;
-      let expireAt = new Date().setHours(new Date().getHours() + inviteCodeExpireHours);
-      const link = `${ adminPortalUrl }/invite/${req.params.id}/${userInvite.inviteCode}/${expireAt}`;
-      user.invitationStatus = true;
-      user.save();
-      userInvite.senderInvitationUser = req.body.loginUser.userId;
-      userInvite.receiverInvitationUser = req.params.id;
-      userInvite.receiverInvitationEmail = user.email;
 
-      userInvite.inviteExpireTime = expireAt;
-      userInvite.invitationStatus = 'PENDING';
-      await userInvite.save();
+      const link = `${invitation?.customer?.type?.toLowerCase() === "sp" ? adminPortalUrl : portalUrl}/invite/${invitation._id}/${invitation.inviteCode}/${invitation.inviteExpireTime.getTime()}`;
+
       let emailSubject = "User Invite - HOWICK Portal";
-      const regex = new RegExp("^USER-INVITE-SUBJECT$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-      if(configObject && configObject?.value)
-          emailSubject = configObject.value;
-      let params = {
-          toEmails: `${user.email}`,
-          subject: emailSubject,
+      const configObject = await Config.findOne({
+        name: /^USER-INVITE-SUBJECT$/i,
+        type: "ADMIN-CONFIG",
+        isArchived: false,
+        isActive: true
+      }).select('value');
+
+      if (configObject?.value) {
+        emailSubject = configObject.value;
+      }
+      
+      const params = {
+        toEmails: invitation.email,
+        subject: emailSubject,
       };
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/userInvite.html'), 'utf8');
-      const content = render(contentHTML, { username: user.name, link });
+
+      const content = render(contentHTML, { 
+        username: invitation.name,
+        link 
+      });
+
       const htmlData =  await renderEmail(emailSubject, content )
-      params.htmlData = htmlData;
-      req.body = { ...params };
-      await this.email.sendEmail( req );
-      if (res) {
-        res.status(StatusCodes.OK).send('Invitation Sent Successfully!');
-      }
+      req.body = { ...params, htmlData };
+
+      await this.email.sendEmail(req);
+
+      // Update invitation sent count and time
+      invitation.inviteSentCount += 1;
+      invitation.lastInviteSentAt = new Date();
+      await invitation.save();
+
+    if (res) {
+      return res.status(StatusCodes.OK).send('Invitation Sent Successfully!');
+    }
       return null
     }catch(error){
       logger.error(new Error(error));
@@ -114,10 +119,10 @@ class UserEmailService {
 
   resetPasswordEmail = async ( req, res, toUser ) => {
     try{
-      const token = await generateRandomString();
-      let updatedToken = await updateUserToken(token);
-      await this.dbservice.patchObject(SecurityUser, toUser._id, updatedToken );
-      const link = `${ toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/auth/new-password/${token}/${toUser._id}`;
+      const rToken = await generateRandomString();
+      const token = await updateUserToken( rToken );
+      await this.dbservice.patchObject(SecurityUser, toUser._id, { token } );
+      const link = `${ toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/auth/new-password/${rToken}/${toUser._id}`;
 
           const emailSubject = "Reset Password";
           const username = toUser?.name;
@@ -148,7 +153,7 @@ class UserEmailService {
           <tr>
             <td align="left" style="padding:0;Margin:0">
               <p>
-                Dear ${toUser?.name || ''},<br>
+                ${toUser?.name || ''},<br>
                 <br>
                 Your password has been updated successfully.<br>
                 <br>

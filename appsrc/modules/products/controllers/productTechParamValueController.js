@@ -13,6 +13,7 @@ let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
 const { ProductTechParamValue } = require('../models');
+const { Config } = require('../../config/models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -27,6 +28,53 @@ this.populate = [
   {path: 'history', populate: { path: 'updatedBy', select: 'name' } }
 ];
 
+async function getLatestTechParamByCode( machine ){
+  try {
+    if( !( machine ) ){
+      throw new Error('Machine ID is required');
+    }
+    const regex = new RegExp("^Tech-Param_in_Ticket$", "i"); 
+    const result = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value').lean()
+    const configObjectIds = result?.value?.split(',')?.map( coi => coi?.trim() );
+    const record = await ProductTechParamValue.find({ machine, isArchived: false, techParam: { $in: configObjectIds } })
+    .populate({ path: 'techParam', select: 'code' }).lean(); 
+    const data = {
+      hlc: record[0]?.techParamValue,
+      plc: record[0]?.techParamValue,
+    }
+      return record; 
+  } catch (error) {
+    throw error;
+  }
+}
+
+exports.getSoftwareVersion = async (req, res, next) => {
+  try{
+    const regex = new RegExp("^Tech-Param_in_Ticket$", "i"); 
+    const result = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value').lean()
+    const configObjectIds = result?.value?.split(',')?.map( coi => coi?.trim() );
+    const records = await ProductTechParamValue.find({ machine: req.params.machineId, isArchived: false, techParam: { $in: configObjectIds } })
+    .populate({ path: 'techParam', select: 'code' }).lean(); 
+    const data = {};
+
+    for (const record of records) {
+      const techParamCode = record?.techParam?.code;
+      if (techParamCode) {
+        const codes = Array.isArray(techParamCode) ? techParamCode : [techParamCode];
+        if (codes.some((code) => typeof code === "string" && /hlc/i.test(code))) {
+          data.hlc = record.techParamValue;
+        }
+        if (codes.some((code) => typeof code === "string" && /plc/i.test(code))) {
+          data.plc = record.techParamValue;
+        }
+      }
+    }
+    res.json(data);
+  } catch( error ){
+    logger.error(new Error( error ));
+    res.status( StatusCodes.INTERNAL_SERVER_ERROR ).send( error?.message );
+  }
+};
 
 exports.getProductTechParamValue = async (req, res, next) => {
   this.dbservice.getObjectById(ProductTechParamValue, this.fields, req.params.id, this.populate, callbackFunc);
@@ -39,7 +87,6 @@ exports.getProductTechParamValue = async (req, res, next) => {
       res.json(response);
     }
   }
-
 };
 
 exports.getProductTechParamValues = async (req, res, next) => {

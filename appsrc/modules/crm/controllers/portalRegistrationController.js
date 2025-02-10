@@ -10,7 +10,7 @@ this.dbservice = new customerDBService();
 const emailService = require('../../security/service/userEmailService');
 const userEmailService = this.userEmailService = new emailService();
 const { PortalRegistration } = require('../models');
-const { postSecurityUser } = require('../../security/controllers/securityUserController');
+const { addSecurityUserForPortalRegistration } = require('../../security/controllers/securityUserController');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {};
@@ -124,7 +124,7 @@ exports.patchRegisteredRequest = async (req, res, next) => {
                         isInvite: true,
                     }
                     req.body = { ...req.body, ...newUser };
-                    const user = await postSecurityUser(req);
+                    const user = await addSecurityUserForPortalRegistration(req, res);
                     await this.dbservice.patchObject(PortalRegistration, req.params.id, { securityUser: user?._id } );
                     req.params.id = user?._id?.toString();
                     await this.userEmailService.sendUserInviteEmail( req );

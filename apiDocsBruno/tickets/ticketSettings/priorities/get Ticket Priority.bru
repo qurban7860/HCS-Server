@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Priority
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/priorities/6780f77c74ff68176cc7dfea
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

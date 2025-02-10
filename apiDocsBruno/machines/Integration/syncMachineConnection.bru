@@ -6,15 +6,13 @@ meta {
 
 post {
   url: {{baseUrl}}/products/public/machines/syncMachineConnection
-  body: json
+  body: none
   auth: none
 }
 
-body:json {
-  {
-    "machineSerialNo": "21078",
-    "howickPortalKey": "2XN42KY5MX4JBLN1-8IIHWV1MHJ6KB2N-G2XN42KY5MX4JBL-N18IIHWV1MHJ6KB-2NG",
-    "computerGUID": "Hello GUID12",
-    "IPCSerialNo": "Bye IPC Serial Numberrr"
-  }
+headers {
+  x-machineSerialNo: 21078
+  x-computerGUID: Hello GUID12
+  x-IPCSerialNo: Bye IPC Serial Numberrr
+  x-howickPortalKey: 2XN42KY5MX4JBLN1-8IIHWV1MHJ6KB2N-G2XN42KY5MX4JBL-N18IIHWV1MHJ6KB-2NG
 }

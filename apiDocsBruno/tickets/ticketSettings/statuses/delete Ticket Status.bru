@@ -1,0 +1,15 @@
+meta {
+  name: delete Ticket Status
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/tickets/settings/statuses/6780f2dbba9e9f03aaa14794
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

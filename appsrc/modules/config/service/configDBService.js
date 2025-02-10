@@ -3,21 +3,12 @@ const mongoose = require('mongoose');
 var async = require("async");
 
 let dbService = require('../../db/dbService');
-const { response } = require('express');
 
 
 class ConfigService {
   constructor() {
     this.db = new dbService();
   }
-
-  // getObject(model, query, populate, callback) {
-  //   this.db.getObject(model, query, populate, callbackFunc);
-  //   function callbackFunc(error, response) {
-  //     if (error) callback(error, {});
-  //     else callback(null, response);
-  //   }
-  // }{}
   
   async getObject(model, query, populate) {
     try {

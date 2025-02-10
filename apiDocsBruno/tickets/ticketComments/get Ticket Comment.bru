@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Comment
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/tickets/6784ec6b143c6d854f092f46/comments/678666419a1a61e8b5d4bc4f
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

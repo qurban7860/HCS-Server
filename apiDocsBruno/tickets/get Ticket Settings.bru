@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Settings
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

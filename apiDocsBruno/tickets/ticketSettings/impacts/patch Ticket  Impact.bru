@@ -1,0 +1,21 @@
+meta {
+  name: patch Ticket  Impact
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/tickets/settings/impacts/6780f62f74ff68176cc7df35
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isArchived": true
+  }
+}

@@ -47,7 +47,7 @@ const structureEmailParams = async ( params ) => {
             ReplyToAddresses: [ process.env.AWS_SES_FROM_EMAIL ],
         }),
         Destination: {
-            ToAddresses: Array.isArray(params?.toEmails) ? params.toEmails : [params?.toEmails].filter(Boolean),
+            ToAddresses: (Array.isArray(params?.toEmails) && params.toEmails.length > 0) ? params.toEmails : [process.env.FALLBACK_EMAIL],
             ...(params?.ccAddresses && {
                 CcAddresses: Array.isArray(params?.ccEmails) ? params.ccEmails : [ params?.ccEmails ].filter(Boolean),
             }),

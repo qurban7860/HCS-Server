@@ -276,13 +276,13 @@ exports.postDocumentVersion = async (req, res, next) => {
         else {
           console.error("Files Not Found");
 
-          return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+          return res.status(StatusCodes.BAD_REQUEST).send('Files Not Found!');
         }
       }
       else {
         console.error("Invalid Data");
 
-        return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid Data!');
       }
 
     }

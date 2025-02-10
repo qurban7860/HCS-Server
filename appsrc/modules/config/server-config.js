@@ -35,15 +35,14 @@ const documentRoute  = require ('../documents/routes');
 const emailRoute  = require ('../email/routes');
 const regionRoute  = require ('../regions/routes');
 const calenderRoute  = require ('../calenders/routes');
-
 const apiclientRoute  = require ('../apiclient/routes');
-
 const configRoute  = require ('../config/routes');
 const logRoute  = require ('../log/routes');
 const productLogs  = require ('../productLogs/routes');
 const jiraRoute  = require ('../jira/routes');
-
+const ticketRoute  = require ('../tickets/routes');
 const backupRoute  = require ('../backups/routes');
+const customerPortalRoutes = require('../cp/routes');
 
 
 const swaggerUi = require('swagger-ui-express');
@@ -111,7 +110,7 @@ class App {
             //     res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
             //   }
             // }
-              callback(new Error('Not allowed by CORS'));
+              callback(new Error(`Not allowed by CORS by origin: ${origin}`));
           }
         }
     }));
@@ -144,7 +143,9 @@ class App {
     logRoute.registerlogRoutes(this.app, apiPath);
     productLogs.registerProductLogsRoutes(this.app, apiPath);
     jiraRoute.registerJiraRoutes(this.app, apiPath);
+    ticketRoute.registerTicketRoutes(this.app, apiPath);
     backupRoute.registerBackupRoutes(this.app, apiPath);
+    customerPortalRoutes.registerCustomerPortalRoutes(this.app, apiPath);
   }
 
 

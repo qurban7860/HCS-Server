@@ -1,0 +1,15 @@
+meta {
+  name: delete Ticket Change Type
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/tickets/settings/changeTypes/6780f55c74ff68176cc7df00
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

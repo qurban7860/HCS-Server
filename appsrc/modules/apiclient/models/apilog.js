@@ -39,18 +39,13 @@ const docSchema = new Schema({
                 
         additionalContextualInformation: { type: String }, 
         //Any additional information that may be relevant for troubleshooting or analysis. This could include user IDs, session information, etc.
-
-        createdBy: { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
-        // System user information who has created document. more detail is in auditlog collection
-        
-        createdIP: {type: String},
-        //user ip address
 },
 {
         collection: 'APILogs'
 });
 
 docSchema.set('timestamps', true);
+docSchema.add(baseSchema.docAuditSchemaForPublic);
 
 docSchema.index({"name":1})
 docSchema.index({"countries":1})

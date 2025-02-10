@@ -1,5 +1,6 @@
 const ObjectId = require('mongoose').Types.ObjectId;
 var async = require("async");
+const nodemailer = require('nodemailer');
 const { Config } = require('../../config/models');
 const { emailController } = require('../controllers');
 const { simpleEmailService } = require('../../../configs/aws/ses');
@@ -7,7 +8,49 @@ const logger = require('../../config/logger');
 
 class EmailService {
 
-    constructor() {}
+    constructor() {
+        this.transporter = process.env.ENV === 'local' 
+        ? nodemailer.createTransport({
+            host: "localhost",
+            port: 1025, // Default Maildev SMTP port
+            ignoreTLS: true,
+            secure: false
+            })
+        : null; // Will use AWS SES in production
+    }
+
+    async sendViaNodemailer(params) {
+        try {
+            const mailOptions = {
+                from: params.fromEmail,
+                to: Array.isArray(params.toEmails) ? params.toEmails.join(',') : params.toEmails,
+                cc: params.ccEmails,
+                bcc: params.bccEmails,
+                subject: params.subject,
+                html: params.htmlData,
+                text: params.body
+            };
+
+            await this.transporter.sendMail(mailOptions);
+        } catch (error) {
+            logger.error(new Error(`Failed to send email via Nodemailer: ${error}`));
+            throw new Error('Email sending failed via Nodemailer');
+        }
+    }
+
+    async isEmailOn( ){
+        try {
+            // EMAIL NOTIFICATIONS OFF
+            const isNotificationsDisabled = String( process.env.EMAIL_NOTIFICATIONS_DISABLED )?.toLowerCase() === 'true';
+        
+            if ( isNotificationsDisabled ) {
+                throw new Error('Email service is turned off.');
+            }
+        } catch (error) {
+            logger.error(new Error(`Failed to send email: ${error}`));
+            throw new Error('Email sending failed');
+        }
+    };
 
     async sendEmail( req ){
         try {
@@ -54,7 +97,13 @@ class EmailService {
                 sourceEmail = configObject.value;
             }
             params.fromEmail = sourceEmail;
-            await simpleEmailService( params );
+
+            // Use Maildev in development, AWS SES in production
+            if (process.env.ENV === 'local') {
+                await this.sendViaNodemailer(params);
+            } else {
+                await simpleEmailService( params );
+            }
             await emailController.newEmailLog( req );
         } catch (error) {
             logger.error(new Error(`Failed to send email: ${error}`));

@@ -29,10 +29,21 @@ const validateRequest = (schema) => async (req, res, next) => {
     if(!schema){
         throw new Error("Request Validation Failed!")
     }
+
     const { loginUser, ...otherFields } = req.body;
-    
-    // Validate and strip unknown fields
-    const validatedBody = await schema.validate(otherFields, {
+
+    let body = otherFields;
+
+    if (req.is("multipart/form-data")) {
+      const formDataObject = {};
+      for (const [key, value] of Object.entries(body)) {
+        formDataObject[key] = Array.isArray(value) ? value[0] : value;
+      }
+      body = formDataObject;
+    }
+
+
+    const validatedBody = await schema.validate(body, {
       abortEarly: false,
       stripUnknown: true,
       context: { req, res },

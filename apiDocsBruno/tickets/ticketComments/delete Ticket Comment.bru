@@ -1,0 +1,20 @@
+meta {
+  name: delete Ticket Comment
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/tickets/:ticketId/comments/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  ticketId: 
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

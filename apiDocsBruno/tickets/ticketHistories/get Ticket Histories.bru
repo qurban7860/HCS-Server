@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Histories
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/tickets/678790eac0265cd389c4735d/history/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

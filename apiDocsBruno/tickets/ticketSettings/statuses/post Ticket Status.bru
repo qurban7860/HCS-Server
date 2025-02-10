@@ -1,0 +1,28 @@
+meta {
+  name: post Ticket Status
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/tickets/settings/statuses/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "icon": "mdi:status",
+    "name": "To Do",
+    "slug": "slug",
+    "type": "67975988b59f071612d28cb7",
+    "description": "description!",
+    "displayOrderNo": "1",
+    "isDefault": true
+  }
+  
+}

@@ -1,0 +1,22 @@
+meta {
+  name: post Ticket Comment
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/tickets/6784ec6b143c6d854f092f46/comments
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "comment": "Test Comment"
+  }
+  
+}

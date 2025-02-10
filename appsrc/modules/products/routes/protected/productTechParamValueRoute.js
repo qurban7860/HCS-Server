@@ -18,9 +18,11 @@ const baseRouteForObject = `/machines/:machineId/techparamvalues`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductTechParamValue);
+router.get(`${baseRouteForObject}/`, checkProductID, controller.getProductTechParamValues );
 
-router.get(`${baseRouteForObject}/`, checkProductID, controller.getProductTechParamValues);
+router.get(`${baseRouteForObject}/softwareVersion/`, checkProductID, controller.getSoftwareVersion );
+
+router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductTechParamValue);
 
 router.post(`${baseRouteForObject}/`, checkProductID,  controller.postProductTechParamValue);
 

@@ -1,0 +1,21 @@
+meta {
+  name: patch Ticket Issue Type
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/tickets/settings/issueTypes/6780f71374ff68176cc7df99
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isArchived": true
+  }
+}
