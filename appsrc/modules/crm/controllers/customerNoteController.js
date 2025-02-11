@@ -18,18 +18,27 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { createdAt: -1 };
 this.populate = [
-  {path: 'contact', select: 'firstName lastName'},
-  {path: 'site', select: 'name'},
-  {path: 'user', select: 'firstName'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'contact', select: 'firstName lastName' },
+  { path: 'site', select: 'name' },
+  { path: 'user', select: 'firstName' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ]
 
 
 exports.getCustomerNote = async (req, res, next) => {
-  this.dbservice.getObjectById(CustomerNote, this.fields, req.params.id, this.populate, callbackFunc);
+
+  this.query = req.query != "undefined" ? req.query : {};
+
+  this.customerId = req.params.customerId;
+  if (this.customerId) {
+    this.query.customer = this.customerId;
+  }
+  this.query._id = req.params.id;
+
+  this.dbservice.getObject(CustomerNote, this.query, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -42,13 +51,13 @@ exports.getCustomerNote = async (req, res, next) => {
 };
 
 exports.getCustomerNotes = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {}; 
-  if(this.query.orderBy) {
+  this.query = req.query != "undefined" ? req.query : {};
+  if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
   this.customerId = req.params.customerId;
-  this.query.customer = this.customerId; 
+  this.query.customer = this.customerId;
   this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -74,10 +83,10 @@ exports.searchCustomerNotes = async (req, res, next) => {
 
 exports.deleteCustomerNote = async (req, res, next) => {
 
-  if(req.params.id && req.params.customerId) {
-    let customerNote = await CustomerNote.findOne({_id:req.params.id, customer:req.params.customerId});
-    
-    if(customerNote) {
+  if (req.params.id && req.params.customerId) {
+    let customerNote = await CustomerNote.findOne({ _id: req.params.id, customer: req.params.customerId });
+
+    if (customerNote) {
       this.dbservice.deleteObject(CustomerNote, req.params.id, res, callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
@@ -108,7 +117,7 @@ exports.postCustomerNote = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.CREATED).json({ CustomerNote: response });
       }
@@ -127,7 +136,7 @@ exports.patchCustomerNote = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -135,40 +144,40 @@ exports.patchCustomerNote = async (req, res, next) => {
   }
 };
 
-function getDocumentFromReq(req, reqType){
-  const { site, contact, user,  note,  
+function getDocumentFromReq(req, reqType) {
+  const { site, contact, user, note,
     isActive, isArchived, loginUser } = req.body;
-  
+
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new CustomerNote({});
   }
-  if (req.params){
+  if (req.params) {
     doc.customer = req.params.customerId;
-  }else{
+  } else {
     doc.customer = req.body.customer;
   }
-  if ("site" in req.body){
+  if ("site" in req.body) {
     doc.site = site;
   }
-  if ("contact" in req.body){
+  if ("contact" in req.body) {
     doc.contact = contact;
   }
-  if ("user" in req.body){
+  if ("user" in req.body) {
     doc.user = user;
   }
-  if ("note" in req.body){
+  if ("note" in req.body) {
     doc.note = note;
   }
-  
-  if ("isActive" in req.body){
+
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -176,7 +185,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
   return doc;
 
 }

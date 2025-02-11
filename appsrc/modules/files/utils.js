@@ -3,30 +3,29 @@ const awsService = require('../../base/aws');
 const path = require('path');
 const sharp = require('sharp');
 
-async function processFile(file, userId, folder = '' ) {
-  console.log(" userId : ",userId)
+async function processFile(file, userId, folder = '') {
   const { name, ext } = path.parse(file.originalname);
   const fileExt = ext.slice(1);
   let thumbnailPath;
   let base64thumbNailData;
   let base64fileData = null;
 
-  if(file.buffer){
+  if (file.buffer) {
     base64fileData = file.buffer;
   } else {
     base64fileData = await readFileAsBase64(file.path);
-  } 
+  }
 
-  if(file.mimetype.includes('image')){
+  if (file.mimetype.includes('image')) {
     thumbnailPath = await generateThumbnail(file.path);
-    if(thumbnailPath)
+    if (thumbnailPath)
       base64thumbNailData = await readFileAsBase64(thumbnailPath);
   }
-  const fileName = userId+"-"+new Date().getTime();
-  const s3Data = await awsService.uploadFileS3( fileName, folder || 'uploads', base64fileData, fileExt, folder !== '' );
+  const fileName = userId + "-" + new Date().getTime();
+  const s3Data = await awsService.uploadFileS3(fileName, folder || 'uploads', base64fileData, fileExt, folder !== '');
   s3Data.eTag = await awsService.generateEtag(file.path);
   fs.unlinkSync(file.path);
-  if(thumbnailPath){
+  if (thumbnailPath) {
     fs.unlinkSync(thumbnailPath);
   }
   if (!s3Data || s3Data === '') {
@@ -36,7 +35,7 @@ async function processFile(file, userId, folder = '' ) {
       fileName,
       name,
       fileExt,
-      s3FilePath: s3Data.Key, 
+      s3FilePath: s3Data.Key,
       awsETag: s3Data.awsETag,
       eTag: s3Data.eTag,
       type: file.mimetype,
@@ -60,7 +59,7 @@ async function readFileAsBase64(filePath) {
 async function generateThumbnail(filePath) {
   try {
     const thumbnailSize = 80;
-    const thumbnailPath = await getThumbnailPath(filePath);     
+    const thumbnailPath = await getThumbnailPath(filePath);
     await sharp(filePath).resize(thumbnailSize, null).toFile(thumbnailPath);
 
     return thumbnailPath;
@@ -76,5 +75,5 @@ async function getThumbnailPath(filePath) {
 }
 
 module.exports = {
-    processFile
+  processFile
 }

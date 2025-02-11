@@ -2,7 +2,7 @@ const { StatusCodes } = require('http-status-codes');
 const { Types: { ObjectId } } = require('mongoose');
 const rtnMsg = require('../modules/config/static/static');
 
-function validateParamIDs( validations ) {
+function validateParamIDs(validations) {
   return async function (req, res, next) {
     try {
       for (const { param = '', model = null } of validations) {
@@ -10,16 +10,16 @@ function validateParamIDs( validations ) {
 
         if (!paramId || !ObjectId.isValid(paramId)) {
           return res.status(StatusCodes.BAD_REQUEST).send(
-            rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, paramId)
+            rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, param)
           );
         }
 
-        if(model){
+        if (model) {
           const objID = new ObjectId(paramId);
           const record = await model.findOne({ _id: objID }).exec();
           if (!record) {
             return res.status(StatusCodes.NOT_FOUND).send(
-              rtnMsg.invalidIdMessage(StatusCodes.NOT_FOUND, paramId)
+              rtnMsg.invalidIdMessage(StatusCodes.NOT_FOUND, param)
             );
           }
         }
