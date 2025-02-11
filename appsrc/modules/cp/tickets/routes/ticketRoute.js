@@ -3,6 +3,7 @@ const multer = require('multer');
 const checkAuth = require('../../../../middleware/check-auth');
 const roleCheck = require('../../../../middleware/role-check');
 const checkCustomer = require('../../../../middleware/check-customer');
+const checkNonSpCustomer = require('../../../../middleware/checkNonSpCustomer');
 const customerDataFilter = require('../../../../middleware/customer-data-filter');
 const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../../middleware/file-upload');
 const controllers = require('../../../tickets/controllers');
@@ -22,7 +23,7 @@ router.use(checkAuth, customerDataFilter);
 
 router.get(`/settings`, controller.getTicketSettings);
 
-router.get(`/`, controller.getTickets);
+router.get(`/`, checkNonSpCustomer, controller.getTickets);
 
 router.get(`/:id`, controller.getTicket);
 

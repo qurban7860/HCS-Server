@@ -3,6 +3,7 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const roleCheck = require('../../../../middleware/role-check');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkSpCustomer = require('../../../../middleware/checkSpCustomer');
 const { portalSchema } = require('../../schema/crmSchemas');
 const { validateRequest } = require('../../../../configs/reqServices');
 
@@ -12,16 +13,16 @@ const controller = controllers.portalRegistration;
 const router = express.Router();
 
 // - /api/1.0.0/crm/
-const baseRouteForObject = "/customers/register"; 
+const baseRouteForObject = "/customers/register";
 
 // - /api/1.0.0/crm/customers/register/
-router.get(`${baseRouteForObject}`, checkAuth, controller.getRegisteredRequests);
+router.get(`${baseRouteForObject}`, checkSpCustomer, checkAuth, controller.getRegisteredRequests);
 
 // - /api/1.0.0/crm/customers/register/:id
-router.get(`${baseRouteForObject}/:id`, checkAuth, controller.getRegisteredRequest);
+router.get(`${baseRouteForObject}/:id`, checkAuth, checkSpCustomer, controller.getRegisteredRequest);
 
 // - /api/1.0.0/crm/customers/register/:id
-router.patch(`${baseRouteForObject}/:id`, checkAuth, validateRequest( portalSchema('update') ), verifyDelete, roleCheck, controller.patchRegisteredRequest);
+router.patch(`${baseRouteForObject}/:id`, checkAuth, validateRequest(portalSchema('update')), verifyDelete, roleCheck, controller.patchRegisteredRequest);
 
 // - /api/1.0.0/crm/customers/register/:id
 router.delete(`${baseRouteForObject}/:id`, checkAuth, controller.deleteRegisteredRequest);
