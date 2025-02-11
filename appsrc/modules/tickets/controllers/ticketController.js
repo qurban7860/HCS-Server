@@ -68,7 +68,6 @@ this.settingFields = "name slug icon color isDefault";
 exports.getTicket = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    this.query.ticket = req.params.id;
     this.query._id = req.params.id;
     let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
