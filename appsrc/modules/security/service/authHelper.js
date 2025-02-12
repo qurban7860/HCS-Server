@@ -144,7 +144,6 @@ const { SecurityUser, SecuritySignInLog, SecuritySession } = require('../models'
     try {
       console.log("removeAndCreateNewSession");
       console.log("req.session", req.session);
-      console.log("req", req);
       await removeSessions(userId);
       if(req.session) {
         req.session.cookie.expires = false;

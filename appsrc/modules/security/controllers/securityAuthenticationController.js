@@ -415,6 +415,7 @@ async function validateAndLoginUser(req, res, existingUser) {
 
     const session = await removeAndCreateNewSession(req, existingUser._id.toString());
 
+    console.log("existingUser::::", existingUser);
     console.log("session::::", session);
 
     if (!session || !session.session || !session.session.sessionId) {
