@@ -16,10 +16,10 @@ router.use(checkAuth, checkCustomer);
 router.get(`${baseRouteForObject}`, controller.getLogs);
 // GET /api/1.0.0/productLogs/
 
-router.get(`/:id`, controller.getLog);
-// GET /api/1.0.0/productLogs/:id
-
 router.get(`/graph`, controller.getLogsGraph);
 // GET /api/1.0.0/productLogs/graph
+
+router.get(`/:id`, controller.getLog);
+// GET /api/1.0.0/productLogs/:id
 
 module.exports = router; 
