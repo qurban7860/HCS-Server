@@ -3,6 +3,8 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 const { Product } = require('../../models');
 const checkProductID = require('../../../../middleware/check-parentID')('machine', Product);
 const controllers = require('../../controllers');
@@ -13,7 +15,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/machines/:machineId/profiles`; 
+const baseRouteForObject = `/machines/:machineId/profiles`;
 
 router.use(checkAuth, checkCustomer);
 

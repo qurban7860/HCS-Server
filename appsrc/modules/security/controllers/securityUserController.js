@@ -23,7 +23,7 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { name: 1 };  
+this.orderBy = { name: 1 };
 this.populate = [
   { path: "createdBy", select: "name" },
   { path: "updatedBy", select: "name" },
@@ -57,44 +57,46 @@ this.populateList = [
 ];
 
 exports.validateUser = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
   this.dbservice.getObject(SecurityUser, this.query, this.populate, callbackFunc);
   function callbackFunc(error, user) {
     if (error) {
-      logger.error(new Error(error));s
+      logger.error(new Error(error)); s
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      if(user?.login){
+      if (user?.login) {
         return res.status(StatusCodes.BAD_REQUEST).send("Email Already Exist!");
-      } 
+      }
       return res.status(StatusCodes.ACCEPTED).send("Email available!");
     }
   }
 };
 
 const getSecurityUser = async (req, res, next) => {
-  this.dbservice.getObjectById(SecurityUser, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, user) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      const wss = getSocketConnectionByUserId(user._id);
-      user.isOnline = false;
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
 
-      if(Array.isArray(wss) && wss.length>0 && wss[0].userData._id) {
-        user = JSON.parse(JSON.stringify(user));
-        user.isOnline = true;
-      }
-      res.json(user);
+    this.query._id = req.params.id;
+
+    const user = await this.dbservice.getObject(SecurityUser, this.query, this.populate);
+    const wss = getSocketConnectionByUserId(user._id);
+    user.isOnline = false;
+
+    if (Array.isArray(wss) && wss.length > 0 && wss[0].userData._id) {
+      user = JSON.parse(JSON.stringify(user));
+      user.isOnline = true;
     }
+    res.json(user);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
 
 exports.getSecurityUser = getSecurityUser;
 
 exports.getSecurityUsers = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
   if (req.query.roleType) {
     let filteredRoles = await SecurityRole.find({ roleType: { $in: req.query.roleType }, isActive: true, isArchived: false });
 
@@ -114,7 +116,8 @@ exports.getSecurityUsers = async (req, res, next) => {
 
   // In case customer type is passed
   const customerType = req.query.customer && req.query.customer.type;
-  delete this.query.customer;
+  if (customerType)
+    delete this.query.customer;
 
   // In case contact department type is passed
   const departmentType = req.query.contact?.department?.departmentType;
@@ -157,14 +160,14 @@ exports.getSecurityUsers = async (req, res, next) => {
 
 exports.deleteSecurityUser = async (req, res, next) => {
 
-  let user = await SecurityUser.findById(req.params.id); 
-  if(!(_.isEmpty(user)) && user.isArchived) {
-    
-    let customer = await Customer.findOne({createdBy:user.id});
-    let machine = await Product.findOne({createdBy:user.id});
+  let user = await SecurityUser.findById(req.params.id);
+  if (!(_.isEmpty(user)) && user.isArchived) {
 
-    if(!customer && !machine) {
-      this.dbservice.deleteObject(SecurityUser, req.params.id, res, (error, result)=>{
+    let customer = await Customer.findOne({ createdBy: user.id });
+    let machine = await Product.findOne({ createdBy: user.id });
+
+    if (!customer && !machine) {
+      this.dbservice.deleteObject(SecurityUser, req.params.id, res, (error, result) => {
         if (error) {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
@@ -182,18 +185,18 @@ exports.deleteSecurityUser = async (req, res, next) => {
   }
 };
 
-exports.postSecurityUser = async ( req, res ) => {
-  try{
+exports.postSecurityUser = async (req, res) => {
+  try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } 
+    }
 
-    if(!req.body.email) req.body.email = req.body.login;
-    if(!req.body.login) req.body.login = req.body.email;
-    
-    let queryString = { 
-      isArchived: false, 
+    if (!req.body.email) req.body.email = req.body.login;
+    if (!req.body.login) req.body.login = req.body.email;
+
+    let queryString = {
+      isArchived: false,
       $or: [
         { email: req.body.email?.toLowerCase()?.trim() },
         { login: req.body.login?.toLowerCase()?.trim() }
@@ -201,14 +204,14 @@ exports.postSecurityUser = async ( req, res ) => {
     };
 
     const existingUser = await SecurityUser.findOne(queryString);
-    if(existingUser) {
+    if (existingUser) {
       return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
     }
 
     const doc = await getDocumentFromReq(req, "new");
     const newUser = await this.dbservice.postObject(doc);
-    return res.status(StatusCodes.CREATED).json({ user: newUser });    
-  } catch(error) {
+    return res.status(StatusCodes.CREATED).json({ user: newUser });
+  } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
     throw error;
@@ -222,38 +225,38 @@ exports.patchSecurityUser = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if (ObjectId.isValid(req.params.id)) {
-      let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
+      let loginUser = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
       // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
       let hasSuperAdminRole = false;
-      if(req.body.loginUser?.roleTypes?.includes("SuperAdmin") || 
-          req.body.loginUser?.roleTypes?.includes("Developer")) {
-          hasSuperAdminRole = true;
+      if (req.body.loginUser?.roleTypes?.includes("SuperAdmin") ||
+        req.body.loginUser?.roleTypes?.includes("Developer")) {
+        hasSuperAdminRole = true;
       }
 
       if (req.url.includes("updatePassword")) {
         // if admin is updating password
-        if(req.body.isAdmin){ 
-          if(req.body.loginUser.userId){
+        if (req.body.isAdmin) {
+          if (req.body.loginUser.userId) {
             // let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
             // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
-            if(!hasSuperAdminRole){
+            if (!hasSuperAdminRole) {
               return res.status("Only superadmins are allowed to access this feature");
             }
-          }else{
+          } else {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
-        }else{
+        } else {
           // if the user is updating their password
-          let queryString  = { _id: req.params.id };
+          let queryString = { _id: req.params.id };
           let existingUser = await this.dbservice.getObject(SecurityUser, queryString, this.populate);
-          if(existingUser){
+          if (existingUser) {
             const passwordsResponse = await comparePasswords(req.body.oldPassword, existingUser.password)
-            if(!passwordsResponse){ 
-              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Wrong password entered", true));  
-            }   
-          }else{
+            if (!passwordsResponse) {
+              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Wrong password entered", true));
+            }
+          } else {
             return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "User not found!", true));
-          }  
+          }
         }
         req.body.password = req.body.newPassword;
         const doc = await getDocumentFromReq(req);
@@ -265,30 +268,30 @@ exports.patchSecurityUser = async (req, res, next) => {
           } else {
             return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "passwordChange"));
           }
-        }   
+        }
       } else {
         // delete(archive) user
-        if("isArchived" in req.body){
-          let user = await SecurityUser.findById(req.params.id); 
-          if(!(_.isEmpty(user))) {        
-            if(req.body.loginUser?.userId == user._id || !hasSuperAdminRole){
+        if ("isArchived" in req.body) {
+          let user = await SecurityUser.findById(req.params.id);
+          if (!(_.isEmpty(user))) {
+            if (req.body.loginUser?.userId == user._id || !hasSuperAdminRole) {
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
-            } 
+            }
             else {
-              if( user?.isArchived && !req.body?.isArchived ){
+              if (user?.isArchived && !req.body?.isArchived) {
                 const userAvailability = await SecurityUser.findOne({ login: user.login, isArchived: false }).lean();
-                if( userAvailability ){
+                if (userAvailability) {
                   return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
                 }
               }
-            const doc = await getDocumentFromReq(req);
-            _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
+              const doc = await getDocumentFromReq(req);
+              _this.dbservice.patchObject(SecurityUser, req.params.id, doc, callbackFunc);
               function callbackFunc(error, result) {
                 if (error) {
                   logger.error(new Error(error));
                   return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                 } else {
-                  return getSecurityUser(req, res )
+                  return getSecurityUser(req, res)
                 }
               }
             }
@@ -299,7 +302,7 @@ exports.patchSecurityUser = async (req, res, next) => {
 
         } else {
           // Only superadmin/logged in user can update
-          if(hasSuperAdminRole || req.body.loginUser.userId == req.params.id){
+          if (hasSuperAdminRole || req.body.loginUser.userId == req.params.id) {
             // check if email already exists
             let queryString = {
               isArchived: false,
@@ -312,7 +315,7 @@ exports.patchSecurityUser = async (req, res, next) => {
               ]
             };
 
-            
+
             this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
             async function getObjectCallback(error, response) {
               if (error) {
@@ -320,7 +323,7 @@ exports.patchSecurityUser = async (req, res, next) => {
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
               } else {
                 // check if theres any other user by the same email
-                if(response && response._id && response._id != req.params.id){
+                if (response && response._id && response._id != req.params.id) {
                   // return error message
                   if (req.body.login && req.body.email) {
                     return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
@@ -340,13 +343,13 @@ exports.patchSecurityUser = async (req, res, next) => {
                       return logger.error(new Error(error));
                       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
                     } else {
-                      return getSecurityUser(req, res )
+                      return getSecurityUser(req, res)
                     }
-                  }     
+                  }
                 }
               }
-            } 
-          }else{
+            }
+          } else {
             return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
           }
         }
@@ -364,7 +367,7 @@ exports.changeLockedStatus = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if (ObjectId.isValid(req.params.id)) {
-      let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
+      let loginUser = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
       const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
 
       if (hasSuperAdminRole) {
@@ -375,8 +378,8 @@ exports.changeLockedStatus = async (req, res, next) => {
         var now = new Date();
 
         let lockUntil = 0;
-        if(!isNaN(req.params.minutes)) {
-          if(req.params.minutes > 0) {
+        if (!isNaN(req.params.minutes)) {
+          if (req.params.minutes > 0) {
             lockUntil = new Date(now.getTime() + req.params.minutes * 60 * 1000);
           } else {
             lockUntil = new Date(now.getTime() + req.params.minutes * 60 * 1000);
@@ -384,17 +387,17 @@ exports.changeLockedStatus = async (req, res, next) => {
             lockUntil = now;
           }
         } else {
-            lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
+          lockUntil = new Date(now.getTime() + 15 * 60 * 1000);
         }
 
-      
-        if(req.params.status === 'true') {
+
+        if (req.params.status === 'true') {
           fieldToUpdate.lockedBy = "ADMIN";
           fieldToUpdate.lockUntil = lockUntil
         } else {
           fieldToUpdate.lockedBy = "",
-          fieldToUpdate.lockUntil = "",
-          fieldToUpdate.loginFailedCounts = 0
+            fieldToUpdate.lockUntil = "",
+            fieldToUpdate.loginFailedCounts = 0
         };
 
 
@@ -406,7 +409,7 @@ exports.changeLockedStatus = async (req, res, next) => {
           } else {
             return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result, "User unlocked successfully"));
           }
-        }   
+        }
       } else {
         return res.status(StatusCodes.BAD_REQUEST).send("Super user previligies not found!");
       }
@@ -417,33 +420,33 @@ exports.changeLockedStatus = async (req, res, next) => {
 };
 
 exports.addSecurityUserForPortalRegistration = async (req, res) => {
-  try{
+  try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } 
+    }
 
-    if(!req.body.email) req.body.email = req.body.login;
-    if(!req.body.login) req.body.login = req.body.email;
-    if(req.body.isInvite) req.body.isActive = false;
-    
-    let queryString = { 
-      isArchived: false, 
+    if (!req.body.email) req.body.email = req.body.login;
+    if (!req.body.login) req.body.login = req.body.email;
+    if (req.body.isInvite) req.body.isActive = false;
+
+    let queryString = {
+      isArchived: false,
       $or: [
         { email: req.body.email?.toLowerCase()?.trim() },
         { login: req.body.login?.toLowerCase()?.trim() }
       ]
     };
-    const user = await this.dbservice.getObject(SecurityUser, queryString, this.populate );
+    const user = await this.dbservice.getObject(SecurityUser, queryString, this.populate);
 
-    if(_.isEmpty(user)){
-      const doc = await getDocumentFromReq( req, "new"  );
-      const newUser = await this.dbservice.postObject( doc );
+    if (_.isEmpty(user)) {
+      const doc = await getDocumentFromReq(req, "new");
+      const newUser = await this.dbservice.postObject(doc);
       return newUser;
     } else {
       return res.status(StatusCodes.CONFLICT).send("Email/Login already exists!");
     }
-  } catch(error){
+  } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("User save failed!");
     throw error;
@@ -451,7 +454,7 @@ exports.addSecurityUserForPortalRegistration = async (req, res) => {
 }
 
 
-async function comparePasswords(encryptedPass, textPass, next){
+async function comparePasswords(encryptedPass, textPass, next) {
   let isValidPassword = false;
   try {
     isValidPassword = await bcrypt.compare(encryptedPass, textPass);
@@ -503,7 +506,7 @@ async function getDocumentFromReq(req, reqType) {
   if (reqType && reqType == "new") {
     doc = new SecurityUser({});
   }
-  
+
   if ("customer" in req.body) doc.customer = customer;
   if ("contact" in req.body) doc.contact = contact;
   if ("name" in req.body) doc.name = name;

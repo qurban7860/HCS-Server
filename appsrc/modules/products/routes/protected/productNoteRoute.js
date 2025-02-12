@@ -5,14 +5,15 @@ const { Product } = require('../../models');
 const checkProductID = require('../../../../middleware/check-parentID')('machine', Product);
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productNoteController;
 
 const router = express.Router();
 
-const baseRouteForObject = `/machines/:machineId/notes`; 
+const baseRouteForObject = `/machines/:machineId/notes`;
 
 router.use(checkAuth, checkCustomer);
 
