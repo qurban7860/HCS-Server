@@ -1,12 +1,13 @@
 const express = require('express');
 const controllers = require('../../../security/controllers');
 const controller = controllers.securityAuthenticationController;
+const customerController = controllers.customerAuthenticationController;
 const router = express.Router();
 
 const validateIP = require('../../../../middleware/validateIP');
 
 // - /api/1.0.0/cp/security/getCustomerToken
-router.post(`/getCustomerToken`, controller.login);
+router.post(`/getCustomerToken`, customerController.login);
 
 // - /api/1.0.0/cp/security/multifactorverifyCode
 router.post(`/multifactorverifyCode`, controller.multifactorverifyCode);
