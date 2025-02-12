@@ -24,7 +24,7 @@ class TicketEmailService {
     ];
   }
 
-  sendSupportTicketEmail = async (req, oldObj = null ) => {
+  sendSupportTicketEmail = async (req, oldObj = null) => {
     try {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
@@ -57,25 +57,25 @@ class TicketEmailService {
       // text = `Support Ticket ${adminTicketUri} has been created by <strong>${username || ""}</strong>.`;
 
       // Check for Updates
-      if (!req.body?.isNew && oldObj ) {
+      if (!req.body?.isNew && oldObj) {
 
-        if ( oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString() ) {
+        if (oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <strong>Status</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-        if ( oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString() ) {
+        if (oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <strong>Priority</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-        if ( oldObj?.reporter && oldObj?.reporter?.toString() != ticketData.reporter?._id?.toString() ) {
+        if (oldObj?.reporter && oldObj?.reporter?.toString() != ticketData.reporter?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <strong>Reporter</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-        if ( oldObj?.summary && oldObj?.summary?.trim() !== ticketData.summary?.trim()) {
+        if (oldObj?.summary && oldObj?.summary?.trim() !== ticketData.summary?.trim()) {
           text = `Support Ticket ${adminTicketUri} <strong>Summary</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
-        if ( oldObj?.description && oldObj?.description?.trim() !== ticketData.description?.trim()) {
+        if (oldObj?.description && oldObj?.description?.trim() !== ticketData.description?.trim()) {
           text = `Support Ticket ${adminTicketUri} <strong>Description</strong> has been updated by <strong>${username || ""}</strong>.`;
         }
 
@@ -84,21 +84,22 @@ class TicketEmailService {
           Array.isArray(ticketData?.approvers) &&
           (
             oldObj?.approvers?.length !== ticketData.approvers.length ||
-            !oldObj?.approvers?.every( id => ticketData?.approvers?.some(appr => appr._id?.toString() == id?.toString() ))
+            !oldObj?.approvers?.every(id => ticketData?.approvers?.some(appr => appr._id?.toString() == id?.toString()))
           )
         ) {
           text = `Support Ticket ${adminTicketUri} <strong>Approvers</strong> have been updated by <strong>${username || ""}</strong>.`;
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
-        } else if( oldObj.assignee && oldObj.assignee !== ticketData?.assignee?._id ){
+        } else if (oldObj.assignee && oldObj.assignee !== ticketData?.assignee?._id) {
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+          text = `Support Ticket ${adminTicketUri} <strong>Assignee</strong> has been updated by <strong>${username || ""}</strong>.`;
         } else {
           if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
         }
 
-      } 
+      }
       // else {
       //   // Collect Unique Email Addresses
       //   if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
@@ -110,7 +111,7 @@ class TicketEmailService {
       //   }
       // }
 
-      if( !text ){
+      if (!text) {
         return;
       }
 
@@ -125,9 +126,9 @@ class TicketEmailService {
         path.join(__dirname, "../../email/templates/supportTicket.html"),
         "utf8"
       );
-      
+
       const content = render(contentHTML, { text });
-      const htmlData = await renderEmail( subject, content );
+      const htmlData = await renderEmail(subject, content);
 
       // Send Email
       params.htmlData = htmlData;
