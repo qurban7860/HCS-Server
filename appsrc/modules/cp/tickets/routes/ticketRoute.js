@@ -8,7 +8,8 @@ const controllers = require('../../../tickets/controllers');
 const { ticketSchema } = require('../../../tickets/schema/ticketSchemas');
 const { validateRequest } = require('../../../../configs/reqServices');
 const controller = controllers.ticketController;
-
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 const router = express.Router();
 
 const storage = multer.memoryStorage();
@@ -23,12 +24,12 @@ router.get(`/settings`, controller.getTicketSettings);
 
 router.get(`/`, validateCustomerInQuery, controller.getTickets);
 
-router.get(`/:id`, validateCustomerInQuery, controller.getTicket);
+router.get(`/:id`, checkIDs(validate.id), validateCustomerInQuery, controller.getTicket);
 
 router.post(`/`, uploadHandler, validateRequest(ticketSchema('new')), checkMaxCount, imageOptimization, controller.postTicket);
 
-router.patch(`/:id`, uploadHandler, validateRequest(ticketSchema()), checkMaxCount, imageOptimization, controller.patchTicket);
+router.patch(`/:id`, checkIDs(validate.id), uploadHandler, validateRequest(ticketSchema()), checkMaxCount, imageOptimization, controller.patchTicket);
 
-router.delete(`/:id`, controller.deleteTicket);
+router.delete(`/:id`, checkIDs(validate.id), controller.deleteTicket);
 
 module.exports = router; 
