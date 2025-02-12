@@ -26,7 +26,9 @@ module.exports = async (req, res, next) => {
     if (userData?.customer?.type?.toLowerCase() !== "sp") {
       req.query.customer = userData?.customer?._id;
     }
-    next();
+
+    next()
+
   } catch (error) {
     logger.error(new Error(error));
     return next(error);

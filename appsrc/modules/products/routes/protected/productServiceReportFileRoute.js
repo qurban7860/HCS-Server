@@ -4,14 +4,16 @@ const router = express.Router();
 const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../../middleware/file-upload');
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 const controllers = require('../../controllers');
 const controller = controllers.productServiceReportFileController;
 
-const baseRouteForObject = `/machines/:machineId/serviceReports/:id/files`; 
+const baseRouteForObject = `/machines/:machineId/serviceReports/:id/files`;
 
 router.use(checkAuth, checkCustomer);
 
-router.post(`${baseRouteForObject}/`, uploadHandler, checkMaxCount, imageOptimization, controller.postServiceReportFiles );
+router.post(`${baseRouteForObject}/`, uploadHandler, checkMaxCount, imageOptimization, controller.postServiceReportFiles);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceReportFiles);
 

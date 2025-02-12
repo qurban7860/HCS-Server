@@ -1,8 +1,5 @@
 const express = require('express');
-const { check } = require('express-validator');
 const checkAuth = require('../../../../middleware/check-auth');
-const checkCustomer = require('../../../../middleware/check-customer');
-const verifyDelete = require('../../../../middleware/verifyDelete');
 const controllers = require('../../../security/controllers');
 const controller = controllers.securityUserInvitationController;
 

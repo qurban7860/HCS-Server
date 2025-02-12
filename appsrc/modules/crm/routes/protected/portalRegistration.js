@@ -3,7 +3,6 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const roleCheck = require('../../../../middleware/role-check');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-const checkSpCustomer = require('../../../../middleware/checkSpCustomer');
 const { portalSchema } = require('../../schema/crmSchemas');
 const { validateRequest } = require('../../../../configs/reqServices');
 
@@ -16,10 +15,10 @@ const router = express.Router();
 const baseRouteForObject = "/customers/register";
 
 // - /api/1.0.0/crm/customers/register/
-router.get(`${baseRouteForObject}`, checkSpCustomer, checkAuth, controller.getRegisteredRequests);
+router.get(`${baseRouteForObject}`, checkAuth, controller.getRegisteredRequests);
 
 // - /api/1.0.0/crm/customers/register/:id
-router.get(`${baseRouteForObject}/:id`, checkAuth, checkSpCustomer, controller.getRegisteredRequest);
+router.get(`${baseRouteForObject}/:id`, checkAuth, controller.getRegisteredRequest);
 
 // - /api/1.0.0/crm/customers/register/:id
 router.patch(`${baseRouteForObject}/:id`, checkAuth, validateRequest(portalSchema('update')), verifyDelete, roleCheck, controller.patchRegisteredRequest);

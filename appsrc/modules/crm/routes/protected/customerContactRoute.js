@@ -14,13 +14,10 @@ const controller = controllers.customerContactController;
 
 const router = express.Router();
 
-//  - base route for module
-// - /api/1.0.0/crm/customers
-
 // - /api/1.0.0/crm/customers/:customerId/contacts
 const baseRoute = `/customers/:customerId/contacts`;
 
-router.use(checkAuth, roleCheck, checkCustomer);
+router.use(checkAuth, roleCheck);
 
 // - /api/1.0.0/crm/contacts/search
 router.get(`${baseRoute}/search`, controller.searchCustomerContacts);

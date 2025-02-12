@@ -24,11 +24,11 @@ this.populate = [
     { path: 'updatedBy', select: 'name' }
 ];
 
-const getPortalRequest = async( req, res ) => {
+const getPortalRequest = async (req, res) => {
     this.query = req.query != "undefined" ? req.query : {};
     if (!ObjectId.isValid(req.params.id))
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Please Provide a valid Request ID!");
-    await this.dbservice.getObjectById( PortalRegistration, this.fields, req.params.id, this.populate, callbackFunc);
+    await this.dbservice.getObjectById(PortalRegistration, this.fields, req.params.id, this.populate, callbackFunc);
     async function callbackFunc(error, response) {
         if (error) {
             logger.error(new Error(error));
@@ -40,9 +40,9 @@ const getPortalRequest = async( req, res ) => {
 }
 
 getRegisteredRequest = async (req, res) => {
-    try{
-        await getPortalRequest( req, res )
-    } catch( error ){
+    try {
+        await getPortalRequest(req, res)
+    } catch (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to find portal request!");
     }
@@ -59,7 +59,7 @@ exports.getRegisteredRequests = async (req, res, next) => {
     }
     if (!req.body.loginUser)
         req.body.loginUser = await getToken(req);
-    await this.dbservice.getObjectList(req, PortalRegistration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+    await this.dbservice.getObject(PortalRegistration, this.query, this.populate, callbackFunc);
     function callbackFunc(error, response) {
         if (error) {
             logger.error(new Error(error));
@@ -71,16 +71,16 @@ exports.getRegisteredRequests = async (req, res, next) => {
 };
 
 exports.postRegisterRequest = async (req, res, next) => {
-    try{
+    try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         } else {
             delete req.body?.internalRemarks;
             delete req.body?.status;
-            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration ), callbackFunc);
+            await this.dbservice.postObject(getDocFromReq(req, 'new', PortalRegistration), callbackFunc);
             async function callbackFunc(error, response) {
-                if ( error ) {
+                if (error) {
                     logger.error(new Error(error));
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Failed to create portal request!");
                 } else {
@@ -88,52 +88,52 @@ exports.postRegisterRequest = async (req, res, next) => {
                 }
             }
         }
-    } catch( error ){
+    } catch (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Portal request failed!");
     }
 };
 
 exports.patchRegisteredRequest = async (req, res, next) => {
-    try{
+    try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         } else {
-            if (!ObjectId.isValid(req.params.id)){
-                return  res.status(StatusCodes.BAD_REQUEST).send("Please Provide a valid Request ID!");
+            if (!ObjectId.isValid(req.params.id)) {
+                return res.status(StatusCodes.BAD_REQUEST).send("Please Provide a valid Request ID!");
             }
-            const findRequest= await PortalRegistration.findById(req.params.id)
-            if(findRequest?.status === 'APPROVED'){
-                return  res.status(StatusCodes.BAD_REQUEST).send("APPROVED request can not be updated!");
+            const findRequest = await PortalRegistration.findById(req.params.id)
+            if (findRequest?.status === 'APPROVED') {
+                return res.status(StatusCodes.BAD_REQUEST).send("APPROVED request can not be updated!");
             }
-            const response = await this.dbservice.patchObject(PortalRegistration, req.params.id,getDocFromReq(req));
+            const response = await this.dbservice.patchObject(PortalRegistration, req.params.id, getDocFromReq(req));
 
-                const { contactPersonName, email, phoneNumber, roles, customer,contact } = req?.body;
-                if( response && req?.body?.status === 'APPROVED' && contactPersonName && email && roles && customer && contact ){
-                    const newUser = {
-                        registrationRequest: req.params.id,
-                        name: contactPersonName,
-                        login: email,
-                        email,
-                        phone: phoneNumber,
-                        password: '',
-                        roles,
-                        customer,
-                        contact,
-                        isInvite: true,
-                    }
-                    req.body = { ...req.body, ...newUser };
-                    const user = await addSecurityUserForPortalRegistration(req, res);
-                    await this.dbservice.patchObject(PortalRegistration, req.params.id, { securityUser: user?._id } );
-                    req.params.id = user?._id?.toString();
-                    await this.userEmailService.sendUserInviteEmail( req );
-                    req.params.id = findRequest?._id
+            const { contactPersonName, email, phoneNumber, roles, customer, contact } = req?.body;
+            if (response && req?.body?.status === 'APPROVED' && contactPersonName && email && roles && customer && contact) {
+                const newUser = {
+                    registrationRequest: req.params.id,
+                    name: contactPersonName,
+                    login: email,
+                    email,
+                    phone: phoneNumber,
+                    password: '',
+                    roles,
+                    customer,
+                    contact,
+                    isInvite: true,
                 }
-                
-                await getPortalRequest(req, res);
+                req.body = { ...req.body, ...newUser };
+                const user = await addSecurityUserForPortalRegistration(req, res);
+                await this.dbservice.patchObject(PortalRegistration, req.params.id, { securityUser: user?._id });
+                req.params.id = user?._id?.toString();
+                await this.userEmailService.sendUserInviteEmail(req);
+                req.params.id = findRequest?._id
             }
-    } catch(error){
+
+            await getPortalRequest(req, res);
+        }
+    } catch (error) {
         logger.error(new Error(error));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Portal Request update failed!");
     }

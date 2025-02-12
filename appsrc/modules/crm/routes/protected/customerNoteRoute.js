@@ -19,22 +19,22 @@ const router = express.Router();
 // - /api/1.0.0/crm/customers/:customerId/notes/
 const baseRouteForObject = `/customers/:customerId/notes`;
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
-router.get(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), checkCustomerID, controller.getCustomerNote);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.getCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/
-router.get(`${baseRouteForObject}/`, checkCustomerID, controller.getCustomerNotes);
+router.get(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.getCustomerNotes);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/
-router.post(`${baseRouteForObject}/`, checkIDs(validate.customerIdAndId), checkCustomerID, controller.postCustomerNote);
+router.post(`${baseRouteForObject}/`, checkIDs(validate.customerIdAndId), controller.postCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
-router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), checkCustomerID, verifyDelete, controller.patchCustomerNote);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), verifyDelete, controller.patchCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
-router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), checkCustomerID, controller.deleteCustomerNote);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.deleteCustomerNote);
 
 // - /api/1.0.0/crm/notes/search
 router.get(`/notes/search`, controller.searchCustomerNotes);
