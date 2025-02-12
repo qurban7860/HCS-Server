@@ -2,6 +2,7 @@ const configRoutes = require('../config/routes');
 const dashboardRoutes = require('../dashboard/routes');
 const securityRoutes = require('../security/routes');
 const productRoutes = require('../products/routes');
+const productLogsRoutes = require('../productLogs/routes');
 const customerRoutes = require('../crm/routes');
 const ticketRoutes = require('../tickets/routes');
 
@@ -10,6 +11,7 @@ exports.registerCustomerPortalRoutes = (app, apiPath) => {
     dashboardRoutes.registerDashboardRoutes(app, apiPath);
     securityRoutes.registerSecurityRoutes(app, apiPath);
     productRoutes.registerProductRoutes(app, apiPath);
+    productLogsRoutes.registerProductLogsRoutes(app, apiPath);
     customerRoutes.registerCustomerRoutes(app, apiPath);
     ticketRoutes.registerTicketRoutes(app, apiPath);
 }; 
