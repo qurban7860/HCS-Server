@@ -58,11 +58,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
       type: "ADMIN-CONFIG",
       isArchived: false,
       isActive: true,
-    })
-      .select("value")
-      .lean();
-
-    console.log("Config result:", result);
+    }).select("value").lean();
 
     if (!result || !result.value) {
       return res.status(StatusCodes.NOT_FOUND).json({ message: "Config not found" });
@@ -72,8 +68,6 @@ exports.getSoftwareVersion = async (req, res, next) => {
     let configObjectIds = result.value.split(",").map((id) => id.trim());
     configObjectIds = configObjectIds.filter((id) => mongoose.isValidObjectId(id))
       .map((id) => mongoose.Types.ObjectId(id));
-
-    console.log("Parsed configObjectIds:", configObjectIds);
 
     if (!configObjectIds.length) {
       return res.status(StatusCodes.NOT_FOUND).json({ message: "No valid configObjectIds found" });
@@ -87,11 +81,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
       machine: machineId,
       isArchived: false,
       techParam: { $in: configObjectIds },
-    })
-      .populate({ path: "techParam", select: "code" })
-      .lean();
-
-    console.log("Fetched records:", records);
+    }).populate({ path: "techParam", select: "code" }).lean();
 
     if (!records.length) {
       return res.status(StatusCodes.NOT_FOUND).json({ message: "No records found" });
@@ -113,8 +103,6 @@ exports.getSoftwareVersion = async (req, res, next) => {
         }
       }
     }
-
-    console.log("Final response data:", data);
 
     res.json(data);
   } catch (error) {
@@ -172,7 +160,6 @@ exports.searchProductTechParamValues = async (req, res, next) => {
 
 exports.deleteProductTechParamValue = async (req, res, next) => {
   this.dbservice.deleteObject(ProductTechParamValue, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -292,6 +279,5 @@ exports.getDocumentFromReq = async (req, reqType) => {
     doc.updatedIP = loginUser.userIP;
   }
 
-  //console.log("doc in http req: ", doc);
   return doc;
 }
