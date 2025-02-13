@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Request Type
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/requestTypes/67adebc1854c354f76731cd8
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

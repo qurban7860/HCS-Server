@@ -18,4 +18,10 @@ router.get(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), cont
 // - /api/1.0.0/cp/crm/customers/:customerId/sites/
 router.get(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.getCustomerSites);
 
+// // - /api/1.0.0/cp/crm/customers/:customerId/sites/
+// router.post(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.postCustomerSite);
+
+// // - /api/1.0.0/cp/crm/customers/:customerId/sites/:id
+// router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.patchCustomerSite);
+
 module.exports = router; 

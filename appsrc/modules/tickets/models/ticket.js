@@ -18,61 +18,63 @@ const docSchema = new Schema({
         approvers: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
 
         changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
-        
+
         changeType: { type: Schema.Types.ObjectId, ref: 'TicketChangeType' },
-        
+
         impact: { type: Schema.Types.ObjectId, ref: 'TicketImpact' },
-        
+
         investigationReason: { type: Schema.Types.ObjectId, ref: 'TicketInvestigationReason' },
 
         issueType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketIssueType' },
+
+        requestType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketRequestType' },
 
         priority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
 
         status: { type: Schema.Types.ObjectId, ref: 'TicketStatus' },
 
-        hlc: { type: String  },
+        hlc: { type: String },
 
-        plc: { type: String  },
+        plc: { type: String },
 
-        implementationPlan: { type: String  },
+        implementationPlan: { type: String },
 
-        plannedStartDate: { type: Date  },
+        plannedStartDate: { type: Date },
 
         startTime: { type: Date },
 
-        plannedEndDate: { type: Date  },
+        plannedEndDate: { type: Date },
 
         endTime: { type: Date },
-        
-        backoutPlan: { type: String  },
 
-        description: { type: String  },
-        
-        workaround: { type: String  },
+        backoutPlan: { type: String },
 
-        rootCause: { type: String  },
+        description: { type: String },
+
+        workaround: { type: String },
+
+        rootCause: { type: String },
 
         shareWith: { type: Boolean },
 
-        testPlan: { type: String  },
-        
-        summary: { type: String  },
+        testPlan: { type: String },
 
-        groups: { type: String  },
+        summary: { type: String },
+
+        groups: { type: String },
 
         files: [{ type: Schema.Types.ObjectId, ref: 'TicketFile' }],
-        
+
 },
-{
-        collection: 'Tickets'
-});
+        {
+                collection: 'Tickets'
+        });
 
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
-docSchema.index({"customer":1})
-docSchema.index({"machine":1})
+docSchema.index({ "customer": 1 })
+docSchema.index({ "machine": 1 })
 docSchema.index({ "history.updatedBy": 1, "history.updatedAt": -1 });
 
 

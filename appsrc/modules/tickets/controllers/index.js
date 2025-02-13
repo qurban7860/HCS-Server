@@ -5,6 +5,7 @@ module.exports = {
     investigationReasonController: require('./investigationReasonController'),
     issueTypeController: require('./issueTypeController'),
     priorityController: require('./priorityController'),
+    requestTypeController: require('./requestTypeController'),
     statusController: require('./statusController'),
     statusTypeController: require('./statusTypeController'),
     ticketCommentController: require('./ticketCommentController'),
