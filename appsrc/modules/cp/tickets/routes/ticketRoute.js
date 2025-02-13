@@ -2,6 +2,8 @@ const express = require('express');
 const multer = require('multer');
 const checkAuth = require('../../../../middleware/check-auth');
 const validateCustomerInQuery = require('../../../../middleware/validateCustomerInQuery');
+const validateCustomerInRequest = require('../../../../middleware/validateCustomerInRequest');
+const removeProperties = require('../../../../middleware/removeProperties');
 const customerDataFilter = require('../../../../middleware/customer-data-filter');
 const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../../middleware/file-upload');
 const controllers = require('../../../tickets/controllers');
@@ -26,10 +28,10 @@ router.get(`/`, validateCustomerInQuery, controller.getTickets);
 
 router.get(`/:id`, checkIDs(validate.id), validateCustomerInQuery, controller.getTicket);
 
-router.post(`/`, uploadHandler, validateRequest(ticketSchema('new')), checkMaxCount, imageOptimization, controller.postTicket);
+router.post(`/`, uploadHandler, validateRequest(ticketSchema('new')), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.postTicket);
 
-router.patch(`/:id`, checkIDs(validate.id), uploadHandler, validateRequest(ticketSchema()), checkMaxCount, imageOptimization, controller.patchTicket);
+router.patch(`/:id`, checkIDs(validate.id), uploadHandler, validateRequest(ticketSchema()), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.patchTicket);
 
-router.delete(`/:id`, checkIDs(validate.id), controller.deleteTicket);
+// router.delete(`/:id`, checkIDs(validate.id), controller.deleteTicket);
 
 module.exports = router; 

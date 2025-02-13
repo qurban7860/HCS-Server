@@ -35,6 +35,7 @@ this.populate = [
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
+  { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
@@ -311,7 +312,7 @@ function getDocFromReq(req, reqType) {
   const doc = reqType === "new" ? new Ticket({}) : {};
 
   const allowedFields = [
-    "customer", "machine", "issueType", "description", "hlc", "plc", "summary", "changeType",
+    "customer", "machine", "issueType", "requestType", "description", "hlc", "plc", "summary", "changeType",
     "reporter", "assignee", "approvers", "impact", "priority", "status", "changeReason", "implementationPlan",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
     "rootCause", "workaround", "plannedStartDate", "startTime", "plannedEndDate", "endTime", "isActive", "isArchived"
