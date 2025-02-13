@@ -50,21 +50,61 @@ async function getLatestTechParamByCode(machine) {
 
 exports.getSoftwareVersion = async (req, res, next) => {
   try {
-    const regex = new RegExp("^Tech-Param_in_Ticket$", "i");
-    const result = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value').lean()
-    console.log(" result : ", result)
-    const configObjectIds = result?.value?.split(',')?.map(coi => coi?.trim());
-    console.log(" configObjectIds : ", configObjectIds)
-    const records = await ProductTechParamValue.find({ machine: req.params.machineId, isArchived: false, techParam: { $in: configObjectIds } })
-      .populate({ path: 'techParam', select: 'code' }).lean();
-    console.log(" records : ", records)
+    const regex = /^Tech-Param_in_Ticket$/i;
 
+    // Fetch the config
+    const result = await Config.findOne({
+      name: regex,
+      type: "ADMIN-CONFIG",
+      isArchived: false,
+      isActive: true,
+    })
+      .select("value")
+      .lean();
+
+    console.log("Config result:", result);
+
+    if (!result || !result.value) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "Config not found" });
+    }
+
+    // Convert config values to valid ObjectIds
+    let configObjectIds = result.value.split(",").map((id) => id.trim());
+    configObjectIds = configObjectIds.filter((id) => mongoose.isValidObjectId(id))
+      .map((id) => mongoose.Types.ObjectId(id));
+
+    console.log("Parsed configObjectIds:", configObjectIds);
+
+    if (!configObjectIds.length) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "No valid configObjectIds found" });
+    }
+
+    // Convert machineId to ObjectId
+    const machineId = mongoose.Types.ObjectId(req.params.machineId);
+
+    // Fetch the relevant records
+    const records = await ProductTechParamValue.find({
+      machine: machineId,
+      isArchived: false,
+      techParam: { $in: configObjectIds },
+    })
+      .populate({ path: "techParam", select: "code" })
+      .lean();
+
+    console.log("Fetched records:", records);
+
+    if (!records.length) {
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "No records found" });
+    }
+
+    // Extract software version data
     const data = {};
 
     for (const record of records) {
       const techParamCode = record?.techParam?.code;
       if (techParamCode) {
         const codes = Array.isArray(techParamCode) ? techParamCode : [techParamCode];
+
         if (codes.some((code) => typeof code === "string" && /hlc/i.test(code))) {
           data.hlc = record.techParamValue;
         }
@@ -74,12 +114,12 @@ exports.getSoftwareVersion = async (req, res, next) => {
       }
     }
 
-    console.log(" data : ", data)
+    console.log("Final response data:", data);
 
     res.json(data);
   } catch (error) {
-    logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
+    logger.error(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
   }
 };
 
