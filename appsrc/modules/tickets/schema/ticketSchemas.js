@@ -38,7 +38,7 @@ const ticketSchema = (reqType) => {
                 otherwise: (schema) => schema.nullable().notRequired(),
             }),
 
-        requestType: Yup.string().label('Issue Type')
+        requestType: Yup.string().label('Request Type')
             .test('is-objectid', 'Invalid Request Type!', (requestTypeId) => {
                 if (!requestTypeId || requestTypeId == "null")
                     return true;

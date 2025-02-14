@@ -1,0 +1,15 @@
+meta {
+  name: Get Product Drawing file download
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/cp/documents/document/files/67aef241ab594c5efd9c9140/download/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
