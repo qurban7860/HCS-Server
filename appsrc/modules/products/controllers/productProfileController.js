@@ -3,6 +3,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const path = require('path');
+const fs = require('fs');
+const awsService = require('../../../base/aws');
 
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
@@ -14,6 +17,68 @@ this.dbservice = new productDBService();
 
 const { ProductProfile } = require('../models');
 
+// File processing functions
+async function readFileAsBase64(filePath) {
+  try {
+    const fileData = await fs.promises.readFile(filePath);
+    const base64Data = fileData.toString('base64');
+    return base64Data;
+  } catch (error) {
+    logger.error(new Error('Error reading file as base64'));
+    logger.error(new Error(error));
+    throw error;
+  }
+}
+
+async function processFile(file, userId) {
+  const { name, ext } = path.parse(file.originalname);
+  const fileExt = ext.slice(1);
+  let thumbnailPath;
+  let base64thumbNailData;
+
+  let base64fileData = null;
+  if(file.buffer)
+    base64fileData = file.buffer;
+  else 
+    base64fileData = await readFileAsBase64(file.path);
+
+  if(file.mimetype.includes('image')){
+    thumbnailPath = await generateThumbnail(file.path);
+    if(thumbnailPath) {
+      base64thumbNailData = await readFileAsBase64(thumbnailPath);
+    }
+  }
+  
+  const fileName = userId+"-"+new Date().getTime();
+  const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
+  s3Data.eTag = await awsService.generateEtag(file.path);
+  try{
+    fs.unlinkSync(file.path);
+    if(thumbnailPath){
+      fs.unlinkSync(thumbnailPath);
+    }
+  } catch ( error ) {
+    logger.error(new Error("Exception while deleting image "));
+    logger.error(new Error( error ));
+  }
+
+  if (!s3Data || s3Data === '') {
+    throw new Error('AWS file saving failed');
+  }
+  else{
+    return {
+      fileName,
+      name,
+      fileExt,
+      s3FilePath: s3Data.Key, 
+      awsETag: s3Data.awsETag,
+      eTag: s3Data.eTag,
+      type: file.mimetype,
+      physicalPath: file.path,
+      base64thumbNailData
+    };
+  }
+}
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -76,65 +141,134 @@ exports.deleteProductProfile = async (req, res, next) => {
 };
 
 exports.postProductProfile = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    // if(req.body.type=='MANUFACTURE') {
-    //   let alreadyExists = await ProductProfile.findOne({
-    //     type:req.body.type,
-    //     isArchived:false,
-    //     isActive:true,
-    //     machine:req.params.machineId
-    //   });
-    //   if(alreadyExists) {
-    //     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURE` already exists for this machine profile');
-    //   }
-    // }
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-        );
-      } else {
-        return res.status(StatusCodes.CREATED).json({ ProductProfile: response });
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+
+      let files = [];
+      if(req.files && req.files.images) {
+        files = req.files.images;
       }
+
+      let productProfile = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+      
+      if (!productProfile) {
+        logger.error(new Error("Product profile save failed"));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Product profile save failed");
+      }
+
+      if (Array.isArray(files) && files.length > 0) {
+        let processedFiles = [];
+        
+        for(let file of files) {
+          if(file && file.originalname) {
+            try {
+              const processedFile = await processFile(file, req.body.loginUser.userId);
+              processedFiles.push({
+                name: processedFile.name,
+                path: processedFile.s3FilePath,
+                type: processedFile.type,
+                extension: processedFile.fileExt,
+                awsETag: processedFile.awsETag,
+                eTag: processedFile.eTag,
+                thumbnail: processedFile.base64thumbNailData
+              });
+            } catch (error) {
+              logger.error(new Error("File processing failed"));
+              logger.error(new Error(error));
+            }
+          }
+        }
+
+        if (processedFiles.length > 0) {
+          productProfile.files = processedFiles;
+          productProfile = await productProfile.save();
+        }
+      }
+
+      return res.status(StatusCodes.CREATED).json({ ProductProfile: productProfile });
     }
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message || "Unable to save product profile");
   }
 };
 
 exports.patchProductProfile = async (req, res, next) => {
-  const errors = validationResult(req);
-  
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
+  try {
+    const errors = validationResult(req);
+    
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      if(!req.body.loginUser){
+        req.body.loginUser = await getToken(req);
+      }
 
-    // if(req.body.type=='MANUFACTURE') {
-    //   let alreadyExists = await ProductProfile.findOne({
-    //     type:req.body.type,
-    //     isArchived:false,
-    //     isActive:true,
-    //     machine:req.params.machineId
-    //   });
-    //   if(alreadyExists && req.params.id!=alreadyExists.id) {
-    //     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURE` already exists for this machine profile');
-    //   }
-    // }
-    this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      let files = [];
+      if(req.files && req.files.images) {
+        files = req.files.images;
+      }
+
+      // Process files if any
+      if (Array.isArray(files) && files.length > 0) {
+        let processedFiles = [];
+        
+        for(let file of files) {
+          if(file && file.originalname) {
+            try {
+              const processedFile = await processFile(file, req.body.loginUser.userId);
+              processedFiles.push({
+                name: processedFile.name,
+                path: processedFile.s3FilePath,
+                type: processedFile.type,
+                extension: processedFile.fileExt,
+                awsETag: processedFile.awsETag,
+                eTag: processedFile.eTag,
+                thumbnail: processedFile.base64thumbNailData
+              });
+            } catch (error) {
+              logger.error(new Error("File processing failed"));
+              logger.error(new Error(error));
+              // Continue with other files even if one fails
+            }
+          }
+        }
+
+        // Get existing product profile
+        let productProfile = await ProductProfile.findById(req.params.id);
+        if (!productProfile) {
+          return res.status(StatusCodes.NOT_FOUND).send("Product profile not found");
+        }
+
+        // Add new files to existing files array
+        if (!productProfile.files) {
+          productProfile.files = [];
+        }
+        productProfile.files = productProfile.files.concat(processedFiles);
+        
+        // Save the updated profile with new files
+        await productProfile.save();
+      }
+
+      // Update other fields
+      this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
+      function callbackFunc(error, result) {
+        if (error) {
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+        }
       }
     }
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message || "Unable to update product profile");
   }
 };
 
