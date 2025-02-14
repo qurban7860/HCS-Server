@@ -9,7 +9,7 @@ const baseRoute = `/documentType`;
 
 router.use(checkAuth);
 
-// - /api/1.0.0/documents/documentType/
+// - /api/1.0.0/cp/documents/documentType/
 router.get(`${baseRoute}/`, controller.getDocumentTypes);
 
 

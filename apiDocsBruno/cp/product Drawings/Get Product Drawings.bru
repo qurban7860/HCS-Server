@@ -1,0 +1,15 @@
+meta {
+  name: Get Product Drawings
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/cp/products/drawings/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

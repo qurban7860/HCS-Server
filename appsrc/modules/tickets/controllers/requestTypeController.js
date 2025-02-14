@@ -20,6 +20,7 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
+exports.requestTypePopulate = this.populate;
 
 exports.getTicketRequestType = async (req, res, next) => {
   try {

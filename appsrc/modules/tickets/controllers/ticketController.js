@@ -13,6 +13,7 @@ const {
   TicketImpact,
   TicketInvestigationReason,
   TicketIssueType,
+  TicketRequestType,
   TicketPriority,
   TicketStatus
 } = require('../models');
@@ -20,6 +21,7 @@ const { SecurityUser } = require('../../security/models');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
+const { requestTypePopulate } = require('./requestTypeController');
 const TicketEmailService = require('../service/ticketEmailService');
 this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -64,7 +66,7 @@ this.listPopulate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-this.settingFields = "name slug icon color isDefault";
+this.settingFields = "name issueType slug icon color isDefault isResolved";
 
 exports.getTicket = async (req, res, next) => {
   try {
@@ -138,6 +140,7 @@ exports.getTicketSettings = async (req, res, next) => {
     const impacts = await this.dbservice.getObjectList(req, TicketImpact, this.settingFields, this.query, this.orderBy);
     const investigationReasons = await this.dbservice.getObjectList(req, TicketInvestigationReason, this.settingFields, this.query, this.orderBy);
     const issueTypes = await this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy);
+    const requestTypes = await this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate);
     const priorities = await this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy);
     const statuses = await this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate);
 
@@ -147,6 +150,7 @@ exports.getTicketSettings = async (req, res, next) => {
       impacts,
       investigationReasons,
       issueTypes,
+      requestTypes,
       priorities,
       statuses
     }

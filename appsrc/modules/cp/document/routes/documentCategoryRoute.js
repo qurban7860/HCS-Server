@@ -8,7 +8,7 @@ const baseRoute = `/categories`;
 
 router.use(checkAuth);
 
-// - /api/1.0.0/documents/categories/
+// - /api/1.0.0/cp/documents/categories/
 router.get(`${baseRoute}/`, controller.getDocumentCategories);
 
 module.exports = router;
