@@ -2,6 +2,7 @@
 const { StatusCodes } = require('http-status-codes');
 let rtnMsg = require('../modules/config/static/static')
 const logger = require('../modules/config/logger');
+const _ = require('lodash');
 
 module.exports = async (req, res, next) => {
   try {
