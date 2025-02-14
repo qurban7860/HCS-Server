@@ -78,7 +78,7 @@ const getSecurityUser = async (req, res, next) => {
 
     this.query._id = req.params.id;
 
-    const user = await this.dbservice.getObject(SecurityUser, this.query, this.populate);
+    let user = await this.dbservice.getObject(SecurityUser, this.query, this.populate);
     const wss = getSocketConnectionByUserId(user._id);
     user.isOnline = false;
 

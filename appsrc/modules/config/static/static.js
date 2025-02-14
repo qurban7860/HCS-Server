@@ -1,17 +1,17 @@
 const { getReasonPhrase } = require('http-status-codes');
 
 module.exports = {
-    recordCustomMessage(code, message){
+    recordCustomMessage(code, message) {
         if (message) {
             return message;
         } else {
             return getReasonPhrase(code);
         }
     },
-    recordCustomMessageJSON(code, message, isError){
-        if (message){
+    recordCustomMessageJSON(code, message, isError) {
+        if (message) {
             const response = {
-                isError: isError, 
+                isError: isError,
                 MessageCode: code,
                 Message: message
             };
@@ -54,9 +54,9 @@ module.exports = {
     recordMissingParamsMessage(code, parameter) {
         if (code == 400) {
             const response = {
-                isError: "true", 
+                isError: "true",
                 MessageCode: code,
-                Message: `Insufficients params received. ${parameter} required!`
+                Message: `Invalid parameter received. ${parameter} required!`
             };
 
             return response;
@@ -81,10 +81,10 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordInvalidCredenitalsMessage(code){
+    recordInvalidCredenitalsMessage(code) {
         if (code == 403 || 400) {
             const response = {
-                isError: "true", 
+                isError: "true",
                 MessageCode: code,
                 Message: 'Could not log you in, please check your credentials and try again'
             };
@@ -93,10 +93,10 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordSchemaVaidationFaliureMessage(code, message = ''){
+    recordSchemaVaidationFaliureMessage(code, message = '') {
         if (code == 500) {
             const response = {
-                isError: "true", 
+                isError: "true",
                 MessageCode: code,
                 Message: `Schema Validation Error ${message}`
             };
@@ -106,10 +106,10 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordInvalidCustomerTypeMessage(code){
+    recordInvalidCustomerTypeMessage(code) {
         if (code == 403) {
             const response = {
-                isError: "true", 
+                isError: "true",
                 MessageCode: code,
                 Message: 'Login failed. Only Service Provider (SP) Users are allowed to access'
             };
@@ -122,7 +122,7 @@ module.exports = {
     invalidIdMessage(code, parameter) {
         if (code == 404) {
             const response = {
-                isError: "true", 
+                isError: "true",
                 MessageCode: code,
                 Message: `${parameter} not found!`
             };
@@ -132,10 +132,10 @@ module.exports = {
             return getReasonPhrase(code);
         }
     },
-    recordLogoutMessage(code){
+    recordLogoutMessage(code) {
         if (code == 200) {
             const response = {
-                isError: "false", 
+                isError: "false",
                 MessageCode: code,
                 Message: "Logout successfully"
             };
@@ -148,7 +148,7 @@ module.exports = {
     recordTransferInvalidMessage(code) {
         if (code == 400) {
             const response = {
-                isError: "true", 
+                isError: "true",
                 MessageCode: code,
                 Message: `In-transfer machines cannot be transferred!`
             };
