@@ -9,6 +9,7 @@ const { Product } = require('../../models');
 const checkProductID = require('../../../../middleware/check-parentID')('machine', Product);
 const controllers = require('../../controllers');
 const controller = controllers.productProfileController;
+const { uploadHandler, checkMaxCount, imageOptimization } = require('../../../../middleware/file-upload');
 
 const router = express.Router();
 
@@ -25,9 +26,9 @@ router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductPro
 
 router.get(`${baseRouteForObject}`, checkProductID, controller.getProductProfiles);
 
-router.post(`${baseRouteForObject}`, checkProductID, controller.postProductProfile);
+router.post(`${baseRouteForObject}`, checkProductID, uploadHandler, checkMaxCount, imageOptimization, controller.postProductProfile);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.patchProductProfile);
+router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, uploadHandler, checkMaxCount, imageOptimization, controller.patchProductProfile);
 
 router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductProfile);
 

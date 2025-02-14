@@ -809,7 +809,7 @@ exports.postDocument = async (req, res, next) => {
           if(!document_) {
             logger.error(new Error("Document saved failed!"));
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
-        }
+          }
   
           let versionNo_ = parseFloat(req.body.versionNo);
   
