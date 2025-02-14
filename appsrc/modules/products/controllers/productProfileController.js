@@ -203,8 +203,10 @@ exports.patchProductProfile = async (req, res, next) => {
     if (!errors.isEmpty()) {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-      if(!req.body.loginUser){
-        req.body.loginUser = await getToken(req);
+
+      let productProfile = await ProductProfile.findById(req.params.id);
+      if (!productProfile) {
+        return res.status(StatusCodes.NOT_FOUND).send("Product profile not found");
       }
 
       let files = [];
@@ -212,7 +214,6 @@ exports.patchProductProfile = async (req, res, next) => {
         files = req.files.images;
       }
 
-      // Process files if any
       if (Array.isArray(files) && files.length > 0) {
         let processedFiles = [];
         
@@ -232,38 +233,37 @@ exports.patchProductProfile = async (req, res, next) => {
             } catch (error) {
               logger.error(new Error("File processing failed"));
               logger.error(new Error(error));
-              // Continue with other files even if one fails
             }
           }
         }
 
-        // Get existing product profile
-        let productProfile = await ProductProfile.findById(req.params.id);
-        if (!productProfile) {
-          return res.status(StatusCodes.NOT_FOUND).send("Product profile not found");
+        if (req.body.replaceFiles === true || req.body.replaceFiles === 'true') {
+          productProfile.files = processedFiles;
+        } else {
+          if (!productProfile.files) {
+            productProfile.files = [];
+          }
+          productProfile.files = productProfile.files.concat(processedFiles);
         }
-
-        // Add new files to existing files array
-        if (!productProfile.files) {
-          productProfile.files = [];
-        }
-        productProfile.files = productProfile.files.concat(processedFiles);
-        
-        // Save the updated profile with new files
-        await productProfile.save();
+      } else if (req.body.files === null || (Array.isArray(req.body.files) && req.body.files.length === 0)) {
+        productProfile.files = [];
       }
 
-      // Update other fields
-      this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
-      function callbackFunc(error, result) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-            error._message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
-        } else {
-          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      const updateData = getDocumentFromReq(req);
+      Object.keys(updateData).forEach(key => {
+        if (key !== 'files') {
+          productProfile[key] = updateData[key];
         }
+      });
+
+      try {
+        const updatedProfile = await productProfile.save();
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, updatedProfile));
+      } catch (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+          error._message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+        );
       }
     }
   } catch (error) {
@@ -272,9 +272,8 @@ exports.patchProductProfile = async (req, res, next) => {
   }
 };
 
-
 function getDocumentFromReq(req, reqType){
-  const { machine, defaultName, names, flange, type, web, thicknessStart, thicknessEnd, isActive, isArchived, loginUser} = req.body;
+  const { machine, defaultName, names, flange, type, web, thicknessStart, thicknessEnd, isActive, isArchived, loginUser, files} = req.body;
   
   let doc = {};
   if (reqType && reqType == "new"){
@@ -290,7 +289,6 @@ function getDocumentFromReq(req, reqType){
   if ("type" in req.body){
     doc.type = type;
   }
-
   
   if ("defaultName" in req.body){
     doc.defaultName = defaultName;
@@ -316,13 +314,16 @@ function getDocumentFromReq(req, reqType){
     doc.thicknessEnd = thicknessEnd;
   }
   
-  
   if ("isActive" in req.body){
     doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
   }
 
   if ("isArchived" in req.body){
     doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
+  }
+
+  if ("files" in req.body && !req.files) {
+    doc.files = files;
   }
 
   if (reqType == "new" && "loginUser" in req.body ){
@@ -335,7 +336,5 @@ function getDocumentFromReq(req, reqType){
     doc.updatedIP = loginUser.userIP;
   } 
 
-  //console.log("doc in http req: ", doc);
   return doc;
-
 }
