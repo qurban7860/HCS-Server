@@ -13,6 +13,9 @@ const baseRouteForObject = `/customers`;
 
 router.use(checkAuth, customerDataFilter);
 
+// - /api/1.0.0/cp/crm/customers/
+// router.get(`${baseRouteForObject}/`, controller.getCustomers);
+
 // - /api/1.0.0/cp/crm/customers/:id
 router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getCustomer);
 

@@ -61,7 +61,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
     }).select("value").lean();
 
     if (!result || !result.value) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "Config not found" });
+      return res.status(StatusCodes.NOT_FOUND).send("Configuration not found!");
     }
 
     // Convert config values to valid ObjectIds
@@ -70,7 +70,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
       .map((id) => mongoose.Types.ObjectId(id));
 
     if (!configObjectIds.length) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "No valid configObjectIds found" });
+      return res.status(StatusCodes.NOT_FOUND).send("No valid configuration value found!");
     }
 
     // Convert machineId to ObjectId
@@ -84,7 +84,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
     }).populate({ path: "techParam", select: "code" }).lean();
 
     if (!records.length) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "No records found" });
+      return res.status(StatusCodes.NOT_FOUND).send("No records found!");
     }
 
     // Extract software version data

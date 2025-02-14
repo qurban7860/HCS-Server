@@ -1,9 +1,7 @@
 const express = require('express');
-
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-
 const controllers = require('../../controllers');
 const controller = controllers.productDrawingController;
 
@@ -12,7 +10,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/drawings`; 
+const baseRouteForObject = `/drawings`;
 
 router.use(checkAuth, checkCustomer);
 
