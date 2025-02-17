@@ -59,7 +59,7 @@ this.listPopulate = [
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
-  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug ' } },
+  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug isResolved' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'createdBy', select: 'name' },
