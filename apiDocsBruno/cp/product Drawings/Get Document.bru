@@ -1,0 +1,15 @@
+meta {
+  name: Get Document
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/cp/documents/document/67aef241ab594c5efd9c9140
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

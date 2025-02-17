@@ -2,12 +2,13 @@
 const { StatusCodes } = require('http-status-codes');
 let rtnMsg = require('../modules/config/static/static')
 const logger = require('../modules/config/logger');
+const { Types: { ObjectId } } = require('mongoose');
 const _ = require('lodash');
 
 module.exports = async (req, res, next) => {
   try {
 
-    if (req?.body?.customer) {
+    if (req?.body?.customer && ObjectId.isValid(req.query.customer)) {
       const userId = req.body.loginUser?.userId
       if (!userId)
         return res.status(StatusCodes.UNAUTHORIZED).send("Not Authorized!");
