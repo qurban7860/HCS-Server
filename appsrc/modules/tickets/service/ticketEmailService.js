@@ -53,8 +53,6 @@ class TicketEmailService {
         <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
       </a>`;
       let text = "";
-      // Default Email Text
-      // text = `Support Ticket ${adminTicketUri} has been created by <strong>${username || ""}</strong>.`;
 
       // Check for Updates
       if (!req.body?.isNew && oldObj) {
@@ -99,17 +97,18 @@ class TicketEmailService {
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
         }
 
+      } else {
+        // Default Email Text
+        text = `Support Ticket ${adminTicketUri} has been created by <strong>${username || ""}</strong>.`;
+        // Collect Unique Email Addresses
+        if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
+        if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+        if (ticketData.approvers?.length) {
+          ticketData?.approvers.forEach((approver) => {
+            if (approver.email) toEmails.add(approver.email);
+          });
+        }
       }
-      // else {
-      //   // Collect Unique Email Addresses
-      //   if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
-      //   if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
-      //   if (ticketData.approvers?.length) {
-      //     ticketData?.approvers.forEach((approver) => {
-      //       if (approver.email) toEmails.add(approver.email);
-      //     });
-      //   }
-      // }
 
       if (!text) {
         return;
