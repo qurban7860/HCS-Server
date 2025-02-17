@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/cp/products/drawings/
+  url: {{baseUrl}}/cp/products/drawings/?machine=661372619472c159c48bce9a
   body: none
   auth: bearer
+}
+
+params:query {
+  machine: 661372619472c159c48bce9a
 }
 
 auth:bearer {
