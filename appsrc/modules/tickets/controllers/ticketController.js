@@ -245,7 +245,6 @@ exports.postTicket = async (req, res, next) => {
     req.params.ticketId = ticketData?._id;
 
     req.params.id = ticketData._id;
-    req.body.isNew = true;
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
@@ -255,6 +254,7 @@ exports.postTicket = async (req, res, next) => {
       }
       throw new Error("Failed to complete the ticket creation process: " + error.message);
     }
+    req.body.isNew = true;
     await this.ticketEmailService.sendSupportTicketEmail(req);
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch (error) {
