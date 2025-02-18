@@ -10,8 +10,8 @@ function validateParamIDs(validations) {
         const paramId = req.params[param];
 
         if (!paramId || !ObjectId.isValid(paramId)) {
-          return res.status(StatusCodes.BAD_REQUEST).send(
-            rtnMsg.recordMissingParamsMessage(StatusCodes.BAD_REQUEST, param)
+          return res.status(StatusCodes.NOT_ACCEPTABLE).send(
+            rtnMsg.recordMissingParamsMessage(StatusCodes.NOT_ACCEPTABLE, param)
           );
         }
 
