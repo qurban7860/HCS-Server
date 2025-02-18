@@ -15,6 +15,7 @@ class TicketEmailService {
     this.dbservice = new ticketDBService();
     this.populate = [
       { path: 'status', select: 'name statusType', populate: { path: 'statusType', select: ' name slug ' } },
+      { path: 'requestType', select: 'name' },
       { path: 'priority', select: 'name' },
       { path: 'reporter', select: 'firstName lastName email customer', populate: { path: 'customer', select: 'type' } },
       { path: 'assignee', select: 'firstName lastName email customer', populate: { path: 'customer', select: 'type' } },
@@ -37,7 +38,7 @@ class TicketEmailService {
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
       const priority = ticketData?.priority?.name || ""
-      const summery = ticketData?.summery || ""
+      const summary = ticketData?.summary || ""
       const description = ticketData?.description || ""
 
       const username = ticketData?.updatedBy?.name;
@@ -132,7 +133,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, requestType, status, priority, summery, description });
+      const content = render(contentHTML, { text, requestType, status, priority, summary, description });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
