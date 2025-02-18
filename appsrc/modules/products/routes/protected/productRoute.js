@@ -40,13 +40,13 @@ router.get(`${baseRouteForObject}/searchProductId/`, controller.getProductId);
 
 router.patch(`${baseRouteForObject}/:id/updateStatus/:statusid`, controller.patchProductStatus);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProduct);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getProduct);
 
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProduct);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), verifyDelete, controller.patchProduct);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProduct);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.deleteProduct);
 
 router.post(`${baseRouteForObject}/transferMachine/`, controller.transferOwnership);
 

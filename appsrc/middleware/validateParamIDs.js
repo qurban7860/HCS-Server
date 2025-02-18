@@ -19,8 +19,8 @@ function validateParamIDs(validations) {
           const objID = new ObjectId(paramId);
           const record = await model.findOne({ _id: objID }).exec();
           if (!record) {
-            return res.status(StatusCodes.NOT_FOUND).send(
-              rtnMsg.invalidIdMessage(StatusCodes.NOT_FOUND, param)
+            return res.status(StatusCodes.NOT_ACCEPTABLE).send(
+              rtnMsg.invalidIdMessage(StatusCodes.NOT_ACCEPTABLE, param)
             );
           }
         }
