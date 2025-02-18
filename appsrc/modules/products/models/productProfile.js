@@ -9,57 +9,48 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-    machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
+    machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
 
     defaultName: { type: String, required: true },
     // DefaultName for profile.
-    
+
     names: [{ type: String }],
     // Names list for profile.
-    
+
     web: { type: String, maxlength: 35 },
     // Width
-    
+
     flange: { type: String, maxlength: 35 },
     // Height
-    
+
     thicknessStart: { type: String, maxlength: 35 },
     // Thickness
-    
+
     thicknessEnd: { type: String, maxlength: 35 },
     // Thickness
-    
-    
-    type: {  type: String, enum: ['CUSTOMER','MANUFACTURE'], default: 'CUSTOMER'},
-    
+
+    type: { type: String, enum: ['CUSTOMER', 'MANUFACTURE'], default: 'CUSTOMER' },
+
     archivedByMachine: { type: Boolean, default: false },
 
-    files: [{
-        name: { type: String },
-        path: { type: String },
-        type: { type: String },
-        extension: { type: String },
-        awsETag: { type: String },
-        eTag: { type: String },
-        thumbnail: { type: String }
-    }],
-    
+    files: [{ type: Schema.Types.ObjectId, ref: 'MachineProfileFile' }],
+
 },
-{
-    collection: 'MachineProfiles'
-});
+    {
+        collection: 'MachineProfiles'
+    });
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-docSchema.index({"defaultName":1})
-docSchema.index({"names":1})
-docSchema.index({"width":1})
-docSchema.index({"height":1})
+docSchema.index({ "defaultName": 1 })
+docSchema.index({ "names": 1 })
+docSchema.index({ "width": 1 })
+docSchema.index({ "height": 1 })
 
-docSchema.index({"isActive":1})
-docSchema.index({"isArchived":1})
+docSchema.index({ "isActive": 1 })
+docSchema.index({ "isArchived": 1 })
 
 module.exports = mongoose.model('MachineProfile', docSchema);

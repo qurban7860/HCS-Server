@@ -30,8 +30,6 @@ const docSchema = new Schema({
 
         awsETag: { type: String },
 
-        isReportDoc: { type: Boolean, default: false },
-
 },
         {
                 collection: 'MachineProfileFiles'

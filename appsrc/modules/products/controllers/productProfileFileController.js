@@ -1,17 +1,11 @@
 const { validationResult } = require('express-validator');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
-const fs = require('fs');
 const awsService = require('../../../base/aws');
 const { Config } = require('../../config/models');
-const path = require('path');
-const sharp = require('sharp');
-
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
-const emailController = require('../../email/controllers/emailController');
 const { ProductProfile, ProductProfileFile } = require('../models');
 const { processFile } = require('../../files/utils');
 
@@ -24,6 +18,7 @@ exports.getProductProfileFiles = async (req, res, next) => {
     await this.dbservice.getObjectList(req, ProductProfileFile, this.fields, this.query, this.orderBy, this.populate);
     return res.json(response);
   } catch (error) {
+    logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
@@ -78,6 +73,7 @@ const saveFiles = async (req, res, next) => {
       return savedFiles;
     }
   } catch (error) {
+    logger.error(new Error(error));
     throw error
   }
 };
@@ -89,7 +85,7 @@ exports.postFiles = async (req, res, next) => {
     const savedFiles = await saveFiles(req);
     return res.status(StatusCodes.OK).send({ files: savedFiles });
   } catch (e) {
-    console.log(e);
+    logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Files save failed!");
   }
 };
@@ -97,7 +93,7 @@ exports.postFiles = async (req, res, next) => {
 exports.downloadFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log(errors)
+    logger.error(new Error(error));
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
@@ -132,9 +128,9 @@ exports.downloadFile = async (req, res, next) => {
       } else {
         res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'File not found', true));
       }
-    } catch (err) {
-      console.log(err);
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "File download failed!");
     }
   }
 };
@@ -147,7 +143,7 @@ exports.patchProductProfileFile = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
-    await this.dbservice.patchObject(ProductProfileFile, req.params.id, getDocumentFromReq(req));
+    await this.dbservice.patchObject(ProductProfileFile, req.params.id, getDocFromReq(req));
     return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
 
   } catch (error) {
@@ -170,7 +166,7 @@ exports.deleteFile = async (req, res, next) => {
   }
 };
 
-function getProfileFileFromReq(req, reqType) {
+function getDocFromReq(req, reqType) {
 
   const { profile, path, extension, name, machine, fileType, awsETag, eTag, thumbnail, isReportDoc, user, isActive, isArchived, loginUser } = req.body;
 
