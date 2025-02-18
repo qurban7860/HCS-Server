@@ -1,11 +1,11 @@
 meta {
-  name: post Ticket
+  name: Patch CP Ticket
   type: http
   seq: 4
 }
 
-post {
-  url: {{baseUrl}}/tickets/
+patch {
+  url: {{baseUrl}}/cp/tickets/67b42291eabfa06c85204928/
   body: multipartForm
   auth: bearer
 }
@@ -42,26 +42,10 @@ body:json {
 }
 
 body:multipart-form {
-  customer: 662f10f3018c887351ae793e
-  machine: 662f117e018c887351ae7da8
-  assignee: 664ed6e12e4733e023cb6ad6
-  issueType: 6780f3c4dc488409754fab7a
-  description: description
-  summary: summary
   changeType: 6780f413dc488409754fab92
   impact: 6780f400dc488409754fab8b
   priority: 6780f3aedc488409754fab70
   status: 6780f22a06dd904dff2ff8e3
-  changeReason: 6780f425dc488409754fab98
-  implementationPlan: implementationPlan
-  backoutPlan: backout
-  testPlan: testPlan
-  groups: groups
-  shareWith: true
-  investigationReason: 6780f3f0dc488409754fab83
-  rootCause: rootCause
-  workaround: workaround
-  plannedStartDate: 2024-04-29T03:18:09.614Z
-  plannedEndDate: 2024-04-29T03:18:09.614Z
-  images: @file(/home/ali-hassan/Downloads/20190706_091546.jpg)
+  images: @file(/home/ali-hassan/Pictures/KARACHI.jpg)
+  customer: 640f20882b6cfb6f0a58eb87
 }
