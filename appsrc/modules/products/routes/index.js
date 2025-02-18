@@ -7,6 +7,7 @@ const publicRoutes = {
 
 // Protected Routes (requiring auth)
 const protectedRoutes = {
+  profileFiles: require("./protected/productProfileFileRoute"),
   auditLogs: require("./protected/productAuditLogRoute"),
   categories: require("./protected/productCategoryRoute"),
   connections: require("./protected/productConnectionRoute"),
@@ -32,7 +33,6 @@ const protectedRoutes = {
   serviceReportFiles: require("./protected/productServiceReportFileRoute"),
   checkItemCategories: require("./protected/productCheckItemCategoryRoute"),
   profiles: require("./protected/productProfileRoute"),
-  profileFiles: require("./protected/productProfileFileRoute"),
   serviceReportValues: require("./protected/productServiceReportValueRoute"),
   serviceReportValueFiles: require("./protected/productServiceReportValueFileRoute"),
   categoryGroups: require("./protected/categoryGroupRoute"),

@@ -1,6 +1,7 @@
 const { StatusCodes } = require('http-status-codes');
 const { Types: { ObjectId } } = require('mongoose');
 const rtnMsg = require('../modules/config/static/static');
+const logger = require('../modules/config/logger');
 
 function validateParamIDs(validations) {
   return async function (req, res, next) {
@@ -26,8 +27,9 @@ function validateParamIDs(validations) {
       }
 
       next();
-    } catch (err) {
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(err.message);
+    } catch (error) {
+      logger.error(new Error(error));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
     }
   };
 }

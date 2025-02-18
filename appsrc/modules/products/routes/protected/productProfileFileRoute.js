@@ -13,7 +13,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/machines/:machineId/profiles/:profileId/files/`;
+const baseRouteForObject = `/machines/:machineId/profiles/:profileId/files`;
 
 router.use(checkAuth);
 
@@ -23,7 +23,7 @@ router.get(`${baseRouteForObject}`, checkIDs(validate.machineIdAndProfileId), co
 
 router.post(`${baseRouteForObject}`, checkIDs(validate.machineIdAndProfileId), uploadHandler, checkMaxCount, imageOptimization, controller.postFiles);
 
-router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.machineIdProfileIdAndId), verifyDelete, controller.patchProductProfileFile);
+// router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.machineIdProfileIdAndId), verifyDelete, controller.patchProductProfileFile);
 
 router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.machineIdProfileIdAndId), controller.deleteFile);
 
