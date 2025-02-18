@@ -19,6 +19,7 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 //this.populate = 'category';
 this.populate = [
+  { path: 'files', select: 'name fileType extension thumbnail awsETag' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
@@ -97,7 +98,7 @@ exports.postProductProfile = async (req, res, next) => {
         logger.error(new Error("Product profile save failed"));
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Product profile save failed");
       }
-      req.params.profileId = productProfile?._id
+      req.params.profileId = productProfile._id
       await saveFiles(req);
       return res.status(StatusCodes.CREATED).json({ ProductProfile: productProfile });
     }
@@ -134,7 +135,7 @@ function getDocumentFromReq(req, reqType) {
     doc = new ProductProfile({});
   }
 
-  if ("machine" in req.body && req.params.machineId) {
+  if ("machine" in req.body || req.params.machineId) {
     doc.machine = req.params.machineId;
   } else {
     doc.machine = machine;
