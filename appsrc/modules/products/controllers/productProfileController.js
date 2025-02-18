@@ -117,11 +117,12 @@ exports.patchProductProfile = async (req, res, next) => {
     }
 
     await this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req));
-    req.params.profileId = productProfile?._id
+    req.params.profileId = req.params.id
     await saveFiles(req);
     return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
 
   } catch (error) {
+    console.log("Error : ", error)
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message || "Unable to update product profile");
   }
