@@ -15,7 +15,7 @@ this.fields = {};
 this.query = {};
 this.orderBy = { displayOrderNo: 1 };  
 this.populate = [
-  {path: 'statusType', select: 'name icon slug color'},
+  {path: 'statusType', select: 'name icon slug color isResolved'},
   {path: 'createdBy', select: 'name'},
   {path: 'updatedBy', select: 'name'}
 ];
@@ -129,7 +129,7 @@ exports.deleteTicketStatus = async (req, res, next) => {
 function getDocFromReq(req, reqType){
   const { loginUser } = req.body;
   const doc = reqType === "new" ? new TicketStatus({}) : {};
-  const allowedFields = [ "name", "description", "statusType", "slug", "displayOrderNo", "icon",  "color", "isDefault", "isActive", "isArchived" ];
+  const allowedFields = [ "name", "description", "statusType", "slug", "displayOrderNo", "icon",  "color", "isDefault", "isActive", "isArchived", "isResolved" ];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {
