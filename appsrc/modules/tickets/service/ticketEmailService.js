@@ -34,6 +34,7 @@ class TicketEmailService {
       if (req.body.isNew) {
         subject = "Support Ticket Created";
       }
+      console.log(" isNew : ", req.body.isNew)
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
@@ -58,7 +59,7 @@ class TicketEmailService {
       }).select("value");
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.id}/view" target="_blank">
+      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.id}/view" target="_blank" style="display: inline; text-decoration: none;" >
         <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
       </a>`;
       let text = "";
