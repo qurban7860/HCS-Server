@@ -34,6 +34,12 @@ class TicketEmailService {
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
+      const requestType = ticketData?.requestType?.name || ""
+      const status = ticketData?.status?.name || ""
+      const priority = ticketData?.priority?.name || ""
+      const summery = ticketData?.summery || ""
+      const description = ticketData?.description || ""
+
       const username = ticketData?.updatedBy?.name;
 
       // Ensure unique emails using a Set
@@ -126,7 +132,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text });
+      const content = render(contentHTML, { text, requestType, status, priority, summery, description });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email

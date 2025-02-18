@@ -1,13 +1,15 @@
 <tr>
-  <td align="left" style="padding:0;Margin:0">
-    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
+  <td align="left" style="padding:0;Margin:0;word-wrap:break-word;">
+    <p
+      style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px;white-space:pre-line;">
       {{ text }}
+
+      <strong>Request Type:</strong> {{ requestType }}<br>
+      <strong>Status:</strong> {{ status }}<br>
+      <strong>Priority:</strong> {{ priority }}<br>
+      <strong>Summery:</strong> {{ summery }}<br>
+      <strong>Description:</strong> {{ description }}<br>
     </p>
-    {{ status }}
-    {{ priority }}
-    {{ assignee }}
-    {{ approvers }}
-    {{ summery }}
     <br>
     <br>
   </td>
