@@ -1,0 +1,19 @@
+meta {
+  name: get CP Tickets
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/cp/tickets/?customer=640f20882b6cfb6f0a58eb87
+  body: none
+  auth: bearer
+}
+
+params:query {
+  customer: 640f20882b6cfb6f0a58eb87
+}
+
+auth:bearer {
+  token: {{token}}
+}
