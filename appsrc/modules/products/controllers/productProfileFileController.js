@@ -12,7 +12,7 @@ const { processFile } = require('../../files/utils');
 
 exports.getProductProfileFiles = async (req, res, next) => {
   try {
-    const profile = req?.profileId || req.params.id;
+    const profile = req?.params?.profileId
     this.query = req.query != "undefined" ? req.query : { profile: profile, isArchived: false, isActive: true };
     this.query.machine = req.params.machineId;
     await this.dbservice.getObjectList(req, ProductProfileFile, this.fields, this.query, this.orderBy, this.populate);
@@ -97,7 +97,7 @@ exports.downloadFile = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const file = await ProductProfileFile.findOne({ _id: req.params.fileId }).select('path');
+      const file = await ProductProfileFile.findOne({ _id: req.params.id }).select('path');
       if (file) {
         if (file.path && file.path !== '') {
           const data = await awsService.fetchAWSFileInfo(file._id, file.path);
