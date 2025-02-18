@@ -30,8 +30,10 @@ class TicketEmailService {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
       // Determine Email Subject
-      const subject = req.body.isNew ? "Support Ticket Created" : "Support Ticket Updated";
-
+      let subject = "Support Ticket Updated";
+      if (req.body.isNew) {
+        subject = "Support Ticket Created";
+      }
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
@@ -65,7 +67,7 @@ class TicketEmailService {
       if (!req.body?.isNew && oldObj) {
 
         if (oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString()) {
-          text = `Support Ticket ${adminTicketUri} <br/>Status has been modified by <strong>${username || ""}</strong>.`;
+          text = `<p>Support Ticket ${adminTicketUri}</p> <br/>Status has been modified by <strong>${username || ""}</strong>.`;
         }
 
         if (oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString()) {
