@@ -34,12 +34,11 @@ class TicketEmailService {
       if (req.body.isNew) {
         subject = "Support Ticket Created";
       }
-      console.log(" isNew : ", req.body.isNew)
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
       this.query = { ticket: req.params.id, isActive: true, isArchived: false };
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
-      const comments = commentsList?.map(c => `${c?.comment || ""}, BY ${c?.updatedBy || ""} AT ${c?.updatedAt || ""} <br/>`)
+      const comments = commentsList?.map(c => `${c?.comment || ""}, BY ${c?.updatedBy?.name || ""} AT ${c?.updatedAt || ""} <br/>`)
 
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
