@@ -38,7 +38,7 @@ class TicketEmailService {
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
       this.query = { ticket: req.params.id, isActive: true, isArchived: false };
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
-      const comments = commentsList?.map(c => `${c?.comment || ""}, <strong>by: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`)
+      const comments = commentsList?.map(c => `${c?.comment || ""} <strong>by: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
 
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
@@ -89,6 +89,11 @@ class TicketEmailService {
           text = `Support Ticket&nbsp;${adminTicketUri} <br/>Description has been modified by <strong>${username || ""}</strong>.`;
         }
 
+        if (oldObj.assignee && oldObj.assignee !== ticketData?.assignee?._id) {
+          if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+          text = `Support Ticket&nbsp;${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}</strong>.`;
+        }
+
         if (
           Array.isArray(oldObj?.approvers) &&
           Array.isArray(ticketData?.approvers) &&
@@ -101,9 +106,6 @@ class TicketEmailService {
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
-        } else if (oldObj.assignee && oldObj.assignee !== ticketData?.assignee?._id) {
-          if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
-          text = `Support Ticket&nbsp;${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}</strong>.`;
         } else {
           if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
