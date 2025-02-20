@@ -74,7 +74,6 @@ exports.getProductProfiles = async (req, res, next) => {
 
 exports.deleteProductProfile = async (req, res, next) => {
   this.dbservice.deleteObject(ProductProfile, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -122,7 +121,6 @@ exports.patchProductProfile = async (req, res, next) => {
     return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
 
   } catch (error) {
-    console.log("Error : ", error)
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message || "Unable to update product profile");
   }
