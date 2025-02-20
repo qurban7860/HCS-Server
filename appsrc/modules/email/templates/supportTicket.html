@@ -1,19 +1,27 @@
 <tr>
-  <td align="left" style="padding:0;Margin:0;">
-    <p
-      style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px;white-space:pre-line;">
-      {{ text }}
-  </td>
   <td align="left" style="padding:0;Margin:0;word-wrap:break-word;">
-    <strong>Request Type:</strong> {{ requestType }}<br>
-    <strong>Status:</strong> {{ status }}<br>
-    <strong>Priority:</strong> {{ priority }}<br>
-    <strong>Summary:</strong> {{ summary }}<br>
-    <strong>Description:</strong> {{ description }}<br>
-    <strong>Comments:</strong>
-    {{ comments }}<br>
-    </p>
-    <br>
-    <br>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td style="padding-bottom: 10px;">
+          <span style="white-space: nowrap; display: inline-block;">
+            {{ text }}
+          </span>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;
+            font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;
+            font-size:16px;white-space:pre-line;">
+            <strong>Request Type:</strong> {{ requestType }}<br>
+            <strong>Status:</strong> {{ status }}<br>
+            <strong>Priority:</strong> {{ priority }}<br>
+            <strong>Summary:</strong> {{ summary }}<br>
+            <strong>Description:</strong> {{ description }}<br>
+            <strong>Comments:</strong> {{ comments }}<br>
+          </p>
+        </td>
+      </tr>
+    </table>
   </td>
 </tr>
