@@ -6,7 +6,7 @@ const logger = require('../../config/logger');
 const ticketDBService = require('../service/ticketDBService');
 const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
-const { Ticket } = require('../models');
+const { Ticket, TicketComment } = require('../models');
 const { Customer, CustomerContacts } = require('../../crm/models');
 
 class TicketEmailService {
@@ -37,6 +37,9 @@ class TicketEmailService {
       console.log(" isNew : ", req.body.isNew)
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
+      this.query = { ticket: req.params.id, isActive: true, isArchived: false };
+      const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
+      const comments = commentsList?.map(c => `${c?.comment || ""}, BY ${c?.updatedBy || ""} AT ${c?.updatedAt || ""} <br/>`)
 
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
@@ -136,7 +139,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, requestType, status, priority, summary, description });
+      const content = render(contentHTML, { text, requestType, status, priority, summary, description, comments });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
