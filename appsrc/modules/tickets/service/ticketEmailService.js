@@ -6,8 +6,8 @@ const logger = require('../../config/logger');
 const ticketDBService = require('../service/ticketDBService');
 const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
-const { Ticket } = require('../models');
-const { Customer, CustomerContacts } = require('../../crm/models');
+const { Ticket, TicketComment } = require('../models');
+const { fDateTime } = require('../../../../utils/formatTime');
 
 class TicketEmailService {
   constructor() {
@@ -34,9 +34,11 @@ class TicketEmailService {
       if (req.body.isNew) {
         subject = "Support Ticket Created";
       }
-      console.log(" isNew : ", req.body.isNew)
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
+      this.query = { ticket: req.params.id, isActive: true, isArchived: false };
+      const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
+      const comments = commentsList?.map(c => `${c?.comment || ""} <strong>by: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
 
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
@@ -87,6 +89,11 @@ class TicketEmailService {
           text = `Support Ticket&nbsp;${adminTicketUri} <br/>Description has been modified by <strong>${username || ""}</strong>.`;
         }
 
+        if (oldObj.assignee?.toString() != ticketData?.assignee?._id?.toString()) {
+          if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+          text = `Support Ticket&nbsp;${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}</strong>.`;
+        }
+
         if (
           Array.isArray(oldObj?.approvers) &&
           Array.isArray(ticketData?.approvers) &&
@@ -99,9 +106,6 @@ class TicketEmailService {
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
-        } else if (oldObj.assignee && oldObj.assignee !== ticketData?.assignee?._id) {
-          if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
-          text = `Support Ticket&nbsp;${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}</strong>.`;
         } else {
           if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
@@ -136,7 +140,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, requestType, status, priority, summary, description });
+      const content = render(contentHTML, { text, requestType, status, priority, summary, description, comments });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
