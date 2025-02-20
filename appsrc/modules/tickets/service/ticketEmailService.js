@@ -154,7 +154,7 @@ class TicketEmailService {
     }
   };
 
-  sendSupportTicketCommentEmail = async (req, oldObj = null) => {
+  sendSupportTicketCommentEmail = async (req) => {
     try {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
@@ -164,8 +164,8 @@ class TicketEmailService {
         subject = "Support Ticket Comment Added";
       }
       // Fetch Ticket Data
-      const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
-      this.query = { ticket: req.params.id, isActive: true, isArchived: false };
+      const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.ticketId, this.populate);
+      this.query = { ticket: req.params.ticketId, isActive: true, isArchived: false };
       this.orderBy = { updatedAt: -1 };
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
       const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
@@ -192,7 +192,7 @@ class TicketEmailService {
       }).select("value");
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.id}/view" target="_blank" >
+      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view" target="_blank" >
         <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
       </a>`;
       let text = "";
