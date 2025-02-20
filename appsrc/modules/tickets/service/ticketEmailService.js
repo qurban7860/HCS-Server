@@ -37,6 +37,7 @@ class TicketEmailService {
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
       this.query = { ticket: req.params.id, isActive: true, isArchived: false };
+      this.orderBy = { updatedAt: -1 };
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
       const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
 
