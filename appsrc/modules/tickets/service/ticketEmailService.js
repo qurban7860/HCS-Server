@@ -7,7 +7,7 @@ const ticketDBService = require('../service/ticketDBService');
 const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
 const { Ticket, TicketComment } = require('../models');
-const { Customer, CustomerContacts } = require('../../crm/models');
+const { fDateTime } = require('../../../../utils/formatTime');
 
 class TicketEmailService {
   constructor() {
@@ -38,7 +38,7 @@ class TicketEmailService {
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
       this.query = { ticket: req.params.id, isActive: true, isArchived: false };
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
-      const comments = commentsList?.map(c => `${c?.comment || ""}, BY ${c?.updatedBy?.name || ""} AT ${c?.updatedAt || ""} <br/>`)
+      const comments = commentsList?.map(c => `${c?.comment || ""}, <strong>by: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`)
 
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
