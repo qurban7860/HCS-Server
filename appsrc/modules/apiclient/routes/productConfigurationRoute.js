@@ -13,9 +13,9 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/productConfigurations
 
-const baseRouteForObject = `/productConfigurations`; 
+const baseRouteForObject = `/productConfigurations`;
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth);
 
 // router.get(`${baseRouteForObject}/search`, controller.searchProductConfiguration);
 
