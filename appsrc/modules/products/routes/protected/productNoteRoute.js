@@ -21,11 +21,11 @@ router.get(`${baseRouteForObject}`, checkProductID, controller.getProductNotes);
 
 router.post(`${baseRouteForObject}`, checkProductID, controller.postProductNote);
 
-router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductNote);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.getProductNote);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.patchProductNote);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, verifyDelete, controller.patchProductNote);
 
-router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductNote);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.deleteProductNote);
 
 router.get(`${baseRouteForObject}/stream`, controller.streamProductNotes);
 

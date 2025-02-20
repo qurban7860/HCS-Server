@@ -6,7 +6,8 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
-
+const checkIDs = require('../../../middleware/validateParamIDs');
+const validate = require('../utils/validate');
 
 const controllers = require('../controllers');
 const controller = controllers.documentCategoryController;
@@ -21,7 +22,7 @@ const baseRoute = `/categories`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/documents/categories/:id
-router.get(`${baseRoute}/:id`,controller.getDocumentCategory);
+router.get(`${baseRoute}/:id`, checkIDs(validate.id), controller.getDocumentCategory);
 
 // - /api/1.0.0/documents/categories/
 router.get(`${baseRoute}/`, controller.getDocumentCategories);
@@ -30,9 +31,9 @@ router.get(`${baseRoute}/`, controller.getDocumentCategories);
 router.post(`${baseRoute}/`,controller.postDocumentCategory);
 
 // - /api/1.0.0/documents/categories/:id
-router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchDocumentCategory);
+router.patch(`${baseRoute}/:id`, checkIDs(validate.id), verifyDelete, controller.patchDocumentCategory);
 
 // - /api/1.0.0/documents/categories/:id
-router.delete(`${baseRoute}/:id`, controller.deleteDocumentCategory);
+router.delete(`${baseRoute}/:id`, checkIDs(validate.id), controller.deleteDocumentCategory);
 
 module.exports = router;

@@ -2,6 +2,9 @@ const express = require('express');
 const { check } = require('express-validator');
 const checkAuth = require('../../../middleware/check-auth');
 const verifyDelete = require('../../../middleware/verifyDelete');
+const checkIDs = require('../../../middleware/validateParamIDs');
+const validate = require('../utils/validate');
+
 const controllers = require('../controllers');
 const controller = controllers.securityConfigBlockedUserController;
 const checkCustomer = require('../../../middleware/check-customer');
@@ -15,7 +18,7 @@ router.use(checkAuth, checkCustomer);
 router.get(`${baseRoute}/search`, controller.searchSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/:id
-router.get(`${baseRoute}/:id`, controller.getsecurityConfigBlockedUser);
+router.get(`${baseRoute}/:id`, checkIDs(validate.id), controller.getsecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers
 router.get(`${baseRoute}/`, controller.getSecurityConfigBlockedUsers);
@@ -24,10 +27,10 @@ router.get(`${baseRoute}/`, controller.getSecurityConfigBlockedUsers);
 router.post(`${baseRoute}/`, controller.postSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/:id
-router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchSecurityConfigBlockedUser);
+router.patch(`${baseRoute}/:id`, checkIDs(validate.id), verifyDelete, controller.patchSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/:id
-router.delete(`${baseRoute}/:id`, controller.deleteSecurityConfigBlockedUser);
+router.delete(`${baseRoute}/:id`, checkIDs(validate.id), controller.deleteSecurityConfigBlockedUser);
 
 // - /api/1.0.0/security/configs/blockedusers/search
 

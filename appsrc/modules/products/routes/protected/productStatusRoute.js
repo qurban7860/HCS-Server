@@ -3,6 +3,8 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productStatusController;
@@ -16,14 +18,14 @@ const baseRouteForObject = `/statuses`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProductStatus);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getProductStatus);
 
 router.get(`${baseRouteForObject}/`, controller.getProductStatuses);
 
 router.post(`${baseRouteForObject}/`,  controller.postProductStatus);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductStatus);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), verifyDelete, controller.patchProductStatus);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProductStatus);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.deleteProductStatus);
 
 module.exports = router;

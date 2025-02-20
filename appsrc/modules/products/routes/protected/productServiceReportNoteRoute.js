@@ -2,6 +2,9 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
+
 const controllers = require('../../controllers');
 const controller = controllers.productServiceReportNoteController;
 
@@ -15,13 +18,13 @@ router.use(checkAuth, checkCustomer);
 
 router.get(`${baseRouteForObject}/`, controller.getProductServiceReportNotes);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProductServiceReportNote);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getProductServiceReportNote);
 
 router.post(`${baseRouteForObject}/`,  controller.postProductServiceReportNote);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceReportNote);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), verifyDelete, controller.patchProductServiceReportNote);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceReportNote);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.deleteProductServiceReportNote);
 
 router.get(`${baseRouteForObject}/stream`, controller.streamProductServiceReportNotes);
 

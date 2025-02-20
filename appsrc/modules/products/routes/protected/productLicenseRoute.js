@@ -17,15 +17,15 @@ const baseRouteForObject = `/machines/:machineId/licenses`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductLicense);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.getProductLicense);
 
 router.get(`${baseRouteForObject}`, checkProductID, controller.getProductLicenses);
 
 router.post(`${baseRouteForObject}`, checkProductID, controller.postProductLicense);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.patchProductLicense);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, verifyDelete, controller.patchProductLicense);
 
-router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductLicense);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.deleteProductLicense);
 
 router.get('/licenses/search', controller.searchProductLicenses);
 
