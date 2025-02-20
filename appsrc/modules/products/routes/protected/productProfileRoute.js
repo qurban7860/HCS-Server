@@ -22,14 +22,14 @@ router.use(checkAuth, checkCustomer);
 
 // router.get(`${baseRouteForObject}/search`, controller.searchProductProfile);
 
-router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductProfile);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.getProductProfile);
 
 router.get(`${baseRouteForObject}`, checkProductID, controller.getProductProfiles);
 
 router.post(`${baseRouteForObject}`, checkProductID, uploadHandler, checkMaxCount, imageOptimization, controller.postProductProfile);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, uploadHandler, checkMaxCount, imageOptimization, controller.patchProductProfile);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, verifyDelete, uploadHandler, checkMaxCount, imageOptimization, controller.patchProductProfile);
 
-router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductProfile);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.deleteProductProfile);
 
 module.exports = router;
