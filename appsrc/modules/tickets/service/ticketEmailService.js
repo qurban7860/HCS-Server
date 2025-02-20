@@ -89,7 +89,7 @@ class TicketEmailService {
           text = `Support Ticket&nbsp;${adminTicketUri} <br/>Description has been modified by <strong>${username || ""}</strong>.`;
         }
 
-        if (oldObj.assignee && oldObj.assignee !== ticketData?.assignee?._id) {
+        if (oldObj.assignee?.toString() != ticketData?.assignee?._id?.toString()) {
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
           text = `Support Ticket&nbsp;${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}</strong>.`;
         }
