@@ -124,12 +124,12 @@ function addIdentifierData(req) {
   const { clientInfo, ...restBody } = req.body;
   let doc = { ...restBody };
 
-  doc.createdByIdentifier = clientInfo.identifier;
+  doc.createdBy = clientInfo.identifier;
   doc.createdIP = clientInfo.ip;
   doc.createdAt = new Date();
-  doc.updatedBy = null;
-  doc.updatedIP = null;
-  doc.updatedAt = null;
+  doc.updatedBy = clientInfo.identifier;
+  doc.updatedIP = clientInfo.ip;
+  doc.updatedAt = new Date();
 
   return doc;
 }

@@ -63,28 +63,26 @@ exports.getLogs = async (req, res, next) => {
       delete this.query.searchColumn;
     }
 
-    if( !(isValidDate(this.query?.fromDate) && isValidDate(this.query?.toDate)) && this.query?.toDate > this.query?.fromDate ){
+    if( !(isValidDate(this.query?.fromDate) && isValidDate(this.query?.toDate)) && this.query?.toDate >= this.query?.fromDate ){
       return res.status(400).send("Please Provide valid date range!");
     }
 
     if(this.query?.fromDate && this.query?.toDate) {
+      const startDate = new Date(this.query.fromDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(this.query.toDate);
+      endDate.setHours(23, 59, 59, 999);
+
       if(this.query?.isCreatedAt) {
-        this.query.createdAt =  {
-          $gte: new Date(this.query.fromDate),
-          $lte: new Date(this.query.toDate)
-        };
         this.query.createdAt = {
-          $gte: new Date(this.query.createdAt.$gte.toISOString()),
-          $lte: new Date(this.query.createdAt.$lte.toISOString())
+          $gte: startDate,
+          $lte: endDate
         };
       } else {
-        this.query.date =  {
-          $gte: new Date(this.query.fromDate),
-          $lte: new Date(this.query.toDate)
-        };
         this.query.date = {
-          $gte: new Date(this.query.date.$gte.toISOString()),
-          $lte: new Date(this.query.date.$lte.toISOString())
+          $gte: startDate,
+          $lte: endDate
         };
       }
     }
