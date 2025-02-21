@@ -15,12 +15,12 @@
           <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;
             font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;
             font-size:16px;white-space:pre-line;">
-            <strong>Request Type:</strong> {{ requestType }}<br>
-            <strong>Status:</strong> {{ status }}<br>
-            <strong>Priority:</strong> {{ priority }}<br>
+            <!-- <strong>Request Type:</strong> {{ requestType }}<br> -->
+            {{ status }}
+            {{ priority }}
             <strong>Summary:</strong> {{ summary }}<br>
-            <strong>Description:</strong> {{ description }}<br>
-            <strong>Comments:</strong>
+            {{ description }}
+
             {{ comments }}<br>
           </p>
         </td>
