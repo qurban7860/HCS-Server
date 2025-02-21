@@ -170,8 +170,9 @@ class TicketEmailService {
       const username = ticketData?.updatedBy?.name || "";
 
       const comment = await this.dbservice.getObjectById(TicketComment, this.fields, req.params.id, this.populate);
+      console.log()
       const commentAudit = `<i style="display: block; text-align: right;" >${fDateTime(comment?.updatedAt)} by ${username}</i>`
-      const comments = `<strong>Comment: </strong><br/>${comment?.comment || ""}<br/>${commentAudit || ""}`
+      const comments = `<strong>Comment: </strong>${comment?.comment || ""} <br/> ${commentAudit || ""}`
       const summary = `<strong>Summary: </strong>${ticketData?.summary || ""}`;
 
       // Ensure unique emails using a Set
