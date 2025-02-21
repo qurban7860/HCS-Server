@@ -193,7 +193,7 @@ class TicketEmailService {
       const adminTicketUri = `<a href=${url} target="_blank" >
             <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
           </a>`;
-      let text = `Support Ticket ${adminTicketUri} comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+      let text = `Support Ticket ${adminTicketUri} <br/>comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
 
 
       if (!text) {
