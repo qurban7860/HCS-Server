@@ -34,7 +34,6 @@ class TicketEmailService {
       if (req.body.isNew) {
         subject = "Support Ticket Created";
       }
-      let url = adminPortalUrl;
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
@@ -42,7 +41,7 @@ class TicketEmailService {
       let status = ""
       let priority = ""
       let summary = ticketData?.summary || ""
-      let description = ticketData?.description || ""
+      let description = ""
 
       const username = ticketData?.updatedBy?.name;
 
@@ -57,9 +56,11 @@ class TicketEmailService {
         isArchived: false,
         isActive: true
       }).select("value");
+      let portalUri = `${adminPortalUrl}/support/supportTickets/${req.params.id}/view`
+      let url = portalUri;
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.id}/view" target="_blank" >
+      const adminTicketUri = `<a href=${portalUri} target="_blank" >
         <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
       </a>`;
       let text = "";
@@ -158,7 +159,6 @@ class TicketEmailService {
     try {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
-      let url = adminPortalUrl;
 
       // Determine Email Subject
       let subject = "Support Ticket Comment Updated";
@@ -188,10 +188,9 @@ class TicketEmailService {
       }).select("value");
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a 
-            href="${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view" 
-            target="_blank" 
-          >
+      let portalUri = `${adminPortalUrl}/support/supportTickets/${req.params.id}/view`
+      let url = portalUri;
+      const adminTicketUri = `<a href=${url} target="_blank" >
             <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
           </a>`;
       let text = `Support Ticket ${adminTicketUri} comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
@@ -213,7 +212,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, summary, comments });
+      const content = render(contentHTML, { text, summary, comments, url });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
