@@ -70,6 +70,7 @@ exports.postTicketComment = async (req, res, next) => {
 
     broadcastComments(this.ticketId, commentsList);
     req.body.isNew = true;
+    req.params.id = response?._id;
     await this.ticketEmailService.sendSupportTicketCommentEmail(req);
     res.status(StatusCodes.CREATED).json({ newComment: response, commentsList });
   } catch (error) {
