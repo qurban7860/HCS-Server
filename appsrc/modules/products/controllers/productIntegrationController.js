@@ -134,10 +134,10 @@ exports.syncMachineConnection = async (req, res, next) => {
   const startTime = Date.now();
   
   const {
-    "x-machineserialno": machineSerialNo,
-    "x-computerguid": computerGUID,
-    "x-ipcserialno": IPCSerialNo,
-    "x-howickportalkey": howickPortalKey
+    "machineserialno": machineSerialNo,
+    "computerguid": computerGUID,
+    "ipcserialno": IPCSerialNo,
+    "howickportalkey": howickPortalKey
   } = req.headers;
 
   const clientIP = req.headers["x-clientip"];
