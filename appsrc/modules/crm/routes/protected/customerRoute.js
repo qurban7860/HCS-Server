@@ -22,7 +22,7 @@ router.use(checkAuth, roleCheck);
 router.get(`${baseRouteForObject}/export`, controller.exportCustomersJSONForCSV);
 
 // - /api/1.0.0/crm/customers/get/:flag/:id
-router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getCustomer);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.idAndCustomer), controller.getCustomer);
 
 // - /api/1.0.0/crm/customers/
 router.get(`${baseRouteForObject}/`, controller.getCustomers);
@@ -31,10 +31,10 @@ router.get(`${baseRouteForObject}/`, controller.getCustomers);
 router.post(`${baseRouteForObject}/`, controller.postCustomer);
 
 // - /api/1.0.0/crm/customers/:id
-router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), verifyDelete, controller.patchCustomer);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.idAndCustomer), verifyDelete, controller.patchCustomer);
 
 // - /api/1.0.0/crm/customers/:id
-router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.deleteCustomer);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.idAndCustomer), controller.deleteCustomer);
 
 // - /api/1.0.0/crm/customers/getRegionCustomers
 router.get(`/getCustomersAgainstCountries`, controller.getCustomersAgainstCountries);

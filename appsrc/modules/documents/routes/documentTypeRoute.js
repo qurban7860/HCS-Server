@@ -6,7 +6,8 @@ const { Customer } = require('../models');
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../middleware/check-customer');
 const verifyDelete = require('../../../middleware/verifyDelete');
-
+const checkIDs = require('../../../middleware/validateParamIDs');
+const validate = require('../utils/validate');
 
 const controllers = require('../controllers');
 const controller = controllers.documentTypeController;
@@ -21,24 +22,24 @@ const baseRoute = `/documentType`;
 router.use(checkAuth, checkCustomer);
 
 // - /api/1.0.0/documents/documentType/:id
-router.get(`${baseRoute}/:id`,controller.getDocumentType);
+router.get(`${baseRoute}/:id`, checkIDs(validate.id), controller.getDocumentType);
 
 // - /api/1.0.0/documents/documentType/
 router.get(`${baseRoute}/`, controller.getDocumentTypes);
 
 // - /api/1.0.0/documents/documentType/:id/files
-router.get(`${baseRoute}/:id/files`, controller.getDocumentTypeFiles);
+router.get(`${baseRoute}/:id/files`, checkIDs(validate.id), controller.getDocumentTypeFiles);
 
 // - /api/1.0.0/documents/documentType/
 router.post(`${baseRoute}/`,controller.postDocumentType);
 
 // - /api/1.0.0/documents/documentType/:id
-router.patch(`${baseRoute}/:id`, verifyDelete, controller.patchDocumentType);
+router.patch(`${baseRoute}/:id`, checkIDs(validate.id), verifyDelete, controller.patchDocumentType);
 
 // - /api/1.0.0/documents/documentType/:id/merge
 router.post(`${baseRoute}/:id/merge`,controller.mergeDocumentType);
 
 // - /api/1.0.0/documents/documentType/:id
-router.delete(`${baseRoute}/:id`, controller.deleteDocumentType);
+router.delete(`${baseRoute}/:id`, checkIDs(validate.id), controller.deleteDocumentType);
 
 module.exports = router;

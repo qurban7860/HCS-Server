@@ -13,23 +13,25 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = { isActive: true, isArchived: false };
-this.orderBy = { updatedAt: -1 };  
+this.orderBy = { updatedAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
+const TicketEmailService = require('../service/ticketEmailService');
+this.ticketEmailService = new TicketEmailService();
 
 exports.getTicketComment = async (req, res, next) => {
-  try{
+  try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query.ticket = req.params.ticketId;
     this.query._id = req.params.id;
-    
+
     const result = await this.dbservice.getObject(TicketComment, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
-  } catch( error ){
+  } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.BAD_REQUEST).send( error?.message );
+    return res.status(StatusCodes.BAD_REQUEST).send(error?.message);
   }
 };
 
@@ -67,6 +69,8 @@ exports.postTicketComment = async (req, res, next) => {
     const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
 
     broadcastComments(this.ticketId, commentsList);
+    req.body.isNew = true;
+    await this.ticketEmailService.sendSupportTicketCommentEmail(req);
     res.status(StatusCodes.CREATED).json({ newComment: response, commentsList });
   } catch (error) {
     logger.error(new Error(error));
@@ -78,12 +82,12 @@ exports.patchTicketComment = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
-    logger.error(new Error(errors));
+      logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
     req.body.ticket = req.params?.ticketId;
-    
+
     const existingComment = await this.dbservice.getObjectById(TicketComment, {}, req.params.id, this.populate);
     if (existingComment.createdBy._id.toString() !== req.body.loginUser.userId) {
       return res.status(StatusCodes.FORBIDDEN).send("Only the comment author can modify this comment");
@@ -96,6 +100,8 @@ exports.patchTicketComment = async (req, res, next) => {
     const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
 
     broadcastComments(this.ticketId, commentsList);
+    await this.ticketEmailService.sendSupportTicketCommentEmail(req);
+
     res.status(StatusCodes.ACCEPTED).json({ updatedComment: response, commentsList });
   } catch (error) {
     logger.error(new Error(error));
@@ -119,7 +125,7 @@ exports.deleteTicketComment = async (req, res, next) => {
 
     broadcastComments(this.ticketId, commentsList);
     res.status(StatusCodes.OK).json({ commentsList });
-  } catch ( error ) {
+  } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Delete Comment failed!");
   }
@@ -127,18 +133,18 @@ exports.deleteTicketComment = async (req, res, next) => {
 
 exports.streamTicketComments = async (req, res) => {
   const ticket = req.params.ticketId;
-  
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  
+
   const clientId = req.body.loginUser.userId + '_' + ticket;
-  
+
   clients.set(clientId, res);
-  
+
   req.on('close', () => {
-      clients.delete(clientId);
+    clients.delete(clientId);
   });
 };
 
@@ -146,18 +152,18 @@ function broadcastComments(ticket, comments) {
   const jsonString = JSON.stringify(comments);
   const compressed = LZString.compressToUTF16(jsonString);
   clients.forEach((client, clientId) => {
-      if (clientId.includes(ticket)) {
-          client.write(`data: ${compressed}\n\n`);
-      }
+    if (clientId.includes(ticket)) {
+      client.write(`data: ${compressed}\n\n`);
+    }
   });
 }
 
 
-function getDocumentFromReq(req, reqType){
+function getDocumentFromReq(req, reqType) {
   const { loginUser } = req.body;
   const doc = reqType === "new" ? new TicketComment({}) : {};
 
-  const allowedFields = [ "ticket", "comment", "isInternal", "isActive", "isArchived" ];
+  const allowedFields = ["ticket", "comment", "isInternal", "isActive", "isArchived"];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {
@@ -165,7 +171,7 @@ function getDocumentFromReq(req, reqType){
     }
   });
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -173,7 +179,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
   if (reqType == "delete") {
     doc.isArchived = true;
     doc.isActive = false;

@@ -3,8 +3,6 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-const checkIDs = require('../../../../middleware/validateParamIDs');
-const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 

@@ -37,8 +37,9 @@ class TicketEmailService {
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
       this.query = { ticket: req.params.id, isActive: true, isArchived: false };
+      this.orderBy = { updatedAt: -1 };
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
-      const comments = commentsList?.map(c => `${c?.comment || ""} <strong>by: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
+      const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
 
       const requestType = ticketData?.requestType?.name || ""
       const status = ticketData?.status?.name || ""
@@ -122,6 +123,86 @@ class TicketEmailService {
             if (approver.email) toEmails.add(approver.email);
           });
         }
+      }
+
+      if (!text) {
+        return;
+      }
+
+      // Prepare Email Params
+      let params = {
+        toEmails: Array.from(toEmails),
+        subject,
+      };
+
+      // Read Email Template and Render
+      const contentHTML = await fs.promises.readFile(
+        path.join(__dirname, "../../email/templates/supportTicket.html"),
+        "utf8"
+      );
+
+      const content = render(contentHTML, { text, requestType, status, priority, summary, description, comments });
+      const htmlData = await renderEmail(subject, content);
+
+      // Send Email
+      params.htmlData = htmlData;
+      req.body = { ...params };
+      await this.email.sendEmail(req);
+    } catch (error) {
+      logger.error(new Error(error));
+      throw error;
+    }
+  };
+
+  sendSupportTicketCommentEmail = async (req) => {
+    try {
+      const portalUrl = process.env.PORTAL_APP_URL;
+      const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
+      // Determine Email Subject
+      let subject = "Support Ticket Comment Updated";
+      if (req.body.isNew) {
+        subject = "Support Ticket Comment Added";
+      }
+      // Fetch Ticket Data
+      const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.ticketId, this.populate);
+      this.query = { ticket: req.params.ticketId, isActive: true, isArchived: false };
+      this.orderBy = { updatedAt: -1 };
+      const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
+      const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
+
+      const requestType = ticketData?.requestType?.name || ""
+      const status = ticketData?.status?.name || ""
+      const priority = ticketData?.priority?.name || ""
+      const summary = ticketData?.summary || ""
+      const description = ticketData?.description || ""
+
+      const username = ticketData?.updatedBy?.name;
+
+      // Ensure unique emails using a Set
+      const toEmails = new Set();
+      if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
+      if (ticketData.assignee?.email && !req.body.isInternal) toEmails.add(ticketData.assignee.email);
+      // Get Ticket No Prefix
+      const regex = new RegExp("^Ticket_Prefix$", "i");
+      const configObject = await Config.findOne({
+        name: regex,
+        type: "ADMIN-CONFIG",
+        isArchived: false,
+        isActive: true
+      }).select("value");
+
+      // Generate Ticket URL for Admin Portal
+      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view" target="_blank" >
+        <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
+      </a>`;
+      let text = "";
+
+      // Check for Updates
+      if (!req.body?.isNew) {
+        text = `Support Ticket ${adminTicketUri}<br/>Comment has been modified by <strong>${username || ""}</strong>.`;
+
+      } else {
+        text = `Support Ticket ${adminTicketUri}<br/>Comment has been Added by <strong>${username || ""}</strong>.`;
       }
 
       if (!text) {
