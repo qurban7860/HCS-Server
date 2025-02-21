@@ -34,6 +34,7 @@ class TicketEmailService {
       if (req.body.isNew) {
         subject = "Support Ticket Created";
       }
+      let url = adminPortalUrl;
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
@@ -140,7 +141,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, requestType, status, priority, summary, description });
+      const content = render(contentHTML, { text, requestType, status, priority, summary, description, url });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
@@ -157,6 +158,8 @@ class TicketEmailService {
     try {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
+      let url = adminPortalUrl;
+
       // Determine Email Subject
       let subject = "Support Ticket Comment Updated";
       if (req.body.isNew) {
