@@ -34,12 +34,9 @@ class TicketEmailService {
       if (req.body.isNew) {
         subject = "Support Ticket Created";
       }
+      let url = adminPortalUrl;
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
-      this.query = { ticket: req.params.id, isActive: true, isArchived: false };
-      this.orderBy = { updatedAt: -1 };
-      const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
-      const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
 
       let requestType = ticketData?.requestType?.name || ""
       let status = ""
@@ -144,7 +141,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, requestType, status, priority, summary, description, comments });
+      const content = render(contentHTML, { text, requestType, status, priority, summary, description, url });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
@@ -161,6 +158,8 @@ class TicketEmailService {
     try {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
+      let url = adminPortalUrl;
+
       // Determine Email Subject
       let subject = "Support Ticket Comment Updated";
       if (req.body.isNew) {
