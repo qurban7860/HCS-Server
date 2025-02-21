@@ -41,11 +41,11 @@ class TicketEmailService {
       const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
       const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
 
-      const requestType = ticketData?.requestType?.name || ""
-      const status = ticketData?.status?.name || ""
-      const priority = ticketData?.priority?.name || ""
-      const summary = ticketData?.summary || ""
-      const description = ticketData?.description || ""
+      let requestType = ticketData?.requestType?.name || ""
+      let status = ""
+      let priority = ""
+      let summary = ticketData?.summary || ""
+      let description = ticketData?.description || ""
 
       const username = ticketData?.updatedBy?.name;
 
@@ -72,10 +72,12 @@ class TicketEmailService {
 
         if (oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri}<br/>Status has been modified by <strong>${username || ""}</strong>.`;
+          status = `<strong>Status: </strong>${ticketData?.status?.name || ""}<br>`;
         }
 
         if (oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Priority has been modified by <strong>${username || ""}</strong>.`;
+          priority = `<strong>Priority: </strong>${ticketData?.priority?.name || ""}<br>`;
         }
 
         if (oldObj?.reporter && oldObj?.reporter?.toString() != ticketData.reporter?._id?.toString()) {
@@ -88,6 +90,7 @@ class TicketEmailService {
 
         if (oldObj?.description && oldObj?.description?.trim() !== ticketData.description?.trim()) {
           text = `Support Ticket ${adminTicketUri} <br/>Description has been modified by <strong>${username || ""}</strong>.`;
+          description = `<strong>Description: </strong>${ticketData?.description || ""}<br>`;
         }
 
         if (oldObj.assignee?.toString() != ticketData?.assignee?._id?.toString()) {
@@ -161,22 +164,16 @@ class TicketEmailService {
       // Determine Email Subject
       let subject = "Support Ticket Comment Updated";
       if (req.body.isNew) {
-        subject = "Support Ticket Comment Added";
+        subject = "Support Ticket Comment Posted";
       }
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.ticketId, this.populate);
-      this.query = { ticket: req.params.ticketId, isActive: true, isArchived: false };
-      this.orderBy = { updatedAt: -1 };
-      const commentsList = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
-      const comments = commentsList?.map(c => `${c?.comment || ""} <br/><strong>By: </strong> ${c?.updatedBy?.name || ""} / ${fDateTime(c?.updatedAt)} <br/>`).join("<br/>");
+      const username = ticketData?.updatedBy?.name || "";
 
-      const requestType = ticketData?.requestType?.name || ""
-      const status = ticketData?.status?.name || ""
-      const priority = ticketData?.priority?.name || ""
-      const summary = ticketData?.summary || ""
-      const description = ticketData?.description || ""
-
-      const username = ticketData?.updatedBy?.name;
+      const comment = await this.dbservice.getObjectById(TicketComment, this.fields, req.params.id, this.populate);
+      const commentAudit = `<i style="display: block; text-align: right;" >${fDateTime(comment?.updatedAt)} by ${username}</i>`
+      const comments = `<strong>Comment: </strong><br/>${comment?.comment || ""}<br/>${commentAudit || ""}`
+      const summary = `<strong>Summary: </strong>${ticketData?.summary || ""}`;
 
       // Ensure unique emails using a Set
       const toEmails = new Set();
@@ -192,18 +189,14 @@ class TicketEmailService {
       }).select("value");
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a href="${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view" target="_blank" >
-        <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
-      </a>`;
-      let text = "";
+      const adminTicketUri = `<a 
+            href="${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view" 
+            target="_blank" 
+          >
+            <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
+          </a>`;
+      let text = `Support Ticket ${adminTicketUri} comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
 
-      // Check for Updates
-      if (!req.body?.isNew) {
-        text = `Support Ticket ${adminTicketUri}<br/>Comment has been modified by <strong>${username || ""}</strong>.`;
-
-      } else {
-        text = `Support Ticket ${adminTicketUri}<br/>Comment has been Added by <strong>${username || ""}</strong>.`;
-      }
 
       if (!text) {
         return;
@@ -221,7 +214,7 @@ class TicketEmailService {
         "utf8"
       );
 
-      const content = render(contentHTML, { text, requestType, status, priority, summary, description, comments });
+      const content = render(contentHTML, { text, summary, comments });
       const htmlData = await renderEmail(subject, content);
 
       // Send Email
