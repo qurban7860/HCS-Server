@@ -69,31 +69,31 @@ class TicketEmailService {
       if (!req.body?.isNew && oldObj) {
 
         if (oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString()) {
-          text = `Support Ticket ${adminTicketUri}<br/>Status has been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri}<br/>Status has been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           status = `<strong>Status: </strong>${ticketData?.status?.name || ""}<br>`;
         }
 
         if (oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString()) {
-          text = `Support Ticket ${adminTicketUri} <br/>Priority has been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <br/>Priority has been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           priority = `<strong>Priority: </strong>${ticketData?.priority?.name || ""}<br>`;
         }
 
         if (oldObj?.reporter && oldObj?.reporter?.toString() != ticketData.reporter?._id?.toString()) {
-          text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
         }
 
         if (oldObj?.summary && oldObj?.summary?.trim() !== ticketData.summary?.trim()) {
-          text = `Support Ticket ${adminTicketUri} <br/>Summary has been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <br/>Summary has been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
         }
 
         if (oldObj?.description && oldObj?.description?.trim() !== ticketData.description?.trim()) {
-          text = `Support Ticket ${adminTicketUri} <br/>Description has been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <br/>Description has been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           description = `<strong>Description: </strong>${ticketData?.description || ""}<br>`;
         }
 
         if (oldObj.assignee?.toString() != ticketData?.assignee?._id?.toString()) {
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
-          text = `Support Ticket ${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
         }
 
         if (
@@ -104,7 +104,7 @@ class TicketEmailService {
             !oldObj?.approvers?.every(id => ticketData?.approvers?.some(appr => appr._id?.toString() == id?.toString()))
           )
         ) {
-          text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""}</strong>.`;
+          text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""}(${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
@@ -170,7 +170,6 @@ class TicketEmailService {
       const username = ticketData?.updatedBy?.name || "";
 
       const comment = await this.dbservice.getObjectById(TicketComment, this.fields, req.params.id, this.populate);
-      console.log()
       const commentAudit = `<i style="display: block; text-align: right;" >${fDateTime(comment?.updatedAt)} by ${username}</i>`
       const comments = `<strong>Comment: </strong>${comment?.comment || ""} <br/> ${commentAudit || ""}`
       const summary = `<strong>Summary: </strong>${ticketData?.summary || ""}`;
