@@ -332,11 +332,11 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     requestHeaders: req.headers,
     machine: machine ? [machine._id] : [],
     customer: machine?.customer,
-    apiType: "MACHINE-INTEGRATION",
+    apiType: "MACHINE-SYNC",
     responseTime: `${Date.now() - startTime}`,
     response: JSON.stringify(responseData.body),
     responseStatusCode: responseData.statusCode,
-    additionalContextualInformation: responseData.context,
+    responseMessage: responseData.context,
     createdIP: req?.body?.loginUser?.userIP || createdIP,
     createdByIdentifier: req?.body?.loginUser?.userId || createdBy || null,
   });
