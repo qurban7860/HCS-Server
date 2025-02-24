@@ -1,17 +1,17 @@
 const express = require('express');
 const { check } = require('express-validator');
-const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
-const controllers = require('../controllers');
+const checkAuth = require('../../../../middleware/check-auth');
+const checkCustomer = require('../../../../middleware/check-customer');
+const controllers = require('../../controllers');
 const controller = controllers.apiLogController;
-const verifyDelete = require('../../../middleware/verifyDelete');
+const verifyDelete = require('../../../../middleware/verifyDelete');
 
 const router = express.Router();
 
 //  - base route for module
 // - /api/1.0.0/apiclient/
 
-const baseRouteForObject = `/logs/`; 
+const baseRouteForObject = `/logs/`;
 
 router.use(checkAuth, checkCustomer);
 
