@@ -107,7 +107,7 @@ exports.postApiLog = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType) {
-  const { machine, customer, apiType, refUUID, responseTime, response, responseStatusCode, additionalContextualInformation, loginUser } = req.body;
+  const { machine, customer, apiType, refUUID, responseTime, response, responseStatusCode, responseMessage, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType === 'new') {
@@ -147,8 +147,8 @@ function getDocumentFromReq(req, reqType) {
     doc.responseStatusCode = responseStatusCode;
   }
 
-  if (additionalContextualInformation !== undefined) {
-    doc.additionalContextualInformation = additionalContextualInformation;
+  if (responseMessage !== undefined) {
+    doc.responseMessage = responseMessage;
   }
 
   if (reqType === 'new' && loginUser !== undefined) {
