@@ -176,7 +176,7 @@ function addIdentifierData(req) {
   const { clientInfo, ...restBody } = req.body;
   let doc = { ...restBody };
 
-  doc.createdBy = clientInfo.identifier;
+  doc.createdByIdentifier = clientInfo.identifier;
   doc.createdIP = clientInfo.ip;
   doc.createdAt = new Date();
   doc.updatedBy = clientInfo.identifier;
