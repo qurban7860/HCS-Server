@@ -179,7 +179,7 @@ function addIdentifierData(req) {
   doc.createdByIdentifier = clientInfo.identifier;
   doc.createdIP = clientInfo.ip;
   doc.createdAt = new Date();
-  doc.updatedBy = clientInfo.identifier;
+  doc.updatedByIdentifier = clientInfo.identifier;
   doc.updatedIP = clientInfo.ip;
   doc.updatedAt = new Date();
 
