@@ -338,6 +338,7 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     responseStatusCode: responseData.statusCode,
     responseMessage: responseData.context,
     createdIP: req?.body?.loginUser?.userIP || createdIP,
+    createdAt: new Date(),
     createdByIdentifier: req?.body?.loginUser?.userId || createdBy || null,
   });
   return apiLog.save();
