@@ -10,6 +10,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let apiClientDBService = require('../service/apiClientDBService')
+const dbFetchPaginatedResults = require('../../db/dbFetchPaginatedResults');
 this.dbservice = new apiClientDBService();
 
 const { apilog } = require('../models');
@@ -80,12 +81,21 @@ exports.getApiLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-    console.log('Fields:', this.fields);
-    console.log('Query:', this.query);
-    console.log('Order By:', this.orderBy);
-    console.log('Populate:', this.populate);
+    // const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
 
-    const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
+    const page = parseInt(req.body.page) + 1 || 1;
+    const pageSize = parseInt(req.body.pageSize) || 10;
+
+    const response = await dbFetchPaginatedResults(
+      apilog,
+      this.query,
+      this.fields,
+      this.orderBy,
+      this.populate,
+      page,
+      pageSize
+    );
+
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
