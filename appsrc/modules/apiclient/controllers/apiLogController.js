@@ -72,8 +72,8 @@ exports.getApiLogs = async (req, res, next) => {
       endDate.setHours(23, 59, 59, 999);
 
       this.query.createdAt = {
-        $gte: startDate,
-        $lte: endDate
+        $gte: startDate.toISOString(),
+        $lte: endDate.toISOString()
       };
     }
 
