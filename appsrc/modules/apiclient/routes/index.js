@@ -12,16 +12,15 @@ const protectedRoutes = {
 };
 
 exports.registerapiClientRoutes = (app, apiPath) => {
-    const rootPathForModule = `${apiPath}/apiclient`;
 
     // public/nonAuth routes mounted
     Object.entries(publicRoutes).forEach(([name, router]) => {
-        app.use(`${rootPathForModule}/public`, router);
+        app.use(`${apiPath}/public/apiclient`, router);
     });
 
     // Mount protected routes with auth middleware
     Object.entries(protectedRoutes).forEach(([name, router]) => {
-        app.use(`${rootPathForModule}`, router);
+        app.use(`${apiPath}/apiclient`, router);
     });
 
 };
