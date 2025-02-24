@@ -80,6 +80,11 @@ exports.getApiLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
+    console.log('Fields:', this.fields);
+    console.log('Query:', this.query);
+    console.log('Order By:', this.orderBy);
+    console.log('Populate:', this.populate);
+
     const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
