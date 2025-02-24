@@ -64,6 +64,22 @@ exports.getApiLogs = async (req, res, next) => {
       delete this.query.fields;
     }
 
+    if(this.query?.fromDate && this.query?.toDate) {
+      const startDate = new Date(this.query.fromDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(this.query.toDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      this.query.createdAt = {
+        $gte: startDate,
+        $lte: endDate
+      };
+    }
+
+    delete this.query?.fromDate;
+    delete this.query?.toDate;
+
     const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
