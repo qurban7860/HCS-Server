@@ -166,6 +166,7 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     responseStatusCode: responseData.statusCode,
     responseMessage: responseData.context,
     noOfRecordsUpdated: responseData?.noOfRecordsUpdated || 0,
+    createdAt: new Date(),
     createdIP: req?.clientInfo?.ip || createdIP,
     createdByIdentifier: req?.clientInfo?.identifier || createdBy || null,
   });
