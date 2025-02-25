@@ -9,6 +9,6 @@ const router = express.Router();
 router.use(verifyMachineAuth);
 
 router.post('/importLogs', controller.postPublicLog);
-router.post('/machineLogs', controller.postPublicLog);
+router.post('/machineLog', controller.postPublicLog);
 
 module.exports = router;

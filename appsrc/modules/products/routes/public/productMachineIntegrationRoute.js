@@ -11,5 +11,6 @@ const router = express.Router();
 const baseRouteForMachineApi = `/machines`; 
 
 router.post(`${baseRouteForMachineApi}/syncMachineConnection`, controller.syncMachineConnection);
+router.post(`${baseRouteForMachineApi}/machineSync`, controller.syncMachineConnection);
 
 module.exports = router;

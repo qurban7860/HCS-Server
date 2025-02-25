@@ -5,453 +5,83 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/public/apiclient/productConfigurations
+  url: {{baseUrl}}/productLogs/public/machineLog
   body: json
   auth: none
 }
 
 headers {
-  ~machineSerialNo: 21004
-  ~computerGUID: efefsefsdg
-  ~IPCSerialNo: gdsgfdsgs
-  ~howickPortalKey: HZ13QSM2D8M973N1-22BI87R1AFHSCS5-9HZ13QSM2D8M973-N122BI87R1AFHSC-S59
+  machineSerialNo: 21133
+  computerGUID: efewgerge
+  IPCSerialNo: fdbfdbfdb
+  howickPortalKey: TJFE1CQL5DR2LCHT-YJTE21Y02V1Y084-ETJFE1CQL5DR2LC-HTYJTE21Y02V1Y0-84E
 }
 
 body:json {
   {
-    "inputGUID":  "64ae5b77dc483f3733994ac3",
-    "inputSerialNo": "11570",
-    "isManufacture":  false,
-    "configuration": {
-    "ConfigurationFormat": {
-      "ConfigurationVersion": "1.0.1",
-      "HLCVersion": "1.4.18"
+    "logs": [
+    {
+      "date": "2025-02-24T07:37:40",
+      "operator": "",
+      "coilBatchName": "GG69816",
+      "ccThickness": "1.15",
+      "coilLength": "0",
+      "frameSet": "",
+      "componentLabel": "initial waste",
+      "webWidth": "89.00",
+      "flangeHeight": "41.00",
+      "profileShape": "C",
+      "componentLength": "0.00",
+      "waste": "2739.00",
+      "time": "13.744"
     },
-    "WindowMode": {
-      "On": "0",
-      "Width": "1024",
-      "Height": "768"
+    {
+      "date": "2025-02-24T07:39:30",
+      "operator": "",
+      "coilBatchName": "GG69816",
+      "ccThickness": "1.15",
+      "coilLength": "0",
+      "frameSet": "MP-L02-008/P2 L2",
+      "componentLabel": "W-G02-3",
+      "webWidth": "149.99",
+      "flangeHeight": "45.00",
+      "profileShape": "C",
+      "componentLength": "3930.00",
+      "waste": "3.00",
+      "time": "17.556"
     },
-    "Profile": {
-      "DisplayProfileName": "false"
+    {
+      "date": "2025-02-24T07:41:19",
+      "operator": "",
+      "coilBatchName": "GG69816",
+      "ccThickness": "1.15",
+      "coilLength": "0",
+      "frameSet": "MP-L02-008/P2 L2",
+      "componentLabel": "W-G02-6",
+      "webWidth": "149.99",
+      "flangeHeight": "45.00",
+      "profileShape": "C",
+      "componentLength": "3926.00",
+      "waste": "3.00",
+      "time": "14.087"
     },
-    "Profile_1": {
-      "Size": "41.30X89.00",
-      "Name[]": "S8908"
-    },
-    "Profile_2": {
-      "Size": "41.30x100.00"
-    },
-    "Profile_3": {
-      "Size": "41.30x150.00"
-    },
-    "LLCSocketData": {
-      "address": "192.168.10.10",
-      "port": "502"
-    },
-    "LanguageSelect": {
-      "Language": "en",
-      "DefaultSetting": "false"
-    },
-    "MeasurementSystem": {
-      "DisplayImperialUnits": "false"
-    },
-    "MachineParameters": {
-      "VariableSpeed": "100",
-      "PressureSetting": "126",
-      "KerfWidth": "3",
-      "EncoderScaleFactor": "0.050304",
-      "ScaleFactor": "0.050255",
-      "WasteFeature": "32840",
-      "FaultConditions": "281474976710655",
-      "DiagnosticInputs": "4293930495",
-      "DefaultManualComponentLength": "2000",
-      "MachineType": "0",
-      "NewCrimp": "true",
-      "TrussOn": "true",
-      "NotchWaste": "true",
-      "DisplayLipButton": "true",
-      "DisplayCrimpTool": "false",
-      "DisplayRFWOInput": "false",
-      "LipAndNotch": "false",
-      "StackerTable": "false",
-      "RecordStopReason": "false",
-      "CheckMaterialThickness": "true",
-      "DefaultFlangeHeight": "41",
-      "DefaultWebWidth": "89",
-      "DisplayCertificationLabel": "true",
-      "DriveAmps": "8.2",
-      "BurnIn": "false",
-      "Product": "FRAMA",
-      "CheckForCombinedTool": "undefined",
-      "DisplayDecoilerFeedInStatus": "false",
-      "CrimpingTime": "20",
-      "EnableDelay": "20",
-      "LipWasteLength": "1300",
-      "ToolDownDelay": "50",
-      "LipCrimpTwoWayCheckValveInstalled": "false",
-      "CrimpTwoWayCheckValveInstalled": "true",
-      "LipTwoWayCheckValveInstalled": "true",
-      "IsSelectableIniFileOn": "false",
-      "DisplayDecoilerFeedInState": "false",
-      "StartWasteLength": "0",
-      "IsCoilWidthRequired": "true"
-    },
-    "LLCParameters": {
-      "TargetWindow": "20",
-      "CreepSpeed": "300",
-      "SpeedAdjust1": "38",
-      "SpeedAdjust2": "2",
-      "LipInSol": "5",
-      "LipOutSol": "6",
-      "LipInProx": "0",
-      "CrimpInSol": "0",
-      "CrimpOutSol": "0",
-      "CrimpLeftProx": "0",
-      "CrimpRightProx": "0",
-      "DecoilerExpand1": "14",
-      "DecoilerRetract1": "15",
-      "DecoilerExpand2": "27",
-      "DecoilerRetract2": "28",
-      "DecoilerSelector": "0",
-      "DecoilerScalper": "0",
-      "AirMin": "9",
-      "WasteInsert": "60",
-      "FloorjoistTab": "0",
-      "NotchSequence": "0",
-      "DancerArmGround": "11880",
-      "DancerArmFault": "26000",
-      "DecoilerScalperProx": "0",
-      "LipDisengagedTime": "3000",
-      "LipEngagedTime": "4500",
-      "DecoilerScalperMotorTol": "0",
-      "LipInOilBurstHoldTime": "30",
-      "LipInOilBurstControlDelayOffTime": "60",
-      "ThresholdForCrimpingAndWasteInsert": "41",
-      "DecoilerLightLocation": "0",
-      "LipLocation": "1800",
-      "RibLocation": "1977",
-      "ProfileTransitionWaste": "2430"
-    },
-    "LabelPrinter": {
-      "Installed": "true",
-      "PrintDotSize": "1000",
-      "LeadingMarginWidth": "40",
-      "PrinterType": "2",
-      "PrinterOffset": "2270"
-    },
-    "EmailList": {
-      "Email[]": "vgjjbb@jm.com"
-    },
-    "ToolPositionLimits": {
-      "ToolPositionMax": "6000"
-    },
-    "ToolDef_1": {
-      "Installed": "true",
-      "ReferenceName": "SHEAR",
-      "Position": "2434.7",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "1",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "false",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "true"
-    },
-    "ToolDef_2": {
-      "Installed": "true",
-      "ReferenceName": "DIMPLE",
-      "Position": "2164",
-      "HomeProx": "2",
-      "DownProx": "0",
-      "DownSol": "7",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_3": {
-      "Installed": "true",
-      "ReferenceName": "SWAGE",
-      "Position": "2333",
-      "HomeProx": "4",
-      "DownProx": "0",
-      "DownSol": "8",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_4": {
-      "Installed": "true",
-      "ReferenceName": "SERVICE_HOLE",
-      "Position": "298.3",
-      "HomeProx": "1",
-      "DownProx": "0",
-      "DownSol": "9",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "126",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_5": {
-      "Installed": "true",
-      "ReferenceName": "LIP_CUT",
-      "Position": "154.3",
-      "HomeProx": "7",
-      "DownProx": "0",
-      "DownSol": "11",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_6": {
-      "Installed": "true",
-      "ReferenceName": "NOTCH",
-      "Position": "154.3",
-      "HomeProx": "3",
-      "DownProx": "0",
-      "DownSol": "18",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "126",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_7": {
-      "Installed": "true",
-      "ReferenceName": "WEB",
-      "Position": "460.3",
-      "HomeProx": "5",
-      "DownProx": "0",
-      "DownSol": "12",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_10": {
-      "Installed": "false",
-      "ReferenceName": "TOOL10",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "0",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_11": {
-      "Installed": "false",
-      "ReferenceName": "BOLT",
-      "Position": "379.8",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "19",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_12": {
-      "Installed": "false",
-      "ReferenceName": "TOOL12",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "0",
-      "UpSol": "0",
-      "Time": "300",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_13": {
-      "Installed": "false",
-      "ReferenceName": "TOOL13",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "1",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_14": {
-      "Installed": "false",
-      "ReferenceName": "TOOL14",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "0",
-      "UpSol": "0",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_15": {
-      "Installed": "false",
-      "ReferenceName": "SIDE_TRUSS_L",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "20",
-      "UpSol": "21",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_16": {
-      "Installed": "false",
-      "ReferenceName": "SIDE_TRUSS_R",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "22",
-      "UpSol": "23",
-      "Time": "3",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "ToolDef_17": {
-      "Installed": "false",
-      "ReferenceName": "END_TRUSS",
-      "Position": "0",
-      "HomeProx": "0",
-      "DownProx": "0",
-      "DownSol": "13",
-      "UpSol": "0",
-      "Time": "300",
-      "AnalogueRange": "0",
-      "AnalogueSetpoint": "0",
-      "Pressure": "0",
-      "CanAssignOpToComponent": "true",
-      "ServiceSetpoint": "300000",
-      "LinkedTool": "false"
-    },
-    "Analogue_Display_0": {
-      "Installed": "true",
-      "DisplayXTime": "2.5",
-      "DisplayYValue": "360",
-      "PollingTime": "Fast",
-      "Scale": "131"
-    },
-    "Analogue_Display_1": {
-      "Installed": "true",
-      "DisplayXTime": "3600",
-      "DisplayYValue": "15",
-      "PollingTime": "Slow",
-      "Scale": "1092"
-    },
-    "Analogue_Display_2": {
-      "Installed": "true",
-      "DisplayXTime": "30",
-      "DisplayYValue": "33000",
-      "PollingTime": "Slow",
-      "Scale": "1"
-    },
-    "Analogue_Display_3": {
-      "Installed": "false",
-      "DisplayXTime": "30",
-      "DisplayYValue": "100",
-      "PollingTime": "Slow",
-      "Scale": "1"
-    },
-    "Analogue_Display_4": {
-      "Installed": "true",
-      "DisplayXTime": "30",
-      "DisplayYValue": "25",
-      "PollingTime": "Slow",
-      "Scale": "10"
-    },
-    "Analogue_Display_5": {
-      "Installed": "true",
-      "DisplayXTime": "30",
-      "DisplayYValue": "55",
-      "PollingTime": "Slow",
-      "Scale": "10"
-    },
-    "Switch_0": {
-      "Show": "false"
-    },
-    "Switch_1": {
-      "Show": "false"
-    },
-    "Switch_2": {
-      "Show": "false"
-    },
-    "Switch_3": {
-      "Show": "false"
-    },
-    "Switch_4": {
-      "Show": "false"
-    },
-    "Settings": {
-      "Setting_1": "0",
-      "Setting_2": "0",
-      "Setting_3": "0",
-      "Setting_4": "0",
-      "Setting_5": "0"
-    },
-    "TextSizeSelect": {
-      "Size": "S"
+    {
+      "date": "2025-02-24T07:41:42",
+      "operator": "",
+      "coilBatchName": "GG69816",
+      "ccThickness": "1.15",
+      "coilLength": "0",
+      "frameSet": "MP-L02-008/P2 L2",
+      "componentLabel": "W-G02-8",
+      "webWidth": "149.99",
+      "flangeHeight": "45.00",
+      "profileShape": "C",
+      "componentLength": "3926.00",
+      "waste": "3.00",
+      "time": "23.538"
     }
-  }}
+  ], 
+    "version": "v1.1.66",
+    "type": "ERP"
+  }
 }
