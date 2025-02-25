@@ -2,7 +2,7 @@ const Yup = require('yup');
 const logger = require('../modules/config/logger');
 
 function getDocFromReq(req, reqType, Model) {
-  const { loginUser, clientInfo = null, ...otherFields } = req.body;
+  const { loginUser, ...otherFields } = req.body;
   let doc;
 
   if (reqType && reqType == "new") {
