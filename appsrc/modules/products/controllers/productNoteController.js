@@ -106,11 +106,6 @@ exports.patchProductNote = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
 
-    const existingNote = await this.dbservice.getObjectById(ProductNote, {}, req.params.id, this.populate);
-    if (existingNote.createdBy._id.toString() !== req.body.loginUser.userId) {
-      return res.status(StatusCodes.FORBIDDEN).send("Only the note author can modify this note");
-    }
-
     const response = await this.dbservice.patchObject(ProductNote, req.params.id, getDocumentFromReq(req));
 
     this.machine = req.params.machineId;
