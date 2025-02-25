@@ -7,7 +7,7 @@ const verifyMachineAuth = async (req, res, next) => {
     return next();
   }
   try {
-    const { 
+    const {
       "machineserialno": machineSerialNo,
       "computerguid": computerGUID,
       "ipcserialno": IPCSerialNo,
@@ -28,24 +28,24 @@ const verifyMachineAuth = async (req, res, next) => {
     }).populate(['status', 'customer']);
 
     if (!machine) {
-      return res.status(StatusCodes.NOT_FOUND).json({ 
-        message: "Machine not found or has been transferred or decommissioned" 
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Machine not found or has been transferred or decommissioned"
       });
     }
 
     if (!machine.machineIntegrationSyncStatus?.syncStatus) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({ 
-        message: "Machine integration not synchronized" 
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Machine integration not synchronized"
       });
     }
 
     const latestPortalKey = machine.portalKey[0]?.key;
 
-    if (machine.computerGUID !== computerGUID || 
-        machine.IPC_SerialNo !== IPCSerialNo || 
-        latestPortalKey !== howickPortalKey) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({ 
-        message: "Invalid machine credentials" 
+    if (machine.computerGUID !== computerGUID ||
+      machine.IPC_SerialNo !== IPCSerialNo ||
+      latestPortalKey !== howickPortalKey) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Invalid machine credentials"
       });
     }
 

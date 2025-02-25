@@ -19,6 +19,9 @@ const baseRoute = `/customers/:customerId/contacts`;
 
 router.use(checkAuth, roleCheck);
 
+// - /api/1.0.0/crm/customers/contacts/
+router.get('/customers/contacts/all', controller.getCustomerContacts);
+
 // - /api/1.0.0/crm/contacts/search
 router.get(`${baseRoute}/search`, controller.searchCustomerContacts);
 
@@ -29,7 +32,7 @@ router.get(`${baseRoute}/export`, controller.exportContactsJSONForCSV);
 router.get(`${baseRoute}/:id`, checkIDs(validate.customerIdAndId), controller.getCustomerContact);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/
-router.get(`${baseRoute}/`, controller.getCustomerContacts);
+router.get(`${baseRoute}/`, checkIDs(validate.customerId), controller.getCustomerContacts);
 
 // - /api/1.0.0/crm/customers/:customerId/contacts/
 router.post(`${baseRoute}/`, checkIDs(validate.customerId), controller.postCustomerContact);

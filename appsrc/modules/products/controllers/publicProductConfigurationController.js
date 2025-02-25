@@ -1,91 +1,27 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-
-const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
-let apiClientDBService = require('../service/apiClientDBService')
-this.dbservice = new apiClientDBService();
+let productDBService = require('../service/productDBService')
+this.dbservice = new productDBService();
 
-const { Product, ProductTechParam } = require('../../products/models');
-
-const { ProductConfiguration } = require('../models');
-
-
+const { ProductConfiguration, Product, ProductTechParam } = require('../models');
 
 const apiLogController = require('../../apiclient/controllers/apiLogController');
 
-const productTechParamValueController = require('../../products/controllers/productTechParamValueController');
+const productTechParamValueController = require('./productTechParamValueController');
 
 const ObjectId = require('mongoose').Types.ObjectId;
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
-this.fields = {};
-this.query = {};
-this.orderBy = { createdAt: -1 };
-//this.populate = 'category';
-this.populate = [
-  { path: 'createdBy', select: 'name' },
-  { path: 'updatedBy', select: 'name' }
-];
-//this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
-
-
-exports.getProductConfiguration = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductConfiguration, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      response.configuration = replaceDotsWithSlashes(response.configuration);
-      res.json(response);
-    }
-  }
-};
-
-exports.getProductConfigurations = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};
-  this.orderBy = { createdAt: -1 };
-  if (this.query.orderBy) {
-    this.orderBy = this.query.orderBy;
-    delete this.query.orderBy;
-  }
-  this.dbservice.getObjectList(req, ProductConfiguration, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
-  }
-};
-
-exports.deleteProductConfiguration = async (req, res, next) => {
-  this.dbservice.deleteObject(ProductConfiguration, req.params.id, res, callbackFunc);
-  function callbackFunc(error, result) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-    }
-  }
-};
-
 exports.postProductConfiguration = async (req, res, next) => {
   const start = Date.now();
+
   const errors = validationResult(req);
-
   req.body.apiType = "INI";
-
+  req.body.clientInfo = req.clientInfo;
   req.body.response = "APPROVED";
   const roleAPIFound = true;
   // const roleAPIFound = req.body.loginUser.roleTypes.filter(type => type === 'APIAccess'); if(roleAPIFound) {req.body.response = "APPROVED"} else {req.body.response = "DENIED"}; 
@@ -102,7 +38,7 @@ exports.postProductConfiguration = async (req, res, next) => {
     }
 
     if (req.body.machine && roleAPIFound) {
-      let productConfObjec = getDocumentFromReq(req, 'new');
+      let productConfObjec = getDocFromReq(req);
 
       const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('code category').lean();
 
@@ -135,12 +71,11 @@ exports.postProductConfiguration = async (req, res, next) => {
             let req_ = { body: { ...req.body } };
             req_.body.techParam = datatoadd._id;
             req_.body.techParamValue = datatoadd.codeValues[index];
-            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_, 'new');
+            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_, "new");
             await objectReceived.save();
           }
         }
       }));
-
       productConfObjec.configuration = replaceDotsWithSlashes(productConfObjec.configuration);
       const date = productConfObjec._id.getTimestamp();
       productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
@@ -162,7 +97,10 @@ exports.postProductConfiguration = async (req, res, next) => {
       res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!" : errorCode);
     }
 
-    const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req, 'new'); apiLogObject.save();
+    const end = Date.now();
+    req.body.responseTime = end - start;
+    let apiLogObject = apiLogController.getDocumentFromReq(req, "new");
+    apiLogObject.save();
   }
 };
 
@@ -191,33 +129,12 @@ function replaceDotsWithSlashes(obj) {
   return newObj;
 }
 
-exports.patchProductConfiguration = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    this.dbservice.patchObject(ProductConfiguration, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-      }
-    }
-  }
-};
 
+function getDocFromReq(req) {
 
-function getDocumentFromReq(req, reqType) {
-  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, isActive, isArchived, loginUser } = req.body;
-  let doc = {};
-  if (reqType && reqType == "new") {
-    doc = new ProductConfiguration({});
-  }
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, clientInfo } = req.body;
+
+  let doc = new ProductConfiguration({});
 
   if ("type" in req.body) {
     doc.type = type;
@@ -261,14 +178,13 @@ function getDocumentFromReq(req, reqType) {
     doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
   }
 
-  if (reqType == "new" && "loginUser" in req.body) {
-    doc.createdBy = loginUser.userId;
-    doc.updatedBy = loginUser.userId;
-    doc.createdIP = loginUser.userIP;
-    doc.updatedIP = loginUser.userIP;
-  } else if ("loginUser" in req.body) {
-    doc.updatedBy = loginUser.userId;
-    doc.updatedIP = loginUser.userIP;
+  if ("clientInfo" in req.body) {
+    doc.createdByIdentifier = clientInfo.identifier;
+    doc.createdIP = clientInfo.ip;
+    doc.createdAt = new Date();
+    doc.updatedByIdentifier = clientInfo.identifier;
+    doc.updatedIP = clientInfo.ip;
+    doc.updatedAt = new Date();
   }
   return doc;
 }

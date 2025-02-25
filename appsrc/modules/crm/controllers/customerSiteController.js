@@ -83,7 +83,7 @@ exports.getCustomerSites = async (req, res, next) => {
 
   this.customerId = req.params.customerId;
   let customerObj;
-  if (this.customerId && this.customerId !== "undefined") {
+  if (this.customerId) {
     this.query.customer = this.customerId;
     customerObj = await Customer.findOne({ _id: this.customerId }).lean().select('mainSite');
   }

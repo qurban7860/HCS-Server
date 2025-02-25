@@ -1,4 +1,4 @@
 module.exports = {
     apiLogController: require('./apiLogController'),
-    productConfigurationController: require('./productConfigurationController'),
+    // productConfigurationController: require('./productConfigurationController'),
 }

@@ -1,6 +1,6 @@
 const express = require('express');
 
-const verifyMachineIntegration = require('../../../../middleware/verifyMachineIntegration');
+const verifyMachineAuth = require('../../../../middleware/verifyMachineIntegration');
 const controllers = require('../../controllers');
 const controller = controllers.productConfigurationController;
 
@@ -11,7 +11,7 @@ const router = express.Router();
 
 const baseRouteForObject = `/productConfigurations`;
 
-
-router.post(`${baseRouteForObject}`, verifyMachineIntegration, controller.postProductConfiguration);
+router.use(verifyMachineAuth);
+router.post(`${baseRouteForObject}`, controller.postProductConfiguration);
 
 module.exports = router;
