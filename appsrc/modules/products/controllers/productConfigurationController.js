@@ -1,22 +1,13 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-
-const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
 const _ = require('lodash');
 
-let apiClientDBService = require('../service/apiClientDBService')
-this.dbservice = new apiClientDBService();
+let productDBService = require('../service/productDBService')
+this.dbservice = new productDBService();
 
-const { Product, ProductTechParam } = require('../../products/models');
-
-const { ProductConfiguration } = require('../models');
-
-
+const { ProductConfiguration, Product, ProductTechParam } = require('../models');
 
 const apiLogController = require('../../apiclient/controllers/apiLogController');
 
@@ -82,6 +73,7 @@ exports.deleteProductConfiguration = async (req, res, next) => {
 
 exports.postProductConfiguration = async (req, res, next) => {
   const start = Date.now();
+
   const errors = validationResult(req);
 
   req.body.apiType = "INI";

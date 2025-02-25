@@ -37,11 +37,11 @@ exports.getApiLog = async (req, res, next) => {
     if (response?.countries?.length > 0) {
       const updatedCountries = response.countries.map((country) => ({
         ...country.toObject(),
-        name: country.country_name, 
+        name: country.country_name,
       }));
       updatedResponse = { ...response.toObject(), countries: updatedCountries };
     }
-      
+
     res.json(updatedResponse);
 
   } catch (error) {
@@ -54,20 +54,20 @@ exports.getApiLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
 
-    if(this.query.orderBy) {
+    if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
 
-    if(this.query.fields) {
+    if (this.query.fields) {
       this.fields = this.query.fields;
       delete this.query.fields;
     }
 
-    if(this.query?.fromDate && this.query?.toDate) {
+    if (this.query?.fromDate && this.query?.toDate) {
       const startDate = new Date(this.query.fromDate);
       startDate.setHours(0, 0, 0, 0);
-      
+
       const endDate = new Date(this.query.toDate);
       endDate.setHours(23, 59, 59, 999);
 
@@ -80,8 +80,8 @@ exports.getApiLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-    console.log('Fields:', this.fields);
-    console.log('Query:', this.query);
+    console.log('Body :', req.body);
+    console.log('Query :', req.query);
     console.log('Order By:', this.orderBy);
     console.log('Populate:', this.populate);
 
@@ -110,14 +110,14 @@ exports.postApiLog = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      
+
 
       req.body.responseStatusCode = 200;
       req.body.response = "APPROVED";
       req.body.responseTime = "123";
-      
+
       let reqBodyInsertion = getDocumentFromReq(req, 'new');
-      
+
       const response = await this.dbservice.postObject(reqBodyInsertion);
       res.status(StatusCodes.CREATED).json({ ApiLog: response });
     } catch (error) {
@@ -139,7 +139,7 @@ function getDocumentFromReq(req, reqType) {
   doc.requestURL = req.originalUrl;
 
   doc.requestHeaders = req.headers; if (doc.requestHeaders) delete doc.requestHeaders.authorization;
-  
+
   doc.requestBody = req.body; if (doc.requestBody) delete doc.requestBody.loginUser;
 
   if (machine !== undefined) {

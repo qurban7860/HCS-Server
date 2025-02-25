@@ -1,6 +1,7 @@
 'use strict'
 module.exports = {
     Product: require('./product'),
+    ProductConfiguration: require('./productConfiguration'),
     ProductAuditLog: require('./productAuditLog'),
     ProductCategory: require('./productCategory'),
     ProductLicense: require('./productLicense'),
