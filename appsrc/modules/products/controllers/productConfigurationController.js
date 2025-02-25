@@ -29,21 +29,27 @@ this.populate = [
 
 
 exports.getProductConfiguration = async (req, res, next) => {
-  this.dbservice.getObjectById(ProductConfiguration, this.fields, req.params.id, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      response.configuration = replaceDotsWithSlashes(response.configuration);
-      res.json(response);
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    this.machineId = req.params.machineId;
+    if (this.machineId) {
+      this.query.machine = this.machineId;
     }
+    this.query._id = req.params.id;
+
+    const response = await this.dbservice.getObject(ProductConfiguration, this.query, this.populate);
+    res.json(response);
+
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 };
 
 exports.getProductConfigurations = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.orderBy = { createdAt: -1 };
+  this.query.machine = req.params.machineId
   if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;

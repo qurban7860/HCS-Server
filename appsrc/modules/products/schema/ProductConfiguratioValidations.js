@@ -39,11 +39,7 @@ const productConfigurationSchema = (reqType) => {
       otherwise: (schema) => schema,
     }),
 
-    backupid: Yup.mixed().label("Backup Id").when([], {
-      is: () => isNewRequest,
-      then: (schema) => schema.required(),
-      otherwise: (schema) => schema.nullable().notRequired(),
-    }),
+    backupid: Yup.mixed().label("Backup Id").nullable().notRequired(),
 
     backupDate: Yup.mixed().label("Backup Date").nullable().notRequired(),
 

@@ -38,7 +38,7 @@ exports.postProductConfiguration = async (req, res, next) => {
     }
 
     if (req.body.machine && roleAPIFound) {
-      let productConfObjec = getDocumentFromReq(req);
+      let productConfObjec = getDocFromReq(req);
 
       const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('code category').lean();
 
@@ -71,7 +71,7 @@ exports.postProductConfiguration = async (req, res, next) => {
             let req_ = { body: { ...req.body } };
             req_.body.techParam = datatoadd._id;
             req_.body.techParamValue = datatoadd.codeValues[index];
-            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_);
+            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_, "new");
             await objectReceived.save();
           }
         }
@@ -97,7 +97,10 @@ exports.postProductConfiguration = async (req, res, next) => {
       res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!" : errorCode);
     }
 
-    const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req); apiLogObject.save();
+    const end = Date.now();
+    req.body.responseTime = end - start;
+    let apiLogObject = apiLogController.getDocumentFromReq(req, "new");
+    apiLogObject.save();
   }
 };
 
@@ -127,9 +130,9 @@ function replaceDotsWithSlashes(obj) {
 }
 
 
-function getDocumentFromReq(req) {
+function getDocFromReq(req) {
 
-  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate } = req.body;
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, clientInfo } = req.body;
 
   let doc = new ProductConfiguration({});
 
@@ -175,13 +178,13 @@ function getDocumentFromReq(req) {
     doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
   }
 
-  // if ("clientInfo" in req.body) {
-  //   doc.createdByIdentifier = clientInfo.identifier;
-  //   doc.createdIP = clientInfo.ip;
-  //   doc.createdAt = new Date();
-  //   doc.updatedByIdentifier = clientInfo.identifier;
-  //   doc.updatedIP = clientInfo.ip;
-  //   doc.updatedAt = new Date();
-  // }
+  if ("clientInfo" in req.body) {
+    doc.createdByIdentifier = clientInfo.identifier;
+    doc.createdIP = clientInfo.ip;
+    doc.createdAt = new Date();
+    doc.updatedByIdentifier = clientInfo.identifier;
+    doc.updatedIP = clientInfo.ip;
+    doc.updatedAt = new Date();
+  }
   return doc;
 }
