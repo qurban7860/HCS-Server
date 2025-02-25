@@ -3,6 +3,8 @@ module.exports = {
     productCategoryController: require('./productCategoryController'),
     productConnectionController: require('./productConnectionController'),
     productController: require('./productController'),
+    productConfigurationController: require('./productConfigurationController'),
+    publicProductConfigurationController: require('./publicProductConfigurationController'),
     productDrawingController: require('./productDrawingController'),
     productLicenseController: require('./productLicenseController'),
     productModelController: require('./productModelController'),
