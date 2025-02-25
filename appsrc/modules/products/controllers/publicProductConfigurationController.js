@@ -20,7 +20,6 @@ exports.postProductConfiguration = async (req, res, next) => {
   const start = Date.now();
 
   const errors = validationResult(req);
-
   req.body.apiType = "INI";
   req.body.clientInfo = req.clientInfo;
   req.body.response = "APPROVED";
@@ -39,7 +38,7 @@ exports.postProductConfiguration = async (req, res, next) => {
     }
 
     if (req.body.machine && roleAPIFound) {
-      let productConfObjec = getDocumentFromReq(req);
+      let productConfObjec = getDocFromReq(req);
 
       const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('code category').lean();
 
@@ -72,12 +71,11 @@ exports.postProductConfiguration = async (req, res, next) => {
             let req_ = { body: { ...req.body } };
             req_.body.techParam = datatoadd._id;
             req_.body.techParamValue = datatoadd.codeValues[index];
-            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_);
+            const objectReceived = await productTechParamValueController.getDocumentFromReq(req_, "new");
             await objectReceived.save();
           }
         }
       }));
-
       productConfObjec.configuration = replaceDotsWithSlashes(productConfObjec.configuration);
       const date = productConfObjec._id.getTimestamp();
       productConfObjec.backupid = date.toISOString().replace(/[-T:.Z]/g, '');
@@ -99,7 +97,10 @@ exports.postProductConfiguration = async (req, res, next) => {
       res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!" : errorCode);
     }
 
-    const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req); apiLogObject.save();
+    const end = Date.now();
+    req.body.responseTime = end - start;
+    let apiLogObject = apiLogController.getDocumentFromReq(req, "new");
+    apiLogObject.save();
   }
 };
 
@@ -129,16 +130,61 @@ function replaceDotsWithSlashes(obj) {
 }
 
 
-function getDocumentFromReq(req) {
-  const { clientInfo, ...restBody } = req.body;
-  let doc = { ...restBody };
+function getDocFromReq(req) {
 
-  doc.createdByIdentifier = clientInfo.identifier;
-  doc.createdIP = clientInfo.ip;
-  doc.createdAt = new Date();
-  doc.updatedByIdentifier = clientInfo.identifier;
-  doc.updatedIP = clientInfo.ip;
-  doc.updatedAt = new Date();
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, clientInfo } = req.body;
 
+  let doc = new ProductConfiguration({});
+
+  if ("type" in req.body) {
+    doc.type = type;
+  }
+
+  if ("backupid" in req.body) {
+    doc.backupid = backupid;
+  }
+
+
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+
+  if ("inputGUID" in req.body) {
+    doc.inputGUID = inputGUID;
+  }
+
+  if ("inputSerialNo" in req.body) {
+    doc.inputSerialNo = inputSerialNo;
+  }
+
+  if ("configuration" in req.body) {
+    doc.configuration = configuration;
+  }
+
+  if ("isManufacture" in req.body) {
+    doc.isManufacture = isManufacture;
+  }
+
+  if ("backupDate" in req.body) {
+    doc.backupDate = backupDate;
+  }
+
+  if ("isActive" in req.body) {
+    doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
+  }
+
+  if ("isArchived" in req.body) {
+    doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
+  }
+
+  if ("clientInfo" in req.body) {
+    doc.createdByIdentifier = clientInfo.identifier;
+    doc.createdIP = clientInfo.ip;
+    doc.createdAt = new Date();
+    doc.updatedByIdentifier = clientInfo.identifier;
+    doc.updatedIP = clientInfo.ip;
+    doc.updatedAt = new Date();
+  }
   return doc;
 }

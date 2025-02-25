@@ -14,7 +14,6 @@ const { Config } = require('../../config/models');
 const path = require('path');
 const sharp = require('sharp');
 const dayjs = require('dayjs');
-const { customTimestamp } = require('../../../../utils/formatTime');
 const { renderEmail } = require('../../email/utils');
 const util = require('util');
 
@@ -22,7 +21,7 @@ let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 const emailController = require('../../email/controllers/emailController');
 const noteController = require('./productServiceReportNoteController');
-const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportNote, ProductServiceReportFiles , ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
+const { ProductServiceReports, ProductServiceReportStatuses, ProductServiceReportNote, ProductServiceReportFiles, ProductServiceReportValue, ProductServiceReportValueFile, Product, ProductModel, ProductCheckItem } = require('../models');
 const { CustomerContact, Customer } = require('../../crm/models');
 const { SecurityUser } = require('../../security/models');
 const customerContact = require('../../crm/models/customerContact');
@@ -33,39 +32,42 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
+this.orderBy = { createdAt: -1 };
 
 this.populate = [
-  {path: 'serviceReportTemplate', select: 'reportTitle reportType' },
-  {path: 'status', select: 'name type displayOrderNo' },
-  {path: 'customer', select: 'name'},
-  {path: 'site', select: 'name'},
-  {path: 'machine', select: 'name serialNo'},
-  {path: 'technicians', select: 'firstName lastName'},
-  {path: 'operators', select: 'firstName lastName'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'serviceReportTemplate', select: 'reportTitle reportType' },
+  { path: 'status', select: 'name type displayOrderNo' },
+  { path: 'customer', select: 'name' },
+  { path: 'site', select: 'name' },
+  { path: 'machine', select: 'name serialNo' },
+  { path: 'technicians', select: 'firstName lastName' },
+  { path: 'operators', select: 'firstName lastName' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 
 this.populateObject = [
-  {path: 'serviceReportTemplate', select: 'reportTitle reportType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired ' },
-  {path: 'status', select: 'name type displayOrderNo' },
-  {path: 'customer', select: 'name'},
-  {path: 'site', select: 'name'},
-  {path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  { path: 'serviceReportTemplate', select: 'reportTitle reportType checkItemLists enableNote footer header enableMaintenanceRecommendations enableSuggestedSpares isOperatorSignatureRequired ' },
+  { path: 'status', select: 'name type displayOrderNo' },
+  { path: 'customer', select: 'name' },
+  { path: 'site', select: 'name' },
+  {
+    path: 'technicianNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
-      { path: 'technicians', select: 'firstName lastName',
+      {
+        path: 'technicians', select: 'firstName lastName',
         populate: [
-          { path: 'customer', select: 'name'}
+          { path: 'customer', select: 'name' }
         ]
       }
     ]
   },
-  {path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  {
+    path: 'serviceNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
@@ -73,7 +75,8 @@ this.populateObject = [
       { path: 'updatedBy', select: 'name' }
     ]
   },
-  {path: 'recommendationNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  {
+    path: 'recommendationNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
@@ -81,7 +84,8 @@ this.populateObject = [
       { path: 'updatedBy', select: 'name' }
     ]
   },
-  {path: 'internalComments', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  {
+    path: 'internalComments', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
@@ -89,7 +93,8 @@ this.populateObject = [
       { path: 'updatedBy', select: 'name' }
     ]
   },
-  {path: 'suggestedSpares', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  {
+    path: 'suggestedSpares', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
@@ -97,7 +102,8 @@ this.populateObject = [
       { path: 'updatedBy', select: 'name' }
     ]
   },
-  {path: 'internalNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  {
+    path: 'internalNote', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
@@ -105,28 +111,30 @@ this.populateObject = [
       { path: 'updatedBy', select: 'name' }
     ]
   },
-  {path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP', 
+  {
+    path: 'operatorNotes', select: 'note type isHistory createdAt updatedAt createdIP updatedIP',
     options: { sort: { createdAt: -1 } },
     populate: [
       { path: 'serviceReport', select: 'isActive' },
       { path: 'createdBy', select: 'name' },
       { path: 'updatedBy', select: 'name' },
-      { path: 'operators', select: 'firstName lastName',
+      {
+        path: 'operators', select: 'firstName lastName',
         populate: [
-          { path: 'customer', select: 'name'}
+          { path: 'customer', select: 'name' }
         ]
       }
     ]
   },
-  {path: 'machine', select: 'name serialNo machineModel'},
-  {path: 'technician', select: 'firstName lastName'},
-  {path: 'operators', select: 'firstName lastName'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'machine', select: 'name serialNo machineModel' },
+  { path: 'technician', select: 'firstName lastName' },
+  { path: 'operators', select: 'firstName lastName' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 
 
-const findDraftServiceReportStatus = async ( res ) => {
+const findDraftServiceReportStatus = async (res) => {
   const serviceReportStatus = await ProductServiceReportStatuses.findOne({ type: { $regex: /^draft$/i }, isArchived: false, isActive: true }).lean();
   // if ( !serviceReportStatus ) {
   //   return res.status(StatusCodes.BAD_REQUEST).send("Draft Status is not available!");
@@ -135,7 +143,7 @@ const findDraftServiceReportStatus = async ( res ) => {
 }
 
 
-const findSubmitServiceReportStatus = async ( res ) => {
+const findSubmitServiceReportStatus = async (res) => {
   const serviceReportStatus = await ProductServiceReportStatuses.findOne({ type: { $regex: /^t[o\-\s]*do$/i }, isArchived: false, isActive: true }).lean();
   // if ( !serviceReportStatus ) {
   //   return res.status(StatusCodes.BAD_REQUEST).send("Submit Status is not available!");
@@ -143,14 +151,14 @@ const findSubmitServiceReportStatus = async ( res ) => {
   return serviceReportStatus || null;
 }
 
-const getProductServiceReportData = async ( req ) => {
+const getProductServiceReportData = async (req) => {
   try {
     const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject);
-    
+
     if (!response) {
       throw new Error('Report not found');
     }
-    
+
     let parsedResponse = JSON.parse(JSON.stringify(response));
 
     if (parsedResponse && Array.isArray(parsedResponse.decoilers) && parsedResponse.decoilers.length > 0) {
@@ -179,15 +187,15 @@ const getProductServiceReportData = async ( req ) => {
     let serviceReportDocs = await ProductServiceReportFiles.find(serviceReportDocsQuery)
       .select('name path extension fileType thumbnail isReportDoc').lean();
 
-      if( req?.query?.isHighQuality ){
-        serviceReportFiles = await Promise.all(
-          serviceReportFiles?.map(async ( file ) => await fetchFileFromAWS(file))
-        );
-        serviceReportDocs = await Promise.all(
-          serviceReportDocs?.map(async ( file ) => await fetchFileFromAWS(file))
-        );
-      }
-      
+    if (req?.query?.isHighQuality) {
+      serviceReportFiles = await Promise.all(
+        serviceReportFiles?.map(async (file) => await fetchFileFromAWS(file))
+      );
+      serviceReportDocs = await Promise.all(
+        serviceReportDocs?.map(async (file) => await fetchFileFromAWS(file))
+      );
+    }
+
     if (Array.isArray(serviceReportFiles) && serviceReportFiles.length > 0) {
       parsedResponse.files = serviceReportFiles;
     }
@@ -208,7 +216,7 @@ async function fetchFileFromAWS(file) {
   try {
     if (file.path && file.path !== '' && file._id) {
       const data = await awsService.fetchAWSFileInfo(file._id, file.path);
-      
+
       const allowedMimeTypes = [
         'image/jpeg',
         'image/jpg',
@@ -222,11 +230,11 @@ async function fetchFileFromAWS(file) {
       const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
       const fileSizeInMegabytes = ((data.ContentLength / 1024) / 1024);
 
-      let updatedFile = { ...file }; 
-      if (isImage ) {
+      let updatedFile = { ...file };
+      if (isImage) {
         const fileBase64 = await awsService.processAWSFile(data);
         return updatedFile = { ...updatedFile, src: fileBase64 };
-      } 
+      }
       return file
     } else {
       throw new Error("Invalid File Provided!");
@@ -251,82 +259,82 @@ exports.getProductServiceReport = async (req, res, next) => {
 
 exports.getProductServiceReportWithIndividualDetails = async (req, res, next) => {
   const response = await this.dbservice.getObjectById(ProductServiceReports, this.fields, req.params.id, this.populateObject, callbackFunc);
-  try{
+  try {
 
-      response = JSON.parse(JSON.stringify(response));
+    response = JSON.parse(JSON.stringify(response));
 
-      if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-        response.decoilers = await Product.find({_id:{$in:response.decoilers},isActive:true,isArchived:false});
-      }
-      
-      if(Array.isArray(response.operators) && response.operators.length>0) {
-        response.operators = await CustomerContact.find( { _id : { $in:response.operators } }, { firstName:1, lastName:1 });
-      }
+    if (response && Array.isArray(response.decoilers) && response.decoilers.length > 0) {
+      response.decoilers = await Product.find({ _id: { $in: response.decoilers }, isActive: true, isArchived: false });
+    }
 
-      // fetching active values.
-      let listProductServiceReportValues = await ProductServiceReportValue.find({
-        serviceReport: req.params.id,
-        isArchived: false
-      }, {checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1}).populate([{path: 'createdBy', select: 'name'}, {path: 'serviceReport' }]);
-      listProductServiceReportValues = JSON.parse(JSON.stringify(listProductServiceReportValues));     
+    if (Array.isArray(response.operators) && response.operators.length > 0) {
+      response.operators = await CustomerContact.find({ _id: { $in: response.operators } }, { firstName: 1, lastName: 1 });
+    }
 
-      if(response.serviceReportTemplate && 
-        Array.isArray(response.serviceReportTemplate.checkItemLists) &&
-        response.serviceReportTemplate.checkItemLists.length>0) {
-        let index = 0;
-        for(let checkParam of response.serviceReportTemplate.checkItemLists) {
-          if(Array.isArray(checkParam.checkItems) && checkParam.checkItems.length>0) {
-            let indexP = 0;
-            let productCheckItemObjects = await ProductCheckItem.find({_id:{$in:checkParam.checkItems}});
-            productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
+    // fetching active values.
+    let listProductServiceReportValues = await ProductServiceReportValue.find({
+      serviceReport: req.params.id,
+      isArchived: false
+    }, { checkItemValue: 1, comments: 1, serviceReport: 1, checkItemListId: 1, machineCheckItem: 1, createdBy: 1, createdAt: 1 }).populate([{ path: 'createdBy', select: 'name' }, { path: 'serviceReport' }]);
+    listProductServiceReportValues = JSON.parse(JSON.stringify(listProductServiceReportValues));
 
-            for(let paramListId of checkParam.checkItems) { 
-              let productCheckItemObject = productCheckItemObjects.find((PCIO)=>paramListId.toString()==PCIO._id.toString());
-              
-              if(!productCheckItemObject)
-                continue;
-              
-              let PSRV = listProductServiceReportValues.find((psrval)=>              
-                psrval.machineCheckItem.toString() == paramListId && 
-                psrval.checkItemListId.toString() == checkParam._id
-              );
+    if (response.serviceReportTemplate &&
+      Array.isArray(response.serviceReportTemplate.checkItemLists) &&
+      response.serviceReportTemplate.checkItemLists.length > 0) {
+      let index = 0;
+      for (let checkParam of response.serviceReportTemplate.checkItemLists) {
+        if (Array.isArray(checkParam.checkItems) && checkParam.checkItems.length > 0) {
+          let indexP = 0;
+          let productCheckItemObjects = await ProductCheckItem.find({ _id: { $in: checkParam.checkItems } });
+          productCheckItemObjects = JSON.parse(JSON.stringify(productCheckItemObjects));
 
-              if(PSRV) {
-                productCheckItemObject.ReportValue = {
-                  serviceReport : PSRV.serviceReport,
-                  checkItemValue : PSRV.checkItemValue,
-                  comments : PSRV.comments,
-                  createdBy : PSRV.createdBy,
-                  createdAt : PSRV.createdAt
-                }
-                productCheckItemObject.serviceReport = PSRV.serviceReport;                
-                productCheckItemObject.checkItemValue = PSRV.checkItemValue;
-                productCheckItemObject.comments = PSRV.comments;
-                productCheckItemObject.createdBy = PSRV.createdBy;
-                productCheckItemObject.createdAt = PSRV.createdAt;
+          for (let paramListId of checkParam.checkItems) {
+            let productCheckItemObject = productCheckItemObjects.find((PCIO) => paramListId.toString() == PCIO._id.toString());
+
+            if (!productCheckItemObject)
+              continue;
+
+            let PSRV = listProductServiceReportValues.find((psrval) =>
+              psrval.machineCheckItem.toString() == paramListId &&
+              psrval.checkItemListId.toString() == checkParam._id
+            );
+
+            if (PSRV) {
+              productCheckItemObject.ReportValue = {
+                serviceReport: PSRV.serviceReport,
+                checkItemValue: PSRV.checkItemValue,
+                comments: PSRV.comments,
+                createdBy: PSRV.createdBy,
+                createdAt: PSRV.createdAt
               }
-
-              response.serviceReportTemplate.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
-              indexP++;
+              productCheckItemObject.serviceReport = PSRV.serviceReport;
+              productCheckItemObject.checkItemValue = PSRV.checkItemValue;
+              productCheckItemObject.comments = PSRV.comments;
+              productCheckItemObject.createdBy = PSRV.createdBy;
+              productCheckItemObject.createdAt = PSRV.createdAt;
             }
-          }
-          index++;
-        }
-      }
-      res.json(response);
 
-  } catch( error ){
+            response.serviceReportTemplate.checkItemLists[index].checkItems[indexP] = productCheckItemObject;
+            indexP++;
+          }
+        }
+        index++;
+      }
+    }
+    res.json(response);
+
+  } catch (error) {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service Report Find Failed!");
   }
 };
 
 
 exports.getProductServiceReports = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};  
-  if( req?.params?.machineId && mongoose.Types.ObjectId.isValid(req.params.machineId)){
+  this.query = req.query != "undefined" ? req.query : {};
+  if (req?.params?.machineId && mongoose.Types.ObjectId.isValid(req.params.machineId)) {
     this.query.machine = req.params.machineId;
   }
-  if(this.query.orderBy) {
+  if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
@@ -342,27 +350,27 @@ exports.getProductServiceReports = async (req, res, next) => {
 };
 
 exports.deleteProductServiceReport = async (req, res, next) => {
-  try{
+  try {
     req.body.isArchived = true;
-    const serviceRecObj = await ProductServiceReports.findById( req.params.id ).select('status').populate([{ path: 'status', select: 'name type' }])
-    if( serviceRecObj?.status?.type?.toLowerCase() === 'draft'){
-      await ProductServiceReportValue.updateMany( { serviceReport: req.params.id }, { $set: { isArchived: true } } );
-      await ProductServiceReportValueFile.updateMany( { serviceReport: req.params.id }, { $set: { isArchived: true } } );
-      await ProductServiceReportFiles.updateMany( { machineServiceReport: req.params.id }, { $set: { isArchived: true } } );
+    const serviceRecObj = await ProductServiceReports.findById(req.params.id).select('status').populate([{ path: 'status', select: 'name type' }])
+    if (serviceRecObj?.status?.type?.toLowerCase() === 'draft') {
+      await ProductServiceReportValue.updateMany({ serviceReport: req.params.id }, { $set: { isArchived: true } });
+      await ProductServiceReportValueFile.updateMany({ serviceReport: req.params.id }, { $set: { isArchived: true } });
+      await ProductServiceReportFiles.updateMany({ machineServiceReport: req.params.id }, { $set: { isArchived: true } });
     }
-      const result = await this.dbservice.deleteObject(ProductServiceReports, req.params.id, getDocumentFromReq(req), callbackFunc );
-      function callbackFunc(error, result) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-        } else {
-          res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
-        }
+    const result = await this.dbservice.deleteObject(ProductServiceReports, req.params.id, getDocumentFromReq(req), callbackFunc);
+    function callbackFunc(error, result) {
+      if (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+      } else {
+        res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
       }
+    }
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-  } 
+  }
 
   this.dbservice.deleteObject(ProductServiceReports, req.params.id, res, callbackFunc);
   function callbackFunc(error, result) {
@@ -377,79 +385,79 @@ exports.deleteProductServiceReport = async (req, res, next) => {
 
 
 exports.postProductServiceReport = async (req, res, next) => {
-  try{
+  try {
     const errors = validationResult(req);
-    if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
+    if (!mongoose.Types.ObjectId.isValid(req.params.machineId)) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report can be added in machine module only!");
     }
 
     if (!errors.isEmpty()) {
       res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
-      if(!req.body.loginUser)
+      if (!req.body.loginUser)
         req.body.loginUser = await getToken(req);
     }
     const machine = await Product.findById(req.params.machineId)
-    if( req.body?.status?.toLowerCase() === 'submitted' ){
-      const serviceReportSubmitStatus = await findSubmitServiceReportStatus( res )
+    if (req.body?.status?.toLowerCase() === 'submitted') {
+      const serviceReportSubmitStatus = await findSubmitServiceReportStatus(res)
       req.body.status = serviceReportSubmitStatus?._id;
     } else {
-      const serviceReportDraftStatus = await findDraftServiceReportStatus( res )
+      const serviceReportDraftStatus = await findDraftServiceReportStatus(res)
       req.body.status = serviceReportDraftStatus?._id;
     }
     let productServiceReportObject = await getDocumentFromReq(req, 'new');
     const nextServiceReportCounterId = await CounterController.getPaddedCounterSequence('serviceReport');
-    productServiceReportObject.serviceReportUID = `${machine?.serialNo || '' } - ${nextServiceReportCounterId}`;
+    productServiceReportObject.serviceReportUID = `${machine?.serialNo || ''} - ${nextServiceReportCounterId}`;
     productServiceReportObject.customer = machine?.customer;
     let response = await this.dbservice.postObject(productServiceReportObject);
     req.params.serviceReportId = response?._id;
-    await noteController.newReportNotesHandler( req );
+    await noteController.newReportNotesHandler(req);
 
-        if(response && Array.isArray(response.decoilers) && response.decoilers.length>0) {
-          response = JSON.parse(JSON.stringify(response));
-          response.decoilers = await Product.find({_id:{$in:response.decoilers}});
-        }
-        req.machineServiceReport = response._id;
-        req.machineId = req.params.machineId;
-        if (req.files && req.files.images) {
-          return next(); 
-        }
-        res.status(StatusCodes.CREATED).json( response );
+    if (response && Array.isArray(response.decoilers) && response.decoilers.length > 0) {
+      response = JSON.parse(JSON.stringify(response));
+      response.decoilers = await Product.find({ _id: { $in: response.decoilers } });
+    }
+    req.machineServiceReport = response._id;
+    req.machineId = req.params.machineId;
+    if (req.files && req.files.images) {
+      return next();
+    }
+    res.status(StatusCodes.CREATED).json(response);
 
-  } catch( error ){
+  } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json( error.message || "Service report save failed!" );
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json(error.message || "Service report save failed!");
   }
 }
 
 
 exports.sendToDraftServiceReport = async (req, res, next) => {
-  try{
+  try {
 
     const productServiceReport = await ProductServiceReports.findById(req.params.id);
-    if(!productServiceReport?._id){
+    if (!productServiceReport?._id) {
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
     }
 
-    if(!productServiceReport?.isActive){
+    if (!productServiceReport?.isActive) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
     }
 
     const draftStatus = await ProductServiceReportStatuses.find({ name: "Draft" }).lean();
-    
+
     await productServiceReport.updateOne({ status: draftStatus?.[0]?._id, "approval.isEdited": true });
 
     const response = await getProductServiceReportData(req);
 
     return res.status(StatusCodes.OK).json({ message: "Service report status updated successfully!", data: response });
-  } catch(error) {
+  } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!" ); 
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!");
   }
 }
 
 exports.changeProductServiceReportStatus = async (req, res, next) => {
-  try{
+  try {
     // const errors = validationResult(req);
 
     // if (!errors.isEmpty()) {
@@ -457,25 +465,25 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
     // }
 
     const productServiceReport = await ProductServiceReports.findById(req.params.id);
-    if(!productServiceReport?._id){
+    if (!productServiceReport?._id) {
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Service Report ID");
     }
 
-    if(!productServiceReport?.isActive){
+    if (!productServiceReport?.isActive) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report is not active!");
     }
 
-    const statusVal = await ProductServiceReportStatuses.findById(req.body?.status )
-    if(!statusVal){
+    const statusVal = await ProductServiceReportStatuses.findById(req.body?.status)
+    if (!statusVal) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service report status not found!");
     }
- 
+
     // if( !req.params.machineId && productServiceReport?.status?.name?.toLowerCase() !== "submitted" && statusVal?.name?.toLowerCase() !== "under review" ){
     //   return res.status(StatusCodes.BAD_REQUEST).send("Service report status can be changed to under review only!");
     // } 
     delete req.params.machineId
     Object.keys(req.body)?.forEach(field => {
-      if ( field !== "loginUser" && field !== "status" ) {
+      if (field !== "loginUser" && field !== "status") {
         delete req.body[field];
       }
     });
@@ -488,12 +496,12 @@ exports.changeProductServiceReportStatus = async (req, res, next) => {
     //     { $set: { isHistory: true, updatedBy: req.body?.loginUser?.userId } }
     //   );
     // }
-    
+
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.OK).send("Service report status updated successfully!");
-  }catch(error) {
+  } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!" ); 
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Service report status update failed!");
   }
 }
 
@@ -502,7 +510,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
   const errors = validationResult(req);
   var _this = this;
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST)); 
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     const file_ = req.file;
     const emailAddress = req.body.email;
@@ -515,7 +523,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
     }
 
     const serviceRecObj = await ProductServiceReports.findOne({ _id: req.params.id, isActive: true, isArchived: false })
-      .populate([{ path: 'customer', select: 'name'}, { path: 'machine', select: 'serialNo'}, { path: 'createdBy', select: 'name'}]);
+      .populate([{ path: 'customer', select: 'name' }, { path: 'machine', select: 'serialNo' }, { path: 'createdBy', select: 'name' }]);
 
     if (serviceRecObj) {
       let emailSubject = `Service Report PDF attached`;
@@ -525,7 +533,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
         subject: emailSubject,
         html: true,
       };
-      
+
       const readFileAsync = util.promisify(fs.readFile);
       try {
         const data = await readFileAsync(file_.path);
@@ -533,32 +541,32 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       } catch (err) {
         console.error('Error reading file:', err);
       }
-      
+
       const username = serviceRecObj.name;
-      const SDdateObject = new Date( serviceRecObj.serviceDate );
+      const SDdateObject = new Date(serviceRecObj.serviceDate);
       const SDmonth = SDdateObject.getMonth() + 1;
       const SDday = SDdateObject.getDate();
       const serviceDate = `${SDdateObject.getFullYear()}-${(SDmonth) < 10 ? '0' : ''}${SDmonth}-${SDday < 10 ? '0' : ''}${SDday}`;
-      const serviceReportId=serviceRecObj.serviceReportUID
-      const serialNo=serviceRecObj.machine?.serialNo;
-      const customer=serviceRecObj.customer?.name;
-      const createdBy=serviceRecObj.createdBy?.name;
+      const serviceReportId = serviceRecObj.serviceReportUID
+      const serialNo = serviceRecObj.machine?.serialNo;
+      const customer = serviceRecObj.customer?.name;
+      const createdBy = serviceRecObj.createdBy?.name;
 
-      let createdAt=serviceRecObj.createdAt;
+      let createdAt = serviceRecObj.createdAt;
       const dateObject = new Date(createdAt);
       const year = dateObject.getFullYear();
       const month = dateObject.getMonth() + 1;
       const day = dateObject.getDate();
       createdAt = `${year}-${month < 10 ? '0' : ''}${month}-${day < 10 ? '0' : ''}${day}`;
-      
+
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/serviceReport.html'), 'utf8');
       const content = render(contentHTML, { username, serviceDate, serviceReportId, serialNo, customer, createdAt, createdBy });
-      const htmlData =  await renderEmail(emailSubject, content )
+      const htmlData = await renderEmail(emailSubject, content)
       params.htmlData = htmlData;
       try {
         await awsService.sendEmailWithRawData(params, file_);
-      } catch(e) {
-        logger.error(new Error( e ));
+      } catch (e) {
+        logger.error(new Error(e));
         res.status(StatusCodes.OK).send('Email Send Fails!');
       }
 
@@ -640,7 +648,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
         const allEmailsSent = results.every((result) => result.success);
 
         if (allEmailsSent) {
-          const serviceReportData = await getProductServiceReportData( req )
+          const serviceReportData = await getProductServiceReportData(req)
           res.status(StatusCodes.OK).send(serviceReportData);
         } else {
           res.status(StatusCodes.BAD_REQUEST).send("Some emails failed to send.");
@@ -671,7 +679,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
 };
 
 exports.evaluateServiceReport = async (req, res, next) => {
-  try{
+  try {
     let reqError = true;
     const errors = validationResult(req);
     const userId = req.body?.loginUser?.userId
@@ -700,12 +708,12 @@ exports.evaluateServiceReport = async (req, res, next) => {
     if (productServiceReport) {
       await productServiceReport.addApprovalLog({ ...evaluationData, updatedBy: userId, updatedAt: new Date() });
       await productServiceReport.updateOne({ "approval.isEdited": false });
-      const response = await getProductServiceReportData( req )
+      const response = await getProductServiceReportData(req)
       res.status(StatusCodes.OK).send(response);
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, "Service Report template not found!", true));
     }
-  } catch( error ){
+  } catch (error) {
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
@@ -716,15 +724,15 @@ function validateEmail(email) {
   return emailRegex.test(email);
 }
 
-async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccEmails = [],bccEmails = []) {
+async function addEmail(subject, body, toUser, emailAddresses, fromEmail = '', ccEmails = [], bccEmails = []) {
   var email = {
     subject,
     body,
-    toEmails:emailAddresses,
-    fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer:'',
-    toContacts:[],
-    toUsers:[],
+    toEmails: emailAddresses,
+    fromEmail: process.env.AWS_SES_FROM_EMAIL,
+    customer: '',
+    toContacts: [],
+    toUsers: [],
     ccEmails,
     bccEmails,
     isArchived: false,
@@ -734,34 +742,34 @@ async function addEmail(subject, body, toUser, emailAddresses, fromEmail='', ccE
     updatedBy: '',
     createdIP: ''
   };
-  if(toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
+  if (toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
     email.toUsers.push(toUser.id);
-    if(toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
+    if (toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
       email.customer = toUser.customer.id;
     } else {
       email.customer = null;
     }
 
-    if(toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
+    if (toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
       email.toContacts.push(toUser.contact.id);
     } else {
       email.toContacts = null;
     }
   }
-  
+
   var reqEmail = {};
 
   reqEmail.body = email;
-  
+
   const res = emailController.getDocumentFromReq(reqEmail, 'new');
   return res;
 }
 
-exports.patchProductServiceReport = async (req, res ) => {
+exports.patchProductServiceReport = async (req, res) => {
   try {
     const errors = validationResult(req);
 
-    if(!mongoose.Types.ObjectId.isValid(req.params.machineId)){
+    if (!mongoose.Types.ObjectId.isValid(req.params.machineId)) {
       return res.status(StatusCodes.BAD_REQUEST).send("Service Report can be edit in machine module only!");
     }
 
@@ -783,28 +791,28 @@ exports.patchProductServiceReport = async (req, res ) => {
     }
     req.params.serviceReportId = req.params.id
 
-    if ( findServiceReport?.status?.type?.toLowerCase() !== 'draft' ) {
+    if (findServiceReport?.status?.type?.toLowerCase() !== 'draft') {
       return res.status(StatusCodes.BAD_REQUEST).send("Only draft service report can be edit!");
     }
 
-    if(req.body?.status?.toUpperCase() === "DRAFT"){
+    if (req.body?.status?.toUpperCase() === "DRAFT") {
       const draftStatus = await findDraftServiceReportStatus();
-      if( draftStatus?._id ){
+      if (draftStatus?._id) {
         req.body.status = draftStatus?._id
       } else {
         return res.status(StatusCodes.ACCEPTED).send("Draft status not found!");
       }
     }
 
-    if(req.body?.status?.toUpperCase() === "SUBMITTED"){
+    if (req.body?.status?.toUpperCase() === "SUBMITTED") {
       const submitStatus = await findSubmitServiceReportStatus();
-      if( submitStatus?._id ){
+      if (submitStatus?._id) {
         req.body.status = submitStatus?._id
       } else {
         return res.status(StatusCodes.ACCEPTED).send("Submit status not found!");
       }
     }
-    
+
     await this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     await noteController.newReportNotesHandler(req);
     return res.status(StatusCodes.ACCEPTED).send("Service report updated successfully!");
@@ -821,15 +829,15 @@ const handleArchive = async (req, res) => {
     await _this.dbservice.patchObject(ProductServiceReports, req.params.id, getDocumentFromReq(req));
     return res.status(StatusCodes.ACCEPTED).send('Service Report Archived Successfully!');
   } catch (error) {
-      console.log(error);
-      return res.status(StatusCodes.BAD_REQUEST).send('Service Report Archived failed!');
+    console.log(error);
+    return res.status(StatusCodes.BAD_REQUEST).send('Service Report Archived failed!');
   }
 }
 
 
-async function getToken(req){
+async function getToken(req) {
   try {
-    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1] : '';
     const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
     const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
     decodedToken.userIP = clientIP;
@@ -839,69 +847,69 @@ async function getToken(req){
   }
 }
 
-function getDocumentFromReq(req, reqType){
-  const { 
-    serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site, 
+function getDocumentFromReq(req, reqType) {
+  const {
+    serviceReportTemplate, serviceReportUID, serviceDate, status, customer, site,
     params, additionalParams, machineMetreageParams, punchCyclesParams, isReportDocsOnly, checkItemLists,
     decoilers, isHistory, loginUser, isActive, isArchived, technician, operators, textBeforeCheckItems, textAfterCheckItems, reportSubmition,
     // technicianNotes, serviceNote, recommendationNote, internalComments,  suggestedSpares, internalNote, operatorNotes,
   } = req.body;
-  
+
   let doc = {};
 
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductServiceReports({});
   }
 
-  if ("serviceReportTemplate" in req.body){
+  if ("serviceReportTemplate" in req.body) {
     doc.serviceReportTemplate = serviceReportTemplate;
   }
 
-  if ("serviceReportUID" in req.body){
+  if ("serviceReportUID" in req.body) {
     doc.serviceReportUID = serviceReportUID;
   }
 
-  if ("status" in req.body){
+  if ("status" in req.body) {
     doc.status = status;
   }
 
-  if ("customer" in req.body){
+  if ("customer" in req.body) {
     doc.customer = customer;
   }
-  
-  if ("site" in req.body){
+
+  if ("site" in req.body) {
     doc.site = site;
   }
 
-  if (req.params.machineId){
+  if (req.params.machineId) {
     doc.machine = req.params.machineId;
   }
 
-  if ("decoilers" in req.body){
+  if ("decoilers" in req.body) {
     doc.decoilers = decoilers;
   }
 
-  if ("technician" in req.body){
+  if ("technician" in req.body) {
     doc.technician = technician;
   }
 
-  if ("params" in req.body){
+  if ("params" in req.body) {
     doc.params = params;
   }
 
-  if ("additionalParams" in req.body){
+  if ("additionalParams" in req.body) {
     doc.additionalParams = additionalParams;
   }
 
-  if ("machineMetreageParams" in req.body){
+  if ("machineMetreageParams" in req.body) {
     doc.machineMetreageParams = machineMetreageParams;
   }
 
-  if ("punchCyclesParams" in req.body){
+  if ("punchCyclesParams" in req.body) {
     doc.punchCyclesParams = punchCyclesParams;
   }
 
-  if ("checkItemLists" in req.body){
+  if ("checkItemLists" in req.body) {
     doc.checkItemLists = checkItemLists;
   }
 
@@ -909,7 +917,7 @@ function getDocumentFromReq(req, reqType){
   //   doc.serviceNote = serviceNote;
   // }
 
-  if ("serviceDate" in req.body){
+  if ("serviceDate" in req.body) {
     doc.serviceDate = serviceDate;
   }
 
@@ -929,7 +937,7 @@ function getDocumentFromReq(req, reqType){
   //   doc.internalNote = internalNote;
   // }
 
-  if ("operators" in req.body){
+  if ("operators" in req.body) {
     doc.operators = operators;
   }
 
@@ -941,35 +949,35 @@ function getDocumentFromReq(req, reqType){
   //   doc.technicianNotes = technicianNotes;
   // }
 
-  if ("textBeforeCheckItems" in req.body){
+  if ("textBeforeCheckItems" in req.body) {
     doc.textBeforeCheckItems = textBeforeCheckItems;
   }
-  
-  if ("textAfterCheckItems" in req.body){
+
+  if ("textAfterCheckItems" in req.body) {
     doc.textAfterCheckItems = textAfterCheckItems;
   }
 
-  if ("reportSubmition" in req.body){
+  if ("reportSubmition" in req.body) {
     doc.reportSubmition = reportSubmition;
   }
 
-  if("isReportDocsOnly" in req.body ){
+  if ("isReportDocsOnly" in req.body) {
     doc.isReportDocsOnly = isReportDocsOnly;
   }
 
-  if ("isHistory" in req.body){
+  if ("isHistory" in req.body) {
     doc.isHistory = isHistory;
   }
 
-  if ("isActive" in req.body){
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
-  
-  if ("isArchived" in req.body){
+
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
-  
-  if (reqType == "new" && "loginUser" in req.body ){
+
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -977,7 +985,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
   return doc;
 

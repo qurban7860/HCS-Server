@@ -12,7 +12,10 @@ const baseRouteForObject = `/customers/:customerId/sites`;
 const router = express.Router();
 router.use(checkAuth);
 
-//// - /api/1.0.0/crm/sites/search
+// - /api/1.0.0/crm/customers/sites/
+router.get('/customers/sites/all', controller.getCustomerSites);
+
+// - /api/1.0.0/crm/sites/search
 router.get(`${baseRouteForObject}/search`, controller.searchCustomerSites);
 
 // - /api/1.0.0/crm/sites/export
@@ -22,7 +25,7 @@ router.get(`${baseRouteForObject}/export`, controller.exportSitesJSONForCSV);
 router.get(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.getCustomerSite);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/
-router.get(`${baseRouteForObject}/`, controller.getCustomerSites);
+router.get(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.getCustomerSites);
 
 // - /api/1.0.0/crm/customers/:customerId/sites/
 router.post(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.postCustomerSite);
@@ -32,7 +35,5 @@ router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), ve
 
 // - /api/1.0.0/crm/customers/:customerId/sites/:id
 router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.deleteCustomerSite);
-
-
 
 module.exports = router;

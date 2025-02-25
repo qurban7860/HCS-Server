@@ -1,0 +1,21 @@
+meta {
+  name: get All Contacts
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/crm/customers/contacts/all
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "page" : 1
+  }
+}

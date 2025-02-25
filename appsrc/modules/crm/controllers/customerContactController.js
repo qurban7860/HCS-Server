@@ -79,7 +79,7 @@ exports.getCustomerContacts = async (req, res, next) => {
       delete this.query.orderBy;
     }
     this.customerId = req.params.customerId;
-    if (this.customerId && this.customerId !== "undefined")
+    if (this.customerId)
       this.query.customer = this.customerId;
 
     const finalQuery = await applyUserFilter(req);
