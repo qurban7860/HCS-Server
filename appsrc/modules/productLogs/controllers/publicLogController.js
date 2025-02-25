@@ -9,6 +9,28 @@ this.dbservice = new logDBService();
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require("../models");
 const APILog = require("../../apiclient/models/apilog");
 
+// Common fields that should be present in all log formats
+// const REQUIRED_COMMON_FIELDS = [
+//   "operator",
+//   "coilBatchName",
+//   "coilLength",
+//   "frameSet",
+//   "componentLabel",
+//   "webWidth",
+//   "flangeHeight",
+//   "profileShape",
+//   "componentLength",
+//   "waste",
+//   "time"
+// ];
+
+// function validateRequiredFields(log) {
+//   const missingFields = REQUIRED_COMMON_FIELDS.filter(field => !log.hasOwnProperty(field));
+//   if (missingFields.length > 0) {
+//     throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+//   }
+//   return true;
+// }
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -87,6 +109,30 @@ exports.postPublicLog = async (req, res, next) => {
     }
 
     const { logs, version, type } = req.body;
+
+    // Validate required fields for each log entry
+    // try {
+    //   logs.forEach((logObj, index) => {
+    //     try {
+    //       validateRequiredFields(logObj);
+    //     } catch (error) {
+    //       throw new Error(`Log entry at index ${index}: ${error.message}`);
+    //     }
+    //   });
+    // } catch (error) {
+    //   await APILog.findByIdAndUpdate(
+    //     apiLogEntry._id,
+    //     {
+    //       responseStatusCode: StatusCodes.BAD_REQUEST,
+    //       response: JSON.stringify({ error: error.message }),
+    //       responseMessage: "Invalid Log Data: Missing required fields",
+    //       noOfRecordsUpdated: 0,
+    //     },
+    //     { new: true }
+    //   );
+    //   return res.status(StatusCodes.BAD_REQUEST).send(`Invalid Log Data: ${error.message}`);
+    // }
+
     req.query.type = type;
     const Model = getModel(req);
     const logsToInsert = [];
