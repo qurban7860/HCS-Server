@@ -28,7 +28,7 @@ router.get(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), cont
 router.get(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.getCustomerNotes);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/
-router.post(`${baseRouteForObject}/`, checkIDs(validate.customerIdAndId), controller.postCustomerNote);
+router.post(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.postCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
 router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), verifyDelete, controller.patchCustomerNote);
