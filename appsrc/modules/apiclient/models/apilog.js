@@ -24,7 +24,7 @@ const docSchema = new Schema({
         customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
         // customer
 
-        apiType: {type: String, enum: ['INI', 'MACHINE-INTEGRATION', 'MACHINE-LOGS', 'OTHER'], default: 'OTHER'},
+        apiType: {type: String, enum: ['INI', 'MACHINE-SYNC', 'MACHINE-LOGS', 'OTHER'], default: 'OTHER'},
 
         refUUID: { type: Schema.Types.ObjectId},
 
@@ -37,8 +37,11 @@ const docSchema = new Schema({
         responseStatusCode: { type: Number , required: true },
         //The HTTP status code returned by your application (e.g., 200 for success, 404 for not found)
                 
-        additionalContextualInformation: { type: String }, 
+        responseMessage: { type: String }, 
         //Any additional information that may be relevant for troubleshooting or analysis. This could include user IDs, session information, etc.
+
+        noOfRecordsUpdated: { type: Number },
+        //No of records updated
 },
 {
         collection: 'APILogs'

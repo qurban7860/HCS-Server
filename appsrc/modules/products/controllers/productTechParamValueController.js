@@ -20,47 +20,81 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
+this.orderBy = { createdAt: -1 };
 this.populate = [
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'},
-  {path: 'techParam',  populate: { path: 'category'}},
-  {path: 'history', populate: { path: 'updatedBy', select: 'name' } }
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' },
+  { path: 'techParam', populate: { path: 'category' } },
+  { path: 'history', populate: { path: 'updatedBy', select: 'name' } }
 ];
 
-async function getLatestTechParamByCode( machine ){
+async function getLatestTechParamByCode(machine) {
   try {
-    if( !( machine ) ){
+    if (!(machine)) {
       throw new Error('Machine ID is required');
     }
-    const regex = new RegExp("^Tech-Param_in_Ticket$", "i"); 
-    const result = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value').lean()
-    const configObjectIds = result?.value?.split(',')?.map( coi => coi?.trim() );
+    const regex = new RegExp("^Tech-Param_in_Ticket$", "i");
+    const result = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value').lean()
+    const configObjectIds = result?.value?.split(',')?.map(coi => coi?.trim());
     const record = await ProductTechParamValue.find({ machine, isArchived: false, techParam: { $in: configObjectIds } })
-    .populate({ path: 'techParam', select: 'code' }).lean(); 
+      .populate({ path: 'techParam', select: 'code' }).lean();
     const data = {
       hlc: record[0]?.techParamValue,
       plc: record[0]?.techParamValue,
     }
-      return record; 
+    return record;
   } catch (error) {
     throw error;
   }
 }
 
 exports.getSoftwareVersion = async (req, res, next) => {
-  try{
-    const regex = new RegExp("^Tech-Param_in_Ticket$", "i"); 
-    const result = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value').lean()
-    const configObjectIds = result?.value?.split(',')?.map( coi => coi?.trim() );
-    const records = await ProductTechParamValue.find({ machine: req.params.machineId, isArchived: false, techParam: { $in: configObjectIds } })
-    .populate({ path: 'techParam', select: 'code' }).lean(); 
+  try {
+    const regex = /^Tech-Param_in_Ticket$/i;
+
+    // Fetch the config
+    const result = await Config.findOne({
+      name: regex,
+      type: "ADMIN-CONFIG",
+      isArchived: false,
+      isActive: true,
+    }).select("value").lean();
+
+    if (!result || !result.value) {
+      return res.status(StatusCodes.NOT_FOUND).send("Configuration not found!");
+    }
+
+    // Convert config values to valid ObjectIds
+    let configObjectIds = result.value.split(",").map((id) => id.trim());
+    configObjectIds = configObjectIds.filter((id) => mongoose.isValidObjectId(id))
+      .map((id) => mongoose.Types.ObjectId(id));
+
+    if (!configObjectIds.length) {
+      return res.status(StatusCodes.NOT_FOUND).send("No valid configuration value found!");
+    }
+
+    // Convert machineId to ObjectId
+    const machineId = mongoose.Types.ObjectId(req.params.machineId);
+
+    // Fetch the relevant records
+    const records = await ProductTechParamValue.find({
+      machine: machineId,
+      isArchived: false,
+      techParam: { $in: configObjectIds },
+    }).populate({ path: "techParam", select: "code" }).lean();
+
+    if (!records.length) {
+      return res.status(StatusCodes.NOT_FOUND).send("No records found!");
+    }
+
+    // Extract software version data
     const data = {};
 
     for (const record of records) {
       const techParamCode = record?.techParam?.code;
       if (techParamCode) {
         const codes = Array.isArray(techParamCode) ? techParamCode : [techParamCode];
+
         if (codes.some((code) => typeof code === "string" && /hlc/i.test(code))) {
           data.hlc = record.techParamValue;
         }
@@ -69,10 +103,11 @@ exports.getSoftwareVersion = async (req, res, next) => {
         }
       }
     }
+
     res.json(data);
-  } catch( error ){
-    logger.error(new Error( error ));
-    res.status( StatusCodes.INTERNAL_SERVER_ERROR ).send( error?.message );
+  } catch (error) {
+    logger.error(error);
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: error.message });
   }
 };
 
@@ -83,7 +118,7 @@ exports.getProductTechParamValue = async (req, res, next) => {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
     } else {
-      response.history = response.history.sort((a, b) => b.updatedAt - a.updatedAt); 
+      response.history = response.history.sort((a, b) => b.updatedAt - a.updatedAt);
       res.json(response);
     }
   }
@@ -91,8 +126,8 @@ exports.getProductTechParamValue = async (req, res, next) => {
 
 exports.getProductTechParamValues = async (req, res, next) => {
   this.machineId = req.params.machineId;
-  this.query = req.query != "undefined" ? req.query : {};  
-  if(this.query.orderBy) {
+  this.query = req.query != "undefined" ? req.query : {};
+  if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
@@ -125,7 +160,6 @@ exports.searchProductTechParamValues = async (req, res, next) => {
 
 exports.deleteProductTechParamValue = async (req, res, next) => {
   this.dbservice.deleteObject(ProductTechParamValue, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -138,7 +172,7 @@ exports.deleteProductTechParamValue = async (req, res, next) => {
 
 exports.postProductTechParamValue = async (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -159,7 +193,7 @@ exports.postProductTechParamValue = async (req, res, next) => {
         }
       }
     }
-    
+
     this.dbservice.postObject(objectVal, callbackFunc);
     function callbackFunc(error, response) {
       if (error) {
@@ -177,7 +211,7 @@ exports.postProductTechParamValue = async (req, res, next) => {
 
 exports.patchProductTechParamValue = async (req, res, next) => {
   const errors = validationResult(req);
-  
+
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
@@ -198,44 +232,44 @@ exports.patchProductTechParamValue = async (req, res, next) => {
 };
 
 exports.getDocumentFromReq = async (req, reqType) => {
-// function getDocumentFromReq(req, reqType){
+  // function getDocumentFromReq(req, reqType){
   const { techParam, techParamValue, activatedAt, expiryDate, note, isActive, isArchived, loginUser } = req.body;
-  
+
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductTechParamValue({});
   }
 
-  if ("machine" in req.body){
+  if ("machine" in req.body) {
     doc.machine = req.body.machine;
-  }else{
+  } else {
     doc.machine = req.params.machineId;
   }
-  if ("techParam" in req.body){
+  if ("techParam" in req.body) {
     doc.techParam = techParam;
   }
-  if ("techParamValue" in req.body){
+  if ("techParamValue" in req.body) {
     doc.techParamValue = techParamValue;
   }
-  if ("activatedAt" in req.body){
+  if ("activatedAt" in req.body) {
     doc.activatedAt = activatedAt;
   }
-  if ("expiryDate" in req.body){
+  if ("expiryDate" in req.body) {
     doc.expiryDate = expiryDate;
   }
-  if ("note" in req.body){
+  if ("note" in req.body) {
     doc.note = note;
   }
-  
-  
-  if ("isActive" in req.body){
+
+
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -243,8 +277,7 @@ exports.getDocumentFromReq = async (req, reqType) => {
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
-  //console.log("doc in http req: ", doc);
   return doc;
 }

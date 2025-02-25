@@ -10,7 +10,7 @@ const docSchema = new Schema({
         name: { type: String, minlength: 2, maxlength: 40 },
         // name of organization
         value: { type: String , required: true },
-        type: {  type: String, enum: ['AUTH','ERROR-PAGES','NORMAL-CONFIG','ADMIN-CONFIG', 'RESPONSE'], default: 'NORMAL-CONFIG'},
+        type: {  type: String, enum: ['AUTH','ERROR-PAGES','NORMAL-CONFIG','ADMIN-CONFIG','MACHINE-INTEGRATION', 'RESPONSE'], default: 'NORMAL-CONFIG'},
         notes: { type: String },
 },
 {

@@ -6,7 +6,8 @@ const { Customer } = require('../../models');
 const checkCustomerID = require('../../../../middleware/check-parentID')('customer', Customer);
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 const controllers = require('../../controllers');
 const controller = controllers.customerNoteController;
 
@@ -18,22 +19,22 @@ const router = express.Router();
 // - /api/1.0.0/crm/customers/:customerId/notes/
 const baseRouteForObject = `/customers/:customerId/notes`;
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
-router.get(`${baseRouteForObject}/:id`, checkCustomerID, controller.getCustomerNote);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.getCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/
-router.get(`${baseRouteForObject}/`, checkCustomerID, controller.getCustomerNotes);
+router.get(`${baseRouteForObject}/`, checkIDs(validate.customerId), controller.getCustomerNotes);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/
-router.post(`${baseRouteForObject}/`, checkCustomerID, controller.postCustomerNote);
+router.post(`${baseRouteForObject}/`, checkIDs(validate.customerIdAndId), controller.postCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
-router.patch(`${baseRouteForObject}/:id`, checkCustomerID, verifyDelete, controller.patchCustomerNote);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), verifyDelete, controller.patchCustomerNote);
 
 // - /api/1.0.0/crm/customers/:customerId/notes/:id
-router.delete(`${baseRouteForObject}/:id`, checkCustomerID, controller.deleteCustomerNote);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.customerIdAndId), controller.deleteCustomerNote);
 
 // - /api/1.0.0/crm/notes/search
 router.get(`/notes/search`, controller.searchCustomerNotes);

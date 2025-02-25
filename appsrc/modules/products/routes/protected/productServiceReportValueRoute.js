@@ -5,6 +5,8 @@ const { fileUpload, uploadHandler, checkMaxCount, imageOptimization } = require(
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productServiceReportValueController;
@@ -18,16 +20,16 @@ const baseRouteForObject = `/machines/:machineId/serviceReportValues`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProductServiceReportValue);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.machineAndId), controller.getProductServiceReportValue);
 
-router.get(`${baseRouteForObject}/`, controller.getProductServiceReportValues);
+router.get(`${baseRouteForObject}/`, checkIDs(validate.machine), controller.getProductServiceReportValues);
 
-router.get(`${baseRouteForObject}/:serviceReportId/checkItems`, controller.getProductServiceReportCheckItems);
+router.get(`${baseRouteForObject}/:serviceReportId/checkItems`, checkIDs(validate.machine), controller.getProductServiceReportCheckItems);
 
-router.post(`${baseRouteForObject}/`,uploadHandler, checkMaxCount, imageOptimization, controller.postProductServiceReportValue );
+router.post(`${baseRouteForObject}/`, checkIDs(validate.machine), uploadHandler, checkMaxCount, imageOptimization, controller.postProductServiceReportValue );
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, uploadHandler, checkMaxCount, imageOptimization, controller.patchProductServiceReportValue, );
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.machineAndId), verifyDelete, uploadHandler, checkMaxCount, imageOptimization, controller.patchProductServiceReportValue, );
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceReportValue);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.machineAndId), controller.deleteProductServiceReportValue);
 
 module.exports = router;

@@ -3,10 +3,12 @@
 // Public Routes (no auth required)
 const publicRoutes = {
   machineIntegration: require("./public/productMachineIntegrationRoute"),
+  productConfiguration: require("./public/productConfigurationRoute"),
 };
 
 // Protected Routes (requiring auth)
 const protectedRoutes = {
+  profileFiles: require("./protected/productProfileFileRoute"),
   auditLogs: require("./protected/productAuditLogRoute"),
   categories: require("./protected/productCategoryRoute"),
   connections: require("./protected/productConnectionRoute"),
@@ -15,6 +17,7 @@ const protectedRoutes = {
   models: require("./protected/productModelRoute"),
   notes: require("./protected/productNoteRoute"),
   products: require("./protected/productRoute"),
+  productConfiguration: require("./protected/productConfigurationRoute"),
   statuses: require("./protected/productStatusRoute"),
   suppliers: require("./protected/productSupplierRoute"),
   techParamCategories: require("./protected/productTechParamCategoryRoute"),

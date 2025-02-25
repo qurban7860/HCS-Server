@@ -5,6 +5,8 @@ const { Product } = require('../../models');
 const checkProductID = require('../../../../middleware/check-parentID')('machine', Product);
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productTechParamValueController;
@@ -14,23 +16,23 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products/machines
 
-const baseRouteForObject = `/machines/:machineId/techparamvalues`; 
+const baseRouteForObject = `/machines/:machineId/techparamvalues`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/`, checkProductID, controller.getProductTechParamValues );
+router.get(`${baseRouteForObject}/`, checkIDs(validate.machineId), checkProductID, controller.getProductTechParamValues);
 
-router.get(`${baseRouteForObject}/softwareVersion/`, checkProductID, controller.getSoftwareVersion );
+router.get(`${baseRouteForObject}/softwareVersion/`, checkIDs(validate.machineId), checkProductID, controller.getSoftwareVersion);
 
-router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductTechParamValue);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.machineIdAndId), checkProductID, controller.getProductTechParamValue);
 
-router.post(`${baseRouteForObject}/`, checkProductID,  controller.postProductTechParamValue);
+router.post(`${baseRouteForObject}/`, checkIDs(validate.machineId), checkProductID, controller.postProductTechParamValue);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID,  verifyDelete, controller.patchProductTechParamValue);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.machineIdAndId), checkProductID, verifyDelete, controller.patchProductTechParamValue);
 
-router.delete(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.deleteProductTechParamValue);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.machineIdAndId), checkProductID, verifyDelete, controller.deleteProductTechParamValue);
 
-router.get('/techparamvalues/search',  controller.searchProductTechParamValues);
+router.get('/techparamvalues/search', controller.searchProductTechParamValues);
 
 
 module.exports = router;

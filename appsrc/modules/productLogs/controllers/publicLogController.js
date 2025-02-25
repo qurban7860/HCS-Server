@@ -9,6 +9,28 @@ this.dbservice = new logDBService();
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require("../models");
 const APILog = require("../../apiclient/models/apilog");
 
+// Common fields that should be present in all log formats
+// const REQUIRED_COMMON_FIELDS = [
+//   "operator",
+//   "coilBatchName",
+//   "coilLength",
+//   "frameSet",
+//   "componentLabel",
+//   "webWidth",
+//   "flangeHeight",
+//   "profileShape",
+//   "componentLength",
+//   "waste",
+//   "time"
+// ];
+
+// function validateRequiredFields(log) {
+//   const missingFields = REQUIRED_COMMON_FIELDS.filter(field => !log.hasOwnProperty(field));
+//   if (missingFields.length > 0) {
+//     throw new Error(`Missing required fields: ${missingFields.join(", ")}`);
+//   }
+//   return true;
+// }
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -25,22 +47,92 @@ this.populate = [
 exports.postPublicLog = async (req, res, next) => {
   const startTime = Date.now();
   const clientIP = req.clientInfo?.ip;
-
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  }
-
-  if (!mongoose.Types.ObjectId.isValid(req.machine?._id)) {
-    return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: machine/customer not found");
-  }
-
-  if (!Array.isArray(req.body?.logs) || req.body?.logs?.length === 0) {
-    return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: Data is missing or empty");
-  }
+  let apiLogEntry;
 
   try {
+    apiLogEntry = await logApiCall({
+      req,
+      startTime,
+      responseData: {
+        statusCode: StatusCodes.ACCEPTED,
+        body: {
+          message: "Request received, processing machine logs",
+          count: req.body?.logs?.length || 0,
+        },
+        context: "Started processing request",
+      },
+      machine: req.machine,
+      createdIP: clientIP,
+    });
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.BAD_REQUEST,
+          response: JSON.stringify({ errors: errors.array() }),
+          responseMessage: "Validation failed",
+          noOfRecordsUpdated: 0,
+        },
+        { new: true }
+      );
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(req.machine?._id)) {
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.BAD_REQUEST,
+          response: JSON.stringify({ error: "Invalid machine/customer" }),
+          responseMessage: "Invalid Log Data: machine/customer not found",
+          noOfRecordsUpdated: 0,
+        },
+        { new: true }
+      );
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: machine/customer not found");
+    }
+
+    if (!Array.isArray(req.body?.logs) || req.body?.logs?.length === 0) {
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.BAD_REQUEST,
+          response: JSON.stringify({ error: "Missing or empty logs array" }),
+          responseMessage: "Invalid Log Data: Data is missing or empty",
+          noOfRecordsUpdated: 0,
+        },
+        { new: true }
+      );
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: Data is missing or empty");
+    }
+
     const { logs, version, type } = req.body;
+
+    // Validate required fields for each log entry
+    // try {
+    //   logs.forEach((logObj, index) => {
+    //     try {
+    //       validateRequiredFields(logObj);
+    //     } catch (error) {
+    //       throw new Error(`Log entry at index ${index}: ${error.message}`);
+    //     }
+    //   });
+    // } catch (error) {
+    //   await APILog.findByIdAndUpdate(
+    //     apiLogEntry._id,
+    //     {
+    //       responseStatusCode: StatusCodes.BAD_REQUEST,
+    //       response: JSON.stringify({ error: error.message }),
+    //       responseMessage: "Invalid Log Data: Missing required fields",
+    //       noOfRecordsUpdated: 0,
+    //     },
+    //     { new: true }
+    //   );
+    //   return res.status(StatusCodes.BAD_REQUEST).send(`Invalid Log Data: ${error.message}`);
+    // }
+
     req.query.type = type;
     const Model = getModel(req);
     const logsToInsert = [];
@@ -55,6 +147,7 @@ exports.postPublicLog = async (req, res, next) => {
       logObj.version = version;
       logObj.batchId = batchId;
       logObj.clientInfo = req.clientInfo;
+      logObj.apiLogId = apiLogEntry._id;
 
       const fakeReq = { body: logObj };
       const newLog = addIdentifierData(fakeReq);
@@ -65,39 +158,43 @@ exports.postPublicLog = async (req, res, next) => {
       await Model.create(logsToInsert);
     }
 
+    const finalResponseTime = Date.now() - startTime;
 
-    await logApiCall({
-      req,
-      startTime,
-      responseData: {
-        statusCode: StatusCodes.CREATED,
-        body: {
+    await APILog.findByIdAndUpdate(
+      apiLogEntry._id,
+      {
+        responseStatusCode: StatusCodes.CREATED,
+        response: JSON.stringify({
           message: "Machine logs processed successfully",
           count: logsToInsert.length,
-        },
-        context: `Successfully processed ${logsToInsert.length} ${type} logs`,
+        }),
+        responseMessage: `Successfully processed ${logsToInsert.length} ${type} logs`,
+        noOfRecordsUpdated: logsToInsert.length,
+        responseTime: `${finalResponseTime}`,
       },
-      machine: req.machine,
-      createdIP: clientIP,
-    });
+      { new: true }
+    );
 
     res.status(StatusCodes.CREATED).json({
       message: "Machine logs processed successfully",
       count: logsToInsert.length,
     });
   } catch (error) {
-    await logApiCall({
-      req,
-      startTime,
-      responseData: {
-        statusCode: StatusCodes.INTERNAL_SERVER_ERROR,
-        body: error.message,
-        context: "Error Processing Machine Logs",
-      },
-      machine: req.machine,
-      createdIP: clientIP,
-    });
-    logger.error(new Error(error));
+    if (apiLogEntry) {
+      const errorResponseTime = Date.now() - startTime;
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.INTERNAL_SERVER_ERROR,
+          response: JSON.stringify({ error: error.message }),
+          responseMessage: "Error Processing Machine Logs",
+          noOfRecordsUpdated: 0,
+          responseTime: `${errorResponseTime}`,
+        },
+        { new: true }
+      );
+    }
+    await logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
@@ -113,7 +210,9 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     responseTime: `${Date.now() - startTime}`,
     response: JSON.stringify(responseData.body),
     responseStatusCode: responseData.statusCode,
-    additionalContextualInformation: responseData.context,
+    responseMessage: responseData.context,
+    noOfRecordsUpdated: responseData?.noOfRecordsUpdated || 0,
+    createdAt: new Date(),
     createdIP: req?.clientInfo?.ip || createdIP,
     createdByIdentifier: req?.clientInfo?.identifier || createdBy || null,
   });
@@ -127,9 +226,9 @@ function addIdentifierData(req) {
   doc.createdByIdentifier = clientInfo.identifier;
   doc.createdIP = clientInfo.ip;
   doc.createdAt = new Date();
-  doc.updatedBy = null;
-  doc.updatedIP = null;
-  doc.updatedAt = null;
+  doc.updatedByIdentifier = clientInfo.identifier;
+  doc.updatedIP = clientInfo.ip;
+  doc.updatedAt = new Date();
 
   return doc;
 }

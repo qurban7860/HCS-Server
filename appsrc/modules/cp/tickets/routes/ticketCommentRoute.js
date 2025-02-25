@@ -12,7 +12,7 @@ const controller = controllers.ticketCommentController;
 
 const router = express.Router({ mergeParams: true });
 
-const baseRoute = `/:ticketId/comments`; 
+const baseRoute = `/:ticketId/comments`;
 
 router.use(checkAuth, customerDataFilter);
 
@@ -20,7 +20,7 @@ router.get(`${baseRoute}/:id`, checkIDs(validate.ticketIdAndId), controller.getT
 
 router.get(`${baseRoute}/`, checkIDs(validate.ticketId), controller.getTicketComments);
 
-router.post(`${baseRoute}/`, checkIDs(validate.ticket), controller.postTicketComment);
+router.post(`${baseRoute}/`, checkIDs(validate.ticketId), controller.postTicketComment);
 
 router.patch(`${baseRoute}/:id`, checkIDs(validate.ticketIdAndId), verifyDelete, controller.patchTicketComment);
 

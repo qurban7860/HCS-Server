@@ -1,8 +1,9 @@
 const express = require('express');
-
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productDrawingController;
@@ -12,18 +13,18 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products
 
-const baseRouteForObject = `/drawings`; 
+const baseRouteForObject = `/drawings`;
 
 router.use(checkAuth, checkCustomer);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProductDrawing);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getProductDrawing);
 
 router.get(`${baseRouteForObject}/`, controller.getProductDrawings);
 
 router.post(`${baseRouteForObject}/`, controller.postProductDrawing);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductDrawing);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), verifyDelete, controller.patchProductDrawing);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProductDrawing);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.deleteProductDrawing);
 
 module.exports = router;

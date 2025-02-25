@@ -18,7 +18,7 @@ const { Event } = require('../../calenders/models');
 
 const { Document } = require('../../documents/models');
 
-const applyUserFilter  = require('../utils/userFilters');
+const applyUserFilter = require('../utils/userFilters');
 
 const { Config, Country } = require('../../config/models');
 const { Product } = require('../../products/models');
@@ -35,72 +35,85 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { createdAt: -1 };
 this.populate = [
-  {path: 'customer', select: 'name'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'},
-  {path: 'primaryBillingContact', select: 'firstName lastName'},
-  {path: 'primaryTechnicalContact', select: 'firstName lastName'},
+  { path: 'customer', select: 'name' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' },
+  { path: 'primaryBillingContact', select: 'firstName lastName' },
+  { path: 'primaryTechnicalContact', select: 'firstName lastName' },
 ];
 
 
 exports.getCustomerSite = async (req, res, next) => {
-    this.dbservice.getObjectById(CustomerSite, this.fields, req.params.id, this.populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-      } else {
-        // check if the customer id is valid
-        res.json(response);
-      }
+  this.query = req.query != "undefined" ? req.query : {};
+
+  this.customerId = req.params.customerId;
+  if (this.customerId) {
+    this.query.customer = this.customerId;
+  }
+  this.query._id = req.params.id;
+  this.dbservice.getObject(CustomerSite, this.query, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      // check if the customer id is valid
+      res.json(response);
     }
+  }
 };
 
 exports.getCustomerSites = async (req, res, next) => {
-    this.query = req.query != "undefined" ? req.query : {};
-    this.orderBy = { name: 1 };
-    if(this.query.orderBy) {
-      this.orderBy = this.query.orderBy;
-      delete this.query.orderBy;
-    }
+  this.query = req.query != "undefined" ? req.query : {};
+  this.orderBy = { name: 1 };
+  if (this.query.orderBy) {
+    this.orderBy = this.query.orderBy;
+    delete this.query.orderBy;
+  }
 
-    const finalQuery = await applyUserFilter(req);
-    if(finalQuery) {
-      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-      if(allowedCustomers?.length > 0) {
-        this.query.customer = { $in: allowedCustomers };
-      }
+  const finalQuery = await applyUserFilter(req);
+  if (finalQuery) {
+    const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+    if (allowedCustomers?.length > 0) {
+      this.query.customer = { $in: allowedCustomers };
     }
+  }
 
-    this.customerId = req.params.customerId;
-    let customerObj;
-    if(this.customerId && ObjectId.isValid(this.customerId)) {
-      this.query.customer = this.customerId;
-      customerObj = await Customer.findOne({_id: this.customerId}).lean().select('mainSite');
-    }
-    
-    this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(json(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)));
-      } else {
-        if(customerObj?.mainSite) {
-          let index = response.findIndex(item => item._id+"" === customerObj.mainSite+"");
-          if (index !== -1) {
-            let item = response.splice(index, 1)[0]; // Remove the item from the response
-            response.unshift(item); // Add the item to the beginning of the response
-          }
+  this.customerId = req.params.customerId;
+  let customerObj;
+  if (this.customerId) {
+    this.query.customer = this.customerId;
+    customerObj = await Customer.findOne({ _id: this.customerId }).lean().select('mainSite');
+  }
+
+  this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(json(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)));
+    } else {
+      if (customerObj?.mainSite) {
+        let index = response.findIndex(item => item._id + "" === customerObj.mainSite + "");
+        if (index !== -1) {
+          let item = response.splice(index, 1)[0]; // Remove the item from the response
+          response.unshift(item); // Add the item to the beginning of the response
         }
-        res.json(response);
       }
+      res.json(response);
     }
+  }
 };
 
 exports.searchCustomerSites = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};   
+  this.query = req.query != "undefined" ? req.query : {};
+
+  this.customerId = req.params.customerId;
+  if (this.customerId) {
+    this.query.customer = this.customerId;
+  }
+
   this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
@@ -131,7 +144,7 @@ exports.postCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+    if (req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
       const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
       req.body.phoneNumbers = validPhoneNumbers;
     }
@@ -141,10 +154,10 @@ exports.postCustomerSite = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
-        updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);      
+        updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);
         res.status(StatusCodes.CREATED).json({ CustomerSite: response });
       }
     }
@@ -160,8 +173,8 @@ async function updateContactAddress(updateAddressPrimaryTechnicalContact, primar
     (updateAddressPrimaryTechnicalContact === true ||
       updateAddressPrimaryTechnicalContact === 'true')
   ) {
-    try { 
-      const setQuery = {$set: { address: address }};
+    try {
+      const setQuery = { $set: { address: address } };
       await CustomerContact.updateOne(
         { _id: primaryTechnicalContact },
         setQuery
@@ -178,54 +191,54 @@ exports.patchCustomerSite = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(req.body?.isArchived == 'true' || req.body?.isArchived === true ){
-      const customerFound = await Customer.findOne({mainSite: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(customerFound) {
-        res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Customers"); 
+    if (req.body?.isArchived == 'true' || req.body?.isArchived === true) {
+      const customerFound = await Customer.findOne({ mainSite: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (customerFound) {
+        res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Customers");
       }
 
-      const noteFound = await CustomerNote.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      console.log({noteFound});
-      if(noteFound) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Notes"); 
+      const noteFound = await CustomerNote.findOne({ site: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      console.log({ noteFound });
+      if (noteFound) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Notes");
       }
 
-      const documentSite = await Document.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(documentSite) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Documents"); 
+      const documentSite = await Document.findOne({ site: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (documentSite) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Documents");
       }
 
-      const productSite = await Product.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(productSite) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product"); 
+      const productSite = await Product.findOne({ site: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (productSite) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product");
       }
 
-      const productServiceReport = await ProductServiceReports.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(productServiceReport) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Report"); 
+      const productServiceReport = await ProductServiceReports.findOne({ site: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (productServiceReport) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Report");
       }
 
-      const eventRecord = await Event.findOne({site: req.params.id, isActive: true, isArchived: false}).select('_id').lean();
-      if(eventRecord) {
-        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Report"); 
+      const eventRecord = await Event.findOne({ site: req.params.id, isActive: true, isArchived: false }).select('_id').lean();
+      if (eventRecord) {
+        return res.status(StatusCodes.BAD_REQUEST).send("Site is attached with Product Service Report");
       }
     }
-    if("isArchived" in req.body){
+    if ("isArchived" in req.body) {
       // check if site exiists in customer schema
-      let queryString  = { _id: req.params.customerId, mainSite: req.params.id };
+      let queryString = { _id: req.params.customerId, mainSite: req.params.id };
       this.dbservice.getObject(Customer, queryString, this.populate, getObjectCallback);
       async function getObjectCallback(error, response) {
         if (error) {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-        } else { 
-          if(_.isEmpty(response)){
+        } else {
+          if (_.isEmpty(response)) {
             // check if site exists in machine schema
-            let queryStringMachine = { 
+            let queryStringMachine = {
               $or: [{
-                  instalationSite: req.params.id
-                }, {
-                  billingSite: req.params.id
+                instalationSite: req.params.id
+              }, {
+                billingSite: req.params.id
               }]
             };
             _this.dbservice.getObject(Product, queryStringMachine, this.populate, getMachineObjectCallback);
@@ -233,51 +246,51 @@ exports.patchCustomerSite = async (req, res, next) => {
               if (error) {
                 logger.error(new Error(error));
                 res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-              } else { 
-                if(_.isEmpty(response)){ 
+              } else {
+                if (_.isEmpty(response)) {
                   _this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
                   function callbackFunc(error, result) {
                     if (error) {
                       logger.error(new Error(error));
                       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
                         //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-                        );
-                    } 
+                      );
+                    }
                     else {
                       updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
-                      updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);   
+                      updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);
                       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
                     }
                   }
                 }
-                else{
+                else {
                   res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Machine assigned site cannot be deleted!"));
                 }
               }
             }
           }
-          else{
+          else {
             res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, "Main Site cannot be deleted!"));
           }
         }
       }
     }
-    else{
-      if(req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
+    else {
+      if (req.body.phoneNumbers && Array.isArray(req.body.phoneNumbers)) {
         const validPhoneNumbers = req.body.phoneNumbers.filter(phoneNumber => phoneNumber?.contactNumber && phoneNumber?.contactNumber.trim() !== '' && phoneNumber?.contactNumber.length > 0);
         req.body.phoneNumbers = validPhoneNumbers;
       }
-      
+
       this.dbservice.patchObject(CustomerSite, req.params.id, getDocumentFromReq(req), callbackFunc);
       function callbackFunc(error, result) {
         if (error) {
           logger.error(new Error(error));
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-            );
+          );
         } else {
           updateContactAddress(req.body.updateAddressPrimaryTechnicalContact, req.body.primaryTechnicalContact, req.body.address);
-          updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);   
+          updateContactAddress(req.body.updateAddressPrimaryBillingContact, req.body.primaryBillingContact, req.body.address);
           res.status(StatusCodes.OK).send(rtnMsg.recordUpdateMessage(StatusCodes.OK, result));
         }
       }
@@ -293,11 +306,11 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
 
     let queryString_ = { isArchived: false };
     // const fetchAllSites = req.query.fetchAllSites === true || req.query.fetchAllSites === 'true' ? true : false;
-    if(ObjectId.isValid(req?.params?.customerId)) {
+    if (ObjectId.isValid(req?.params?.customerId)) {
       queryString_.customer = req.params.customerId;
     } else {
-      let listCustomers = await Customer.find({"excludeReports": { $ne: true }, isArchived: false}).select('_id').lean();
-      if(listCustomers && listCustomers.length > 0)
+      let listCustomers = await Customer.find({ "excludeReports": { $ne: true }, isArchived: false }).select('_id').lean();
+      if (listCustomers && listCustomers.length > 0)
         queryString_.customer = { $in: listCustomers };
     }
 
@@ -308,14 +321,14 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
 
 
     const finalQuery = await applyUserFilter(req);
-    if(finalQuery) {
+    if (finalQuery) {
       const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-      if(allowedCustomers?.length > 0) {
+      if (allowedCustomers?.length > 0) {
         queryString_.customer = { $in: allowedCustomers };
       }
     }
 
-    let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({name: 1})
+    let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({ name: 1 })
       .populate('customer')
       .populate('primaryBillingContact')
       .populate('primaryTechnicalContact');
@@ -335,12 +348,12 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       }
 
       let finalDataObj;
-      let createdDateLTZ = ""; 
-      if(site.createdAt && site.createdAt.length > 0) { const createdDate = new Date(site.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
+      let createdDateLTZ = "";
+      if (site.createdAt && site.createdAt.length > 0) { const createdDate = new Date(site.createdAt); createdDateLTZ = createdDate.toLocaleString('en-NZ', options); }
 
-      let updatedDateLTZ = ""; 
-      if(site.updatedAt && site.updatedAt.length > 0) { const updatedAt = new Date(site.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }    
-      
+      let updatedDateLTZ = "";
+      if (site.updatedAt && site.updatedAt.length > 0) { const updatedAt = new Date(site.updatedAt); updatedDateLTZ = updatedAt.toLocaleString('en-NZ', options); }
+
       const phoneNumber_ = formatPhoneNumber(site);
 
       if (EXPORT_UUID) {
@@ -364,10 +377,10 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Phone: phoneNumber_,
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
-          CreationDate : createdDateLTZ,
-          ModificationDate : updatedDateLTZ,
-          Active : site.isActive ? 'true' : 'false',
-          Archived : site.isArchived ? 'true' : 'false'
+          CreationDate: createdDateLTZ,
+          ModificationDate: updatedDateLTZ,
+          Active: site.isActive ? 'true' : 'false',
+          Archived: site.isArchived ? 'true' : 'false'
         };
       } else {
         finalDataObj = {
@@ -386,10 +399,10 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
           Phone: phoneNumber_,
           Email: site.email ? site.email : '',
           Website: site.website ? site.website : '',
-          CreationDate : createdDateLTZ,
-          ModificationDate : updatedDateLTZ,
-          Active : site.isActive ? 'true' : 'false',
-          Archived : site.isArchived ? 'true' : 'false'
+          CreationDate: createdDateLTZ,
+          ModificationDate: updatedDateLTZ,
+          Active: site.isActive ? 'true' : 'false',
+          Archived: site.isArchived ? 'true' : 'false'
         };
       }
 
@@ -407,9 +420,9 @@ function formatPhoneNumber(site, type = "PHONE") {
   let phoneNumber_ = "";
   const phoneNo = site?.phoneNumbers?.find(item => item.type === type);
   if (phoneNo) {
-      const countryCode = phoneNo.countryCode ? (phoneNo.countryCode.startsWith('+') ? phoneNo.countryCode : `+${phoneNo.countryCode}`) : "";
-      const number = phoneNo.contactNumber ? ` ${phoneNo.contactNumber}` : "";
-      phoneNumber_ = countryCode + number;
+    const countryCode = phoneNo.countryCode ? (phoneNo.countryCode.startsWith('+') ? phoneNo.countryCode : `+${phoneNo.countryCode}`) : "";
+    const number = phoneNo.contactNumber ? ` ${phoneNo.contactNumber}` : "";
+    phoneNumber_ = countryCode + number;
   }
   return phoneNumber_;
 }
@@ -417,80 +430,80 @@ function formatPhoneNumber(site, type = "PHONE") {
 function getContactName(contact) {
   let fullName = '"';
 
-  if(contact && contact.firstName)
-    fullName+= contact.firstName.replace(/"/g,"'");
+  if (contact && contact.firstName)
+    fullName += contact.firstName.replace(/"/g, "'");
 
-  if(contact && contact.lastName)
-    fullName+= contact.lastName.replace(/"/g,"'");
+  if (contact && contact.lastName)
+    fullName += contact.lastName.replace(/"/g, "'");
 
-  return fullName+'"';
+  return fullName + '"';
 }
 
-function getDocumentFromReq(req, reqType){
-  const { name, phone, email, phoneNumbers, fax, website, address, lat, long, 
+function getDocumentFromReq(req, reqType) {
+  const { name, phone, email, phoneNumbers, fax, website, address, lat, long,
     primaryBillingContact, primaryTechnicalContact, contacts,
     isActive, isArchived, loginUser } = req.body;
-  
+
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new CustomerSite({});
   }
   // get customer from params
-  if (req.params){
+  if (req.params) {
     doc.customer = req.params.customerId;
-  }else{
+  } else {
     doc.customer = req.body.customer;
   }
-  if ("name" in req.body){
+  if ("name" in req.body) {
     doc.name = name;
   }
-  if ("phone" in req.body){
+  if ("phone" in req.body) {
     doc.phone = phone;
   }
-  if ("email" in req.body){
+  if ("email" in req.body) {
     doc.email = email;
   }
-  if ("phoneNumbers" in req.body){
+  if ("phoneNumbers" in req.body) {
     doc.phoneNumbers = phoneNumbers;
   }
-  if ("fax" in req.body){
+  if ("fax" in req.body) {
     doc.fax = fax;
   }
-  if ("website" in req.body){
+  if ("website" in req.body) {
     doc.website = website;
   }
-  if ("address" in req.body){
+  if ("address" in req.body) {
     doc.address = address;
   }
   //primaryBillingContact, primaryTechnicalContact, contacts
 
-  if ("contacts" in req.body){
+  if ("contacts" in req.body) {
     doc.contacts = contacts;
   }
 
-  if ("lat" in req.body){
+  if ("lat" in req.body) {
     doc.lat = lat;
   }
 
-  if ("long" in req.body){
+  if ("long" in req.body) {
     doc.long = long;
   }
 
-  if ("primaryBillingContact" in req.body){
+  if ("primaryBillingContact" in req.body) {
     doc.primaryBillingContact = primaryBillingContact;
   }
-  if ("primaryTechnicalContact" in req.body){
+  if ("primaryTechnicalContact" in req.body) {
     doc.primaryTechnicalContact = primaryTechnicalContact;
   }
-  
-  if ("isActive" in req.body){
+
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -498,7 +511,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
   return doc;
 

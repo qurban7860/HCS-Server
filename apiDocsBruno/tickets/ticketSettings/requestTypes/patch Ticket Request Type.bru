@@ -1,0 +1,21 @@
+meta {
+  name: patch Ticket Request Type
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/tickets/settings/requestTypes/67adebc1854c354f76731cd8
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isArchived": true
+  }
+}

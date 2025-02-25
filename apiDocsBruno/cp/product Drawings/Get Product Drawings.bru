@@ -1,0 +1,19 @@
+meta {
+  name: Get Product Drawings
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/cp/products/drawings/?machine=661372619472c159c48bce9a
+  body: none
+  auth: bearer
+}
+
+params:query {
+  machine: 661372619472c159c48bce9a
+}
+
+auth:bearer {
+  token: {{token}}
+}

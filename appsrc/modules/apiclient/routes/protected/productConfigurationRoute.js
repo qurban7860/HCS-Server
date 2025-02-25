@@ -1,11 +1,11 @@
 const express = require('express');
 const { check } = require('express-validator');
 
-const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
-const verifyDelete = require('../../../middleware/verifyDelete');
-const { Product } = require('../models');
-const controllers = require('../controllers');
+const checkAuth = require('../../../../middleware/check-auth');
+const checkCustomer = require('../../../../middleware/check-customer');
+const verifyDelete = require('../../../../middleware/verifyDelete');
+const { Product } = require('../../models');
+const controllers = require('../../controllers');
 const controller = controllers.productConfigurationController;
 
 const router = express.Router();
@@ -13,9 +13,9 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/productConfigurations
 
-const baseRouteForObject = `/productConfigurations`; 
+const baseRouteForObject = `/productConfigurations`;
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth);
 
 // router.get(`${baseRouteForObject}/search`, controller.searchProductConfiguration);
 

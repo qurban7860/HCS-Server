@@ -86,6 +86,12 @@ class App {
       store: store
     }));
 
+    this.app.use('/api/1.0.0/cp/security/getCustomerToken/',session({
+      secret: process.env.SESSION_SECRETKEY,
+      resave: true,
+      store: store
+    }));
+
     let allowedOrigins;
     if(process.env.CORS_CONFIG) {
       allowedOrigins = process.env.CORS_CONFIG.split(",");

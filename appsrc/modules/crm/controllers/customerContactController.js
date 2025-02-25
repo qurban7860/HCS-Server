@@ -41,78 +41,61 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-
 exports.getCustomerContact = async (req, res, next) => {
-  this.dbservice.getObjectById(CustomerContact, this.fields, req.params.id, this.populate, callbackFunc);
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      let operatorsList = await ProductServiceReports.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceReportTemplate machine').populate({ path: "serviceReportTemplate", select: "reportTitle" });
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
 
-      if (operatorsList && operatorsList.length > 0) {
-        response = JSON.parse(JSON.stringify(response));
-        response.serviceReports = operatorsList;
-      }
-      else
-        response.serviceReports = [];
-
-      res.json(response);
+    this.customerId = req.params.customerId;
+    if (this.customerId) {
+      this.query.customer = this.customerId;
     }
-  }
+    this.query._id = req.params.id;
 
+    const response = await this.dbservice.getObject(CustomerContact, this.query, this.populate);
+
+    let operatorsList = await ProductServiceReports.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceReportTemplate machine').populate({ path: "serviceReportTemplate", select: "reportTitle" });
+
+    if (operatorsList && operatorsList.length > 0) {
+      response = JSON.parse(JSON.stringify(response));
+      response.serviceReports = operatorsList;
+    }
+    else
+      response.serviceReports = [];
+
+    res.json(response);
+  } catch (error) {
+    console.log(" error : ", error)
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
 };
 
 exports.getCustomerContacts = async (req, res, next) => {
-  this.orderBy = { firstName: 1, lastName: 1 };
-  this.query = req.query != "undefined" ? req.query : {};
-  if (this.query.orderBy) {
-    this.orderBy = this.query.orderBy;
-    delete this.query.orderBy;
-  }
-  this.customerId = req.params.customerId;
-
-  if (this.customerId && ObjectId.isValid(this.customerId))
-    this.query.customer = this.customerId;
-
-  const finalQuery = await applyUserFilter(req);
-  if (finalQuery) {
-    const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-    if (allowedCustomers?.length > 0) {
-      this.query.customer = { $in: allowedCustomers };
+  try {
+    this.orderBy = { firstName: 1, lastName: 1 };
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
     }
-  }
+    this.customerId = req.params.customerId;
+    if (this.customerId)
+      this.query.customer = this.customerId;
 
-  this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
-
-  async function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      // if(Array.isArray(response) && response.length>0) {
-
-      //   response = JSON.parse(JSON.stringify(response));
-      //   let index = 0;
-
-      //   for(let contact of response) {
-
-      //     let isOperator = await ProductServiceReports.findOne( { operators : response._id } ).select('_id machine');
-
-      //     if(isOperator) {
-      //       contact.isOperator = true;
-      //     }
-      //     else
-      //       contact.isOperator = false;
-
-      //     response[index] = contact; 
-      //     index++;
-      //   }
-
-      // }
-      res.json(response);
+    const finalQuery = await applyUserFilter(req);
+    if (finalQuery) {
+      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
+      if (allowedCustomers?.length > 0) {
+        this.query.customer = { $in: allowedCustomers };
+      }
     }
+
+    const contacts = await this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate);
+    res.json(contacts);
+  } catch (error) {
+    console.log(" error : ", error)
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
@@ -353,8 +336,8 @@ exports.postCustomerContact = async (req, res, next) => {
 exports.patchCustomerContact = async (req, res, next) => {
 
   const contactAttached = await checkIfContactIsAttached(req, res);
-  if(contactAttached) {
-    return res.status(StatusCodes.BAD_REQUEST).send(contactAttached); 
+  if (contactAttached) {
+    return res.status(StatusCodes.BAD_REQUEST).send(contactAttached);
   }
   await body('email')
     .optional()
@@ -380,7 +363,7 @@ exports.patchCustomerContact = async (req, res, next) => {
     this.query.customer = req.params.customerId;
     this.query._id = req.params.id;
 
- 
+
 
 
     // let queryString  = { _id: req.params.customerId, customer: req.params.id };

@@ -1,0 +1,15 @@
+meta {
+  name: get CP Ticket Settings
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/cp/tickets/settings
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

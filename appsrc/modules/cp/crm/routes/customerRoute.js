@@ -1,24 +1,23 @@
 const express = require('express');
-const { check } = require('express-validator');
 const checkAuth = require('../../../../middleware/check-auth');
-const roleCheck = require('../../../../middleware/role-check');
-const checkCustomer = require('../../../../middleware/check-customer');
 const customerDataFilter = require('../../../../middleware/customer-data-filter');
 const controllers = require('../../../crm/controllers');
 const controller = controllers.customerController;
-
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 const router = express.Router();
 
 //  - base route for module
 // - /api/1.0.0/cp/crm/
-const baseRouteForObject = `/customers`; 
+const baseRouteForObject = `/customers`;
 
-router.use(checkAuth, checkCustomer, roleCheck, customerDataFilter);
-
-// - /api/1.0.0/cp/crm/customers/:id
-router.get(`${baseRouteForObject}/:id`, controller.getCustomer);
+router.use(checkAuth, customerDataFilter);
 
 // - /api/1.0.0/cp/crm/customers/
-router.get(`${baseRouteForObject}/`, controller.getCustomers);
+// router.get(`${baseRouteForObject}/`, controller.getCustomers);
+
+// - /api/1.0.0/cp/crm/customers/:id
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.getCustomer);
+
 
 module.exports = router; 

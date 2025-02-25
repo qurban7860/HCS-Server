@@ -1,11 +1,8 @@
 const express = require('express');
-
 const checkAuth = require('../../../../middleware/check-auth');
-const { Product } = require('../../models');
-const checkProductID = require('../../../../middleware/check-parentID')('machine', Product);
-const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productToolInstalledController;
@@ -15,24 +12,21 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products/machines
 
-const baseRouteForObject = `/machines/:machineId/toolsinstalled`; 
+const baseRouteForObject = `/machines/:machineId/toolsinstalled`;
 
-// EndPoint: {{baseUrl}}/products/machines/
-// localhost://api/1.0.0/products/machines/ 
+router.use(checkAuth);
 
-router.use(checkAuth, checkCustomer);
+router.get(`${baseRouteForObject}/search`, checkIDs(validate.machineId), controller.searchProductToolInstalled);
 
-router.get(`${baseRouteForObject}/search`, controller.searchProductToolInstalled);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.machineId), controller.getProductToolInstalled);
 
-router.get(`${baseRouteForObject}/:id`, checkProductID, controller.getProductToolInstalled);
+router.get(`${baseRouteForObject}`, checkIDs(validate.machineId), controller.getProductToolInstalledList);
 
-router.get(`${baseRouteForObject}`, checkProductID, controller.getProductToolInstalledList);
+router.post(`${baseRouteForObject}`, checkIDs(validate.machineId), controller.postProductToolInstalled);
 
-router.post(`${baseRouteForObject}`, checkProductID, controller.postProductToolInstalled);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.machineId), verifyDelete, controller.patchProductToolInstalled);
 
-router.patch(`${baseRouteForObject}/:id`, checkProductID, verifyDelete, controller.patchProductToolInstalled);
-
-router.delete(`${baseRouteForObject}/:id`, checkProductID, controller.deleteProductToolInstalled);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.machineId), controller.deleteProductToolInstalled);
 
 
 module.exports = router;

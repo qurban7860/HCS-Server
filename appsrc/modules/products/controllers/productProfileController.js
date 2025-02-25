@@ -1,29 +1,27 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-
-const HttpError = require('../../config/models/http-error');
+const path = require('path');
+const fs = require('fs');
+const awsService = require('../../../base/aws');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static');
+let { saveFiles } = require('./productProfileFileController');
 const _ = require('lodash');
-
 let productDBService = require('../service/productDBService')
 this.dbservice = new productDBService();
 
-const { ProductProfile } = require('../models');
-
+const { ProductProfile, ProductProfileFile } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };   
+this.orderBy = { createdAt: -1 };
 //this.populate = 'category';
 this.populate = [
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'files', select: 'name fileType extension thumbnail awsETag' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 //this.populate = {path: 'category', model: 'MachineCategory', select: '_id name description'};
 
@@ -38,15 +36,27 @@ exports.getProductProfile = async (req, res, next) => {
       res.json(response);
     }
   }
-
 };
+
+exports.getProductProfileFile = async (req, res, next) => {
+  this.dbservice.getObjectById(ProductProfileFile, this.fields, req.params.id, this.populate, callbackFunc);
+  function callbackFunc(error, response) {
+    if (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    } else {
+      res.json(response);
+    }
+  }
+};
+
 
 exports.getProductProfiles = async (req, res, next) => {
   this.machineId = req.params.machineId;
-  this.query = req.query != "undefined" ? req.query : {};  
+  this.query = req.query != "undefined" ? req.query : {};
   this.query.machine = this.machineId;
   this.orderBy = { createdAt: -1 };
-  if(this.query.orderBy) {
+  if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
@@ -64,7 +74,6 @@ exports.getProductProfiles = async (req, res, next) => {
 
 exports.deleteProductProfile = async (req, res, next) => {
   this.dbservice.deleteObject(ProductProfile, req.params.id, res, callbackFunc);
-  //console.log(req.params.id);
   function callbackFunc(error, result) {
     if (error) {
       logger.error(new Error(error));
@@ -76,122 +85,98 @@ exports.deleteProductProfile = async (req, res, next) => {
 };
 
 exports.postProductProfile = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    // if(req.body.type=='MANUFACTURE') {
-    //   let alreadyExists = await ProductProfile.findOne({
-    //     type:req.body.type,
-    //     isArchived:false,
-    //     isActive:true,
-    //     machine:req.params.machineId
-    //   });
-    //   if(alreadyExists) {
-    //     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURE` already exists for this machine profile');
-    //   }
-    // }
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-        );
-      } else {
-        return res.status(StatusCodes.CREATED).json({ ProductProfile: response });
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+
+      let productProfile = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+
+      if (!productProfile) {
+        logger.error(new Error("Product profile save failed"));
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Product profile save failed");
       }
+      req.params.profileId = productProfile._id
+      await saveFiles(req);
+      return res.status(StatusCodes.CREATED).json({ ProductProfile: productProfile });
     }
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message || "Unable to save product profile");
   }
 };
 
 exports.patchProductProfile = async (req, res, next) => {
-  const errors = validationResult(req);
-  
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
+  try {
+    const errors = validationResult(req);
 
-    // if(req.body.type=='MANUFACTURE') {
-    //   let alreadyExists = await ProductProfile.findOne({
-    //     type:req.body.type,
-    //     isArchived:false,
-    //     isActive:true,
-    //     machine:req.params.machineId
-    //   });
-    //   if(alreadyExists && req.params.id!=alreadyExists.id) {
-    //     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Request. Type `MANUFACTURE` already exists for this machine profile');
-    //   }
-    // }
-    this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-      }
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
+
+    await this.dbservice.patchObject(ProductProfile, req.params.id, getDocumentFromReq(req));
+    req.params.profileId = req.params.id
+    await saveFiles(req);
+    return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
+
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message || "Unable to update product profile");
   }
 };
 
+function getDocumentFromReq(req, reqType) {
+  const { machine, defaultName, names, flange, type, web, thicknessStart, thicknessEnd, isActive, isArchived, loginUser } = req.body;
 
-function getDocumentFromReq(req, reqType){
-  const { machine, defaultName, names, flange, type, web, thicknessStart, thicknessEnd, isActive, isArchived, loginUser} = req.body;
-  
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductProfile({});
   }
 
-  if ("machine" in req.body){
-    doc.machine = req.body.machine;
-  }else{
+  if ("machine" in req.body || req.params.machineId) {
     doc.machine = req.params.machineId;
+  } else {
+    doc.machine = machine;
   }
 
-  if ("type" in req.body){
+  if ("type" in req.body) {
     doc.type = type;
   }
 
-  
-  if ("defaultName" in req.body){
+  if ("defaultName" in req.body) {
     doc.defaultName = defaultName;
   }
-  
-  if ("names" in req.body){
+
+  if ("names" in req.body) {
     doc.names = names;
   }
-  
-  if ("flange" in req.body){
+
+  if ("flange" in req.body) {
     doc.flange = flange;
   }
-  
-  if ("web" in req.body){
+
+  if ("web" in req.body) {
     doc.web = web;
   }
-  
-  if ("thicknessStart" in req.body){
+
+  if ("thicknessStart" in req.body) {
     doc.thicknessStart = thicknessStart;
   }
 
-  if ("thicknessEnd" in req.body){
+  if ("thicknessEnd" in req.body) {
     doc.thicknessEnd = thicknessEnd;
   }
-  
-  
-  if ("isActive" in req.body){
-    doc.isActive = req.body.isActive === true || req.body.isActive === 'true' ? true : false;
+
+  if ("isActive" in req.body) {
+    doc.isActive = isActive;
   }
 
-  if ("isArchived" in req.body){
-    doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -199,9 +184,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
-  //console.log("doc in http req: ", doc);
   return doc;
-
 }

@@ -3,15 +3,15 @@ const { ProductStatus, Product } = require("../modules/products/models");
 
 
 const verifyMachineAuth = async (req, res, next) => {
-  if (!req.headers["x-howickportalkey"] || !req.headers["x-machineserialno"] || !req.headers["x-ipcserialno"] || !req.headers["x-computerguid"]) {
+  if (!req.headers["howickportalkey"] || !req.headers["machineserialno"] || !req.headers["ipcserialno"] || !req.headers["computerguid"]) {
     return next();
   }
   try {
-    const { 
-      "x-machineserialno": machineSerialNo,
-      "x-computerguid": computerGUID,
-      "x-ipcserialno": IPCSerialNo,
-      "x-howickportalkey": howickPortalKey
+    const {
+      "machineserialno": machineSerialNo,
+      "computerguid": computerGUID,
+      "ipcserialno": IPCSerialNo,
+      "howickportalkey": howickPortalKey
     } = req.headers;
 
     const clientIP = req.headers["x-clientip"];
@@ -28,24 +28,24 @@ const verifyMachineAuth = async (req, res, next) => {
     }).populate(['status', 'customer']);
 
     if (!machine) {
-      return res.status(StatusCodes.NOT_FOUND).json({ 
-        message: "Machine not found or has been transferred or decommissioned" 
+      return res.status(StatusCodes.NOT_FOUND).json({
+        message: "Machine not found or has been transferred or decommissioned"
       });
     }
 
     if (!machine.machineIntegrationSyncStatus?.syncStatus) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({ 
-        message: "Machine integration not synchronized" 
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Machine integration not synchronized"
       });
     }
 
     const latestPortalKey = machine.portalKey[0]?.key;
 
-    if (machine.computerGUID !== computerGUID || 
-        machine.IPC_SerialNo !== IPCSerialNo || 
-        latestPortalKey !== howickPortalKey) {
-      return res.status(StatusCodes.UNAUTHORIZED).json({ 
-        message: "Invalid machine credentials" 
+    if (machine.computerGUID !== computerGUID ||
+      machine.IPC_SerialNo !== IPCSerialNo ||
+      latestPortalKey !== howickPortalKey) {
+      return res.status(StatusCodes.UNAUTHORIZED).json({
+        message: "Invalid machine credentials"
       });
     }
 

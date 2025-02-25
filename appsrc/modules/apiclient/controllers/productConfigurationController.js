@@ -53,7 +53,7 @@ exports.getProductConfiguration = async (req, res, next) => {
 exports.getProductConfigurations = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   this.orderBy = { createdAt: -1 };
-  if(this.query.orderBy) {
+  if (this.query.orderBy) {
     this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
@@ -104,10 +104,6 @@ exports.postProductConfiguration = async (req, res, next) => {
     if (req.body.machine && roleAPIFound) {
       let productConfObjec = getDocumentFromReq(req, 'new');
 
-
-
-
-
       const paramsToAdd = await ProductTechParam.find({ isActive: true, isArchived: false, isIniRead: true }).select('code category').lean();
 
       const fetchCodeValues = async (code) => {
@@ -125,7 +121,7 @@ exports.postProductConfiguration = async (req, res, next) => {
       };
 
       const rotatedParams = await Promise.all(paramsToAdd.map(async (param) => {
-        if(!Array.isArray(param.code)) {
+        if (!Array.isArray(param.code)) {
           param.code = [param.code];
         }
 

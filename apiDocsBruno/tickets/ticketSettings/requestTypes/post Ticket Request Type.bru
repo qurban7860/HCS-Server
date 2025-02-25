@@ -1,0 +1,27 @@
+meta {
+  name: post Ticket Request Type
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/tickets/settings/requestTypes/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "issueType": "67978598a7152615e717f2b7",
+    "icon": "mdi:issue",
+    "name": "Issue",
+    "slug": "slug",
+    "description": "description!",
+    "displayOrderNo": "1",
+    "isDefault": false
+  }
+}

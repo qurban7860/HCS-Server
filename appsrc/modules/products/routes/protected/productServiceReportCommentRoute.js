@@ -3,6 +3,8 @@ const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 
 const controllers = require('../../controllers');
 const controller = controllers.productServiceReportCommentController;
@@ -22,9 +24,9 @@ router.get(`${baseRouteForObject}/`, controller.getProductServiceReportComments)
 
 router.post(`${baseRouteForObject}/`,  controller.postProductServiceReportComment);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProductServiceReportComment);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), verifyDelete, controller.patchProductServiceReportComment);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProductServiceReportComment);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), controller.deleteProductServiceReportComment);
 
 router.get(`${baseRouteForObject}/stream`, controller.streamProductServiceReportComments);
 

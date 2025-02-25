@@ -5,8 +5,8 @@ const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
 
-    name: { type: String , required: true },
-    
+    name: { type: String, required: true },
+
     icon: { type: String },
 
     color: { type: String },
@@ -14,19 +14,21 @@ const docSchema = new Schema({
     description: { type: String },
 
     slug: { type: String },
-    
+
     displayOrderNo: { type: Number },
-    
-    isDefault: { type: Boolean, default:false }
+
+    isDefault: { type: Boolean, default: false },
+
+    isResolved: { type: Boolean, default: false }
 },
-{
-    collection: 'TicketStatusTypes'
-});
+    {
+        collection: 'TicketStatusTypes'
+    });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
-docSchema.index({"isActive":1})
-docSchema.index({"isArchived":1})
+docSchema.index({ "isActive": 1 })
+docSchema.index({ "isArchived": 1 })
 
 module.exports = mongoose.model('TicketStatusType', docSchema);

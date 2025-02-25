@@ -7,7 +7,6 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require("
 const HttpError = require("../../config/models/http-error");
 const logger = require("../../config/logger");
 let rtnMsg = require("../../config/static/static");
-const { integrationDetailsSchema } = require("../validations/ProductIntegrationValidations");
 
 let productDBService = require("../service/productDBService");
 this.dbservice = new productDBService();
@@ -23,7 +22,7 @@ exports.getIntegrationDetails = async (req, res, next) => {
     const { machineId } = req.params;
 
     const machine = await Product.findById(machineId).select('portalKey computerGUID IPC_SerialNo machineIntegrationSyncStatus');
-    
+
     if (!machine) {
       return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
     }
@@ -83,7 +82,7 @@ exports.postIntegrationPortalKey = async (req, res, next) => {
     // });
 
     res.status(StatusCodes.CREATED).json({
-      portalKey: updatedMachine.portalKey, 
+      portalKey: updatedMachine.portalKey,
       syncStatus: updatedMachine.machineIntegrationSyncStatus
     });
   } catch (error) {
@@ -102,7 +101,7 @@ exports.postIntegrationDetails = async (req, res, next) => {
 
     const { machineId } = req.params;
     const { computerGUID, IPC_SerialNo } = req.body;
-    
+
     const machine = await Product.findById(machineId);
     if (!machine) {
       return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
@@ -110,7 +109,7 @@ exports.postIntegrationDetails = async (req, res, next) => {
 
     machine.computerGUID = computerGUID;
     machine.IPC_SerialNo = IPC_SerialNo;
-    
+
     const result = await machine.save();
     // broadcastIntegrationDetails(machineId, {
     //   computerGUID: result.computerGUID,
@@ -132,12 +131,12 @@ exports.postIntegrationDetails = async (req, res, next) => {
 
 exports.syncMachineConnection = async (req, res, next) => {
   const startTime = Date.now();
-  
+
   const {
-    "x-machineserialno": machineSerialNo,
-    "x-computerguid": computerGUID,
-    "x-ipcserialno": IPCSerialNo,
-    "x-howickportalkey": howickPortalKey
+    "machineserialno": machineSerialNo,
+    "computerguid": computerGUID,
+    "ipcserialno": IPCSerialNo,
+    "howickportalkey": howickPortalKey
   } = req.headers;
 
   const clientIP = req.headers["x-clientip"];
@@ -249,10 +248,10 @@ exports.syncMachineConnection = async (req, res, next) => {
         portalKey: machine.portalKey,
         machineIntegrationSyncStatus: !machine.machineIntegrationSyncStatus?.syncStatus
           ? {
-              syncStatus: true,
-              syncDate: new Date(),
-              syncIP: clientIP,
-            }
+            syncStatus: true,
+            syncDate: new Date(),
+            syncIP: clientIP,
+          }
           : machine.machineIntegrationSyncStatus,
       });
       await logApiCall({
@@ -302,26 +301,26 @@ exports.syncMachineConnection = async (req, res, next) => {
 
 exports.streamMachineIntegrationStatus = async (req, res) => {
   const machineId = req.params.machineId;
-  
+
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  
+
   const clientId = req.body.loginUser.userId + '_' + machineId;
-  
+
   clients.set(clientId, res);
-  
+
   req.on('close', () => {
-      clients.delete(clientId);
+    clients.delete(clientId);
   });
 };
 
 function broadcastIntegrationDetails(machineId, integrationDetails) {
   clients.forEach((client, clientId) => {
-      if (clientId.includes(machineId)) {
-          client.write(`data: ${JSON.stringify(integrationDetails)}\n\n`);
-      }
+    if (clientId.includes(machineId)) {
+      client.write(`data: ${JSON.stringify(integrationDetails)}\n\n`);
+    }
   });
 }
 
@@ -332,12 +331,13 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     requestHeaders: req.headers,
     machine: machine ? [machine._id] : [],
     customer: machine?.customer,
-    apiType: "MACHINE-INTEGRATION",
+    apiType: "MACHINE-SYNC",
     responseTime: `${Date.now() - startTime}`,
     response: JSON.stringify(responseData.body),
     responseStatusCode: responseData.statusCode,
-    additionalContextualInformation: responseData.context,
+    responseMessage: responseData.context,
     createdIP: req?.body?.loginUser?.userIP || createdIP,
+    createdAt: new Date(),
     createdByIdentifier: req?.body?.loginUser?.userId || createdBy || null,
   });
   return apiLog.save();

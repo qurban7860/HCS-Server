@@ -10,6 +10,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let apiClientDBService = require('../service/apiClientDBService')
+const dbFetchPaginatedResults = require('../../db/dbFetchPaginatedResults');
 this.dbservice = new apiClientDBService();
 
 const { apilog } = require('../models');
@@ -64,7 +65,37 @@ exports.getApiLogs = async (req, res, next) => {
       delete this.query.fields;
     }
 
-    const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
+    if(this.query?.fromDate && this.query?.toDate) {
+      const startDate = new Date(this.query.fromDate);
+      startDate.setHours(0, 0, 0, 0);
+      
+      const endDate = new Date(this.query.toDate);
+      endDate.setHours(23, 59, 59, 999);
+
+      this.query.createdAt = {
+        $gte: startDate.toISOString(),
+        $lte: endDate.toISOString()
+      };
+    }
+
+    delete this.query?.fromDate;
+    delete this.query?.toDate;
+
+    // const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
+
+    const page = parseInt(req.body.page) + 1 || 1;
+    const pageSize = parseInt(req.body.pageSize) || 10;
+
+    const response = await dbFetchPaginatedResults(
+      apilog,
+      this.query,
+      this.fields,
+      this.orderBy,
+      this.populate,
+      page,
+      pageSize
+    );
+
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -107,7 +138,7 @@ exports.postApiLog = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType) {
-  const { machine, customer, apiType, refUUID, responseTime, response, responseStatusCode, additionalContextualInformation, loginUser } = req.body;
+  const { machine, customer, apiType, refUUID, responseTime, response, responseStatusCode, responseMessage, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType === 'new') {
@@ -147,8 +178,8 @@ function getDocumentFromReq(req, reqType) {
     doc.responseStatusCode = responseStatusCode;
   }
 
-  if (additionalContextualInformation !== undefined) {
-    doc.additionalContextualInformation = additionalContextualInformation;
+  if (responseMessage !== undefined) {
+    doc.responseMessage = responseMessage;
   }
 
   if (reqType === 'new' && loginUser !== undefined) {

@@ -4,7 +4,8 @@ const checkAuth = require('../../../../middleware/check-auth');
 const roleCheck = require('../../../../middleware/role-check');
 const checkCustomer = require('../../../../middleware/check-customer');
 const verifyDelete = require('../../../../middleware/verifyDelete');
-
+const checkIDs = require('../../../../middleware/validateParamIDs');
+const validate = require('../../utils/validate');
 const controllers = require('../../controllers');
 const controller = controllers.productController;
 
@@ -13,7 +14,7 @@ const router = express.Router();
 //  - route information from parent
 // - /api/1.0.0/products/machines
 
-const baseRouteForObject = `/machines`; 
+const baseRouteForObject = `/machines`;
 
 // EndPoint: {{baseUrl}}/products/machines/
 // localhost://api/1.0.0/products/machines/ 
@@ -29,7 +30,7 @@ router.get(`${baseRouteForObject}/getMachinesAgainstCountries`, controller.getMa
 
 router.get(`${baseRouteForObject}/machineCoordinates`, controller.getProductsSiteCoordinates);
 
-router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getConnectionProducts); 
+router.get(`${baseRouteForObject}/getDecoilerProducts/`, controller.getConnectionProducts);
 
 router.get(`${baseRouteForObject}/checkDuplicateSerialNumber/`, controller.checkDuplicateSerialNumber);
 
@@ -39,13 +40,13 @@ router.get(`${baseRouteForObject}/searchProductId/`, controller.getProductId);
 
 router.patch(`${baseRouteForObject}/:id/updateStatus/:statusid`, controller.patchProductStatus);
 
-router.get(`${baseRouteForObject}/:id`, controller.getProduct);
+router.get(`${baseRouteForObject}/:id`, checkIDs(validate.idAndMachine), controller.getProduct);
 
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
-router.patch(`${baseRouteForObject}/:id`, verifyDelete, controller.patchProduct);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.idAndMachine), verifyDelete, controller.patchProduct);
 
-router.delete(`${baseRouteForObject}/:id`, controller.deleteProduct);
+router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.idAndMachine), controller.deleteProduct);
 
 router.post(`${baseRouteForObject}/transferMachine/`, controller.transferOwnership);
 
