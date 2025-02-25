@@ -65,12 +65,8 @@ exports.deleteProductNote = async (req, res, next) => {
   try {
     const existingNote = await this.dbservice.getObjectById(ProductNote, {}, req.params.id, this.populate);
 
-    if (existingNote.createdBy._id.toString() !== req.body.loginUser.userId) {
-      return res.status(StatusCodes.FORBIDDEN).send("Only the note author can delete this note");
-    }
-
     if (!existingNote.isArchived) {
-      return res.status(StatusCodes.FORBIDDEN).send("Record cannot be deleted. It should be archived first!");
+      return res.status(StatusCodes.BAD_REQUEST).send("Record cannot be deleted. It should be archived first!");
     }
 
     await this.dbservice.deleteObject(ProductNote, req.params.id, res);
