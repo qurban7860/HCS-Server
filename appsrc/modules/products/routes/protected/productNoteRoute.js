@@ -23,7 +23,7 @@ router.post(`${baseRouteForObject}`, checkProductID, controller.postProductNote)
 
 router.get(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.getProductNote);
 
-router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, verifyDelete, controller.patchProductNote);
+router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.patchProductNote);
 
 router.delete(`${baseRouteForObject}/:id`, checkIDs(validate.id), checkProductID, controller.deleteProductNote);
 
