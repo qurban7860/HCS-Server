@@ -81,7 +81,18 @@ exports.getApiLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-    // const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
+    if (this.query['machine.serialNo']) {
+      const serialNoQuery = this.query['machine.serialNo'];
+      delete this.query['machine.serialNo'];
+      
+      const matchingMachines = await mongoose.model('Machine').find({
+        serialNo: serialNoQuery
+      }).select('_id');
+      
+      this.query.machine = {
+        $in: matchingMachines.map(m => m._id)
+      };
+    }
 
     const page = parseInt(req.body.page) + 1 || 1;
     const pageSize = parseInt(req.body.pageSize) || 10;
