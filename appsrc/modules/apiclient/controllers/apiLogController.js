@@ -63,7 +63,7 @@ exports.getApiLogs = async (req, res, next) => {
     if(this.query.fields) {
       this.fields = this.query.fields;
       delete this.query.fields;
-    }
+    } 
 
     if(this.query?.fromDate && this.query?.toDate) {
       const startDate = new Date(this.query.fromDate);
