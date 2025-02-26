@@ -204,7 +204,7 @@ const logApiCall = async ({ req, startTime, responseData, machine = null, create
     requestMethod: req.method,
     requestURL: req.originalUrl,
     requestHeaders: req.headers,
-    machine: machine ? machine._id : null,
+    machine: machine ? [machine._id] : [],
     customer: machine?.customer,
     apiType: "MACHINE-LOGS",
     responseTime: `${Date.now() - startTime}`,

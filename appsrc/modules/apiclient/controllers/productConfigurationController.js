@@ -84,7 +84,7 @@ exports.postProductConfiguration = async (req, res, next) => {
   const start = Date.now();
   const errors = validationResult(req);
 
-  req.body.apiType = "MACHINE-CONFIG";
+  req.body.apiType = "INI";
 
   req.body.response = "APPROVED";
   const roleAPIFound = true;
@@ -162,10 +162,7 @@ exports.postProductConfiguration = async (req, res, next) => {
       res.status(errorCode).send(!roleAPIFound ? "User is not allowed to access!" : errorCode);
     }
 
-    // const end = Date.now(); 
-    // req.body.responseTime = end - start; 
-    // let apiLogObject = apiLogController.getDocumentFromReq(req, 'new'); 
-    // apiLogObject.save();
+    const end = Date.now(); req.body.responseTime = end - start; let apiLogObject = apiLogController.getDocumentFromReq(req, 'new'); apiLogObject.save();
   }
 };
 

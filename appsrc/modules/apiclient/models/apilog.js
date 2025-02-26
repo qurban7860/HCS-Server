@@ -18,13 +18,13 @@ const docSchema = new Schema({
         // requestBody: { type: Schema.Types.Mixed },
         // // Capture the payload or data sent in the API request.
 
-        machine: { type: Schema.Types.ObjectId , ref: 'Machine' },
+        machine: [{ type: Schema.Types.ObjectId , ref: 'Machine' }],
         // Machine
 
         customer: { type: Schema.Types.ObjectId , ref: 'Customer' },
         // customer
 
-        apiType: {type: String, enum: ['MACHINE-CONFIG', 'MACHINE-SYNC', 'MACHINE-LOGS', 'OTHER'], default: 'OTHER'},
+        apiType: {type: String, enum: ['INI', 'MACHINE-SYNC', 'MACHINE-LOGS', 'OTHER'], default: 'OTHER'},
 
         refUUID: { type: Schema.Types.ObjectId},
 
