@@ -20,7 +20,7 @@ exports.postProductConfiguration = async (req, res, next) => {
   const start = Date.now();
 
   const errors = validationResult(req);
-  req.body.apiType = "MACHINE-CONFIG";
+  req.body.apiType = "INI";
   req.body.clientInfo = req.clientInfo;
   req.body.response = "APPROVED";
   const roleAPIFound = true;

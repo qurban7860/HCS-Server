@@ -8,9 +8,9 @@ const controller = controllers.productIntegrationController;
 
 const router = express.Router();
 
-// const baseRouteForMachineApi = `/machines`; 
+const baseRouteForMachineApi = `/machines`; 
 
-// router.post(`/syncMachineConnection`, controller.syncMachineConnection);
-router.post(`/machineSync`, controller.syncMachineConnection);
+router.post(`${baseRouteForMachineApi}/syncMachineConnection`, controller.syncMachineConnection);
+router.post(`${baseRouteForMachineApi}/machineSync`, controller.syncMachineConnection);
 
 module.exports = router;

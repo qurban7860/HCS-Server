@@ -81,38 +81,20 @@ exports.getApiLogs = async (req, res, next) => {
     delete this.query?.fromDate;
     delete this.query?.toDate;
 
-    if (this.query['machine.serialNo']) {
-      const serialNoQuery = this.query['machine.serialNo'];
-      delete this.query['machine.serialNo'];
-      
-      const matchingMachines = await mongoose.model('Machine').find({
-        serialNo: serialNoQuery
-      }).select('_id');
-      
-      this.query.machine = {
-        $in: matchingMachines.map(m => m._id)
-      };
-    }
+    // const response = await this.dbservice.getObjectList(req, apilog, this.fields, this.query, this.orderBy, this.populate);
 
-    // const page = parseInt(req.body.page) + 1 || 1;
-    // const pageSize = parseInt(req.body.pageSize) || 10;
+    const page = parseInt(req.body.page) + 1 || 1;
+    const pageSize = parseInt(req.body.pageSize) || 10;
 
-    // const response = await dbFetchPaginatedResults(
-    //   apilog,
-    //   this.query,
-    //   this.fields,
-    //   this.orderBy,
-    //   this.populate,
-    //   page,
-    //   pageSize
-    // );
-
-    // Temporarily return all results without pagination
-    const response = await apilog.find(this.query)
-      .select(this.fields)
-      .sort(this.orderBy)
-      .populate(this.populate)
-      .limit(1000);
+    const response = await dbFetchPaginatedResults(
+      apilog,
+      this.query,
+      this.fields,
+      this.orderBy,
+      this.populate,
+      page,
+      pageSize
+    );
 
     res.json(response);
   } catch (error) {

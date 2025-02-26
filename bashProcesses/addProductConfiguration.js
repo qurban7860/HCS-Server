@@ -30,7 +30,7 @@ if(tokenResponse && tokenResponse.status==200 && tokenResponse.data) {
     };
 
     const bodyParameters = {
-      apiType: 'MACHINE-CONFIG',
+      apiType: 'INI',
       response:'APPROVED',
       inputGUID:'',
       inputSerialNo:'',
