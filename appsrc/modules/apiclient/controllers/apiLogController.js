@@ -94,18 +94,25 @@ exports.getApiLogs = async (req, res, next) => {
       };
     }
 
-    const page = parseInt(req.body.page) + 1 || 1;
-    const pageSize = parseInt(req.body.pageSize) || 10;
+    // const page = parseInt(req.body.page) + 1 || 1;
+    // const pageSize = parseInt(req.body.pageSize) || 10;
 
-    const response = await dbFetchPaginatedResults(
-      apilog,
-      this.query,
-      this.fields,
-      this.orderBy,
-      this.populate,
-      page,
-      pageSize
-    );
+    // const response = await dbFetchPaginatedResults(
+    //   apilog,
+    //   this.query,
+    //   this.fields,
+    //   this.orderBy,
+    //   this.populate,
+    //   page,
+    //   pageSize
+    // );
+
+    // Temporarily return all results without pagination
+    const response = await apilog.find(this.query)
+      .select(this.fields)
+      .sort(this.orderBy)
+      .populate(this.populate)
+      .limit(1000);
 
     res.json(response);
   } catch (error) {
