@@ -9,6 +9,7 @@ module.exports = {
     statusController: require('./statusController'),
     statusTypeController: require('./statusTypeController'),
     ticketCommentController: require('./ticketCommentController'),
+    ticketWorkLogController: require('./ticketWorkLogController'),
     ticketController: require('./ticketController'),
     ticketFileController: require('./ticketFileController'),
     ticketHistoryController: require('./ticketHistoryController'),

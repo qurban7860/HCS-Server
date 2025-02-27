@@ -1,6 +1,7 @@
 const ticketRoute = require('./ticketRoute');
 const ticketHistoryRoute = require('./ticketHistoryRoute');
 const ticketCommentRoute = require('./ticketCommentRoute');
+const ticketWorkLogRoute = require('./ticketWorkLogRoute');
 const ticketFileRoute = require('./ticketFileRoute');
 const changeReasonRoute = require('./changeReasonRoute');
 const changeTypeRoute = require('./changeTypeRoute');
@@ -26,5 +27,6 @@ exports.registerTicketRoutes = (app, apiPath) => {
     app.use(`${rootPathForModule}`, ticketRoute);
     app.use(`${rootPathForModule}`, ticketHistoryRoute);
     app.use(`${rootPathForModule}`, ticketCommentRoute);
+    app.use(`${rootPathForModule}`, ticketWorkLogRoute);
     app.use(`${rootPathForModule}`, ticketFileRoute);
 }; 

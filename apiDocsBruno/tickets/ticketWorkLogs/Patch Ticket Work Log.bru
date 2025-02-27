@@ -1,0 +1,20 @@
+meta {
+  name: Patch Ticket Work Log
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/tickets/679ca4312e8c152f7811f855/workLogs/67beb2bbac4f483484179f59
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {"timeSpent": "45m",
+  "notes": "test"}
+}
