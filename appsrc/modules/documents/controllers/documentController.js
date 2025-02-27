@@ -17,7 +17,7 @@ let documentDBService = require('../service/documentDBService')
 const dbservice = new documentDBService();
 
 const { Document, DocumentType, DocumentCategory, DocumentFile, DocumentVersion, DocumentAuditLog } = require('../models');
-const {  } = require('../../products/models');
+const { } = require('../../products/models');
 
 const { Customer, CustomerSite } = require('../../crm/models');
 const { Product, MachineModel, ProductDrawing } = require('../../products/models');
@@ -51,38 +51,38 @@ this.populateHistory = [
 exports.getDocument = async (req, res, next) => {
   try {
     let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
-    if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
-      
+    if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
+
       document_ = JSON.parse(JSON.stringify(document_));
 
-      let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
+      let documentVersionQuery = { _id: { $in: document_.documentVersions }, isArchived: false };
       let documentVersions = [];
       let historical = req.query.historical;
-      
 
-      
-      if(historical) 
-        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description updatedBy createdBy updatedIP createdIP createdAt updatedAt').sort({createdAt:-1}).populate(this.populateHistory);
-      else 
-        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description updatedBy createdBy updatedIP createdIP createdAt updatedAt').sort({createdAt:-1}).populate(this.populateHistory).limit(1);
-      
-      
 
-      if(Array.isArray(documentVersions) && documentVersions.length>0) {
+
+      if (historical)
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description updatedBy createdBy updatedIP createdIP createdAt updatedAt').sort({ createdAt: -1 }).populate(this.populateHistory);
+      else
+        documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description updatedBy createdBy updatedIP createdIP createdAt updatedAt').sort({ createdAt: -1 }).populate(this.populateHistory).limit(1);
+
+
+
+      if (Array.isArray(documentVersions) && documentVersions.length > 0) {
         documentVersions = JSON.parse(JSON.stringify(documentVersions));
 
 
-        for(let documentVersion of documentVersions) {
-          if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-            let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
+        for (let documentVersion of documentVersions) {
+          if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
+            let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
             let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
             documentVersion.files = documentFiles;
           }
         }
       }
 
-      if(document_?.docCategory?.drawing) {
-        document_.productDrawings = await ProductDrawing.find({document: document_._id, isActive:true, isArchived: false}, {machine: 1}).populate({ path: 'machine', select: 'name serialNo'});
+      if (document_?.docCategory?.drawing) {
+        document_.productDrawings = await ProductDrawing.find({ document: document_._id, isActive: true, isArchived: false }, { machine: 1 }).populate({ path: 'machine', select: 'name serialNo' });
       }
       document_.documentVersions = documentVersions;
     }
@@ -94,8 +94,8 @@ exports.getDocument = async (req, res, next) => {
 };
 
 exports.getDocuments = async (req, res, next) => {
-  
- //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
+
+  //   if(!req.body.loginUser?.roleTypes?.includes("SuperAdmin") && req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL'){
   //   let user = await SecurityUser.findById(req.body.loginUser.userId).select('regions').lean();
   //   if(user && ((user.regions && user.regions.length > 0)) ) {
   //     if(Array.isArray(user.regions) && user.regions.length>0 ) {
@@ -112,30 +112,29 @@ exports.getDocuments = async (req, res, next) => {
   //   }
   // }
 
-    let listCustomers;
-    let listProducts;
-    let isVersionNeeded = true;
-    let isDrawing = false;
+  let listCustomers;
+  let listProducts;
+  let isVersionNeeded = true;
+  let isDrawing = false;
 
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    if(this.query.orderBy) {
+    if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
 
-    if( this.query && ( this.query.isVersionNeeded == false || this.query.isVersionNeeded == 'false')) {
+    if (this.query && (this.query.isVersionNeeded == false || this.query.isVersionNeeded == 'false')) {
       isVersionNeeded = false;
       delete this.query.isVersionNeeded;
     }
-    
-    if (this.query.searchKey && this.query.searchColumn) {
+
+    if (this.query.searchKey && this.query.searchColumn && !this.query.forDrawing) {
       const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
       if (this.query.searchColumn === "machine.serialNo") {
         const machineIds = await Product.find({
-          "serialNo": regexCondition
+          "serialNo": regexCondition, isArchived: false
         }, "_id").lean();
-    
         this.query.machine = { $in: machineIds };
       } else if (this.query.searchColumn.includes(".")) {
         const [parentField, childField] = this.query.searchColumn.split(".");
@@ -145,40 +144,50 @@ exports.getDocuments = async (req, res, next) => {
       } else {
         this.query[this.query.searchColumn] = regexCondition;
       }
-    
+
       delete this.query.searchKey;
       delete this.query.searchColumn;
     }
-    
-      let basicInfo = false;
 
-    if( this.query && ( this.query.basic == true || this.query.basic == 'true' )) {
+    let basicInfo = false;
+
+    if (this.query && (this.query.basic == true || this.query.basic == 'true')) {
       basicInfo = true;
       delete this.query.basic;
     }
 
-    if(this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
-      if (this.query.forDrawing) 
-        isDrawing = true;
-        let query;
-      if(this.query.forCustomer && this.query.forMachine) {
-          query = { $or : [ { customer : true } ,{ machine : true } ] };
-        if(!listCustomers || listCustomers.length == 0) {
+    if (this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
+      if (this.query.forDrawing)
+        if (this.query.searchColumn == "machine.serialNo") {
+          const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
+          const machineIds = await Product.find({ "serialNo": regexCondition, isArchived: false }, "_id").lean();
+          // console.log("machineIds : ", machineIds)
+          const documentIds = await ProductDrawing.find({ "machine": { $in: machineIds?.map(m => m?._id) }, isArchived: false }, "document").lean();
+          // console.log("documentIds : ", documentIds)
+          this.query._id = { $in: documentIds?.map(d => d?.document) };
+          delete this.query.searchKey;
+          delete this.query.searchColumn;
+        }
+      isDrawing = true;
+      let query;
+      if (this.query.forCustomer && this.query.forMachine) {
+        query = { $or: [{ customer: true }, { machine: true }] };
+        if (!listCustomers || listCustomers.length == 0) {
           this.query.$or = [
-            {customer: { '$exists': true }}, 
-            {machine:{ '$exists': true }}
+            { customer: { '$exists': true } },
+            { machine: { '$exists': true } }
           ];
         }
       }
-      
-      else if(this.query.forCustomer) 
-        query = { customer:true };
-      else if(this.query.forMachine) 
-        query = { machine:true };
-      else if(this.query.forDrawing) 
-        query = { drawing:true };
-      if(query) {
-        let docCats = await DocumentCategory.find({...query, ...( this.query.docCategory ? { _id: this.query.docCategory, isActive: true, isArchived: false } : { isActive: true, isArchived: false })}).select('_id').lean();
+
+      else if (this.query.forCustomer)
+        query = { customer: true };
+      else if (this.query.forMachine)
+        query = { machine: true };
+      else if (this.query.forDrawing)
+        query = { drawing: true };
+      if (query) {
+        let docCats = await DocumentCategory.find({ ...query, ...(this.query.docCategory ? { _id: this.query.docCategory, isActive: true, isArchived: false } : { isActive: true, isArchived: false }) }).select('_id').lean();
 
         if (Array.isArray(docCats) && docCats.length > 0) {
           let docCatIds = docCats.map((dc) => dc._id.toString());
@@ -190,17 +199,17 @@ exports.getDocuments = async (req, res, next) => {
       }
     }
 
-    if(this.query.isArchived=='false')
+    if (this.query.isArchived == 'false')
       this.query.isArchived = false;
 
-    if(this.query.isArchived=='true')
+    if (this.query.isArchived == 'true')
       this.query.isArchived = true;
 
 
-    if(this.query.isActive=='true')
+    if (this.query.isActive == 'true')
       this.query.isActive = true;
 
-    if(this.query.isActive=='false')
+    if (this.query.isActive == 'false')
       this.query.isActive = false;
 
     this.populate = [
@@ -214,22 +223,22 @@ exports.getDocuments = async (req, res, next) => {
     ];
 
     let andString = [];
-    if( listCustomers && listCustomers.length > 0 ) {
+    if (listCustomers && listCustomers.length > 0) {
       andString.push({ customer: { $in: listCustomers } });
     }
 
-    if( listProducts && listProducts.length > 0 ) {
+    if (listProducts && listProducts.length > 0) {
       andString.push({ machine: { $in: listProducts } });
     }
-    if(andString && andString.length > 0) {
-      if(!this.query.$or || !this.query.$or.length == 0) {
+    if (andString && andString.length > 0) {
+      if (!this.query.$or || !this.query.$or.length == 0) {
         this.query.$or = [];
       }
       this.query.$or.push(...andString);
     }
 
     const orCondition = [];
-    
+
     if (this.query?.searchString) {
       const regexCondition = { $regex: escapeRegExp(this.query.searchString), $options: 'i' };
       orCondition.push({ name: regexCondition });
@@ -237,7 +246,7 @@ exports.getDocuments = async (req, res, next) => {
       orCondition.push({ referenceNumber: regexCondition });
       orCondition.push({ stockNumber: regexCondition });
       delete this.query.searchString;
-    
+
       if (orCondition?.length > 0) {
         this.query.$or = orCondition;
       }
@@ -255,7 +264,7 @@ exports.getDocuments = async (req, res, next) => {
     // let docTypes_ = await DocumentType.find({
     //   ...(this.query.docType ? this.query.docType : { isPrimaryDrawing: true })
     // }).select('_id').lean();
-    
+
     // if (Array.isArray(docTypes_) && docTypes_.length > 0) {
     //   let docTypeIds = docTypes_.map((dc) => dc._id.toString());
     //   this.query.docType = { $in: docTypeIds };
@@ -290,7 +299,7 @@ exports.getDocuments = async (req, res, next) => {
       // Combine and remove duplicates for all results.
       documents = [...new Map([...assemblyDrawings, ...otherDocuments].map((doc) => [doc._id.toString(), doc])).values()];
     }
-    
+
     if (req.body.page || req.body.page === 0) {
       let pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       const totalPages = Math.ceil(documents.length / pageSize);
@@ -298,7 +307,7 @@ exports.getDocuments = async (req, res, next) => {
       let page = parseInt(req.body.page) || 0; // Current page number
       let skip = req.body.page * pageSize;
       documents = documents.slice(skip, skip + pageSize);
-    
+
       documents = {
         data: documents,
         ...(req.body.page && {
@@ -308,31 +317,31 @@ exports.getDocuments = async (req, res, next) => {
           totalCount: totalCount
         })
       };
-    }    
+    }
 
     const documents__ = documents;
     documents = documents.data;
-    if(documents && Array.isArray(documents) && documents.length>0) {
+    if (documents && Array.isArray(documents) && documents.length > 0) {
       documents = JSON.parse(JSON.stringify(documents));
 
-      if(isVersionNeeded) {
+      if (isVersionNeeded) {
         let documentIndex = 0;
-        for(let document_ of documents) {
+        for (let document_ of documents) {
 
-          if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
-            
+          if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
+
             document_ = JSON.parse(JSON.stringify(document_));
 
-            let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
+            let documentVersionQuery = { _id: { $in: document_.documentVersions }, isArchived: false };
             let documentVersions = [];
-            if(basicInfo===false) {
-              documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({createdAt:-1});
-              if(Array.isArray(documentVersions) && documentVersions.length>0) {
+            if (basicInfo === false) {
+              documentVersions = await DocumentVersion.find(documentVersionQuery).select('files versionNo description').sort({ createdAt: -1 });
+              if (Array.isArray(documentVersions) && documentVersions.length > 0) {
                 documentVersions = JSON.parse(JSON.stringify(documentVersions));
 
-                for(let documentVersion of documentVersions) {
-                  if(Array.isArray(documentVersion.files) && documentVersion.files.length>0) {
-                    let documentFileQuery = {_id:{$in:documentVersion.files},isArchived:false};
+                for (let documentVersion of documentVersions) {
+                  if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
+                    let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                     let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                     documentVersion.files = documentFiles;
                   }
@@ -340,7 +349,7 @@ exports.getDocuments = async (req, res, next) => {
               }
             }
             else {
-              let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({createdAt:-1});
+              let documentVersion = await DocumentVersion.findOne(documentVersionQuery).select('versionNo description').sort({ createdAt: -1 });
               documentVersions = [documentVersion]
             }
 
@@ -349,8 +358,7 @@ exports.getDocuments = async (req, res, next) => {
                 path: "machine",
                 select: "serialNo",
               });
-              
-              // document_.productDrawings.serialNumbers = document_.productDrawings.map((item) => item?.machine?.serialNo).join(", ");
+              document_.productDrawings.serialNumbers = document_.productDrawings.map((item) => item?.machine?.serialNo).join(", ");
             }
             document_.documentVersions = documentVersions;
           }
@@ -384,49 +392,49 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
   let fileType = "image";
   let documentId_ = null;
 
-  if(req.query?.fileType !== undefined) {
+  if (req.query?.fileType !== undefined) {
     fileType = req.query.fileType;
     delete req.query.fileType;
   }
 
-  if(req.query?.documentId !== undefined) {
-    if(mongoose.Types.ObjectId.isValid(req.query.documentId))
+  if (req.query?.documentId !== undefined) {
+    if (mongoose.Types.ObjectId.isValid(req.query.documentId))
       documentId_ = req.query.documentId;
     delete req.query.documentId;
   }
-   
 
-  if(req.body?.page) {
+
+  if (req.body?.page) {
     page = parseInt(req.body.page);
-    if(req.body?.pageSize)
+    if (req.body?.pageSize)
       pageSize = parseInt(req.body.pageSize);
     delete req.body.page;
     delete req.body.pageSize;
   }
-  page ++;
+  page++;
 
-  
+
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    if(this.query.orderBy) {
+    if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    if(!this.query.isActive) this.query.isActive = true;
-    if(!this.query.isArchived) this.query.isArchived = false;
+    if (!this.query.isActive) this.query.isActive = true;
+    if (!this.query.isArchived) this.query.isArchived = false;
 
     const customer = req.query.customer;
-    if(Customer) {
-      let CustomerObj = await Customer.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
-      if(!CustomerObj) {
-        if(!CustomerObj) return res.status(StatusCodes.BAD_REQUEST).send({"message":"Customer validation failed not found!. Please check customer is not archived and is Active."});
+    if (Customer) {
+      let CustomerObj = await Customer.find({ customer: customer, isActive: true, isArchived: false }).select('_id').lean();
+      if (!CustomerObj) {
+        if (!CustomerObj) return res.status(StatusCodes.BAD_REQUEST).send({ "message": "Customer validation failed not found!. Please check customer is not archived and is Active." });
       }
     }
     const machine = req.query.machine;
     const document = req.query.document;
-    
-    if(!customer && !machine && !document) return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    
+
+    if (!customer && !machine && !document) return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+
     var queryConditions = [];
 
     if (customer) {
@@ -436,7 +444,7 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
     if (includeMachines) {
       queryConditions.push({ machine: true });
     }
-    
+
     if (includeDrawings) {
       queryConditions.push({ drawing: true });
     }
@@ -445,33 +453,33 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
 
     if (queryConditions.length > 0) {
       query.$or = queryConditions;
-      if(query) {
+      if (query) {
         let docCats = await DocumentCategory.find(query).select('_id').lean();
-        if(Array.isArray(docCats) && docCats.length>0) {
-          let docCatIds = docCats.map((dc)=>dc._id.toString());
-          this.query.docCategory = {'$in':docCatIds};
+        if (Array.isArray(docCats) && docCats.length > 0) {
+          let docCatIds = docCats.map((dc) => dc._id.toString());
+          this.query.docCategory = { '$in': docCatIds };
         }
       }
     }
 
-    if(this.query.isArchived=='true')
+    if (this.query.isArchived == 'true')
       this.query.isArchived = true;
 
-    if(this.query.isArchived=='false')
+    if (this.query.isArchived == 'false')
       this.query.isArchived = false;
 
-    if(this.query.isActive=='true')
+    if (this.query.isActive == 'true')
       this.query.isActive = true;
-    
-    if(this.query.isActive=='false')
+
+    if (this.query.isActive == 'false')
       this.query.isActive = false;
 
-    if(this.query.includeMachines=='true'){
+    if (this.query.includeMachines == 'true') {
       includeMachines = true;
       delete this.query.includeMachines;
     }
 
-    if(this.query.includeDrawings=='true'){
+    if (this.query.includeDrawings == 'true') {
       includeDrawings = true;
       delete this.query.includeDrawings;
     }
@@ -485,55 +493,55 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
       { path: 'machine', select: 'name serialNo' }
     ];
 
-    const queryString__ = [];  
+    const queryString__ = [];
     let machineList = [];
     let customerMachines_ = [];
-    if(customer && includeMachines) {
-      machineList = await Product.find({customer: customer, isActive: true, isArchived: false}).select('_id').lean();
-        
-      if(Array.isArray(machineList) && machineList.length>0) {
-        customerMachines_ = machineList.map((dc)=>dc._id.toString());
-      }
-    }
-    if(machine) customerMachines_.push(machine);
-    queryString__.push({machine : {'$in':customerMachines_}});
+    if (customer && includeMachines) {
+      machineList = await Product.find({ customer: customer, isActive: true, isArchived: false }).select('_id').lean();
 
-    if(customer && includeDrawings && Array.isArray(machineList) && machineList.length>0) {
-      let machineDrawings = await ProductDrawing.find({machine : {'$in':customerMachines_}, isActive: true, isArchived: false}).select('document').lean();  
-      if(Array.isArray(machineDrawings) && machineDrawings.length>0) {
-        let drawingIds = machineDrawings.map((dc)=>dc.document.toString());
-        queryString__.push({_id : {'$in':drawingIds}});
+      if (Array.isArray(machineList) && machineList.length > 0) {
+        customerMachines_ = machineList.map((dc) => dc._id.toString());
       }
     }
-    
-    if (customer) {queryString__.push({ customer: customer}); delete this.query.customer};
-    if (machine) {queryString__.push({ machine: machine}); delete this.query.machine};
-    
+    if (machine) customerMachines_.push(machine);
+    queryString__.push({ machine: { '$in': customerMachines_ } });
+
+    if (customer && includeDrawings && Array.isArray(machineList) && machineList.length > 0) {
+      let machineDrawings = await ProductDrawing.find({ machine: { '$in': customerMachines_ }, isActive: true, isArchived: false }).select('document').lean();
+      if (Array.isArray(machineDrawings) && machineDrawings.length > 0) {
+        let drawingIds = machineDrawings.map((dc) => dc.document.toString());
+        queryString__.push({ _id: { '$in': drawingIds } });
+      }
+    }
+
+    if (customer) { queryString__.push({ customer: customer }); delete this.query.customer };
+    if (machine) { queryString__.push({ machine: machine }); delete this.query.machine };
+
     this.query.$or = queryString__;
 
-    if(documentId_) {
+    if (documentId_) {
       this.query._id = documentId_;
     }
 
     let listOfFiles = [];
     let documents = await dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
-    if(documents && Array.isArray(documents) && documents.length>0) {
+    if (documents && Array.isArray(documents) && documents.length > 0) {
       documents = JSON.parse(JSON.stringify(documents));
       let documentIndex = 0;
-      for(let document_ of documents) {
+      for (let document_ of documents) {
 
-        if(document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length>0) {
-          
+        if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
+
           document_ = JSON.parse(JSON.stringify(document_));
 
-          let documentVersionQuery = {_id:{$in:document_.documentVersions},isArchived:false};
+          let documentVersionQuery = { _id: { $in: document_.documentVersions }, isArchived: false };
           let documentVersions = [];
-          documentVersions = await DocumentVersion.find(documentVersionQuery).sort({_id: -1}).select('files versionNo description').limit(1);
+          documentVersions = await DocumentVersion.find(documentVersionQuery).sort({ _id: -1 }).select('files versionNo description').limit(1);
           if (Array.isArray(documentVersions) && documentVersions.length > 0) {
             documentVersions = JSON.parse(JSON.stringify(documentVersions));
             for (let documentVersion of documentVersions) {
               if (Array.isArray(documentVersion.files) && documentVersion.files.length > 0) {
-                let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };               
+                let documentFileQuery = { _id: { $in: documentVersion.files }, isArchived: false };
                 documentFileQuery.fileType = { $regex: fileType, $options: 'i' };
                 let documentFiles = await DocumentFile.find(documentFileQuery).select('name displayName path extension fileType thumbnail');
                 if (documentFiles && documentFiles.length > 0) {
@@ -543,16 +551,16 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
                     file.version_id = documentVersion._id;
                     file.document_id = document_._id;
                     file.customerAccess = document_.customerAccess;
-                    file.isActive= document_.isActive;
-                    file.isArchived= document_.isArchived;
-                    file.name= document_.name;
-                    file.displayName= document_.displayName;
-                    file.docType= document_.docType;
-                    file.docCategory= document_.docCategory;
-                    file.machine= document_.machine; 
-                    file.versionPrefix= document_.versionPrefix; 
-                    file.createdBy= document_.createdBy; 
-                    file.updatedBy= document_.updatedBy;
+                    file.isActive = document_.isActive;
+                    file.isArchived = document_.isArchived;
+                    file.name = document_.name;
+                    file.displayName = document_.displayName;
+                    file.docType = document_.docType;
+                    file.docCategory = document_.docCategory;
+                    file.machine = document_.machine;
+                    file.versionPrefix = document_.versionPrefix;
+                    file.createdBy = document_.createdBy;
+                    file.updatedBy = document_.updatedBy;
                     listOfFiles.push(file);
                   }
                 }
@@ -566,7 +574,7 @@ exports.getImagesAgainstDocuments = async (req, res, next) => {
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const slicedFiles = listOfFiles.slice(startIndex, endIndex);
-    
+
     const documentsLists = {
       data: slicedFiles,
       totalPages: Math.ceil(listOfFiles.length / pageSize),
@@ -594,18 +602,18 @@ exports.putDocumentFilesETag = async (req, res, next) => {
       isActive: true,
       isArchived: false,
       eTag: { $exists: false },
-    }).sort({_id: -1}).limit(1000);
-   
+    }).sort({ _id: -1 }).limit(1000);
+
     await Promise.all(
       filteredFiles.map(async (fileObj) => {
         try {
-          const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);          
+          const fileData = await awsService.fetchAWSFileInfo(fileObj._id, fileObj.path);
           if (fileData.ETag) {
             const dataReceived = fileData.Body.toString('utf-8');
             const base64Data = dataReceived.replace(/^data:[\w/]+;base64,/, '');
             const imageBuffer = Buffer.from(base64Data, 'base64');
             const ETagGenerated = await awsService.generateEtag(imageBuffer);
-            
+
             await DocumentFile.updateOne(
               { _id: fileObj._id },
               { $set: { awsETag: fileData.ETag.replace(/"/g, ''), eTag: ETagGenerated.replace(/"/g, '') } }
@@ -687,16 +695,16 @@ exports.getduplicateDrawings = async (req, res, next) => {
 exports.deleteDocument = async (req, res, next) => {
   try {
     const document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
-    if(document_ && document_.id && document_.isArchived==true) {
+    if (document_ && document_.id && document_.isArchived == true) {
       const result = await dbservice.deleteObject(Document, req.params.id);
       let documentAuditLogObj = {
-        document : document_._id,
-        activityType : "Delete",
-        activitySummary : "Delete Document",
-        activityDetail : "Delete Document permanently",
+        document: document_._id,
+        activityType: "Delete",
+        activitySummary: "Delete Document",
+        activityDetail: "Delete Document permanently",
       }
 
-      await createAuditLog(documentAuditLogObj,req);
+      await createAuditLog(documentAuditLogObj, req);
 
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
     }
@@ -710,7 +718,7 @@ exports.deleteDocument = async (req, res, next) => {
 };
 
 exports.postDocument = async (req, res, next) => {
-  try{
+  try {
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -718,7 +726,7 @@ exports.postDocument = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
 
-      if(!req.body.loginUser){
+      if (!req.body.loginUser) {
         req.body.loginUser = await getToken(req);
       }
 
@@ -727,8 +735,8 @@ exports.postDocument = async (req, res, next) => {
       // }
 
       let files = [];
-        
-      if(req.files && req.files.images)
+
+      if (req.files && req.files.images)
         files = req.files.images;
 
       let name = req.body.name;
@@ -738,27 +746,27 @@ exports.postDocument = async (req, res, next) => {
       let site = req.body.site;
       let documentCategory = req.body.documentCategory;
       let machineModel = req.body.machineModel;
-      if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
+      if (name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
 
-        let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
-              
-        if(!docType) {
+        let docType = await dbservice.getObjectById(DocumentType, this.fields, documentType);
+
+        if (!docType) {
           logger.error(new Error("Document Type Not Found"));
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
 
-        let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-              
-        if(!docCategory) {
+        let docCategory = await dbservice.getObjectById(DocumentCategory, this.fields, documentCategory);
+
+        if (!docCategory) {
           logger.error(new Error("Document Category Not Found"));
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
 
         let cust = {}
 
-        if(mongoose.Types.ObjectId.isValid(customer)) {
-          cust = await dbservice.getObjectById(Customer,this.fields,customer);
-          if(!cust || cust.isActive==false || cust.isArchived==true) {
+        if (mongoose.Types.ObjectId.isValid(customer)) {
+          cust = await dbservice.getObjectById(Customer, this.fields, customer);
+          if (!cust || cust.isActive == false || cust.isArchived == true) {
             logger.error(new Error("Customer Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
@@ -766,20 +774,20 @@ exports.postDocument = async (req, res, next) => {
 
         let site_ = {}
 
-        if(mongoose.Types.ObjectId.isValid(site)) {
+        if (mongoose.Types.ObjectId.isValid(site)) {
           site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
-          if(!site_) {
+          if (!site_) {
             logger.error(new Error("Site Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
 
         let mach = {};
-        if(mongoose.Types.ObjectId.isValid(machine)){
+        if (mongoose.Types.ObjectId.isValid(machine)) {
 
-          mach = await dbservice.getObjectById(Product,this.fields,machine);
+          mach = await dbservice.getObjectById(Product, this.fields, machine);
 
-          if(!mach) {
+          if (!mach) {
             logger.error(new Error("Machine Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
@@ -787,59 +795,59 @@ exports.postDocument = async (req, res, next) => {
 
 
         let mModel = {};
-        if(mongoose.Types.ObjectId.isValid(machineModel)){
+        if (mongoose.Types.ObjectId.isValid(machineModel)) {
 
-          mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
+          mModel = await dbservice.getObjectById(MachineModel, this.fields, machineModel);
 
-          if(!mModel) {
+          if (!mModel) {
             logger.error(new Error("Machine Model Not Found"));
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
           }
         }
 
-        let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
+        let docCat = await dbservice.getObjectById(DocumentCategory, this.fields, documentCategory);
 
-        if(!docCat) {
+        if (!docCat) {
           logger.error(new Error("Category Not Found"));
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
         }
-        if(Array.isArray(files) && files.length>0) {
+        if (Array.isArray(files) && files.length > 0) {
           let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
 
-          if(!document_) {
+          if (!document_) {
             logger.error(new Error("Document saved failed!"));
             return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
           }
-  
+
           let versionNo_ = parseFloat(req.body.versionNo);
-  
-          if(isNaN(versionNo_))
+
+          if (isNaN(versionNo_))
             req.body.versionNo = 1;
-  
-          let documentVersion = createDocumentVersionObj(document_,req.body);
+
+          let documentVersion = createDocumentVersionObj(document_, req.body);
           let dbFiles = []
-          for(let file of files) {
-            
-            if(file && file.originalname) {
-              
+          for (let file of files) {
+
+            if (file && file.originalname) {
+
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
               req.body.type = processedFile.type
               req.body.extension = processedFile.fileExt;
               req.body.awsETag = processedFile.awsETag;
               req.body.eTag = processedFile.eTag;
-              
-              
-              if(processedFile.base64thumbNailData)
+
+
+              if (processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
-              
+
               req.body.originalname = processedFile.name;
 
-              if(document_ && document_.id) {
+              if (document_ && document_.id) {
 
-                let documentFile = await saveDocumentFile(document_,req.body);
+                let documentFile = await saveDocumentFile(document_, req.body);
 
-                if(documentVersion && documentFile && documentFile.id && 
+                if (documentVersion && documentFile && documentFile.id &&
                   Array.isArray(documentVersion.files)) {
 
                   documentVersion.files.push(documentFile.id);
@@ -850,10 +858,10 @@ exports.postDocument = async (req, res, next) => {
                 }
               }
             }
-            
+
           }
 
-          if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+          if (documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
             document_.documentVersions.push(documentVersion.id);
             document_ = await document_.save();
           }
@@ -865,14 +873,14 @@ exports.postDocument = async (req, res, next) => {
           document_.documentVersions = [documentVersion];
           document_.customer = cust;
           let documentAuditLogObj = {
-            document : document_._id,
-            activityType : "Create",
-            activitySummary : "Create Document",
-            activityDetail : "Document created successfully",
+            document: document_._id,
+            activityType: "Create",
+            activitySummary: "Create Document",
+            activityDetail: "Document created successfully",
           }
 
 
-          if(docCategory.drawing && req.body.drawingMachine) {
+          if (docCategory.drawing && req.body.drawingMachine) {
             req.body.documentId = document_._id;
             req.body.machine = req.body.drawingMachine;
             let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
@@ -880,7 +888,7 @@ exports.postDocument = async (req, res, next) => {
             delete req.body.machine;
           }
 
-          await createAuditLog(documentAuditLogObj,req);
+          await createAuditLog(documentAuditLogObj, req);
 
 
           return res.status(StatusCodes.CREATED).json({ Document: document_ });
@@ -897,7 +905,7 @@ exports.postDocument = async (req, res, next) => {
       }
 
     }
-  }catch(e) {
+  } catch (e) {
     logger.error(new Error(e));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
 
@@ -905,7 +913,7 @@ exports.postDocument = async (req, res, next) => {
 };
 
 exports.postMultiDocument = async (req, res, next) => {
-  try{
+  try {
     const req_ = _.cloneDeep(req);
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -913,20 +921,20 @@ exports.postMultiDocument = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     } else {
       let documentCategory_ = [];
-      if(typeof req.body.documentCategory === "string") {
+      if (typeof req.body.documentCategory === "string") {
         documentCategory_.push(req.body.documentCategory);
       } else {
         documentCategory_ = req.body.documentCategory;
       }
 
       let documentslist = [];
-      if(documentCategory_ && documentCategory_.length > 0 && Array.isArray(documentCategory_)){
+      if (documentCategory_ && documentCategory_.length > 0 && Array.isArray(documentCategory_)) {
         for (let i = 0; i < documentCategory_.length; i++) {
-          if(!req.body.loginUser){
+          if (!req.body.loginUser) {
             req.body.loginUser = await getToken(req);
           }
 
- 
+
           req.body.name = req_.body?.name && typeof req_.body?.name !== "string" && req_.body?.name[i] !== undefined ? req_.body?.name[i] : req.body?.name;
           req.body.customer = req_.body?.customer && typeof req_.body?.customer !== "string" && req_.body?.customer[i] !== undefined ? req_.body?.customer[i] : req.body?.customer;
           req.body.machine = req_.body?.machine && typeof req_.body?.machine !== "string" && req_.body?.machine[i] !== undefined ? req_.body?.machine[i] : req.body?.machine;
@@ -943,16 +951,16 @@ exports.postMultiDocument = async (req, res, next) => {
           req.body.stockNumber = req_.body.stockNumber && typeof req_.body.stockNumber !== "string" && req_.body.stockNumber[i] !== undefined ? req_.body.stockNumber[i] : req_.body.stockNumber;
           req.body.drawingMachine = req_.body.drawingMachine && typeof req_.body.drawingMachine !== "string" && req_.body.drawingMachine[i] !== undefined ? req_.body.drawingMachine[i] : req_.body.drawingMachine;
           req.body.description = req_.body.description && typeof req_.body.description !== "string" && req_.body.description[i] !== undefined ? req_.body.description[i] : req_.body.description;
-          
-          if(req_.files?.images && req_.files?.images[i])
+
+          if (req_.files?.images && req_.files?.images[i])
             req.files.images = req_.files?.images[i];
-  
+
           let files = [];
-            
-          if(req?.files?.images){
+
+          if (req?.files?.images) {
             files[0] = req.files.images;
           }
-  
+
           let name = req.body.name;
           let customer = req.body.customer;
           let machine = req.body.machine;
@@ -960,109 +968,109 @@ exports.postMultiDocument = async (req, res, next) => {
           let site = req.body.site;
           let documentCategory = req.body.documentCategory;
           let machineModel = req.body.machineModel;
-          if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
-  
-            let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
-                  
-            if(!docType) {
+          if (name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
+
+            let docType = await dbservice.getObjectById(DocumentType, this.fields, documentType);
+
+            if (!docType) {
               logger.error(new Error("Document Type Not Found!"));
               return res.status(StatusCodes.BAD_REQUEST).send("Document Type Not Found!");
             }
-  
-            let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-                  
-            if(!docCategory) {
+
+            let docCategory = await dbservice.getObjectById(DocumentCategory, this.fields, documentCategory);
+
+            if (!docCategory) {
               logger.error(new Error("Document Category Not Found"));
               return res.status(StatusCodes.BAD_REQUEST).send("Document Category Not Found!");
             }
-  
+
             let cust = {}
-  
-            if(mongoose.Types.ObjectId.isValid(customer)) {
-              cust = await dbservice.getObjectById(Customer,this.fields,customer);
-              if(!cust || cust.isActive==false || cust.isArchived==true) {
+
+            if (mongoose.Types.ObjectId.isValid(customer)) {
+              cust = await dbservice.getObjectById(Customer, this.fields, customer);
+              if (!cust || cust.isActive == false || cust.isArchived == true) {
                 logger.error(new Error("Customer Not Found!"));
                 return res.status(StatusCodes.BAD_REQUEST).send("Customer Not Found!");
               }
             }
-  
+
             let site_ = {}
-  
-            if(mongoose.Types.ObjectId.isValid(site)) {
+
+            if (mongoose.Types.ObjectId.isValid(site)) {
               site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
-              if(!site_) {
+              if (!site_) {
                 logger.error(new Error("Site Not Found!"));
                 return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
               }
             }
-  
+
             let mach = {};
-            if(mongoose.Types.ObjectId.isValid(machine)){
-  
-              mach = await dbservice.getObjectById(Product,this.fields,machine);
-  
-              if(!mach) {
+            if (mongoose.Types.ObjectId.isValid(machine)) {
+
+              mach = await dbservice.getObjectById(Product, this.fields, machine);
+
+              if (!mach) {
                 logger.error(new Error("Machine Not Found"));
                 return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
               }
             }
-  
-  
+
+
             let mModel = {};
-            if(mongoose.Types.ObjectId.isValid(machineModel)){
-  
-              mModel = await dbservice.getObjectById(MachineModel,this.fields,machineModel);
-  
-              if(!mModel) {
+            if (mongoose.Types.ObjectId.isValid(machineModel)) {
+
+              mModel = await dbservice.getObjectById(MachineModel, this.fields, machineModel);
+
+              if (!mModel) {
                 logger.error(new Error("Machine Model Not Found!"));
                 return res.status(StatusCodes.BAD_REQUEST).send("Machine Model Not Found!");
               }
             }
-  
-            let docCat = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-  
-            if(!docCat) {
+
+            let docCat = await dbservice.getObjectById(DocumentCategory, this.fields, documentCategory);
+
+            if (!docCat) {
               logger.error(new Error("Category Not Found!"));
               return res.status(StatusCodes.BAD_REQUEST).send("Category Not Found!");
             }
-            if(Array.isArray(files) && files.length>0) {
+            if (Array.isArray(files) && files.length > 0) {
               let document_ = await dbservice.postObject(getDocumentFromReq(req, 'new'));
-  
-              if(!document_) {
+
+              if (!document_) {
                 logger.error(new Error("Document saved failed!"));
                 return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
               }
-      
+
               let versionNo_ = parseFloat(req.body.versionNo);
-      
-              if(isNaN(versionNo_))
+
+              if (isNaN(versionNo_))
                 req.body.versionNo = 1;
-      
-              let documentVersion = createDocumentVersionObj(document_,req.body);
+
+              let documentVersion = createDocumentVersionObj(document_, req.body);
               let documentFiles = [];
               let dbFiles = []
-              for(let file of files) {
-                if(file && file.originalname) {
+              for (let file of files) {
+                if (file && file.originalname) {
                   const processedFile = await processFile(file, req.body.loginUser.userId);
                   req.body.path = processedFile.s3FilePath;
                   req.body.type = processedFile.type
                   req.body.extension = processedFile.fileExt;
                   req.body.awsETag = processedFile.awsETag;
                   req.body.eTag = processedFile.eTag;
-                  
-                  
-                  if(processedFile.base64thumbNailData)
+
+
+                  if (processedFile.base64thumbNailData)
                     req.body.content = processedFile.base64thumbNailData;
-                  
+
                   req.body.originalname = processedFile.name;
-  
-                  if(document_ && document_.id) {
-  
-                    let documentFile = await saveDocumentFile(document_,req.body);
-  
-                    if(documentVersion && documentFile && documentFile.id && 
+
+                  if (document_ && document_.id) {
+
+                    let documentFile = await saveDocumentFile(document_, req.body);
+
+                    if (documentVersion && documentFile && documentFile.id &&
                       Array.isArray(documentVersion.files)) {
-  
+
                       documentVersion.files.push(documentFile.id);
                       dbFiles.push(documentFile);
                       documentVersion = await documentVersion.save();
@@ -1071,10 +1079,10 @@ exports.postMultiDocument = async (req, res, next) => {
                     }
                   }
                 }
-                
+
               }
-  
-              if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+
+              if (documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
                 document_.documentVersions.push(documentVersion.id);
                 document_ = await document_.save();
               }
@@ -1086,21 +1094,21 @@ exports.postMultiDocument = async (req, res, next) => {
               document_.documentVersions = [documentVersion];
               document_.customer = cust;
               let documentAuditLogObj = {
-                document : document_._id,
-                activityType : "Create",
-                activitySummary : "Create Document",
-                activityDetail : "Document created successfully",
+                document: document_._id,
+                activityType: "Create",
+                activitySummary: "Create Document",
+                activityDetail: "Document created successfully",
               }
-  
-              if(docCategory.drawing && req.body.drawingMachine) {
+
+              if (docCategory.drawing && req.body.drawingMachine) {
                 req.body.documentId = document_._id;
                 req.body.machine = req.body.drawingMachine;
                 let productDrawingDocx = getDocumentProductDocumentFromReq(req, 'new');
                 productDrawingDocx.save();
                 delete req.body.machine;
               }
-  
-              await createAuditLog(documentAuditLogObj,req);
+
+              await createAuditLog(documentAuditLogObj, req);
               documentslist.push(document_);
             }
             else {
@@ -1115,113 +1123,113 @@ exports.postMultiDocument = async (req, res, next) => {
         }
       }
 
-      if(documentslist?.length > 0) {
+      if (documentslist?.length > 0) {
         return res.status(StatusCodes.CREATED).json(documentslist);
       } else {
-        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");      
+        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
       }
     }
-  }catch(e) {
+  } catch (e) {
     logger.error(new Error(e));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Document saved failed!");
 
   }
 };
 
-async function createAuditLog(documentAuditLogObj,req) {
-  if(!documentAuditLogObj.document)
+async function createAuditLog(documentAuditLogObj, req) {
+  if (!documentAuditLogObj.document)
     logger.error(new Error("'Document not found'"));
-    return 
-  
-  if(!req.body.loginUser)
+  return
+
+  if (!req.body.loginUser)
     req.body.loginUser = await getToken(req);
-  
+
   documentAuditLogObj.isActive = true;
   documentAuditLogObj.isArchived = false;
 
-  if(req.body.loginUser) {
+  if (req.body.loginUser) {
     documentAuditLogObj.createdBy = documentAuditLogObj.updatedBy = req.body.loginUser.userId
     documentAuditLogObj.createdIP = documentAuditLogObj.updatedIP = req.body.loginUser.userIP
   }
-  
+
   documentAuditLogObj = new DocumentAuditLog(documentAuditLogObj);
   await documentAuditLogObj.save();
 }
 
-function createDocumentVersionObj(document_,file) {
+function createDocumentVersionObj(document_, file) {
   let documentVersion = new DocumentVersion({
-    document :document_.id,
-    versionNo:file.versionNo,
-    customer:file.customer,
-    description:file.description,
-    isActive:file.isActive,
-    isArchived:file.isArchived,
+    document: document_.id,
+    versionNo: file.versionNo,
+    customer: file.customer,
+    description: file.description,
+    isActive: file.isActive,
+    isArchived: file.isArchived,
   });
 
-  if(file.loginUser) {
+  if (file.loginUser) {
     documentVersion.createdBy = documentVersion.updatedBy = file.loginUser.userId
     documentVersion.createdIP = documentVersion.updatedIP = file.loginUser.userIP
   }
 
-  if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
+  if (file.site && mongoose.Types.ObjectId.isValid(file.site)) {
     documentVersion.site = file.site;
   }
 
-  if(file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
+  if (file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
     documentVersion.contact = file.contact;
   }
 
-  if(file.user && mongoose.Types.ObjectId.isValid(file.user)) {
+  if (file.user && mongoose.Types.ObjectId.isValid(file.user)) {
     documentVersion.user = file.user;
   }
 
-  if(file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
+  if (file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
     documentVersion.machine = file.machine;
   }
   return documentVersion;
 }
 
-async function saveDocumentFile(document_,file) {
+async function saveDocumentFile(document_, file) {
 
   let documentFile = new DocumentFile({
-    document:document_.id,
-    name:file.originalname,
-    displayName:file.name,
-    description:file.description,
-    path:file.path,
-    eTag:file.eTag,
-    awsETag:file.awsETag,
-    fileType:file.type,
-    extension:file.extension,
-    thumbnail:file.content,
-    customer:file.customer,
-    isActive:file.isActive,
-    isArchived:file.isArchived
+    document: document_.id,
+    name: file.originalname,
+    displayName: file.name,
+    description: file.description,
+    path: file.path,
+    eTag: file.eTag,
+    awsETag: file.awsETag,
+    fileType: file.type,
+    extension: file.extension,
+    thumbnail: file.content,
+    customer: file.customer,
+    isActive: file.isActive,
+    isArchived: file.isArchived
   });
 
-  if(file.loginUser) {
+  if (file.loginUser) {
     documentFile.createdBy = documentFile.updatedBy = file.loginUser.userId
     documentFile.createdIP = documentFile.updatedIP = file.loginUser.userIP
   }
 
-  if(file.site && mongoose.Types.ObjectId.isValid(file.site)) {
+  if (file.site && mongoose.Types.ObjectId.isValid(file.site)) {
     documentFile.site = file.site;
   }
 
-  if(file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
+  if (file.contact && mongoose.Types.ObjectId.isValid(file.contact)) {
     documentFile.contact = file.contact;
   }
 
-  if(file.user && mongoose.Types.ObjectId.isValid(file.user)) {
+  if (file.user && mongoose.Types.ObjectId.isValid(file.user)) {
     documentFile.user = file.user;
   }
 
-  if(file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
+  if (file.machine && mongoose.Types.ObjectId.isValid(file.machine)) {
     documentFile.machine = file.machine;
   }
 
   return await documentFile.save();
-} 
+}
 
 exports.patchDocument = async (req, res, next) => {
   const errors = validationResult(req);
@@ -1229,30 +1237,30 @@ exports.patchDocument = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(!req.body.loginUser){
+      if (!req.body.loginUser) {
         req.body.loginUser = await getToken(req);
       }
 
       let files = [];
-      if(req.files && req.files.images)
+      if (req.files && req.files.images)
         files = req.files.images;
 
-      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
-      
+      let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
 
-      if(req.body.isArchived) {
-        let productDrawingObj__ = await ProductDrawing.find({document: req.params.id, isActive: true, isArchived: false}).populate([{path: "machine", select: "serialNo"}])
+
+      if (req.body.isArchived) {
+        let productDrawingObj__ = await ProductDrawing.find({ document: req.params.id, isActive: true, isArchived: false }).populate([{ path: "machine", select: "serialNo" }])
         const serialNosString = productDrawingObj__.map(obj => obj.machine ? obj.machine.serialNo : null).filter(serialNo => serialNo !== null).join(', ');
 
-        if(productDrawingObj__ && productDrawingObj__.length > 0) 
-          return res.status(StatusCodes.CONFLICT).send(`This document is attached with machines/customers. So it can't be deleted. Attached with Machines: ${serialNosString}`);      
+        if (productDrawingObj__ && productDrawingObj__.length > 0)
+          return res.status(StatusCodes.CONFLICT).send(`This document is attached with machines/customers. So it can't be deleted. Attached with Machines: ${serialNosString}`);
 
-        if(req.body.checkReference && (document_.machine || document_.customer))
-          return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);      
+        if (req.body.checkReference && (document_.machine || document_.customer))
+          return res.status(StatusCodes.CONFLICT).send(`Reference Exists.`);
 
       }
 
-      if(!document_)
+      if (!document_)
         return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
 
       let name = req.body.name;
@@ -1263,73 +1271,73 @@ exports.patchDocument = async (req, res, next) => {
       let documentCategory = req.body.documentCategory;
       let archiveStatus = req.body.isArchived;
 
-      if(name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory) ) {
+      if (name && mongoose.Types.ObjectId.isValid(documentType) && mongoose.Types.ObjectId.isValid(documentCategory)) {
 
-        let docType = await dbservice.getObjectById(DocumentType,this.fields,documentType);
-              
-        if(!docType) {
+        let docType = await dbservice.getObjectById(DocumentType, this.fields, documentType);
+
+        if (!docType) {
           logger.error(new Error("Document type not found!"));
           return res.status(StatusCodes.BAD_REQUEST).send("Document type not found!");
         }
 
         let site_ = {}
-        if(mongoose.Types.ObjectId.isValid(site)) {
+        if (mongoose.Types.ObjectId.isValid(site)) {
           site_ = await dbservice.getObjectById(CustomerSite, this.fields, site);
-          if(!site_) {
+          if (!site_) {
             logger.error(new Error("Site not found!"));
             return res.status(StatusCodes.BAD_REQUEST).send("Site not found!");
           }
         }
 
-        let docCategory = await dbservice.getObjectById(DocumentCategory,this.fields,documentCategory);
-              
-        if(!docCategory) {
+        let docCategory = await dbservice.getObjectById(DocumentCategory, this.fields, documentCategory);
+
+        if (!docCategory) {
           logger.error(new Error("Document category not found!"));
           return res.status(StatusCodes.BAD_REQUEST).send("Document category not found!");
         }
       }
-      
+
       let newVersion = req.body.newVersion;
-      
-      if(req.body.customerAccess=='true' || req.body.customerAccess===true)
+
+      if (req.body.customerAccess == 'true' || req.body.customerAccess === true)
         req.body.customerAccess = true;
 
-      if(req.body.customerAccess=='false' || req.body.customerAccess===false)
+      if (req.body.customerAccess == 'false' || req.body.customerAccess === false)
         req.body.customerAccess = false;
 
-      if(req.body.isActive=='true' || req.body.isActive===true)
+      if (req.body.isActive == 'true' || req.body.isActive === true)
         req.body.isActive = true;
 
-      if(req.body.isActive=='false' || req.body.isActive===false)
+      if (req.body.isActive == 'false' || req.body.isActive === false)
         req.body.isActive = false;
-      
-      if(req.body.isArchived=='true' || req.body.isArchived===true)
+
+      if (req.body.isArchived == 'true' || req.body.isArchived === true)
         req.body.isArchived = true;
 
-      if(req.body.isArchived=='false' || req.body.isArchived===false)
+      if (req.body.isArchived == 'false' || req.body.isArchived === false)
         req.body.isArchived = false;
 
-      if(newVersion) {
+      if (newVersion) {
 
-        if(Array.isArray(files) && files.length>0) {
+        if (Array.isArray(files) && files.length > 0) {
 
-          let documentVersion = await DocumentVersion.findOne({document:document_.id, isArchived:false},{versionNo:1})
-          .sort({ versionNo:-1 });
+          let documentVersion = await DocumentVersion.findOne({ document: document_.id, isArchived: false }, { versionNo: 1 })
+            .sort({ versionNo: -1 });
           let version = 0;
 
-          if(!documentVersion || isNaN(parseFloat(documentVersion.versionNo))) 
+          if (!documentVersion || isNaN(parseFloat(documentVersion.versionNo)))
             version = 1;
-          else 
+          else
             version = Math.ceil(parseFloat(documentVersion.versionNo) + 1);
 
           req.body.versionNo = version;
 
-          documentVersion = createDocumentVersionObj(document_,req.body);
+          documentVersion = createDocumentVersionObj(document_, req.body);
 
           let dbFiles = []
-          for(let file of files) {
-              
-            if(file && file.originalname) {
+          for (let file of files) {
+
+            if (file && file.originalname) {
 
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
@@ -1338,16 +1346,16 @@ exports.patchDocument = async (req, res, next) => {
               req.body.awsETag = processedFile.awsETag;
               req.body.eTag = processedFile.eTag;
 
-              if(processedFile.base64thumbNailData)
+              if (processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
-              
+
               req.body.originalname = processedFile.name;
 
-              if(document_ && document_.id) {
+              if (document_ && document_.id) {
 
-                let documentFile = await saveDocumentFile(document_,req.body);
+                let documentFile = await saveDocumentFile(document_, req.body);
 
-                if(documentVersion && documentFile && documentFile.id && 
+                if (documentVersion && documentFile && documentFile.id &&
                   Array.isArray(documentVersion.files)) {
 
                   documentVersion.files.push(documentFile.id);
@@ -1362,51 +1370,51 @@ exports.patchDocument = async (req, res, next) => {
               }
             }
           }
-          if(documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
+          if (documentVersion && documentVersion.id && Array.isArray(document_.documentVersions)) {
             document_.documentVersions.push(documentVersion.id);
             document_ = await document_.save();
           }
           await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
-          document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
+          document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
           document_ = JSON.parse(JSON.stringify(document_));
           documentVersion = JSON.parse(JSON.stringify(documentVersion));
           documentVersion.files = dbFiles;
           document_.documentVersions = [documentVersion];
 
           let documentAuditLogObj = {
-            document : document_._id,
-            activityType : "Update",
-            activitySummary : "Update Document",
-            activityDetail : "New Version Created",
+            document: document_._id,
+            activityType: "Update",
+            activitySummary: "Update Document",
+            activityDetail: "New Version Created",
           }
 
-          if(archiveStatus && archiveStatus!=document_.isArchived && 
-            document_.isArchived==true) {
+          if (archiveStatus && archiveStatus != document_.isArchived &&
+            document_.isArchived == true) {
             documentAuditLogObj.activityType = 'SoftDelete';
             documentAuditLogObj.activitySummary = 'Document Archived';
             documentAuditLogObj.activityDetail = 'Document Archived';
           }
 
-          await createAuditLog(documentAuditLogObj,req);
+          await createAuditLog(documentAuditLogObj, req);
           return res.status(StatusCodes.ACCEPTED).json(document_);
         }
-        else 
+        else
           return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-      
+
       }
       else {
-        
-        let documentVersion = await DocumentVersion.findOne({document:document_.id, isArchived:false})
-        .sort({ versionNo:-1 });
+
+        let documentVersion = await DocumentVersion.findOne({ document: document_.id, isArchived: false })
+          .sort({ versionNo: -1 });
         let dbFiles = []
 
-        if(Array.isArray(files) && files.length>0) {
-          if(!documentVersion || isNaN(parseFloat(documentVersion.versionNo))) 
+        if (Array.isArray(files) && files.length > 0) {
+          if (!documentVersion || isNaN(parseFloat(documentVersion.versionNo)))
             return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
-          for(let file of files) {
-              
-            if(file && file.originalname) {
+          for (let file of files) {
+
+            if (file && file.originalname) {
 
               const processedFile = await processFile(file, req.body.loginUser.userId);
               req.body.path = processedFile.s3FilePath;
@@ -1415,15 +1423,15 @@ exports.patchDocument = async (req, res, next) => {
               req.body.awsETag = processedFile.awsETag;
               req.body.eTag = processedFile.eTag;
 
-              if(processedFile.base64thumbNailData)
+              if (processedFile.base64thumbNailData)
                 req.body.content = processedFile.base64thumbNailData;
-              
+
               req.body.originalname = processedFile.name;
 
-              if(document_ && document_.id) {
+              if (document_ && document_.id) {
 
-                let documentFile = await saveDocumentFile(document_,req.body);
-                if(documentVersion && documentFile && documentFile.id && 
+                let documentFile = await saveDocumentFile(document_, req.body);
+                if (documentVersion && documentFile && documentFile.id &&
                   Array.isArray(documentVersion.files)) {
                   dbFiles.push(documentFile);
                   documentVersion.files.push(documentFile.id);
@@ -1438,21 +1446,21 @@ exports.patchDocument = async (req, res, next) => {
         }
 
         await dbservice.patchObject(Document, req.params.id, getDocumentFromReq(req));
-        document_ = await dbservice.getObjectById(Document, this.fields, req.params.id,this.populate);
+        document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
 
         document_ = JSON.parse(JSON.stringify(document_));
         documentVersion = JSON.parse(JSON.stringify(documentVersion));
         documentVersion.files = dbFiles;
         document_.documentVersions = [documentVersion];
-        
+
         let documentAuditLogObj = {
-          document : document_._id,
-          activityType : "Update",
-          activitySummary : "Update Document",
-          activityDetail : "Update Existing version",
+          document: document_._id,
+          activityType: "Update",
+          activitySummary: "Update Document",
+          activityDetail: "Update Existing version",
         }
 
-        await createAuditLog(documentAuditLogObj,req);
+        await createAuditLog(documentAuditLogObj, req);
 
         return res.status(StatusCodes.ACCEPTED).json(document_);
       }
@@ -1526,20 +1534,20 @@ exports.patchDocumentVersion = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     const requestedVersionNo = req.body.updatedVersion;
-    if((!requestedVersionNo || isNaN(parseFloat(requestedVersionNo)))) {
-      return res.status(StatusCodes.BAD_REQUEST).send({"message": "version defined is not valid"});  
+    if ((!requestedVersionNo || isNaN(parseFloat(requestedVersionNo)))) {
+      return res.status(StatusCodes.BAD_REQUEST).send({ "message": "version defined is not valid" });
     }
-    let documentVersionQuery = {document: req.params.id, isActive: true, isArchived: false};
-    let documentVersionsObj = await DocumentVersion.findOne(documentVersionQuery).sort({createdAt:-1}).lean();
-    if(documentVersionsObj) {
-      let queryString__ = { _id: {$ne: documentVersionsObj._id},  document: req.params.id, isActive: true, isArchived: false};
-      const ltVersionNoValue = await DocumentVersion.findOne(queryString__).sort({versionNo: -1}).select('versionNo').exec();
+    let documentVersionQuery = { document: req.params.id, isActive: true, isArchived: false };
+    let documentVersionsObj = await DocumentVersion.findOne(documentVersionQuery).sort({ createdAt: -1 }).lean();
+    if (documentVersionsObj) {
+      let queryString__ = { _id: { $ne: documentVersionsObj._id }, document: req.params.id, isActive: true, isArchived: false };
+      const ltVersionNoValue = await DocumentVersion.findOne(queryString__).sort({ versionNo: -1 }).select('versionNo').exec();
 
-      if(requestedVersionNo <= ltVersionNoValue?.versionNo) {
-        return res.status(StatusCodes.BAD_REQUEST).send({"message": `Please input a version higher than ${ltVersionNoValue?.versionNo}`});  
+      if (requestedVersionNo <= ltVersionNoValue?.versionNo) {
+        return res.status(StatusCodes.BAD_REQUEST).send({ "message": `Please input a version higher than ${ltVersionNoValue?.versionNo}` });
       }
       else {
-        DocumentVersion.updateOne({_id: documentVersionsObj._id}, {versionNo: requestedVersionNo}, function(err, result) {
+        DocumentVersion.updateOne({ _id: documentVersionsObj._id }, { versionNo: requestedVersionNo }, function (err, result) {
           if (error) {
             logger.error(new Error("Error while updating document"));
             logger.error(new Error(error));
@@ -1549,7 +1557,7 @@ exports.patchDocumentVersion = async (req, res, next) => {
         });
       }
     } else {
-      return res.status(StatusCodes.BAD_REQUEST).send({"message": "document details not found!"});
+      return res.status(StatusCodes.BAD_REQUEST).send({ "message": "document details not found!" });
     }
   }
 }
@@ -1569,13 +1577,13 @@ async function readFileAsBase64(filePath) {
 async function generateThumbnail(filePath) {
   try {
     const thumbnailSize = 80;
-    const thumbnailPath = getThumbnailPath(filePath);     
+    const thumbnailPath = getThumbnailPath(filePath);
     await sharp(filePath)
       .resize(thumbnailSize, null)
       .toFile(thumbnailPath);
 
     return thumbnailPath;
-    
+
   } catch (error) {
     logger.error(new Error(errors));
   }
@@ -1593,41 +1601,41 @@ async function processFile(file, userId) {
   let base64thumbNailData;
 
   let base64fileData = null;
-  if(file.buffer)
+  if (file.buffer)
     base64fileData = file.buffer;
-  else 
+  else
     base64fileData = await readFileAsBase64(file.path);
 
-  if(file.mimetype.includes('image')){
+  if (file.mimetype.includes('image')) {
 
     thumbnailPath = await generateThumbnail(file.path);
-    if(thumbnailPath) {
+    if (thumbnailPath) {
       base64thumbNailData = await readFileAsBase64(thumbnailPath);
     }
   }
-  
-  const fileName = userId+"-"+new Date().getTime();
+
+  const fileName = userId + "-" + new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, 'uploads', base64fileData, fileExt);
   s3Data.eTag = await awsService.generateEtag(file.path);
-  try{
+  try {
     fs.unlinkSync(file.path);
-    if(thumbnailPath){
+    if (thumbnailPath) {
       fs.unlinkSync(thumbnailPath);
     }
-  } catch ( error ) {
+  } catch (error) {
     logger.error(new Error("Exception while deleting image "));
-    logger.error(new Error( error ));
+    logger.error(new Error(error));
   }
 
   if (!s3Data || s3Data === '') {
     throw new Error('AWS file saving failed');
   }
-  else{
+  else {
     return {
       fileName,
       name,
       fileExt,
-      s3FilePath: s3Data.Key, 
+      s3FilePath: s3Data.Key,
       awsETag: s3Data.awsETag,
       eTag: s3Data.eTag,
       type: file.mimetype,
@@ -1637,9 +1645,9 @@ async function processFile(file, userId) {
   }
 }
 
-async function getToken(req){
+async function getToken(req) {
   try {
-    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1] : '';
     const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
     const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
     decodedToken.userIP = clientIP;
@@ -1650,10 +1658,10 @@ async function getToken(req){
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { name, displayName, documentTitle, description, path, type, extension, content, 
+  const { name, displayName, documentTitle, description, path, type, extension, content,
     documentVersions, documentCategory, customer, customerAccess, site,
-    contact, user, machine, isActive, isArchived, loginUser, versionPrefix, 
-    machineModel, documentType, shippingDate, installationDate, referenceNumber, stockNumber} = req.body;
+    contact, user, machine, isActive, isArchived, loginUser, versionPrefix,
+    machineModel, documentType, shippingDate, installationDate, referenceNumber, stockNumber } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -1668,9 +1676,9 @@ function getDocumentFromReq(req, reqType) {
   }
 
   if ("stockNumber" in req.body) {
-    doc.stockNumber= stockNumber;
+    doc.stockNumber = stockNumber;
   }
-  
+
   if ("displayName" in req.body) {
     doc.displayName = displayName;
   }
@@ -1691,10 +1699,10 @@ function getDocumentFromReq(req, reqType) {
   if ("extension" in req.body) {
     doc.extension = extension;
   }
-  if ("installationDate" in req.body){
+  if ("installationDate" in req.body) {
     doc.installationDate = installationDate;
   }
-  if ("shippingDate" in req.body){
+  if ("shippingDate" in req.body) {
     doc.shippingDate = shippingDate;
   }
   if ("documentType" in req.body) {
@@ -1738,7 +1746,7 @@ function getDocumentFromReq(req, reqType) {
     doc.machineModel = machineModel;
   }
 
-  if('versionPrefix' in req.body) {
+  if ('versionPrefix' in req.body) {
     doc.versionPrefix = versionPrefix;
   }
   else {
@@ -1761,39 +1769,39 @@ function getDocumentFromReq(req, reqType) {
 }
 
 
-function getDocumentProductDocumentFromReq(req, reqType){
+function getDocumentProductDocumentFromReq(req, reqType) {
   const { machine, documentCategory, documentType, documentId, archivedByCustomer, isActive, isArchived, loginUser } = req.body;
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductDrawing({});
   }
 
-  if ("machine" in req.body){
+  if ("machine" in req.body) {
     doc.machine = machine;
   }
-  if ("documentCategory" in req.body){
+  if ("documentCategory" in req.body) {
     doc.documentCategory = documentCategory;
   }
-  if ("documentType" in req.body){
+  if ("documentType" in req.body) {
     doc.documentType = documentType;
   }
-  if ("documentId" in req.body){
+  if ("documentId" in req.body) {
     doc.document = documentId;
   }
-  
-  if ("isActive" in req.body){
+
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
 
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
 
-  if ("archivedByCustomer" in req.body){
+  if ("archivedByCustomer" in req.body) {
     doc.archivedByCustomer = archivedByCustomer;
   }
-  
-  if (reqType == "new" && "loginUser" in req.body ){
+
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -1801,7 +1809,7 @@ function getDocumentProductDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
   return doc;
 }
 
