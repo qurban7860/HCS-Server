@@ -17,8 +17,6 @@ const updateHistory = async () => {
     // Find documents where history is missing or empty
     const docs = await ProductTechParamValue.find({ $or: [{ history: { $exists: false } }, { history: { $size: 0 } }] });
 
-    console.log(mongoose.modelNames());
-
     if (!Array.isArray(docs) || docs?.length == 0) {
       console.log(`No Record Found!`);
       rl.close();
