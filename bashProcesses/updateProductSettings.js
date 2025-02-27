@@ -3,6 +3,7 @@ const fs = require('fs');
 const readline = require('readline');
 const { parse } = require('json2csv');
 const { ProductTechParamValue } = require('../appsrc/modules/products/models');
+const { SecurityUser } = require('../appsrc/modules/security/models');
 const mongoose__ = require('../appsrc/modules/db/dbConnection');
 
 
@@ -14,15 +15,15 @@ const rl = readline.createInterface({
 const updateHistory = async () => {
   try {
     // Find documents where history is missing or empty
-    const docs = await ProductTechParamValue.find({
-      $or: [{ history: { $exists: false } }, { history: { $size: 0 } }]
-    }).populate('machine', 'name');
+    const docs = await ProductTechParamValue.find({ $or: [{ history: { $exists: false } }, { history: { $size: 0 } }] });
+
     if (!Array.isArray(docs) || docs?.length == 0) {
       console.log(`No Record Found!`);
       rl.close();
       process.exit(0)
       return;
     }
+
     console.log(`Found ${docs.length} documents to update.`);
 
     // Ask for confirmation
@@ -35,7 +36,7 @@ const updateHistory = async () => {
       }
 
       // Prepare updates and collect report data
-      const updates = docs.map(doc => {
+      const updates = docs?.map(doc => {
         const historyEntry = {
           techParamValue: doc.techParamValue || '',
           updatedBy: doc.createdBy || null,
@@ -56,11 +57,11 @@ const updateHistory = async () => {
       });
 
       // Execute updates
-      await Promise.all(updates.map(({ update }) => update));
+      await Promise.all(updates?.map(({ update }) => update));
       console.log(`${updates.length} documents updated successfully!`);
 
       // Generate CSV report
-      const reportData = updates.map(({ reportData }) => reportData);
+      const reportData = updates?.map(({ reportData }) => reportData);
       const csv = parse(reportData, { fields: ['_id', 'machine', 'techParamValue'] });
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-'); // Format: YYYY-MM-DDTHH-MM-SS
       const fileName = `UpdatedProductSettingRecords_${timestamp}.csv`;
