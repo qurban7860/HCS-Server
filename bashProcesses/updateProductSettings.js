@@ -15,7 +15,8 @@ const rl = readline.createInterface({
 const updateHistory = async () => {
   try {
     // Find documents where history is missing or empty
-    const docs = await ProductTechParamValue.find({ $or: [{ history: { $exists: false } }, { history: { $size: 0 } }] });
+    const docs = await ProductTechParamValue.find({ $or: [{ history: { $exists: false } }, { history: { $size: 0 } }] }
+    ).populate('machine', 'name');
 
     if (!Array.isArray(docs) || docs?.length == 0) {
       console.log(`No Record Found!`);
@@ -50,7 +51,7 @@ const updateHistory = async () => {
           ),
           reportData: {
             _id: doc._id,
-            machine: doc.machine?.name || 'N/A',
+            machine: doc.machine?._id || 'N/A',
             techParamValue: doc.techParamValue || 'N/A'
           }
         };
