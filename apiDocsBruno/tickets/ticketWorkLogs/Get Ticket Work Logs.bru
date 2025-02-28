@@ -1,0 +1,15 @@
+meta {
+  name: Get Ticket Work Logs
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/tickets/679ca4312e8c152f7811f855/workLogs/
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

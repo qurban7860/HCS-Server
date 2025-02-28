@@ -12,5 +12,6 @@ module.exports = {
     Ticket: require('./ticket'),
     TicketChangeHistory: require('./ticketChangeHistory'),
     TicketComment: require('./ticketComment'),
+    TicketWorkLog: require('./ticketWorkLog'),
     TicketFile: require('./ticketFile'),
 }
