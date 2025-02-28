@@ -28,6 +28,7 @@ this.populate = [
   { path: 'countries', select: '' },
   { path: 'machine', select: 'name serialNo' }
 ];
+this.limit = 1000;
 
 
 
@@ -63,6 +64,11 @@ exports.getApiLogs = async (req, res, next) => {
     if(this.query.fields) {
       this.fields = this.query.fields;
       delete this.query.fields;
+    }
+
+    if(this.query.limit) {
+      this.limit = Number(this.query.limit);
+      delete this.query.limit;
     }
 
     if(this.query?.fromDate && this.query?.toDate) {
@@ -112,7 +118,7 @@ exports.getApiLogs = async (req, res, next) => {
       .select(this.fields)
       .sort(this.orderBy)
       .populate(this.populate)
-      .limit(1000);
+      .limit(this.limit);
 
     res.json(response);
   } catch (error) {

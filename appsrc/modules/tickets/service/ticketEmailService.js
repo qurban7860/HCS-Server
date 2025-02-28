@@ -167,9 +167,9 @@ class TicketEmailService {
       }
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.ticketId, this.populate);
-      const username = ticketData?.updatedBy?.name || "";
-
       const comment = await this.dbservice.getObjectById(TicketComment, this.fields, req.params.id, this.populate);
+      const username = comment?.updatedBy?.name || "";
+
       const commentAudit = `<i style="display: block; text-align: right; color:gray; font-size:11px;" >${fDateTime(comment?.updatedAt)} by ${username}</i>`
       const comments = `<strong>Comment: </strong>${comment?.comment || ""} <br/> ${commentAudit || ""}`
       const summary = `</strong>${ticketData?.summary || ""}`;
@@ -193,7 +193,7 @@ class TicketEmailService {
       const adminTicketUri = `<a href=${url} target="_blank" >
             <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
           </a>`;
-      let text = `Support Ticket ${adminTicketUri} <br/>Comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+      let text = `Support Ticket ${adminTicketUri} <br/>Comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""} (${comment?.updatedBy?.contact?.email || ""})</strong>.`;
 
 
       if (!text) {
