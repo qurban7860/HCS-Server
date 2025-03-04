@@ -50,6 +50,10 @@ exports.getSecuritySignInLog = async (req, res, next) => {
 exports.getSecuritySignInLogs = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.orderBy = this.query.orderBy
+      delete this.query.orderBy
+    }
     if (this.query.searchKey && this.query.searchColumn && !this.query.forDrawing) {
       const regexCondition = { $regex: this.query.searchKey, $options: "i" };
       if (this.query.searchColumn == "user.name") {
