@@ -6,6 +6,7 @@ const baseSchema = require('../../../base/baseSchema');
 const docSchema = new Schema({
     ticket: { type: Schema.Types.ObjectId, ref: 'Ticket', required: true },
     timeSpent: { type: String, required: true },
+    workDate: { type: Date, default: null },
     notes: { type: String, maxlength: 300 }, 
     createdBy: { type: Schema.Types.ObjectId, ref: 'User', required: true }, 
 }, {
