@@ -140,7 +140,7 @@ function getDocumentFromReq(req, reqType) {
   const { loginUser } = req.body;
   const doc = reqType === "new" ? new TicketWorkLog({}) : {};
 
-  const allowedFields = ["ticket", "timeSpent", "notes", "isActive", "isArchived"];
+  const allowedFields = ["ticket", "timeSpent", "workDate", "notes", "isActive", "isArchived"];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {

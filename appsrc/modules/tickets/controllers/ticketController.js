@@ -56,6 +56,7 @@ this.listPopulate = [
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
+  { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
