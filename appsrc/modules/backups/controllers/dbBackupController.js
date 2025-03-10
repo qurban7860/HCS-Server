@@ -1,7 +1,6 @@
 const { validationResult } = require('express-validator');
 const { StatusCodes, getReasonPhrase } = require('http-status-codes');
 const logger = require('../../config/logger');
-const { fDateTime } = require('../../../../utils/formatTime');
 const BackupDBService = require('../service/backupDBService');
 const EmailService = require('../service/emailService');
 const { Backup } = require('../models');
@@ -9,6 +8,7 @@ const AWS = require('aws-sdk');
 const cron = require('node-cron');
 const { exec } = require('child_process');
 const fs = require('fs');
+const fsPromise = require('fs').promises;
 const archiver = require('archiver');
 
 AWS.config.update({ region: process.env.WS_REGION });
@@ -26,7 +26,7 @@ if (CRON_TIME && ENABLE_CRON && S3_BUCKET) {
         try {
             await dbBackup();
         } catch (error) {
-            logger.error('Error running DB backup:', error);
+            logger.error(`Error running DB backup : , {error}`);
         }
     });
     logger.info(`Cron job scheduled: ${CRON_TIME}`);
@@ -83,7 +83,6 @@ const dbBackup = async () => {
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
         const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
-        // const mongoUri = "mongodb://127.0.0.1:27017/howick"
 
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
 
@@ -92,13 +91,7 @@ const dbBackup = async () => {
         const zipSizeKb = await zipFolder(S3_BUCKET, zipPath);
 
         if (zipSizeKb > 0) {
-            uploadToS3(zipPath, fileName, 'FRAMA-DB', (err, location) => {
-                if (err) {
-                    logger.error(`Upload failed : , ${err}`);
-                    return;
-                }
-                logger.error(`File uploaded to:', ${location}`)
-            });
+            await uploadToS3(zipPath, fileName, 'FRAMA-DB');
             await cleanUp([S3_BUCKET, zipPath]);
         } else {
             throw new Error('Zip file is empty');
@@ -126,23 +119,14 @@ const zipFolder = (source, out) => new Promise((resolve, reject) => {
     archive.finalize();
 });
 
-const uploadToS3 = (filePath, key, folder, callback) => {
-    const bucket = process.env.AWS_S3_BUCKET;
-    if (!bucket) return callback(new Error('S3 bucket not defined'));
-
-    fs.readFile(filePath, (err, fileContent) => {
-        if (err) return callback(err);
-
-        const params = { Bucket: bucket, Key: `${folder}/${key}`, Body: fileContent };
-        s3.upload(params, (err, data) => {
-            if (err) return callback(err);
-
-            logger.info(`Uploaded to S3: ${data.Location}`);
-            callback(null, data.Location); // Success, returning the S3 location
-        });
-    });
-};
-
+async function uploadToS3(filePath) {
+    try {
+        const fileData = await fsPromise.readFile(filePath);
+        // Upload to S3 or process the file here
+    } catch (err) {
+        logger.error(`Error reading file : , ${err}`);
+    }
+}
 
 const cleanUp = (paths) => Promise.all(paths.map((path) => fs.rm(path, { recursive: true }).catch((err) => logger.error(`Failed to remove ${path}: ${err.message}`))));
 
