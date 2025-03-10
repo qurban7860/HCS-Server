@@ -1,5 +1,7 @@
 const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
+const validateCustomerInQuery = require('../../../../middleware/validateCustomerInQuery');
+const validateCustomerInRequest = require('../../../../middleware/validateCustomerInRequest');
 const controllers = require('../../../security/controllers');
 const controller = controllers.securityUserInvitationController;
 const checkIDs = require('../../../../middleware/validateParamIDs');
@@ -11,10 +13,10 @@ const baseRoute = `/invites`;
 
 router.use(checkAuth);
 
-router.get(`${baseRoute}/sendUserInvite/:id`, checkIDs(validate.id), controller.sendUserInvite);
+router.get(`${baseRoute}/sendUserInvite/:id`, checkIDs(validate.id), validateCustomerInQuery, controller.sendUserInvite);
 
-router.get(`${baseRoute}/verifyInviteCode/:id/:code`, checkIDs(validate.id), controller.verifyInviteCode);
+router.get(`${baseRoute}/verifyInviteCode/:id/:code`, checkIDs(validate.id), validateCustomerInQuery, controller.verifyInviteCode);
 
-router.patch(`${baseRoute}/setInvitedUserPasswordDetails/:id`, checkIDs(validate.id), controller.setInvitedUserPassword);
+router.patch(`${baseRoute}/setInvitedUserPasswordDetails/:id`, checkIDs(validate.id), validateCustomerInRequest, controller.setInvitedUserPassword);
 
 module.exports = router; 
