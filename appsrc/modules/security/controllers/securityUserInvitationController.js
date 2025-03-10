@@ -61,20 +61,27 @@ exports.getUserInvitations = async (req, res, next) => {
 };
 
 
-exports.patchUserInvitation = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    try {
-      const result = await this.dbservice.patchObject(SecurityUserInvite, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-    } catch (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+  exports.patchUserInvitation = async (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      try {
+        const updateData = getDocumentFromReq(req);
+        
+        if (req.body.status === 'CANCELLED') {
+          updateData.invitationStatus = 'REVOKED';
+          updateData.statusUpdatedAt = new Date();
+        }
+
+        const result = await this.dbservice.patchObject(SecurityUserInvite, req.params.id, updateData);
+        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      } catch (error) {
+        logger.error(new Error(error));
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      }
     }
-  }
-};
+  };
 
 exports.postUserInvite = async (req, res, next) => {
   try {
