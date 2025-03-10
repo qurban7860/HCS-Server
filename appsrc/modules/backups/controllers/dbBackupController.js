@@ -83,6 +83,7 @@ const dbBackup = async () => {
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
         const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
+        // const mongoUri = "mongodb://127.0.0.1:27017/howick"
 
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
 
@@ -91,13 +92,19 @@ const dbBackup = async () => {
         const zipSizeKb = await zipFolder(S3_BUCKET, zipPath);
 
         if (zipSizeKb > 0) {
-            await uploadToS3(zipPath, fileName, 'FRAMA-DB');
+            uploadToS3(zipPath, fileName, 'FRAMA-DB', (err, location) => {
+                if (err) {
+                    logger.error(`Upload failed : , ${err}`);
+                    return;
+                }
+                logger.error(`File uploaded to:', ${location}`)
+            });
             await cleanUp([S3_BUCKET, zipPath]);
         } else {
             throw new Error('Zip file is empty');
         }
     } catch (error) {
-        logger.error('DB backup failed:', error);
+        logger.error(`DB backup failed : , ${error}`);
     }
 };
 
@@ -119,16 +126,23 @@ const zipFolder = (source, out) => new Promise((resolve, reject) => {
     archive.finalize();
 });
 
-const uploadToS3 = async (filePath, key, folder) => {
+const uploadToS3 = (filePath, key, folder, callback) => {
     const bucket = process.env.AWS_S3_BUCKET;
-    if (!bucket) throw new Error('S3 bucket not defined');
+    if (!bucket) return callback(new Error('S3 bucket not defined'));
 
-    const fileContent = await fs.readFile(filePath);
-    const params = { Bucket: bucket, Key: `${folder}/${key}`, Body: fileContent };
-    const { Location } = await s3.upload(params).promise();
+    fs.readFile(filePath, (err, fileContent) => {
+        if (err) return callback(err);
 
-    logger.info(`Uploaded to S3: ${Location}`);
+        const params = { Bucket: bucket, Key: `${folder}/${key}`, Body: fileContent };
+        s3.upload(params, (err, data) => {
+            if (err) return callback(err);
+
+            logger.info(`Uploaded to S3: ${data.Location}`);
+            callback(null, data.Location); // Success, returning the S3 location
+        });
+    });
 };
+
 
 const cleanUp = (paths) => Promise.all(paths.map((path) => fs.rm(path, { recursive: true }).catch((err) => logger.error(`Failed to remove ${path}: ${err.message}`))));
 
