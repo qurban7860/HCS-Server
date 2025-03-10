@@ -8,7 +8,7 @@ const { Backup } = require('../models');
 const AWS = require('aws-sdk');
 const cron = require('node-cron');
 const { exec } = require('child_process');
-const fs = require('fs').promises;
+const fs = require('fs');
 const archiver = require('archiver');
 
 AWS.config.update({ region: process.env.WS_REGION });
