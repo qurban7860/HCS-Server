@@ -71,7 +71,7 @@ const postBackup = async (req, res) => {
         return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
     }
     try {
-        await dbService.postObject(getDocFromReq(req, 'new'));
+        const result = await dbService.postObject(getDocFromReq(req, 'new'));
     } catch (error) {
         logger.error(error);
         throw new Error(error)
@@ -86,19 +86,14 @@ const dbBackup = async () => {
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
         const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
-        // const mongoUri = "mongodb://127.0.0.1:27017/howick"
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
         const S3Path = 'FRAMA-DB';
         const fileName = `db-${timestamp}.zip`;
         const zipPath = `./${S3_BUCKET}/${fileName}`;
         const zipFilePath = `./${S3_BUCKET}/${process.env.MONGODB_NAME}`;
         const zipSizeKb = await zipFolder(zipFilePath, zipPath);
-        console.log(" zipSizeKb : ", zipSizeKb)
         if (zipSizeKb > 0) {
-            console.log("Before Upload")
-            await uploadToS3(zipFilePath, fileName,);
-            console.log("After Upload")
-            // await cleanUp([S3_BUCKET, zipPath]);
+            await uploadToS3(zipFilePath, fileName);
             const endTime = performance.now();
             const endDateTime = fDateTime(new Date());
             const durationSeconds = (endTime - startTime) / 1000;
@@ -117,12 +112,9 @@ const dbBackup = async () => {
                 backupSize: `${parseFloat(backupsizeInGb.toFixed(4)) || 0} GB`,
                 backupTime: endDateTime
             };
-            console.log("Before Post")
             await postBackup(req);
-            console.log("After Post")
-            console.log("Before Email")
             await emailService.sendDbBackupEmail(req);
-            console.log("After Email")
+            await cleanUp(`./${S3_BUCKET}`);
         } else {
             throw new Error('Zip file is empty');
         }
@@ -136,7 +128,6 @@ const execCommand = (cmd) => new Promise((resolve, reject) => {
 });
 
 const zipFolder = (sourceDirectory, filePath) => {
-    console.log("sourceDirectory, filePath : ", sourceDirectory, filePath)
     return new Promise((resolve, reject) => {
         const output = fs.createWriteStream(filePath);
         const archive = archiver('zip', { zlib: { level: 9 } }); // Max compression
@@ -166,22 +157,28 @@ const zipFolder = (sourceDirectory, filePath) => {
     });
 };
 
-async function uploadToS3(filePath, fileName, folder) {
+const uploadToS3 = async (filePath, fileName, folder) => {
     try {
-        console.log("filePath : ", filePath)
-        // const fileData = await fs.readFileSync(filePath);
         await uploadFileS3(fileName, folder, filePath, "zip")
     } catch (err) {
         logger.error(`Failed to uploadToS3 archive: ${err}`);
         throw new Error(err)
     }
 }
+exports.uploadToS3 = uploadToS3;
 
-const cleanUp = (paths) =>
-    Promise.all(paths.map((path) =>
-        fs.rm(path, { recursive: true, force: true })
-            .catch((err) => logger.error(`Failed to remove ${path}: ${err}`))
-    ));
+const cleanUp = async (path) => {
+    try {
+        await fs.rm(path, { recursive: true, force: true })
+        logger.info(`Successfully removed ${path}`);
+    } catch (e) {
+        logger.error(`Failed to remove ${path}: ${e}`)
+        throw new Error(e)
+    }
+}
+
+
+exports.cleanUp = cleanUp;
 
 function getDocFromReq(req, type) {
     const fields = [
@@ -189,7 +186,7 @@ function getDocFromReq(req, type) {
         'databaseVersion', 'backupStatus', 'backupLocation',
         'backupMethod', 'backupDuration', 'isActive', 'isArchived',
     ];
-    const doc = type === 'new' ? new Backup() : {};
+    const doc = type == 'new' ? new Backup() : {};
 
     fields.forEach((field) => {
         if (req.body?.[field]) doc[field] = req.body[field];
