@@ -127,19 +127,35 @@ const execCommand = (cmd) => new Promise((resolve, reject) => {
     exec(cmd, (err, stdout, stderr) => (err ? reject(stderr || err.message) : resolve(stdout)));
 });
 
-const zipFolder = (sourceDirectory, filePath) => new Promise((resolve, reject) => {
-    const output = fs.createWriteStream(filePath);
-    const archive = archiver('zip');
-    let totalBytes = 0;
+const zipFolder = (sourceDirectory, filePath) => {
+    return new Promise((resolve, reject) => {
+        const output = fs.createWriteStream(filePath);
+        const archive = archiver('zip', { zlib: { level: 9 } }); // Max compression
+        let totalBytes = 0;
 
-    archive.on('error', reject);
-    archive.on('data', (data) => (totalBytes += data.length));
-    output.on('close', () => resolve(totalBytes / 1024));
+        output.on('close', () => {
+            logger.info(`Archive created successfully: ${filePath}`);
+            resolve(totalBytes / 1024); // Return size in KB
+        });
 
-    archive.pipe(output);
-    archive.directory(sourceDirectory, false);
-    archive.finalize();
-});
+        archive.on('error', (err) => {
+            logger.error(`Archiving error: ${err}`);
+            reject(err);
+        });
+
+        archive.on('data', (data) => {
+            totalBytes += data.length;
+        });
+
+        archive.pipe(output);
+        archive.directory(sourceDirectory, false);
+
+        archive.finalize().catch((err) => {
+            logger.error(`Failed to finalize archive: ${err}`);
+            reject(err);
+        });
+    });
+};
 
 async function uploadToS3(filePath, fileName, folder) {
     try {
