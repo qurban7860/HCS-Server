@@ -82,25 +82,29 @@ exports.postBackup = postBackup;
 
 const dbBackup = async () => {
     try {
+        const startTime = performance.now();
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
-        const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
-        // const mongoUri = "mongodb://127.0.0.1:27017/howick"
+        // const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
+        const mongoUri = "mongodb://127.0.0.1:27017/howick"
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
-
+        const S3Path = 'FRAMA-DB';
         const fileName = `db-${timestamp}.zip`;
         const zipPath = `./${S3_BUCKET}/${fileName}`;
-        const zipSizeKb = await zipFolder(S3_BUCKET, zipPath);
+        const zipFilePath = `./${S3_BUCKET}/${process.env.MONGODB_NAME}`;
+        const zipSizeKb = await zipFolder(zipFilePath, zipPath);
         console.log(" zipSizeKb : ", zipSizeKb)
         if (zipSizeKb > 0) {
-            await uploadToS3(zipPath, fileName, 'FRAMA-DB');
+            console.log("Before Upload")
+            await uploadToS3(zipFilePath, fileName,);
+            console.log("After Upload")
             // await cleanUp([S3_BUCKET, zipPath]);
             const endTime = performance.now();
             const endDateTime = fDateTime(new Date());
             const durationSeconds = (endTime - startTime) / 1000;
             let req = {};
             req.body = {};
-            const backupsizeInGb = totalZipSizeInkb > 0 ? totalZipSizeInkb / (1024 * 1024) : 0
+            const backupsizeInGb = zipSizeKb > 0 ? zipSizeKb / (1024 * 1024) : 0
             req.body = {
                 name: fileName,
                 backupDuration: durationSeconds,
@@ -113,8 +117,12 @@ const dbBackup = async () => {
                 backupSize: `${parseFloat(backupsizeInGb.toFixed(4)) || 0} GB`,
                 backupTime: endDateTime
             };
+            console.log("Before Post")
             await postBackup(req);
+            console.log("After Post")
+            console.log("Before Email")
             await emailService.sendDbBackupEmail(req);
+            console.log("After Email")
         } else {
             throw new Error('Zip file is empty');
         }
@@ -128,6 +136,7 @@ const execCommand = (cmd) => new Promise((resolve, reject) => {
 });
 
 const zipFolder = (sourceDirectory, filePath) => {
+    console.log("sourceDirectory, filePath : ", sourceDirectory, filePath)
     return new Promise((resolve, reject) => {
         const output = fs.createWriteStream(filePath);
         const archive = archiver('zip', { zlib: { level: 9 } }); // Max compression
@@ -159,9 +168,11 @@ const zipFolder = (sourceDirectory, filePath) => {
 
 async function uploadToS3(filePath, fileName, folder) {
     try {
-        const fileData = fs.readFileSync(filePath);
-        await uploadFileS3(fileName, folder, fileData)
+        console.log("filePath : ", filePath)
+        // const fileData = await fs.readFileSync(filePath);
+        await uploadFileS3(fileName, folder, filePath, "zip")
     } catch (err) {
+        logger.error(`Failed to uploadToS3 archive: ${err}`);
         throw new Error(err)
     }
 }
