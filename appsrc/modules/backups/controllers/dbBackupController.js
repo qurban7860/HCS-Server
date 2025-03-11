@@ -3,12 +3,12 @@ const { StatusCodes, getReasonPhrase } = require('http-status-codes');
 const logger = require('../../config/logger');
 const BackupDBService = require('../service/backupDBService');
 const EmailService = require('../service/emailService');
+const { uploadFileS3 } = require('../../../base/aws');
 const { Backup } = require('../models');
 const AWS = require('aws-sdk');
 const cron = require('node-cron');
 const { exec } = require('child_process');
 const fs = require('fs');
-const fsPromise = require('fs').promises;
 const archiver = require('archiver');
 
 AWS.config.update({ region: process.env.WS_REGION });
@@ -64,35 +64,56 @@ exports.getBackups = async (req, res) => {
     }
 };
 
-exports.postBackup = async (req, res) => {
+const postBackup = async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(StatusCodes.BAD_REQUEST).json({ errors: errors.array() });
     }
     try {
         await dbService.postObject(getDocFromReq(req, 'new'));
-        res.status(StatusCodes.CREATED).send('Backup recorded successfully');
     } catch (error) {
         logger.error(error);
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        throw new Error(error)
     }
 };
+
+exports.postBackup = postBackup;
 
 const dbBackup = async () => {
     try {
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
         const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
-
+        // const mongoUri = "mongodb://127.0.0.1:27017/howick"
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
 
         const fileName = `db-${timestamp}.zip`;
-        const zipPath = `./${fileName}`;
+        const zipPath = `./${S3_BUCKET}/${fileName}`;
         const zipSizeKb = await zipFolder(S3_BUCKET, zipPath);
-
+        console.log(" zipSizeKb : ", zipSizeKb)
         if (zipSizeKb > 0) {
             await uploadToS3(zipPath, fileName, 'FRAMA-DB');
-            await cleanUp([S3_BUCKET, zipPath]);
+            // await cleanUp([S3_BUCKET, zipPath]);
+            const endTime = performance.now();
+            const endDateTime = fDateTime(new Date());
+            const durationSeconds = (endTime - startTime) / 1000;
+            let req = {};
+            req.body = {};
+            const backupsizeInGb = totalZipSizeInkb > 0 ? totalZipSizeInkb / (1024 * 1024) : 0
+            req.body = {
+                name: fileName,
+                backupDuration: durationSeconds,
+                backupMethod: 'mongodump',
+                backupLocation: `${S3Path}/${fileName}`,
+                backupStatus: '201',
+                databaseVersion: '1',
+                databaseName: process.env.MONGODB_USERNAME,
+                backupType: 'SYSTEM',
+                backupSize: `${parseFloat(backupsizeInGb.toFixed(4)) || 0} GB`,
+                backupTime: endDateTime
+            };
+            await postBackup(req);
+            await emailService.sendDbBackupEmail(req);
         } else {
             throw new Error('Zip file is empty');
         }
@@ -119,16 +140,20 @@ const zipFolder = (source, out) => new Promise((resolve, reject) => {
     archive.finalize();
 });
 
-async function uploadToS3(filePath) {
+async function uploadToS3(filePath, fileName, folder) {
     try {
-        const fileData = await fsPromise.readFile(filePath);
-        // Upload to S3 or process the file here
+        const fileData = fs.readFileSync(filePath);
+        await uploadFileS3(fileName, folder, fileData)
     } catch (err) {
-        logger.error(`Error reading file : , ${err}`);
+        throw new Error(err)
     }
 }
 
-const cleanUp = (paths) => Promise.all(paths.map((path) => fs.rm(path, { recursive: true }).catch((err) => logger.error(`Failed to remove ${path}: ${err.message}`))));
+const cleanUp = (paths) =>
+    Promise.all(paths.map((path) =>
+        fs.rm(path, { recursive: true, force: true })
+            .catch((err) => logger.error(`Failed to remove ${path}: ${err}`))
+    ));
 
 function getDocFromReq(req, type) {
     const fields = [
