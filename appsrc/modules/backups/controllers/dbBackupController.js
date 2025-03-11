@@ -10,6 +10,7 @@ const cron = require('node-cron');
 const { exec } = require('child_process');
 const fs = require('fs');
 const archiver = require('archiver');
+const { fDateTime } = require('../../../../utils/formatTime');
 
 AWS.config.update({ region: process.env.WS_REGION });
 const s3 = new AWS.S3();
@@ -126,8 +127,8 @@ const execCommand = (cmd) => new Promise((resolve, reject) => {
     exec(cmd, (err, stdout, stderr) => (err ? reject(stderr || err.message) : resolve(stdout)));
 });
 
-const zipFolder = (source, out) => new Promise((resolve, reject) => {
-    const output = fs.createWriteStream(out);
+const zipFolder = (sourceDirectory, filePath) => new Promise((resolve, reject) => {
+    const output = fs.createWriteStream(filePath);
     const archive = archiver('zip');
     let totalBytes = 0;
 
@@ -136,7 +137,7 @@ const zipFolder = (source, out) => new Promise((resolve, reject) => {
     output.on('close', () => resolve(totalBytes / 1024));
 
     archive.pipe(output);
-    archive.directory(source, false);
+    archive.directory(sourceDirectory, false);
     archive.finalize();
 });
 
