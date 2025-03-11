@@ -85,8 +85,8 @@ const dbBackup = async () => {
         const startTime = performance.now();
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
-        // const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
-        const mongoUri = "mongodb://127.0.0.1:27017/howick"
+        const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
+        // const mongoUri = "mongodb://127.0.0.1:27017/howick"
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
         const S3Path = 'FRAMA-DB';
         const fileName = `db-${timestamp}.zip`;
