@@ -1,12 +1,3 @@
-const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-var ObjectId = require('mongoose').Types.ObjectId;
-const HttpError = require('../../config/models/http-error');
-const logger = require('../../config/logger');
-let rtnMsg = require('../../config/static/static')
 
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
@@ -17,7 +8,7 @@ const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 const { Country } = require('../../config/models');
 
-async function applyUserFilter(req) {
+async function applyTicketFilter(req) {
     try {
         if (!req.query.unfiltered) {
             if (
@@ -132,4 +123,4 @@ async function applyUserFilter(req) {
     }
 }
 
-module.exports = applyUserFilter;
+module.exports = applyTicketFilter;

@@ -18,7 +18,7 @@ const {
   TicketStatus
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
-const applyUserFilter = require('../utils/userFilters');
+const applyTicketFilter = require('../utils/ticketFilter');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
@@ -74,7 +74,7 @@ exports.getTicket = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
-    const finalQuery = await applyUserFilter(req);
+    const finalQuery = await applyTicketFilter(req);
     if (finalQuery) {
       this.query = {
         ...this.query,
@@ -182,7 +182,7 @@ exports.getTickets = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    const finalQuery = await applyUserFilter(req);
+    const finalQuery = await applyTicketFilter(req);
     if (finalQuery) {
       this.query = {
         ...this.query,
