@@ -59,7 +59,7 @@ async function applyUserFilter(req) {
                     console.log("***countryNames", countryNames);
 
                     if (Array.isArray(countryNames) && countryNames.length > 0) {
-                        customerSitesDB = await CustomerSite.find(
+                        let customerSitesDB = await CustomerSite.find(
                             { "address.country": { $in: countryNames } }
                         ).select('_id').lean();
 
