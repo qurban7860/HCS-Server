@@ -18,6 +18,7 @@ const {
   TicketStatus
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
+const applyUserFilter = require('../utils/userFilters');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
@@ -73,7 +74,17 @@ exports.getTicket = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
+    const finalQuery = await applyUserFilter(req);
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
+    }
     let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
+    if (!result?._id) {
+      return res.status(StatusCodes.NOT_ACCEPTABLE).json("No resource found!");
+    }
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     logger.error(new Error(error));
@@ -170,6 +181,13 @@ exports.getTickets = async (req, res, next) => {
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
+    }
+    const finalQuery = await applyUserFilter(req);
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
     }
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
 
