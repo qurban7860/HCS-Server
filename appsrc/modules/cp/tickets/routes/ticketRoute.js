@@ -11,7 +11,7 @@ const { ticketSchema } = require('../../../tickets/schema/ticketSchemas');
 const { validateRequest } = require('../../../../configs/reqServices');
 const controller = controllers.ticketController;
 const checkIDs = require('../../../../middleware/validateParamIDs');
-const validateTicketID = require('../../../middleware/validateTicketID');
+const validateTicketID = require('../../../../middleware/validateTicketID');
 const validate = require('../../utils/validate');
 const router = express.Router();
 
