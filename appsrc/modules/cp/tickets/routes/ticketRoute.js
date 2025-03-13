@@ -11,6 +11,7 @@ const { ticketSchema } = require('../../../tickets/schema/ticketSchemas');
 const { validateRequest } = require('../../../../configs/reqServices');
 const controller = controllers.ticketController;
 const checkIDs = require('../../../../middleware/validateParamIDs');
+const validateTicketID = require('../../../../middleware/validateTicketID');
 const validate = require('../../utils/validate');
 const router = express.Router();
 
@@ -26,12 +27,12 @@ router.get(`/settings`, controller.getTicketSettings);
 
 router.get(`/`, validateCustomerInQuery, controller.getTickets);
 
-router.get(`/:id`, checkIDs(validate.id), validateCustomerInQuery, controller.getTicket);
+router.get(`/:id`, validateTicketID("id"), validateCustomerInQuery, controller.getTicket);
 
 router.post(`/`, uploadHandler, validateRequest(ticketSchema('new')), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.postTicket);
 
-router.patch(`/:id`, checkIDs(validate.id), uploadHandler, validateRequest(ticketSchema()), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.patchTicket);
+router.patch(`/:id`, validateTicketID("id"), uploadHandler, validateRequest(ticketSchema()), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.patchTicket);
 
-// router.delete(`/:id`, checkIDs(validate.id), controller.deleteTicket);
+// router.delete(`/:id`, validateTicketID("id"), controller.deleteTicket);
 
 module.exports = router; 

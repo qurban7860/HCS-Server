@@ -18,6 +18,7 @@ const {
   TicketStatus
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
+const applyTicketFilter = require('../utils/ticketFilter');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
@@ -73,7 +74,17 @@ exports.getTicket = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
+    const finalQuery = await applyTicketFilter(req);
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
+    }
     let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
+    if (!result?._id) {
+      return res.status(StatusCodes.NOT_ACCEPTABLE).json("No resource found!");
+    }
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     logger.error(new Error(error));
@@ -136,14 +147,25 @@ exports.getTicketSettings = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    const changeReasons = await this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy);
-    const changeTypes = await this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy);
-    const impacts = await this.dbservice.getObjectList(req, TicketImpact, this.settingFields, this.query, this.orderBy);
-    const investigationReasons = await this.dbservice.getObjectList(req, TicketInvestigationReason, this.settingFields, this.query, this.orderBy);
-    const issueTypes = await this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy);
-    const requestTypes = await this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate);
-    const priorities = await this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy);
-    const statuses = await this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate);
+    const [
+      changeReasons,
+      changeTypes,
+      impacts,
+      investigationReasons,
+      issueTypes,
+      requestTypes,
+      priorities,
+      statuses
+    ] = await Promise.all([
+      this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketImpact, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketInvestigationReason, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate),
+      this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate)
+    ]);
 
     const result = {
       changeReasons,
@@ -170,6 +192,13 @@ exports.getTickets = async (req, res, next) => {
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
+    }
+    const finalQuery = await applyTicketFilter(req);
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
     }
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
 

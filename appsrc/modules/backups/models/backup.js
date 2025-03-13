@@ -7,7 +7,7 @@ const baseSchema = require('../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
         name: { type: String, required: true }, // Name of the backup
-        backupSize: { type: Number }, // Size of the backup
+        backupSize: { type: String }, // Size of the backup
         backupType: { type: String }, // Type of backup
         databaseName: { type: String }, // Name of the database being backed up
         databaseVersion: { type: String }, // Version of the database software
@@ -16,9 +16,9 @@ const docSchema = new Schema({
         backupMethod: { type: String }, // Method used for backup
         backupDuration: { type: Number }, // Duration of the backup process
 },
-{
-        collection: 'Backups'
-});
+        {
+                collection: 'Backups'
+        });
 
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);

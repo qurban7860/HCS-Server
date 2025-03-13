@@ -3,7 +3,7 @@ const { StatusCodes, getReasonPhrase } = require('http-status-codes');
 const LZString = require('lz-string');
 const logger = require('../../config/logger');
 const clients = new Map();
-
+const applyTicketCommentFilter = require('../utils/ticketCommentFilter');
 let DBService = require('../service/ticketDBService')
 this.dbservice = new DBService();
 
@@ -26,7 +26,13 @@ exports.getTicketComment = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     this.query.ticket = req.params.ticketId;
     this.query._id = req.params.id;
-
+    const finalQuery = await applyTicketCommentFilter(req);
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
+    }
     const result = await this.dbservice.getObject(TicketComment, this.query, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
@@ -45,7 +51,13 @@ exports.getTicketComments = async (req, res, next) => {
     this.query.ticket = req.params.ticketId;
     this.query.isActive = true;
     this.query.isArchived = false;
-
+    const finalQuery = await applyTicketCommentFilter(req);
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
+    }
     const response = await this.dbservice.getObjectList(req, TicketComment, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
