@@ -147,14 +147,25 @@ exports.getTicketSettings = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    const changeReasons = await this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy);
-    const changeTypes = await this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy);
-    const impacts = await this.dbservice.getObjectList(req, TicketImpact, this.settingFields, this.query, this.orderBy);
-    const investigationReasons = await this.dbservice.getObjectList(req, TicketInvestigationReason, this.settingFields, this.query, this.orderBy);
-    const issueTypes = await this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy);
-    const requestTypes = await this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate);
-    const priorities = await this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy);
-    const statuses = await this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate);
+    const [
+      changeReasons,
+      changeTypes,
+      impacts,
+      investigationReasons,
+      issueTypes,
+      requestTypes,
+      priorities,
+      statuses
+    ] = await Promise.all([
+      this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketImpact, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketInvestigationReason, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate),
+      this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate)
+    ]);
 
     const result = {
       changeReasons,
