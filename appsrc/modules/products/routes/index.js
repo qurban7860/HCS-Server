@@ -39,6 +39,7 @@ const protectedRoutes = {
   serviceReportValueFiles: require("./protected/productServiceReportValueFileRoute"),
   categoryGroups: require("./protected/categoryGroupRoute"),
   integrations: require("./protected/productIntegrationRoute"),
+  dashboard: require("./protected/productDashboardRoute"),
 };
 
 exports.registerProductRoutes = (app, apiPath) => {

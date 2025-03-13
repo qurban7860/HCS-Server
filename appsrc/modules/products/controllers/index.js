@@ -31,4 +31,5 @@ module.exports = {
     categoryGroupController: require('./categoryGroupController'),
     productIntegrationController: require('./productIntegrationController'),
     productTechParamReportController: require('./productTechParamReportController'),
+    productDashboardController: require('./productDashboardController'),
 }
