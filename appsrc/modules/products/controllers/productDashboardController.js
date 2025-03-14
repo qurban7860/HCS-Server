@@ -20,13 +20,38 @@ this.populate = [
 
 exports.getProductDashboard = async (req, res, next) => {
   try {
+    if (!req.params.machineId || !mongoose.Types.ObjectId.isValid(req.params.machineId)) {
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        status: 'error',
+        code: StatusCodes.BAD_REQUEST,
+        message: 'Invalid machine ID provided'
+      });
+    }
+
     this.machine = req.params.machineId;
-    
     const statistics = await calculateMachineStatistics(this.machine);
     
-    res.json(statistics);
+    if (statistics.error) {
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        status: 'error',
+        code: StatusCodes.INTERNAL_SERVER_ERROR,
+        message: statistics.error
+      });
+    }
+
+    return res.status(StatusCodes.OK).json({
+      status: 'success',
+      code: StatusCodes.OK,
+      data: statistics
+    });
+
   } catch (error) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || "Dashboard Statistics Fetch Failed!");
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      status: 'error',
+      code: StatusCodes.INTERNAL_SERVER_ERROR,
+      message: error?.message || "Dashboard Statistics Fetch Failed!"
+    });
   }
 };
 
@@ -41,41 +66,115 @@ async function calculateMachineStatistics(machineId) {
       {
         $match: {
           machine: mongoose.Types.ObjectId(machineId),
-          componentLength: { $exists: true, $ne: null, $ne: "" },
-          waste: { $exists: true, $ne: null, $ne: "" },
-          time: { $exists: true, $ne: null, $ne: "" }
+          componentLength: { $exists: true },
+          waste: { $exists: true },
+          time: { $exists: true }
         }
       },
       {
         $addFields: {
-          cleanComponentLength: {
-            $replaceAll: {
-              input: "$componentLength",
-              find: ",",
-              replacement: ""
+          numComponentLength: {
+            $convert: {
+              input: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: [{ $type: "$componentLength" }, "null"] },
+                      { $eq: [{ $type: "$componentLength" }, "missing"] },
+                      { $eq: ["$componentLength", ""] },
+                      {
+                        $not: {
+                          $regexMatch: {
+                            input: { $ifNull: ["$componentLength", "0"] },
+                            regex: /^-?\d*\.?\d+$/
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "0",
+                  {
+                    $replaceAll: {
+                      input: { $ifNull: ["$componentLength", "0"] },
+                      find: ",",
+                      replacement: ""
+                    }
+                  }
+                ]
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0
             }
           },
-          cleanWaste: {
-            $replaceAll: {
-              input: "$waste",
-              find: ",",
-              replacement: ""
+          numWaste: {
+            $convert: {
+              input: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: [{ $type: "$waste" }, "null"] },
+                      { $eq: [{ $type: "$waste" }, "missing"] },
+                      { $eq: ["$waste", ""] },
+                      {
+                        $not: {
+                          $regexMatch: {
+                            input: { $ifNull: ["$waste", "0"] },
+                            regex: /^-?\d*\.?\d+$/
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "0",
+                  {
+                    $replaceAll: {
+                      input: { $ifNull: ["$waste", "0"] },
+                      find: ",",
+                      replacement: ""
+                    }
+                  }
+                ]
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0
             }
           },
-          cleanTime: {
-            $replaceAll: {
-              input: "$time",
-              find: ",",
-              replacement: ""
+          numTime: {
+            $convert: {
+              input: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: [{ $type: "$time" }, "null"] },
+                      { $eq: [{ $type: "$time" }, "missing"] },
+                      { $eq: ["$time", ""] },
+                      {
+                        $not: {
+                          $regexMatch: {
+                            input: { $ifNull: ["$time", "0"] },
+                            regex: /^-?\d*\.?\d+$/
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "0",
+                  {
+                    $replaceAll: {
+                      input: { $ifNull: ["$time", "0"] },
+                      find: ",",
+                      replacement: ""
+                    }
+                  }
+                ]
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0
             }
           }
-        }
-      },
-      {
-        $addFields: {
-          numComponentLength: { $toDouble: "$cleanComponentLength" },
-          numWaste: { $toDouble: "$cleanWaste" },
-          numTime: { $toDouble: "$cleanTime" }
         }
       },
       {
@@ -90,13 +189,18 @@ async function calculateMachineStatistics(machineId) {
       {
         $project: {
           _id: 0,
-          producedLength: "$totalComponentLength",
-          wasteLength: "$totalWaste",
+          producedLength: { $round: ["$totalComponentLength", 2] },
+          wasteLength: { $round: ["$totalWaste", 2] },
           productionRate: {
-            $cond: [
-              { $eq: ["$totalTime", 0] },
-              0,
-              { $divide: [{ $add: ["$totalComponentLength", "$totalWaste"] }, "$totalTime"] }
+            $round: [
+              {
+                $cond: [
+                  { $eq: ["$totalTime", 0] },
+                  0,
+                  { $divide: [{ $add: ["$totalComponentLength", "$totalWaste"] }, "$totalTime"] }
+                ]
+              },
+              2
             ]
           },
           recordCount: "$count"
@@ -114,12 +218,6 @@ async function calculateMachineStatistics(machineId) {
     };
   } catch (error) {
     console.error("Error calculating machine statistics:", error);
-    return {
-      producedLength: 0,
-      wasteLength: 0,
-      productionRate: 0,
-      recordCount: 0,
-      error: error.message
-    };
+    throw new Error("Failed to calculate machine statistics: " + error.message);
   }
 }
