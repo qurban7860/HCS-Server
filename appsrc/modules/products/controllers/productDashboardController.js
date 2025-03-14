@@ -39,11 +39,7 @@ exports.getProductDashboard = async (req, res, next) => {
       });
     }
 
-    return res.status(StatusCodes.OK).json({
-      status: 'success',
-      code: StatusCodes.OK,
-      data: statistics
-    });
+    return res.status(StatusCodes.OK).json(statistics);
 
   } catch (error) {
     logger.error(new Error(error));
