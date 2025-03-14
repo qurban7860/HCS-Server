@@ -183,12 +183,36 @@ exports.getLogsGraph = async (req, res, next) => {
         _id: groupBy,
         componentLength: {
           $sum: {
-            $toDouble: {
-              $replaceAll: {
-                input: { $ifNull: ["$componentLength", "0"] },
-                find: ",",
-                replacement: ""
-              }
+            $convert: {
+              input: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: [{ $type: "$componentLength" }, "null"] },
+                      { $eq: [{ $type: "$componentLength" }, "missing"] },
+                      {
+                        $not: {
+                          $regexMatch: {
+                            input: { $ifNull: ["$componentLength", "0"] },
+                            regex: /^-?\d*\.?\d+$/
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "0",
+                  {
+                    $replaceAll: {
+                      input: { $ifNull: ["$componentLength", "0"] },
+                      find: ",",
+                      replacement: ""
+                    }
+                  }
+                ]
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0
             }
           }
         }
@@ -198,22 +222,66 @@ exports.getLogsGraph = async (req, res, next) => {
     if (logGraphType === 'productionRate') {
       groupStage.$group.time = {
         $sum: {
-          $cond: [
-            { $ifNull: ["$time", false] },
-            { $toDouble: "$time" },
-            "NA"
-          ]
+          $convert: {
+            input: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: [{ $type: "$time" }, "null"] },
+                    { $eq: [{ $type: "$time" }, "missing"] },
+                    {
+                      $not: {
+                        $regexMatch: {
+                          input: { $ifNull: ["$time", "0"] },
+                          regex: /^-?\d*\.?\d+$/
+                        }
+                      }
+                    }
+                  ]
+                },
+                "0",
+                { $ifNull: ["$time", "0"] }
+              ]
+            },
+            to: "double",
+            onError: 0,
+            onNull: 0
+          }
         }
       };
     } else {
       groupStage.$group.waste = {
         $sum: {
-          $toDouble: {
-            $replaceAll: {
-              input: { $ifNull: ["$waste", "0"] },
-              find: ",",
-              replacement: ""
-            }
+          $convert: {
+            input: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: [{ $type: "$waste" }, "null"] },
+                    { $eq: [{ $type: "$waste" }, "missing"] },
+                    {
+                      $not: {
+                        $regexMatch: {
+                          input: { $ifNull: ["$waste", "0"] },
+                          regex: /^-?\d*\.?\d+$/
+                        }
+                      }
+                    }
+                  ]
+                },
+                "0",
+                {
+                  $replaceAll: {
+                    input: { $ifNull: ["$waste", "0"] },
+                    find: ",",
+                    replacement: ""
+                  }
+                }
+              ]
+            },
+            to: "double",
+            onError: 0,
+            onNull: 0
           }
         }
       };
@@ -227,7 +295,11 @@ exports.getLogsGraph = async (req, res, next) => {
           _id: 1,
           componentLength: { $round: ["$componentLength", 2] },
           ...(logGraphType === 'productionRate'
-            ? { time: { $cond: [{ $eq: ["$time", "NA"] }, "NA", { $round: ["$time", 2] }] } }
+            ? { 
+                time: { 
+                  $round: ["$time", 2]
+                } 
+              }
             : { waste: { $round: ["$waste", 2] } })
         }
       },
