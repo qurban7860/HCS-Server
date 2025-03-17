@@ -1,24 +1,25 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
 const controllers = require('../controllers');
 const controller = controllers.priorityController;
 const router = express.Router();
 
-const baseRoute = `/settings/priorities`; 
+const baseRoute = `/settings/priorities`;
 
 router.use(checkAuth);
 
 // router.get(`${baseRoute}/search`, controller.searchTicketPriorities );
 
-router.get(`${baseRoute}/:id`, checkCustomer, controller.getTicketPriority);
+router.get(`${baseRoute}/count`, controller.getTicketCountByPriority);
 
-router.get(`${baseRoute}/`, controller.getTicketPriorities );
+router.get(`${baseRoute}/:id`, controller.getTicketPriority);
 
-router.post(`${baseRoute}/`, checkCustomer, controller.postTicketPriority );
+router.get(`${baseRoute}/`, controller.getTicketPriorities);
 
-router.patch(`${baseRoute}/:id`, checkCustomer, controller.patchTicketPriority );
+router.post(`${baseRoute}/`, controller.postTicketPriority);
 
-router.delete(`${baseRoute}/:id`, checkCustomer, controller.deleteTicketPriority );
+router.patch(`${baseRoute}/:id`, controller.patchTicketPriority);
+
+router.delete(`${baseRoute}/:id`, controller.deleteTicketPriority);
 
 module.exports = router;

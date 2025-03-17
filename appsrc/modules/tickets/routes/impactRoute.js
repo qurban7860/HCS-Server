@@ -1,24 +1,25 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
 const controllers = require('../controllers');
 const controller = controllers.impactController;
 const router = express.Router();
 
-const baseRoute = `/settings/impacts`; 
+const baseRoute = `/settings/impacts`;
 
 router.use(checkAuth);
 
 // router.get(`${baseRoute}/search`, controller.searchTicketImpacts );
 
-router.get(`${baseRoute}/:id`, checkCustomer, controller.getTicketImpact );
+router.get(`${baseRoute}/count`, controller.getTicketCountByImpact);
 
-router.get(`${baseRoute}/`, controller.getTicketImpacts );
+router.get(`${baseRoute}/:id`, controller.getTicketImpact);
 
-router.post(`${baseRoute}/`, checkCustomer, controller.postTicketImpact );
+router.get(`${baseRoute}/`, controller.getTicketImpacts);
 
-router.patch(`${baseRoute}/:id`, checkCustomer, controller.patchTicketImpact );
+router.post(`${baseRoute}/`, controller.postTicketImpact);
 
-router.delete(`${baseRoute}/:id`, checkCustomer, controller.deleteTicketImpact );
+router.patch(`${baseRoute}/:id`, controller.patchTicketImpact);
+
+router.delete(`${baseRoute}/:id`, controller.deleteTicketImpact);
 
 module.exports = router;

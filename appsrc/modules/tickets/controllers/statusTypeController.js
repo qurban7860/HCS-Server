@@ -2,11 +2,11 @@ const { validationResult } = require('express-validator');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-
+const getDateFromUnitAndValue = require('../utils/getDateFromUnit');
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
-const { TicketStatus, TicketStatusType } = require('../models');
+const { Ticket, TicketStatus, TicketStatusType } = require('../models');
 
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -19,6 +19,31 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
+exports.getTicketCountByStatusType = async (req, res, next) => {
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    const startDate = getDateFromUnitAndValue({ unit: this.query?.unit, value: this.query?.value })
+    const isResolved = this.query?.isResolved || null
+
+    let result = await this.dbservice.getCountsByGroups({
+      model: Ticket,
+      field: "status.statusType",
+      localField: "status",
+      subField: "statusType",
+      collectionName: "TicketStatusTypes",
+      localFieldCollectionName: "TicketStatuses",
+      subFieldCollectionName: "TicketStatusTypes",
+      propertiesToRetrieve: ["name", "color"],
+      isSubFieldValue: true,
+      isResolved,
+      startDate
+    })
+    return res.status(StatusCodes.OK).json(result);
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.BAD_REQUEST).send(error?.message);
+  }
+};
 
 exports.getTicketStatusType = async (req, res, next) => {
   try {

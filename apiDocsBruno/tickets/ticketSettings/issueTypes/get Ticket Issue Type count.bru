@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Issue Type count
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/issueTypes/count
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
