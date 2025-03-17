@@ -1,24 +1,25 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
 const controllers = require('../controllers');
 const controller = controllers.investigationReasonController;
 const router = express.Router();
 
-const baseRoute = `/settings/investigationReasons`; 
+const baseRoute = `/settings/investigationReasons`;
 
 router.use(checkAuth);
 
 // router.get(`${baseRoute}/search`, controller.searchTicketInvestigationReasons );
 
-router.get(`${baseRoute}/:id`, checkCustomer, controller.getTicketInvestigationReason );
+router.get(`${baseRoute}/count`, controller.getTicketCountByInvestigationReason);
 
-router.get(`${baseRoute}/`, controller.getTicketInvestigationReasons );
+router.get(`${baseRoute}/:id`, controller.getTicketInvestigationReason);
 
-router.post(`${baseRoute}/`, checkCustomer, controller.postTicketInvestigationReason );
+router.get(`${baseRoute}/`, controller.getTicketInvestigationReasons);
 
-router.patch(`${baseRoute}/:id`, checkCustomer, controller.patchTicketInvestigationReason );
+router.post(`${baseRoute}/`, controller.postTicketInvestigationReason);
 
-router.delete(`${baseRoute}/:id`, checkCustomer, controller.deleteTicketInvestigationReason );
+router.patch(`${baseRoute}/:id`, controller.patchTicketInvestigationReason);
+
+router.delete(`${baseRoute}/:id`, controller.deleteTicketInvestigationReason);
 
 module.exports = router;

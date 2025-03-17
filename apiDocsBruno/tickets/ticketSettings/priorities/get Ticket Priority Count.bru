@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Priority Count
+  type: http
+  seq: 6
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/priorities/count
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

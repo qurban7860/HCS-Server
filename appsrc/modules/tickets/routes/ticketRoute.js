@@ -14,6 +14,8 @@ router.use(checkAuth);
 
 router.get(`/settings`, controller.getTicketSettings);
 
+router.get(`/count`, controller.getTicketCount);
+
 router.get(`/`, controller.getTickets);
 
 router.get(`/:id`, validateTicketID("id"), controller.getTicket);

@@ -1,24 +1,25 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
 const controllers = require('../controllers');
 const controller = controllers.statusTypeController;
 const router = express.Router();
 
-const baseRoute = `/settings/statusTypes`; 
+const baseRoute = `/settings/statusTypes`;
 
-router.use(checkAuth );
+router.use(checkAuth);
 
 // router.get(`${baseRoute}/search`, controller.searchTicketStatusTypes );
 
-router.get(`${baseRoute}/:id`, checkCustomer, controller.getTicketStatusType );
+router.get(`${baseRoute}/count`, controller.getTicketCountByStatusType);
 
-router.get(`${baseRoute}/`, controller.getTicketStatusTypes );
+router.get(`${baseRoute}/:id`, controller.getTicketStatusType);
 
-router.post(`${baseRoute}/`, checkCustomer, controller.postTicketStatusType );
+router.get(`${baseRoute}/`, controller.getTicketStatusTypes);
 
-router.patch(`${baseRoute}/:id`, checkCustomer, controller.patchTicketStatusType );
+router.post(`${baseRoute}/`, controller.postTicketStatusType);
 
-router.delete(`${baseRoute}/:id`, checkCustomer, controller.deleteTicketStatusType );
+router.patch(`${baseRoute}/:id`, controller.patchTicketStatusType);
+
+router.delete(`${baseRoute}/:id`, controller.deleteTicketStatusType);
 
 module.exports = router;
