@@ -304,19 +304,23 @@ exports.getTickets = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    if (req.query?.isResolved !== undefined) {
-      const statusTypesIds = await TicketStatusType
-        .find({ isResolved: JSON.parse(req.query.isResolved) }).select('_id').lean();
+    if (this.query?.isResolved || this.query?.statusType || !this.query?.status) {
+      let query = {};
+      let statusTypes = [];
+      let statusTypesIds = [];
+      let statusIds = [];
+      if (this.query?.statusType) query._id = this.query?.statusType;
+      if (this.query?.isResolved) query.isResolved = JSON.parse(this.query?.isResolved);
+      if (Object.keys(query).length > 0 && !this.query?.status) {
+        statusTypes = await TicketStatusType.find(query).select('_id').lean();
+        statusTypesIds = statusTypes?.map(st => st._id);
 
-      const statusTypesObjectIds = statusTypesIds.map(sti => sti._id);
-
-      const statusIds = await TicketStatus
-        .find({ statusType: { $in: statusTypesObjectIds } }).select('_id').lean();
-
-      const statusObjectIds = statusIds.map(sti => sti._id);
-
-      this.query = { status: { $in: statusObjectIds } };
+        const statuses = await TicketStatus.find({ statusType: { $in: statusTypesIds } }).select('_id').lean();
+        statusIds = statuses.map(sti => sti._id);
+        this.query = { status: { $in: statusIds } };
+      }
       delete this.query.isResolved
+      delete this.query.statusType
     }
 
     const finalQuery = await applyTicketFilter(req);
@@ -326,7 +330,6 @@ exports.getTickets = async (req, res, next) => {
         ...finalQuery
       }
     }
-
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
