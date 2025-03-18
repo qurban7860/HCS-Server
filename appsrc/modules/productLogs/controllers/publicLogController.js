@@ -110,29 +110,6 @@ exports.postPublicLog = async (req, res, next) => {
 
     const { logs, version, type } = req.body;
 
-    // Validate required fields for each log entry
-    // try {
-    //   logs.forEach((logObj, index) => {
-    //     try {
-    //       validateRequiredFields(logObj);
-    //     } catch (error) {
-    //       throw new Error(`Log entry at index ${index}: ${error.message}`);
-    //     }
-    //   });
-    // } catch (error) {
-    //   await APILog.findByIdAndUpdate(
-    //     apiLogEntry._id,
-    //     {
-    //       responseStatusCode: StatusCodes.BAD_REQUEST,
-    //       response: JSON.stringify({ error: error.message }),
-    //       responseMessage: "Invalid Log Data: Missing required fields",
-    //       noOfRecordsUpdated: 0,
-    //     },
-    //     { new: true }
-    //   );
-    //   return res.status(StatusCodes.BAD_REQUEST).send(`Invalid Log Data: ${error.message}`);
-    // }
-
     req.query.type = type;
     const Model = getModel(req);
     const logsToInsert = [];
@@ -155,30 +132,36 @@ exports.postPublicLog = async (req, res, next) => {
     });
 
     if (logsToInsert.length > 0) {
-      await Model.create(logsToInsert);
+      const insertedLogs = await Model.create(logsToInsert);
+      // Extract ObjectIds of inserted logs
+      const insertedLogIds = insertedLogs.map(log => log._id);
+
+      const finalResponseTime = Date.now() - startTime;
+
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.CREATED,
+          response: JSON.stringify({
+            message: "Machine logs processed successfully",
+            count: insertedLogs.length,
+            insertedLogIds: insertedLogIds // Include the array of inserted log IDs
+          }),
+          responseMessage: `Successfully processed ${insertedLogs.length} ${type} logs`,
+          noOfRecordsUpdated: insertedLogs.length,
+          responseTime: `${finalResponseTime}`,
+        },
+        { new: true }
+      );
+
+      res.status(StatusCodes.CREATED).json({
+        message: "Machine logs processed successfully",
+        count: insertedLogs.length,
+        insertedLogIds: insertedLogIds
+      });
+    } else {
+      throw new Error("No valid logs to insert");
     }
-
-    const finalResponseTime = Date.now() - startTime;
-
-    await APILog.findByIdAndUpdate(
-      apiLogEntry._id,
-      {
-        responseStatusCode: StatusCodes.CREATED,
-        response: JSON.stringify({
-          message: "Machine logs processed successfully",
-          count: logsToInsert.length,
-        }),
-        responseMessage: `Successfully processed ${logsToInsert.length} ${type} logs`,
-        noOfRecordsUpdated: logsToInsert.length,
-        responseTime: `${finalResponseTime}`,
-      },
-      { new: true }
-    );
-
-    res.status(StatusCodes.CREATED).json({
-      message: "Machine logs processed successfully",
-      count: logsToInsert.length,
-    });
   } catch (error) {
     if (apiLogEntry) {
       const errorResponseTime = Date.now() - startTime;

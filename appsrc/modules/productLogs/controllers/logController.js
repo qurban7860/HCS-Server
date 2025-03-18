@@ -116,6 +116,39 @@ exports.getLogs = async (req, res, next) => {
   }
 };
 
+exports.getLogsByIDs = async (req, res, next) => {
+  try {
+    const { ids, type } = req.query;
+
+    if (!type?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Log type is not defined!");
+    }
+
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Please provide a valid array of log IDs!");
+    }
+
+    const parsedIds = ids;
+
+    const validIds = parsedIds.every(id => mongoose.Types.ObjectId.isValid(id));
+    if (!validIds) {
+      return res.status(StatusCodes.BAD_REQUEST).send("One or more invalid log IDs provided!");
+    }
+
+    req.query.type = type;
+    const Model = getModel(req);
+
+    const logs = await Model.find({ 
+      _id: { $in: parsedIds.map(id => new mongoose.Types.ObjectId(id)) } 
+    }).populate(this.populate);
+
+    res.json(logs);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
+  }
+};
+
 exports.getLogsGraph = async (req, res, next) => {
   try {
     const LogModel = getModel(req);
