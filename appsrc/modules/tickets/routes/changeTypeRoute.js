@@ -1,24 +1,25 @@
 const express = require('express');
 const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
 const controllers = require('../controllers');
 const controller = controllers.changeTypeController;
 const router = express.Router();
 
-const baseRoute = `/settings/changeTypes`; 
+const baseRoute = `/settings/changeTypes`;
 
 router.use(checkAuth);
 
 // router.get(`${baseRoute}/search`, controller.searchTicketChangeTypes );
 
-router.get(`${baseRoute}/:id`, checkCustomer, controller.getTicketChangeType );
+router.get(`${baseRoute}/count`, controller.getTicketCountByChangeType);
 
-router.get(`${baseRoute}/`, controller.getTicketChangeTypes );
+router.get(`${baseRoute}/:id`, controller.getTicketChangeType);
 
-router.post(`${baseRoute}/`, checkCustomer, controller.postTicketChangeType );
+router.get(`${baseRoute}/`, controller.getTicketChangeTypes);
 
-router.patch(`${baseRoute}/:id`, checkCustomer, controller.patchTicketChangeType );
+router.post(`${baseRoute}/`, controller.postTicketChangeType);
 
-router.delete(`${baseRoute}/:id`, checkCustomer, controller.deleteTicketChangeType );
+router.patch(`${baseRoute}/:id`, controller.patchTicketChangeType);
+
+router.delete(`${baseRoute}/:id`, controller.deleteTicketChangeType);
 
 module.exports = router;

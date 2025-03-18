@@ -1,5 +1,5 @@
 const { validationResult } = require('express-validator');
-const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+const { StatusCodes, getReasonPhrase } = require('http-status-codes');
 const logger = require('../../config/logger');
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
@@ -19,6 +19,7 @@ const {
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
 const applyTicketFilter = require('../utils/ticketFilter');
+const getDateFromUnitAndValue = require('../utils/getDateFromUnit');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
@@ -92,47 +93,155 @@ exports.getTicket = async (req, res, next) => {
   }
 };
 
+exports.getTicketCount = async (req, res, next) => {
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    const startDate = getDateFromUnitAndValue({ unit: this.query?.unit, value: this.query?.value })
+    const isResolved = this.query?.isResolved || null
 
-const getCountsByGroups = async () => {
-  const pipeline = [
-    { $match: { isArchived: false, isActive: true } },
-    {
-      $facet: {
-        byChangeReasons: [
-          { $group: { _id: "$changeReason", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byChangeTypes: [
-          { $group: { _id: "$changeType", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byImpacts: [
-          { $group: { _id: "$impact", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byInvestigationReasons: [
-          { $group: { _id: "$investigationReason", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byIssueTypes: [
-          { $group: { _id: "$issueType", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byPriorities: [
-          { $group: { _id: "$priority", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-        byStatuses: [
-          { $group: { _id: "$status", count: { $sum: 1 } } },
-          { $sort: { count: -1 } },
-        ],
-      },
-    },
-  ];
+    const [
+      changeReason,
+      changeType,
+      impact,
+      investigationReason,
+      issueType,
+      requestType,
+      priority,
+      status,
+      statusType,
+      statusTypes
+    ] = await Promise.all([
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "changeReason",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketChangeReasons",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "changeType",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketChangeTypes",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "impact",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketImpacts",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "investigationReason",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketInvestigationReasons",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "issueType",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketIssueTypes",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "requestType",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketRequestTypes",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "priority",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketPriorities",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "status",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketStatuses",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isResolved,
+        startDate
+      }),
+      this.dbservice.getCountsByGroups({
+        model: Ticket,
+        field: "status.statusType",
+        localField: "status",
+        subField: "statusType",
+        collectionName: "TicketStatusTypes",
+        localFieldCollectionName: "TicketStatuses",
+        subFieldCollectionName: "TicketStatusTypes",
+        propertiesToRetrieve: ["name", "color"],
+        isSubFieldValue: true,
+        isResolved,
+        startDate
+      })
+    ]);
 
-  const result = await Ticket.aggregate(pipeline);
-  return result;
+    const result = {
+      changeReason,
+      changeType,
+      impact,
+      investigationReason,
+      issueType,
+      requestType,
+      priority,
+      status,
+      statusType,
+      statusTypes
+    }
+
+    return res.status(StatusCodes.OK).json(result);
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.BAD_REQUEST).send(error?.message);
+  }
 };
+
 
 exports.getTicketSettings = async (req, res, next) => {
   try {
@@ -201,16 +310,6 @@ exports.getTickets = async (req, res, next) => {
       }
     }
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
-
-    const countsResult = await getCountsByGroups();
-    if (Array.isArray(result)) {
-      result = {
-        data: result,
-        groupCounts: countsResult
-      }
-    } else {
-      result.groupCounts = countsResult
-    }
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     logger.error(new Error(error));
