@@ -64,7 +64,11 @@ async function calculateMachineStatistics(machineId) {
           machine: mongoose.Types.ObjectId(machineId),
           componentLength: { $exists: true },
           waste: { $exists: true },
-          time: { $exists: true }
+          time: { $exists: true },
+          $or: [
+            { measurementUnit: { $ne: "in" } },
+            { measurementUnit: { $exists: false } }
+          ]
         }
       },
       {
