@@ -15,7 +15,8 @@ const {
   TicketIssueType,
   TicketRequestType,
   TicketPriority,
-  TicketStatus
+  TicketStatus,
+  TicketStatusType
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
 const applyTicketFilter = require('../utils/ticketFilter');
@@ -43,7 +44,7 @@ this.populate = [
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
-  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug ' } },
+  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug isResolved' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'files', select: 'name fileType extension thumbnail eTag' },
@@ -302,6 +303,22 @@ exports.getTickets = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
+
+    if (req.query?.isResolved !== undefined) {
+      const statusTypesIds = await TicketStatusType
+        .find({ isResolved: JSON.parse(req.query.isResolved) }).select('_id').lean();
+
+      const statusTypesObjectIds = statusTypesIds.map(sti => sti._id);
+
+      const statusIds = await TicketStatus
+        .find({ statusType: { $in: statusTypesObjectIds } }).select('_id').lean();
+
+      const statusObjectIds = statusIds.map(sti => sti._id);
+
+      this.query = { status: { $in: statusObjectIds } };
+      delete this.query.isResolved
+    }
+
     const finalQuery = await applyTicketFilter(req);
     if (finalQuery) {
       this.query = {
@@ -309,6 +326,7 @@ exports.getTickets = async (req, res, next) => {
         ...finalQuery
       }
     }
+
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
