@@ -15,6 +15,9 @@ router.use(checkAuth, checkCustomer);
 router.get(`/`, controller.getLogs);
 // GET /api/1.0.0/productLogs/
 
+router.get(`/logsByIDs`, controller.getLogsByIDs);
+// GET /api/1.0.0/productLogs/logsByIDs
+
 router.get(`/graph`, controller.getLogsGraph);
 // GET /api/1.0.0/productLogs/graph
 
