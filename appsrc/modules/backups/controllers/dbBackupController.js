@@ -116,6 +116,7 @@ const dbBackup = async () => {
                 backupTime: endDateTime
             };
             await postBackup(req);
+            req.body.backupSize = `${backupSize?.toFixed(1) || 0} MB`
             await emailService.sendDbBackupEmail(req);
             await cleanUp(`./${S3_BUCKET}`);
         } else {
