@@ -15,7 +15,8 @@ const {
   TicketIssueType,
   TicketRequestType,
   TicketPriority,
-  TicketStatus
+  TicketStatus,
+  TicketStatusType
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
 const applyTicketFilter = require('../utils/ticketFilter');
@@ -43,7 +44,7 @@ this.populate = [
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
   { path: 'priority', select: 'name icon color' },
-  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug ' } },
+  { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug isResolved' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'files', select: 'name fileType extension thumbnail eTag' },
@@ -302,6 +303,26 @@ exports.getTickets = async (req, res, next) => {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
+
+    if (this.query?.isResolved || this.query?.statusType || !this.query?.status) {
+      let query = {};
+      let statusTypes = [];
+      let statusTypesIds = [];
+      let statusIds = [];
+      if (this.query?.statusType) query._id = this.query?.statusType;
+      if (this.query?.isResolved) query.isResolved = JSON.parse(this.query?.isResolved);
+      if (Object.keys(query).length > 0 && !this.query?.status) {
+        statusTypes = await TicketStatusType.find(query).select('_id').lean();
+        statusTypesIds = statusTypes?.map(st => st._id);
+
+        const statuses = await TicketStatus.find({ statusType: { $in: statusTypesIds } }).select('_id').lean();
+        statusIds = statuses.map(sti => sti._id);
+        this.query = { status: { $in: statusIds } };
+      }
+      delete this.query.isResolved
+      delete this.query.statusType
+    }
+
     const finalQuery = await applyTicketFilter(req);
     if (finalQuery) {
       this.query = {
