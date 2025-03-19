@@ -1,0 +1,15 @@
+meta {
+  name: Get Waste Length
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products/machines/661372179472c159c48bcd8b/dashboard/wasteLength
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}
