@@ -269,7 +269,7 @@ exports.getProductionRate = async (req, res, next) => {
       const waste = parseFloat(log.waste?.replace(',', '') || 0);
       const time = parseFloat(log.time?.replace(',', '') || 0);
       
-      if (time === 0) {
+      if (time === 0 || isNaN(time)) {
         return acc;
       }
       
