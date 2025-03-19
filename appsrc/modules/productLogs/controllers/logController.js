@@ -52,7 +52,6 @@ exports.getLogs = async (req, res, next) => {
         if (mongoose.Types.ObjectId.isValid(this.query.searchKey)) {
           this.query._id = mongoose.Types.ObjectId(this.query.searchKey);
         } else {
-          // If it's not a valid ObjectId, we can't search for it
           return res.status(400).send("Invalid _id format");
         }
       } else {
@@ -116,30 +115,24 @@ exports.getLogs = async (req, res, next) => {
   }
 };
 
-exports.getLogsByIDs = async (req, res, next) => {
+exports.getLogsByApiId = async (req, res, next) => {
   try {
-    const { ids, type } = req.query;
+    const { apiId, type } = req.query;
 
     if (!type?.trim()) {
       return res.status(StatusCodes.BAD_REQUEST).send("Log type is not defined!");
     }
 
-    if (!ids || !Array.isArray(ids) || ids.length === 0) {
-      return res.status(StatusCodes.BAD_REQUEST).send("Please provide a valid array of log IDs!");
-    }
-
-    const parsedIds = ids;
-
-    const validIds = parsedIds.every(id => mongoose.Types.ObjectId.isValid(id));
-    if (!validIds) {
-      return res.status(StatusCodes.BAD_REQUEST).send("One or more invalid log IDs provided!");
+    const validApiId = mongoose.Types.ObjectId.isValid(apiId);
+    if (!validApiId) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid log API ID provided!");
     }
 
     req.query.type = type;
     const Model = getModel(req);
 
     const logs = await Model.find({ 
-      _id: { $in: parsedIds.map(id => new mongoose.Types.ObjectId(id)) } 
+      apiLogId: mongoose.Types.ObjectId(apiId)
     }).populate(this.populate);
 
     res.json(logs);

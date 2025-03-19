@@ -133,9 +133,6 @@ exports.postPublicLog = async (req, res, next) => {
 
     if (logsToInsert.length > 0) {
       const insertedLogs = await Model.create(logsToInsert);
-      // Extract ObjectIds of inserted logs
-      const insertedLogIds = insertedLogs.map(log => log._id);
-
       const finalResponseTime = Date.now() - startTime;
 
       await APILog.findByIdAndUpdate(
@@ -145,7 +142,6 @@ exports.postPublicLog = async (req, res, next) => {
           response: JSON.stringify({
             message: "Machine logs processed successfully",
             count: insertedLogs.length,
-            insertedLogIds: insertedLogIds // Include the array of inserted log IDs
           }),
           responseMessage: `Successfully processed ${insertedLogs.length} ${type} logs`,
           noOfRecordsUpdated: insertedLogs.length,
@@ -157,7 +153,6 @@ exports.postPublicLog = async (req, res, next) => {
       res.status(StatusCodes.CREATED).json({
         message: "Machine logs processed successfully",
         count: insertedLogs.length,
-        insertedLogIds: insertedLogIds
       });
     } else {
       throw new Error("No valid logs to insert");
