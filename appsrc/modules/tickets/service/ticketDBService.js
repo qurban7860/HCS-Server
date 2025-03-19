@@ -132,10 +132,20 @@ class TicketService {
         pipeline.push({ $unwind: { path: `$${localField}Data`, preserveNullAndEmptyArrays: true } });
       }
 
+      // if (subField) {
+      //   pipeline.push({ $unwind: { path: `$${subField}Data`, preserveNullAndEmptyArrays: true } });
+      // }
       if (subField) {
-        pipeline.push({ $unwind: { path: `$${subField}Data`, preserveNullAndEmptyArrays: true } });
+        pipeline.push(
+          { $unwind: { path: `$${subField}Data`, preserveNullAndEmptyArrays: true } },
+          {
+            $match: {
+              [`${subField}Data.isArchived`]: false,
+              [`${subField}Data.isActive`]: true,
+            }
+          }
+        );
       }
-
       pipeline.push({
         $lookup: {
           from: collectionName,
