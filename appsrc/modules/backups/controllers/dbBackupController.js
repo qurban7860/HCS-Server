@@ -100,6 +100,7 @@ const dbBackup = async () => {
             var durationSeconds = (endTime - startTime) / 1000;
             let req = {};
             req.body = {};
+            throw new Error("Failed Backup")
             // BACKUP SIZE IN MB
             var backupSize = zipSizeKb > 0 ? zipSizeKb / 1024 : 0
             req.body = {
