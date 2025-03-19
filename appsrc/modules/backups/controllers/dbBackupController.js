@@ -108,7 +108,7 @@ const dbBackup = async () => {
                 backupDuration: durationSeconds,
                 backupMethod: 'mongodump',
                 backupLocation: `${s3BackupLocation}/${zipFileName}`,
-                backupStatus: 'completed',
+                backupStatus: '201',
                 databaseVersion: '1',
                 databaseName: process.env.MONGODB_USERNAME,
                 backupType: 'SYSTEM',
