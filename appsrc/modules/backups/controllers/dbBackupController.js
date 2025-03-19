@@ -85,15 +85,17 @@ const dbBackup = async () => {
         const startTime = performance.now();
         const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
-        const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
+        // const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
+        const mongoUri = `mongodb://localhost:27017/${process.env.MONGODB_NAME}`;
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
         const fileName = `db-${timestamp}`;
         const zipFileName = `db-${timestamp}.zip`;
         const zipPath = `./${S3_BUCKET}/${zipFileName}`;
-        const backupLocation = `${S3_BUCKET}/${process.env.MONGODB_NAME}`;
-        const zipSizeKb = await zipFolder(`./${backupLocation}`, zipPath);
+        const backupLocation = `./${S3_BUCKET}/${process.env.MONGODB_NAME}`;
+        const s3BackupLocation = `${S3_BUCKET}/${process.env.ENV}/${process.env.MONGODB_NAME}`;
+        const zipSizeKb = await zipFolder(backupLocation, zipPath);
         if (zipSizeKb > 0) {
-            await uploadToS3(zipPath, fileName, backupLocation);
+            await uploadToS3(zipPath, fileName, s3BackupLocation);
             const endTime = performance.now();
             const endDateTime = fDateTime(new Date());
             const durationSeconds = (endTime - startTime) / 1000;
@@ -105,7 +107,7 @@ const dbBackup = async () => {
                 name: zipFileName,
                 backupDuration: durationSeconds,
                 backupMethod: 'mongodump',
-                backupLocation: `${backupLocation}/${zipFileName}`,
+                backupLocation: `${s3BackupLocation}/${zipFileName}`,
                 backupStatus: '201',
                 databaseVersion: '1',
                 databaseName: process.env.MONGODB_USERNAME,
