@@ -330,7 +330,7 @@ exports.getTickets = async (req, res, next) => {
         ...finalQuery
       }
     }
-    console.log("this.query : ", this.query)
+
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
