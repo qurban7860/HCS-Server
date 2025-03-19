@@ -305,7 +305,7 @@ exports.getTickets = async (req, res, next) => {
     }
 
     if (this.query?.isResolved || this.query?.statusType || !this.query?.status) {
-      let query = {};
+      let query = { isActive: true, isArchived: false };
       let statusTypes = [];
       let statusTypesIds = [];
       let statusIds = [];
@@ -315,7 +315,7 @@ exports.getTickets = async (req, res, next) => {
         statusTypes = await TicketStatusType.find(query).select('_id').lean();
         statusTypesIds = statusTypes?.map(st => st._id);
 
-        const statuses = await TicketStatus.find({ statusType: { $in: statusTypesIds } }).select('_id').lean();
+        const statuses = await TicketStatus.find({ statusType: { $in: statusTypesIds }, isActive: true, isArchived: false }).select('_id').lean();
         statusIds = statuses.map(sti => sti._id);
         this.query = { status: { $in: statusIds } };
       }
