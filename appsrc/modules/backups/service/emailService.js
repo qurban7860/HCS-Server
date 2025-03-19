@@ -30,13 +30,14 @@ class TicketEmailService {
                 backupType,
                 backupSize,
                 backupTime,
+                error
             } = req.body;
             // Prepare Email Params
             let params = { toEmails, subject };
 
             // Read Email Template and Render
             const contentHTML = await fs.promises.readFile(path.join(__dirname, "../../email/templates/databaseBackup.html"), "utf8");
-            const content = render(contentHTML, { backupTime, name, backupStatus, databaseName, backupSize, backupLocation });
+            const content = render(contentHTML, { backupTime, name, backupStatus, databaseName, backupSize, backupLocation, error });
             const htmlData = await renderEmail(subject, content);
 
             // Send Email

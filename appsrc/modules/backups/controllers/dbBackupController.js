@@ -117,6 +117,7 @@ const dbBackup = async () => {
             };
             await postBackup(req);
             req.body.backupSize = `${backupSize?.toFixed(1) || 0} MB`
+            req.body.backupStatus = "completed"
             await emailService.sendDbBackupEmail(req);
             await cleanUp(`./${S3_BUCKET}`);
         } else {
@@ -129,13 +130,16 @@ const dbBackup = async () => {
             backupDuration: durationSeconds,
             backupMethod: 'mongodump',
             backupLocation: `${s3BackupLocation}/${zipFileName}`,
-            backupStatus: "failed",
+            backupStatus: "500",
             databaseVersion: '1',
             databaseName: process.env.MONGODB_USERNAME,
             backupType: 'SYSTEM',
             backupSize,
             backupTime: endDateTime
         };
+        await postBackup(req);
+        req.body.backupStatus = "failed"
+        req.body.error = `<strong>Error:</strong> ${error?.message}<br>`
         await emailService.sendDbBackupEmail(req);
         logger.error(`DB backup failed : , ${error}`);
     }
