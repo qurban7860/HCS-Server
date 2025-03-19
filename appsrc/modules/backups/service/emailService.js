@@ -28,16 +28,16 @@ class TicketEmailService {
                 databaseVersion,
                 databaseName,
                 backupType,
-                backupSize,
+                backupSize = 0,
                 backupTime,
             } = req.body;
-
+            const size = `${backupSize?.toFixed(backupSize) || 0} MB`
             // Prepare Email Params
             let params = { toEmails, subject };
 
             // Read Email Template and Render
             const contentHTML = await fs.promises.readFile(path.join(__dirname, "../../email/templates/databaseBackup.html"), "utf8");
-            const content = render(contentHTML, { backupTime, name, databaseName, backupSize, backupLocation });
+            const content = render(contentHTML, { backupTime, name, backupStatus, databaseName, size, backupLocation });
             const htmlData = await renderEmail(subject, content);
 
             // Send Email
