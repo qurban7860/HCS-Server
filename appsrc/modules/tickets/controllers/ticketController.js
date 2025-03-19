@@ -317,7 +317,7 @@ exports.getTickets = async (req, res, next) => {
 
         const statuses = await TicketStatus.find({ statusType: { $in: statusTypesIds }, isActive: true, isArchived: false }).select('_id').lean();
         statusIds = statuses.map(sti => sti._id);
-        this.query = { status: { $in: statusIds } };
+        this.query.status = { $in: statusIds };
       }
       delete this.query.isResolved
       delete this.query.statusType
