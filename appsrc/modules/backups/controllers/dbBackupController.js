@@ -87,29 +87,30 @@ const dbBackup = async () => {
         const collections = process.env.DB_BACKUP_COLLECTIONS?.trim();
         const mongoUri = `mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}`;
         await execCommand(`mongodump --out ${S3_BUCKET} ${collections ? `--collection ${collections}` : ''} --uri="${mongoUri}"`);
-        const S3Path = 'FRAMA-DB';
-        const fileName = `db-${timestamp}.zip`;
-        const zipPath = `./${S3_BUCKET}/${fileName}`;
-        const zipFilePath = `./${S3_BUCKET}/${process.env.MONGODB_NAME}`;
-        const zipSizeKb = await zipFolder(zipFilePath, zipPath);
+        const fileName = `db-${timestamp}`;
+        const zipFileName = `db-${timestamp}.zip`;
+        const zipPath = `./${S3_BUCKET}/${zipFileName}`;
+        const backupLocation = `${S3_BUCKET}/${process.env.MONGODB_NAME}`;
+        const zipSizeKb = await zipFolder(`./${backupLocation}`, zipPath);
         if (zipSizeKb > 0) {
-            await uploadToS3(zipFilePath, fileName);
+            await uploadToS3(zipPath, fileName, backupLocation);
             const endTime = performance.now();
             const endDateTime = fDateTime(new Date());
             const durationSeconds = (endTime - startTime) / 1000;
             let req = {};
             req.body = {};
-            const backupsizeInGb = zipSizeKb > 0 ? zipSizeKb / (1024 * 1024) : 0
+            // BACKUP SIZE IN MB
+            const backupSize = zipSizeKb > 0 ? zipSizeKb / 1024 : 0
             req.body = {
-                name: fileName,
+                name: zipFileName,
                 backupDuration: durationSeconds,
                 backupMethod: 'mongodump',
-                backupLocation: `${S3Path}/${fileName}`,
+                backupLocation: `${backupLocation}/${zipFileName}`,
                 backupStatus: '201',
                 databaseVersion: '1',
                 databaseName: process.env.MONGODB_USERNAME,
                 backupType: 'SYSTEM',
-                backupSize: `${parseFloat(backupsizeInGb.toFixed(4)) || 0} GB`,
+                backupSize,
                 backupTime: endDateTime
             };
             await postBackup(req);
@@ -159,7 +160,8 @@ const zipFolder = (sourceDirectory, filePath) => {
 
 const uploadToS3 = async (filePath, fileName, folder) => {
     try {
-        await uploadFileS3(fileName, folder, filePath, "zip")
+        const fileContent = fs.readFileSync(filePath);
+        await uploadFileS3(fileName, folder, fileContent, "zip", true)
     } catch (err) {
         logger.error(`Failed to uploadToS3 archive: ${err}`);
         throw new Error(err)
