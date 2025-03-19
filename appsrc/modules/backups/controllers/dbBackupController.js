@@ -92,22 +92,21 @@ const dbBackup = async () => {
         var zipFileName = `db-${timestamp}.zip`;
         const zipPath = `./${S3_BUCKET}/${zipFileName}`;
         const backupLocation = `./${S3_BUCKET}/${process.env.MONGODB_NAME}`;
-        var s3BackupLocation = `${S3_BUCKET}/${process.env.ENV}/${process.env.MONGODB_NAME}`;
         const zipSizeKb = await zipFolder(backupLocation, zipPath);
         if (zipSizeKb > 0) {
-            await uploadToS3(zipPath, fileName, s3BackupLocation);
+            await uploadToS3(zipPath, fileName, S3_BUCKET);
             const endTime = performance.now();
             var endDateTime = fDateTime(new Date());
             var durationSeconds = (endTime - startTime) / 1000;
             let req = {};
             req.body = {};
             // BACKUP SIZE IN MB
-            const backupSize = zipSizeKb > 0 ? zipSizeKb / 1024 : 0
+            var backupSize = zipSizeKb > 0 ? zipSizeKb / 1024 : 0
             req.body = {
                 name: zipFileName,
                 backupDuration: durationSeconds,
                 backupMethod: 'mongodump',
-                backupLocation: `${s3BackupLocation}/${zipFileName}`,
+                backupLocation: `${S3_BUCKET}/${zipFileName}`,
                 backupStatus: '201',
                 databaseVersion: '1',
                 databaseName: process.env.MONGODB_USERNAME,
@@ -116,7 +115,7 @@ const dbBackup = async () => {
                 backupTime: endDateTime
             };
             await postBackup(req);
-            req.body.backupSize = `${backupSize?.toFixed(1) || 0} MB`
+            req.body.backupSize = `${backupSize?.toFixed(2) || 0} MB`
             req.body.backupStatus = "completed"
             await emailService.sendDbBackupEmail(req);
             await cleanUp(`./${S3_BUCKET}`);
@@ -139,6 +138,7 @@ const dbBackup = async () => {
         };
         await postBackup(req);
         req.body.backupStatus = "failed"
+        req.body.backupSize = `${backupSize?.toFixed(2) || 0} MB`
         req.body.error = `<strong>Error:</strong> ${error?.message}<br>`
         await emailService.sendDbBackupEmail(req);
         logger.error(`DB backup failed : , ${error}`);
