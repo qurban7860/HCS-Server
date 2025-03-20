@@ -11,7 +11,8 @@ let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require('../models');
 const { Product } = require('../../products/models');
-const { isValidDate, validateYear  } = require('../../../../utils/formatTime');
+const { isValidDate  } = require('../../../../utils/formatTime');
+const { convertAllInchesBitsToMM, convertTimestampToDate } = require('../utils/helpers');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -52,7 +53,6 @@ exports.getLogs = async (req, res, next) => {
         if (mongoose.Types.ObjectId.isValid(this.query.searchKey)) {
           this.query._id = mongoose.Types.ObjectId(this.query.searchKey);
         } else {
-          // If it's not a valid ObjectId, we can't search for it
           return res.status(400).send("Invalid _id format");
         }
       } else {
@@ -110,6 +110,33 @@ exports.getLogs = async (req, res, next) => {
       response.machines = machines;
     }
     return res.json(response);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
+  }
+};
+
+exports.getLogsByApiId = async (req, res, next) => {
+  try {
+    const { apiId, type } = req.query;
+
+    if (!type?.trim()) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Log type is not defined!");
+    }
+
+    const validApiId = mongoose.Types.ObjectId.isValid(apiId);
+    if (!validApiId) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Invalid log API ID provided!");
+    }
+
+    req.query.type = type;
+    const Model = getModel(req);
+
+    const logs = await Model.find({ 
+      apiLogId: mongoose.Types.ObjectId(apiId)
+    }).populate(this.populate);
+
+    res.json(logs);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
@@ -183,12 +210,36 @@ exports.getLogsGraph = async (req, res, next) => {
         _id: groupBy,
         componentLength: {
           $sum: {
-            $toDouble: {
-              $replaceAll: {
-                input: { $ifNull: ["$componentLength", "0"] },
-                find: ",",
-                replacement: ""
-              }
+            $convert: {
+              input: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: [{ $type: "$componentLength" }, "null"] },
+                      { $eq: [{ $type: "$componentLength" }, "missing"] },
+                      {
+                        $not: {
+                          $regexMatch: {
+                            input: { $ifNull: ["$componentLength", "0"] },
+                            regex: /^-?\d*\.?\d+$/
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "0",
+                  {
+                    $replaceAll: {
+                      input: { $ifNull: ["$componentLength", "0"] },
+                      find: ",",
+                      replacement: ""
+                    }
+                  }
+                ]
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0
             }
           }
         }
@@ -198,22 +249,66 @@ exports.getLogsGraph = async (req, res, next) => {
     if (logGraphType === 'productionRate') {
       groupStage.$group.time = {
         $sum: {
-          $cond: [
-            { $ifNull: ["$time", false] },
-            { $toDouble: "$time" },
-            "NA"
-          ]
+          $convert: {
+            input: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: [{ $type: "$time" }, "null"] },
+                    { $eq: [{ $type: "$time" }, "missing"] },
+                    {
+                      $not: {
+                        $regexMatch: {
+                          input: { $ifNull: ["$time", "0"] },
+                          regex: /^-?\d*\.?\d+$/
+                        }
+                      }
+                    }
+                  ]
+                },
+                "0",
+                { $ifNull: ["$time", "0"] }
+              ]
+            },
+            to: "double",
+            onError: 0,
+            onNull: 0
+          }
         }
       };
     } else {
       groupStage.$group.waste = {
         $sum: {
-          $toDouble: {
-            $replaceAll: {
-              input: { $ifNull: ["$waste", "0"] },
-              find: ",",
-              replacement: ""
-            }
+          $convert: {
+            input: {
+              $cond: [
+                {
+                  $or: [
+                    { $eq: [{ $type: "$waste" }, "null"] },
+                    { $eq: [{ $type: "$waste" }, "missing"] },
+                    {
+                      $not: {
+                        $regexMatch: {
+                          input: { $ifNull: ["$waste", "0"] },
+                          regex: /^-?\d*\.?\d+$/
+                        }
+                      }
+                    }
+                  ]
+                },
+                "0",
+                {
+                  $replaceAll: {
+                    input: { $ifNull: ["$waste", "0"] },
+                    find: ",",
+                    replacement: ""
+                  }
+                }
+              ]
+            },
+            to: "double",
+            onError: 0,
+            onNull: 0
           }
         }
       };
@@ -227,7 +322,11 @@ exports.getLogsGraph = async (req, res, next) => {
           _id: 1,
           componentLength: { $round: ["$componentLength", 2] },
           ...(logGraphType === 'productionRate'
-            ? { time: { $cond: [{ $eq: ["$time", "NA"] }, "NA", { $round: ["$time", 2] }] } }
+            ? { 
+                time: { 
+                  $round: ["$time", 2]
+                } 
+              }
             : { waste: { $round: ["$waste", 2] } })
         }
       },
@@ -260,7 +359,6 @@ exports.deleteLog = async (req, res, next) => {
   }
 };
 
-
 exports.postLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -289,7 +387,23 @@ exports.postLog = async (req, res, next) => {
     if (skip)
       update = false;
 
-    await Promise.all( logs?.map(async (logObj) => {
+    // Convert inches to mm if needed
+    let logsToProcess = logs;
+    if (logs.some(log => log.measurementUnit === 'in')) {
+      const convertedLogs = convertAllInchesBitsToMM(logs, type);
+      if (convertedLogs === null) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement values found in logs');
+      }
+      if (convertedLogs.error) {
+        return res.status(StatusCodes.BAD_REQUEST).send(convertedLogs.error);
+      }
+      logsToProcess = convertedLogs;
+    } else if (logs.some(log => log.measurementUnit && log.measurementUnit !== 'mm')) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement unit. Only "in" and "mm" are allowed.');
+    }
+
+    await Promise.all(logsToProcess?.map(async (logObj) => {
+        logObj = convertTimestampToDate(logObj);
         logObj.machine = machine;
         logObj.customer = customer;
         logObj.loginUser = loginUser;
@@ -329,8 +443,6 @@ exports.postLog = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
-
-
 
 exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);

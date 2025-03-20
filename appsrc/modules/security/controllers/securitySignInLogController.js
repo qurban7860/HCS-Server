@@ -10,26 +10,27 @@ let rtnMsg = require('../../config/static/static')
 let securityDBService = require('../service/securityDBService')
 this.dbservice = new securityDBService();
 
-const { SecuritySignInLog } = require('../models');
-
+const { SecuritySignInLog, SecurityUser } = require('../models');
+const { Customer } = require('../../crm/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
 this.query = {};
-this.orderBy = { loginTime: -1 };  
+this.orderBy = { loginTime: -1 };
 this.populate = [
-  {path: '', select: ''}
+  { path: '', select: '' }
 ];
 
 
 this.populateList = [
-  {path: 'user', select: 'name email login customer contact roles', 
+  {
+    path: 'user', select: 'name email login customer contact roles',
     populate: [
       { path: "customer", select: "name type " },
       { path: "contact", select: "firstName lastName" },
       { path: 'roles', contact: '_id name' }
-    ] 
+    ]
   }
 ];
 
@@ -47,51 +48,41 @@ exports.getSecuritySignInLog = async (req, res, next) => {
 };
 
 exports.getSecuritySignInLogs = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};
-
-  // var aggregate = [
-  //   {
-  //     $lookup: {
-  //       from: "SecurityUsers",
-  //       localField: "user",
-  //       foreignField: "_id",
-  //       as: "user"
-  //     },
-  //   },
-  //   {
-  //     $unwind: "$user"
-  //   },
-  //   {
-  //     $lookup: {
-  //       from: "SecurityRoles",
-  //       localField: "user.roles",
-  //       foreignField: "_id",
-  //       as: "user.roles"
-  //     }
-  //   },
-  //   {
-  //     $match: {
-  //       "user.roles.name": { $nin: ["Developer", "developer"] }
-  //     }
-  //   },
-  //   {
-  //     $sort: {
-  //       "loginTime": -1
-  //     }
-  //   }
-  // ];
-  
-  this.dbservice.getObjectList(req, SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
-  // this.dbservice.getObjectListWithAggregate(SecuritySignInLog, aggregate, params, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.orderBy = this.query.orderBy
+      delete this.query.orderBy
     }
+    if (this.query.searchKey && this.query.searchColumn && !this.query.forDrawing) {
+      const regexCondition = { $regex: this.query.searchKey, $options: "i" };
+      if (this.query.searchColumn == "user.name") {
+        const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
+        const userIds = await SecurityUser.find({ "name": regexCondition }, "_id").lean();
+        this.query.user = { $in: userIds?.map(s => s?._id) };
+      } else if (this.query.searchColumn == "user.customer.name") {
+        const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
+        const customerIds = await Customer.find({ "name": regexCondition }, "_id").lean();
+        const userIds = await SecurityUser.find({ "customer": { $in: customerIds?.map(m => m?._id) } }, "_id").lean();
+        this.query.user = { $in: userIds?.map(s => s?._id) };
+      } else {
+        this.query[this.query.searchColumn] = regexCondition;
+      }
+
+      delete this.query.searchKey;
+      delete this.query.searchColumn;
+    }
+    const response = await this.dbservice.getObjectList(req, SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList);
+    res.json(response);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || error);
   }
 };
+
+function escapeRegExp(string) {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 
 exports.deleteSignInLog = async (req, res, next) => {
   this.dbservice.deleteObject(SecuritySignInLog, req.params.id, res, callbackFunc);
@@ -116,7 +107,7 @@ exports.searchSignInLogs = async (req, res, next) => {
     let searchName = this.query.name;
     delete this.query.name;
     this.dbservice.getObjectList(req, SecuritySignInLog, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
-    
+
     function callbackFunc(error, signInLogs) {
 
       if (error) {
@@ -124,20 +115,20 @@ exports.searchSignInLogs = async (req, res, next) => {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
 
-        if(searchName) {
+        if (searchName) {
           let filterSignInLogs = [];
-          
-          for(let signInLog of signInLogs) {
+
+          for (let signInLog of signInLogs) {
             let name = signInLog.user.name.toLowerCase();
-            if(name.search(searchName.toLowerCase())>-1) {
+            if (name.search(searchName.toLowerCase()) > -1) {
               filterSignInLogs.push(signInLog);
             }
           }
 
           signInLogs = filterSignInLogs;
 
-        } 
-        
+        }
+
         return res.status(StatusCodes.OK).json(signInLogs);
       }
     }
@@ -177,7 +168,7 @@ exports.patchSignInLog = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -186,48 +177,48 @@ exports.patchSignInLog = async (req, res, next) => {
 };
 
 
-function getDocumentFromReq(req, reqType){
+function getDocumentFromReq(req, reqType) {
   const { requestedLogin, user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
 
   let doc = {};
-  
-  if (reqType && reqType == "new"){
+
+  if (reqType && reqType == "new") {
     doc = new SecuritySignInLog({});
   }
-  
 
-  if ("requestedLogin" in req.body){
+
+  if ("requestedLogin" in req.body) {
     doc.requestedLogin = requestedLogin;
   }
-  
-  if ("user" in req.body){
+
+  if ("user" in req.body) {
     doc.user = user;
   }
-  if ("loginTime" in req.body){
+  if ("loginTime" in req.body) {
     doc.loginTime = loginTime;
   }
-  if ("logoutTime" in req.body){
+  if ("logoutTime" in req.body) {
     doc.logoutTime = logoutTime;
   }
 
-  if ("loggedOutBy" in req.body){
+  if ("loggedOutBy" in req.body) {
     doc.loggedOutBy = loggedOutBy;
   }
 
-  if ("loginIP" in req.body){
+  if ("loginIP" in req.body) {
     doc.loginIP = loginIP;
   }
 
-  if ("statusCode" in req.body){
+  if ("statusCode" in req.body) {
     doc.statusCode = statusCode;
   }
 
-  
-  if ("considerLog" in req.body){
+
+  if ("considerLog" in req.body) {
     doc.considerLog = considerLog;
   }
 
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = req.body.loginUser.userId;
     doc.updatedBy = req.body.loginUser.userId;
     doc.createdIP = req.body.loginUser.userIP;
@@ -235,7 +226,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = req.body.loginUser.userId;
     doc.updatedIP = req.body.loginUser.userIP;
-  } 
+  }
 
   return doc;
 }

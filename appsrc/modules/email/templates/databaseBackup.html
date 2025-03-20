@@ -1,14 +1,16 @@
 <tr>
   <td align="left" style="padding:0;Margin:0">
-    <p style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
+    <p
+      style="Margin:0;-webkit-text-size-adjust:none;-ms-text-size-adjust:none;mso-line-height-rule:exactly;font-family:lato, 'helvetica neue', helvetica, arial, sans-serif;line-height:24px;color:#1F1F1F;font-size:16px">
       <br>
       <br>
-      Database backup is completed on {{ backupTime }}.
+      Database backup is {{ backupStatus }} on {{ backupTime }}.
       <br><br>
       <strong>File Name:</strong> {{ name }}<br>
       <strong>Database Name:</strong> {{ databaseName }}<br>
       <strong>Backup Size:</strong> {{ backupSize }}<br>
       <strong>S3 Location:</strong> {{ backupLocation }}<br>
+      {{ error }}
     </p>
   </td>
 </tr>

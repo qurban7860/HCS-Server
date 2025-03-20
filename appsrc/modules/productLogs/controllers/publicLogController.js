@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const { StatusCodes, getReasonPhrase } = require("http-status-codes");
 const { v4: uuidv4 } = require("uuid");
 const logger = require("../../config/logger");
+const { convertAllInchesBitsToMM, convertTimestampToDate } = require('../utils/helpers');
 
 let logDBService = require("../service/logDBService");
 this.dbservice = new logDBService();
@@ -110,35 +111,58 @@ exports.postPublicLog = async (req, res, next) => {
 
     const { logs, version, type } = req.body;
 
-    // Validate required fields for each log entry
-    // try {
-    //   logs.forEach((logObj, index) => {
-    //     try {
-    //       validateRequiredFields(logObj);
-    //     } catch (error) {
-    //       throw new Error(`Log entry at index ${index}: ${error.message}`);
-    //     }
-    //   });
-    // } catch (error) {
-    //   await APILog.findByIdAndUpdate(
-    //     apiLogEntry._id,
-    //     {
-    //       responseStatusCode: StatusCodes.BAD_REQUEST,
-    //       response: JSON.stringify({ error: error.message }),
-    //       responseMessage: "Invalid Log Data: Missing required fields",
-    //       noOfRecordsUpdated: 0,
-    //     },
-    //     { new: true }
-    //   );
-    //   return res.status(StatusCodes.BAD_REQUEST).send(`Invalid Log Data: ${error.message}`);
-    // }
-
     req.query.type = type;
     const Model = getModel(req);
     const logsToInsert = [];
     const batchId = uuidv4();
 
-    logs.forEach((logObj) => {
+    // Convert inches to mm if needed
+    let logsToProcess = logs;
+    if (logs.some(log => log.measurementUnit === 'in')) {
+      const convertedLogs = convertAllInchesBitsToMM(logs, type);
+      if (convertedLogs === null) {
+        await APILog.findByIdAndUpdate(
+          apiLogEntry._id,
+          {
+            responseStatusCode: StatusCodes.BAD_REQUEST,
+            response: JSON.stringify({ error: "Invalid measurement values found in logs" }),
+            responseMessage: "Invalid measurement values found in logs",
+            noOfRecordsUpdated: 0,
+          },
+          { new: true }
+        );
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement values found in logs');
+      }
+      if (convertedLogs.error) {
+        await APILog.findByIdAndUpdate(
+          apiLogEntry._id,
+          {
+            responseStatusCode: StatusCodes.BAD_REQUEST,
+            response: JSON.stringify({ error: convertedLogs.error }),
+            responseMessage: convertedLogs.error,
+            noOfRecordsUpdated: 0,
+          },
+          { new: true }
+        );
+        return res.status(StatusCodes.BAD_REQUEST).send(convertedLogs.error);
+      }
+      logsToProcess = convertedLogs;
+    } else if (logs.some(log => log.measurementUnit && log.measurementUnit !== 'mm')) {
+      const errorMessage = 'Invalid measurement unit. Only "in" and "mm" are allowed.';
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.BAD_REQUEST,
+          response: JSON.stringify({ error: errorMessage }),
+          responseMessage: errorMessage,
+          noOfRecordsUpdated: 0,
+        },
+        { new: true }
+      );
+      return res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
+    }
+
+    logsToProcess.forEach((logObj) => {
       logObj = convertTimestampToDate(logObj);
 
       logObj.machine = req.machine._id;
@@ -155,30 +179,31 @@ exports.postPublicLog = async (req, res, next) => {
     });
 
     if (logsToInsert.length > 0) {
-      await Model.create(logsToInsert);
+      const insertedLogs = await Model.create(logsToInsert);
+      const finalResponseTime = Date.now() - startTime;
+
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.CREATED,
+          response: JSON.stringify({
+            message: "Machine logs processed successfully",
+            count: insertedLogs.length,
+          }),
+          responseMessage: `Successfully processed ${insertedLogs.length} ${type} logs`,
+          noOfRecordsUpdated: insertedLogs.length,
+          responseTime: `${finalResponseTime}`,
+        },
+        { new: true }
+      );
+
+      res.status(StatusCodes.CREATED).json({
+        message: "Machine logs processed successfully",
+        count: insertedLogs.length,
+      });
+    } else {
+      throw new Error("No valid logs to insert");
     }
-
-    const finalResponseTime = Date.now() - startTime;
-
-    await APILog.findByIdAndUpdate(
-      apiLogEntry._id,
-      {
-        responseStatusCode: StatusCodes.CREATED,
-        response: JSON.stringify({
-          message: "Machine logs processed successfully",
-          count: logsToInsert.length,
-        }),
-        responseMessage: `Successfully processed ${logsToInsert.length} ${type} logs`,
-        noOfRecordsUpdated: logsToInsert.length,
-        responseTime: `${finalResponseTime}`,
-      },
-      { new: true }
-    );
-
-    res.status(StatusCodes.CREATED).json({
-      message: "Machine logs processed successfully",
-      count: logsToInsert.length,
-    });
   } catch (error) {
     if (apiLogEntry) {
       const errorResponseTime = Date.now() - startTime;
@@ -262,13 +287,4 @@ function getModel(req) {
   }
 
   return Model;
-}
-function convertTimestampToDate(logObj) {
-  if (logObj.timestamp && !logObj.date) {
-    logObj.srcInfo = logObj.srcInfo || {};
-    logObj.srcInfo.timestamp = logObj.timestamp;
-    logObj.date = logObj.timestamp;
-    delete logObj.timestamp;
-  }
-  return logObj;
 }

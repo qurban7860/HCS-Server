@@ -1,0 +1,20 @@
+meta {
+  name: Delete Ticket Work Log
+  type: http
+  seq: 4
+}
+
+delete {
+  url: {{baseUrl}}/tickets/:ticketId/workLogs/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  ticketId: 
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

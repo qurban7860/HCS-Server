@@ -1,0 +1,15 @@
+meta {
+  name: Get Produced Length
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/products/machines/661372179472c159c48bcd8b/dashboard/producedLength
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{bearerToken}}
+}

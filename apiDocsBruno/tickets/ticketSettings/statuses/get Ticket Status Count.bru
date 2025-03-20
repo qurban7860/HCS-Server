@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Status Count
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/statuses/count
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

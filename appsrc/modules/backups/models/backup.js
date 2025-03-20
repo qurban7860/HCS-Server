@@ -16,9 +16,9 @@ const docSchema = new Schema({
         backupMethod: { type: String }, // Method used for backup
         backupDuration: { type: Number }, // Duration of the backup process
 },
-{
-        collection: 'Backups'
-});
+        {
+                collection: 'Backups'
+        });
 
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
