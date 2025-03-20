@@ -88,7 +88,6 @@ class TicketService {
 
       const matchStage = {
         isArchived: false,
-        isActive: true,
       };
 
       const filterResolvedStage = isResolved !== null ? {
@@ -132,16 +131,12 @@ class TicketService {
         pipeline.push({ $unwind: { path: `$${localField}Data`, preserveNullAndEmptyArrays: true } });
       }
 
-      // if (subField) {
-      //   pipeline.push({ $unwind: { path: `$${subField}Data`, preserveNullAndEmptyArrays: true } });
-      // }
       if (subField) {
         pipeline.push(
           { $unwind: { path: `$${subField}Data`, preserveNullAndEmptyArrays: true } },
           {
             $match: {
               [`${subField}Data.isArchived`]: false,
-              [`${subField}Data.isActive`]: true,
             }
           }
         );
