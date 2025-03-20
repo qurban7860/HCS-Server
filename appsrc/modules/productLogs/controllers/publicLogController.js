@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const { StatusCodes, getReasonPhrase } = require("http-status-codes");
 const { v4: uuidv4 } = require("uuid");
 const logger = require("../../config/logger");
+const { convertAllInchesBitsToMM, convertTimestampToDate } = require('../utils/helpers');
 
 let logDBService = require("../service/logDBService");
 this.dbservice = new logDBService();
@@ -115,7 +116,53 @@ exports.postPublicLog = async (req, res, next) => {
     const logsToInsert = [];
     const batchId = uuidv4();
 
-    logs.forEach((logObj) => {
+    // Convert inches to mm if needed
+    let logsToProcess = logs;
+    if (logs.some(log => log.measurementUnit === 'in')) {
+      const convertedLogs = convertAllInchesBitsToMM(logs, type);
+      if (convertedLogs === null) {
+        await APILog.findByIdAndUpdate(
+          apiLogEntry._id,
+          {
+            responseStatusCode: StatusCodes.BAD_REQUEST,
+            response: JSON.stringify({ error: "Invalid measurement values found in logs" }),
+            responseMessage: "Invalid measurement values found in logs",
+            noOfRecordsUpdated: 0,
+          },
+          { new: true }
+        );
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement values found in logs');
+      }
+      if (convertedLogs.error) {
+        await APILog.findByIdAndUpdate(
+          apiLogEntry._id,
+          {
+            responseStatusCode: StatusCodes.BAD_REQUEST,
+            response: JSON.stringify({ error: convertedLogs.error }),
+            responseMessage: convertedLogs.error,
+            noOfRecordsUpdated: 0,
+          },
+          { new: true }
+        );
+        return res.status(StatusCodes.BAD_REQUEST).send(convertedLogs.error);
+      }
+      logsToProcess = convertedLogs;
+    } else if (logs.some(log => log.measurementUnit && log.measurementUnit !== 'mm')) {
+      const errorMessage = 'Invalid measurement unit. Only "in" and "mm" are allowed.';
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.BAD_REQUEST,
+          response: JSON.stringify({ error: errorMessage }),
+          responseMessage: errorMessage,
+          noOfRecordsUpdated: 0,
+        },
+        { new: true }
+      );
+      return res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
+    }
+
+    logsToProcess.forEach((logObj) => {
       logObj = convertTimestampToDate(logObj);
 
       logObj.machine = req.machine._id;
@@ -240,13 +287,4 @@ function getModel(req) {
   }
 
   return Model;
-}
-function convertTimestampToDate(logObj) {
-  if (logObj.timestamp && !logObj.date) {
-    logObj.srcInfo = logObj.srcInfo || {};
-    logObj.srcInfo.timestamp = logObj.timestamp;
-    logObj.date = logObj.timestamp;
-    delete logObj.timestamp;
-  }
-  return logObj;
 }

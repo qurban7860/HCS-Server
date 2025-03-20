@@ -11,7 +11,8 @@ let logDBService = require('../service/logDBService')
 this.dbservice = new logDBService();
 const { CoilLog, ErpLog, ProductionLog, ToolCountLog, WasteLog } = require('../models');
 const { Product } = require('../../products/models');
-const { isValidDate, validateYear  } = require('../../../../utils/formatTime');
+const { isValidDate  } = require('../../../../utils/formatTime');
+const { convertAllInchesBitsToMM, convertTimestampToDate } = require('../utils/helpers');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -358,7 +359,6 @@ exports.deleteLog = async (req, res, next) => {
   }
 };
 
-
 exports.postLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -387,7 +387,23 @@ exports.postLog = async (req, res, next) => {
     if (skip)
       update = false;
 
-    await Promise.all( logs?.map(async (logObj) => {
+    // Convert inches to mm if needed
+    let logsToProcess = logs;
+    if (logs.some(log => log.measurementUnit === 'in')) {
+      const convertedLogs = convertAllInchesBitsToMM(logs, type);
+      if (convertedLogs === null) {
+        return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement values found in logs');
+      }
+      if (convertedLogs.error) {
+        return res.status(StatusCodes.BAD_REQUEST).send(convertedLogs.error);
+      }
+      logsToProcess = convertedLogs;
+    } else if (logs.some(log => log.measurementUnit && log.measurementUnit !== 'mm')) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement unit. Only "in" and "mm" are allowed.');
+    }
+
+    await Promise.all(logsToProcess?.map(async (logObj) => {
+        logObj = convertTimestampToDate(logObj);
         logObj.machine = machine;
         logObj.customer = customer;
         logObj.loginUser = loginUser;
@@ -427,8 +443,6 @@ exports.postLog = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
-
-
 
 exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);
