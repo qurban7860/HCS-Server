@@ -9,7 +9,8 @@ const { render } = require('template-file');
 const path = require('path');
 const { renderEmail } = require('../../email/utils');
 const { filterAndDeduplicateEmails, verifyEmail } = require('../../email/utils');
-const awsService = require('../../../base/aws');
+const EmailService = require('../../email/service/emailService');
+this.email = new EmailService();
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -732,13 +733,13 @@ exports.patchProduct = async (req, res, next) => {
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
-        if( req.body?.isUpdateConnectedMachines){
-          if(Array.isArray( req.body?.machineConnections ) && req.body?.machineConnections?.length > 0) {
-            try{
-              const validateIds = req.body?.machineConnections?.map( id => mongoose.Types.ObjectId(id) )
+        if (req.body?.isUpdateConnectedMachines) {
+          if (Array.isArray(req.body?.machineConnections) && req.body?.machineConnections?.length > 0) {
+            try {
+              const validateIds = req.body?.machineConnections?.map(id => mongoose.Types.ObjectId(id))
               const getMachineConnections = await ProductConnection.find({ _id: { $in: validateIds } });
-              const machineIds = getMachineConnections?.map( el => mongoose.Types.ObjectId(el?.connectedMachine) )
-              const updateClause = { $set: { } };
+              const machineIds = getMachineConnections?.map(el => mongoose.Types.ObjectId(el?.connectedMachine))
+              const updateClause = { $set: {} };
               if (req.body.customer) updateClause.$set.customer = req.body.customer;
               if (req.body.instalationSite) updateClause.$set.instalationSite = req.body.instalationSite;
               if (req.body.siteMilestone) updateClause.$set.siteMilestone = req.body.siteMilestone;
@@ -752,8 +753,8 @@ exports.patchProduct = async (req, res, next) => {
               if (req.body.accountManager) updateClause.$set.accountManager = req.body.accountManager;
               if (req.body.projectManager) updateClause.$set.projectManager = req.body.projectManager;
               if (req.body.supportManager) updateClause.$set.supportManager = req.body.supportManager;
-              const isUpdated = await Product.updateMany( { _id: { $in: machineIds } }, updateClause );
-            }catch (err){
+              const isUpdated = await Product.updateMany({ _id: { $in: machineIds } }, updateClause);
+            } catch (err) {
               logger.error(new Error(err));
               return res.status(StatusCodes.ACCEPTED).send("Update Connected machines failed!");
             }
@@ -774,7 +775,7 @@ function isValidDate(dateString) {
 }
 
 exports.patchProductStatus = async (req, res, next) => {
-  let params ={};
+  let params = {};
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     console.log("errors machine patch request", errors);
@@ -787,25 +788,25 @@ exports.patchProductStatus = async (req, res, next) => {
     }
 
     const productObj = await Product.findOne({ _id: req.params.id })
-        .select('_id serialNo machineModel status accountManager projectManager supportManager')
-        .populate({ path: 'machineModel', select: 'name' })
-        .populate({ path: 'status', select: '_id name' })
-        .populate({ path: 'customer', select: '_id name' })
-        .populate({ path: 'instalationSite', select: '_id name' })
-        .populate({ path: 'billingSite', select: '_id name' })
-        .populate({ path: 'accountManager', select: '_id email' })
-        .populate({ path: 'projectManager', select: '_id email' })
-        .populate({ path: 'supportManager', select: '_id email' })
-        .lean();
-        params.machineId = productObj?._id;
-        params.model = productObj?.machineModel?.name;
-        params.serialNo = productObj?.serialNo;
-        params.previousStatus = productObj?.status?.name;
-        params.customer = productObj?.customer?.name;
-        params.installationSite = productObj?.instalationSite?.name;
-        params.billingSite = productObj?.billingSite?.name;
-        params.managers = [ ...productObj?.accountManager, ...productObj?.projectManager, ...productObj?.supportManager ];
-        params.subject = 'Machine Status Notification';
+      .select('_id serialNo machineModel status accountManager projectManager supportManager')
+      .populate({ path: 'machineModel', select: 'name' })
+      .populate({ path: 'status', select: '_id name' })
+      .populate({ path: 'customer', select: '_id name' })
+      .populate({ path: 'instalationSite', select: '_id name' })
+      .populate({ path: 'billingSite', select: '_id name' })
+      .populate({ path: 'accountManager', select: '_id email' })
+      .populate({ path: 'projectManager', select: '_id email' })
+      .populate({ path: 'supportManager', select: '_id email' })
+      .lean();
+    params.machineId = productObj?._id;
+    params.model = productObj?.machineModel?.name;
+    params.serialNo = productObj?.serialNo;
+    params.previousStatus = productObj?.status?.name;
+    params.customer = productObj?.customer?.name;
+    params.installationSite = productObj?.instalationSite?.name;
+    params.billingSite = productObj?.billingSite?.name;
+    params.managers = [...productObj?.accountManager, ...productObj?.projectManager, ...productObj?.supportManager];
+    params.subject = 'Machine status notification';
     if (!productObj) {
       return res.status(StatusCodes.BAD_REQUEST).send(`Please provide valid product Id to proceed!`);
     }
@@ -827,48 +828,49 @@ exports.patchProductStatus = async (req, res, next) => {
     const whereClause = { _id: req.params.id, isActive: true, isArchived: false };
     const statusChangeHistory = { status: statusid, dated: req.body.dated };
     const updateClause = {
-      $push: { statusChangeHistory: { $each: [statusChangeHistory],  $position: 0 } },
+      $push: { statusChangeHistory: { $each: [statusChangeHistory], $position: 0 } },
       $set: { status: statusid }
     };
 
     if (productStatus?.slug === 'assembly') {
       updateClause.$set.manufactureDate = req.body.dated;
-      params.manufactureDate = fDate( req.body.dated );
+      params.manufactureDate = fDate(req.body.dated);
     } else if (productStatus?.slug === 'freight') {
       updateClause.$set.shippingDate = req.body.dated;
-      params.shippingDate = fDate( req.body.dated );
+      params.shippingDate = fDate(req.body.dated);
     } else if (productStatus?.slug === 'decommissioned') {
       updateClause.$set.decommissionedDate = req.body.dated;
-      params.decommissionedDate = fDate( req.body.dated );
+      params.decommissionedDate = fDate(req.body.dated);
     } else if (productStatus?.slug === 'commissioned') {
       updateClause.$set.installationDate = req.body.dated;
-      params.installationDate = fDate( req.body.dated );
+      params.installationDate = fDate(req.body.dated);
     }
 
-    const updatedProcess = await Product.updateOne(whereClause, updateClause); 
-    if(req.body?.updateConnectedMachines && (req.body?.updateConnectedMachines === true || req.body?.updateConnectedMachines == 'true')) {
+    const updatedProcess = await Product.updateOne(whereClause, updateClause);
+    if (req.body?.updateConnectedMachines && (req.body?.updateConnectedMachines === true || req.body?.updateConnectedMachines == 'true')) {
       const whereClause_ = { machine: req.params.id, isActive: true, isArchived: false };
       try {
-        const machinePopulate = [  
-            { path: "connectedMachine", select: "serialNo machineModel",
-              populate: { path: "machineModel", select: "name" } 
-            } 
+        const machinePopulate = [
+          {
+            path: "connectedMachine", select: "serialNo machineModel",
+            populate: { path: "machineModel", select: "name" }
+          }
         ]
 
         const connectionsToUpdate = await ProductConnection.find(whereClause_).select('connectedMachine').populate(machinePopulate).lean();
-        if(Array.isArray( connectionsToUpdate )){
-          params.connectedMachines = await connectionsToUpdate.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel?.name}`).join(', ');
+        if (Array.isArray(connectionsToUpdate)) {
+          params.connectedMachines = await connectionsToUpdate.map((mc) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel?.name}`).join(', ');
         }
         const connectedMachineIds = connectionsToUpdate.map(connection => connection.connectedMachine._id);
-        if(connectedMachineIds?.length > 0) {
-          await Product.updateMany( { _id: { $in: connectedMachineIds }, isActive: true, isArchived: false }, updateClause);
+        if (connectedMachineIds?.length > 0) {
+          await Product.updateMany({ _id: { $in: connectedMachineIds }, isActive: true, isArchived: false }, updateClause);
         }
       } catch (error) {
         console.error("Error updating ProductConnection:", error);
       }
     }
     if (updatedProcess) {
-      exports.sendEmailAlert( params );
+      exports.sendEmailAlert(req, params);
       return res.status(StatusCodes.ACCEPTED).send("Status updated successfully!");
     } else {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
@@ -905,34 +907,36 @@ exports.transferOwnership = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const machinePopulate = [ 
+      const machinePopulate = [
         { path: "machineModel", select: "name" },
-        { path: 'customer', select: 'name' }, 
-        { path: 'billingSite', select: 'name' }, 
-        { path: 'installationSite', select: 'name' }, 
-        { path: 'status', select: 'name' }, 
+        { path: 'customer', select: 'name' },
+        { path: 'billingSite', select: 'name' },
+        { path: 'installationSite', select: 'name' },
+        { path: 'status', select: 'name' },
         { path: 'accountManager', select: 'email' },
         { path: 'projectManager', select: 'email' },
         { path: 'supportManager', select: 'email' },
-        { path: 'machineConnections', select: 'connectedMachine', 
-          populate: { path: "connectedMachine", select: "serialNo machineModel",
-            populate: { path: "machineModel", select: "name" } 
-          } 
-        } 
+        {
+          path: 'machineConnections', select: 'connectedMachine',
+          populate: {
+            path: "connectedMachine", select: "serialNo machineModel",
+            populate: { path: "machineModel", select: "name" }
+          }
+        }
       ]
 
       let params = {};
       let newParams = {};
       if (ObjectId.isValid(req.body.machine)) {
-        let parentMachine = await dbservice.getObjectById(Product, this.fields, req.body.machine, machinePopulate );
+        let parentMachine = await dbservice.getObjectById(Product, this.fields, req.body.machine, machinePopulate);
         params.machineId = parentMachine?._id;
         params.model = parentMachine?.machineModel?.name;
         params.serialNo = parentMachine?.serialNo;
         params.customer = parentMachine?.customer?.name || '';
-        params.managers = [ ...parentMachine?.accountManager, ...parentMachine?.projectManager, ...parentMachine?.supportManager ];
+        params.managers = [...parentMachine?.accountManager, ...parentMachine?.projectManager, ...parentMachine?.supportManager];
         params.subject = 'Machine Transferred';
-        if(Array.isArray( parentMachine.machineConnections )){
-          params.connectedMachines = await parentMachine?.machineConnections.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel.name}`).join(', ');
+        if (Array.isArray(parentMachine.machineConnections)) {
+          params.connectedMachines = await parentMachine?.machineConnections.map((mc) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel.name}`).join(', ');
         }
         const globelMachineID = parentMachine?.globelMachineID && ObjectId.isValid(parentMachine.globelMachineID) ? parentMachine.globelMachineID : req.body.machine;
         if (!parentMachine) {
@@ -963,7 +967,7 @@ exports.transferOwnership = async (req, res, next) => {
           req.body.transferredFromMachine = parentMachine._id;
           req.body.transferredDate = null;
           req.body.purchaseDate = transferredDate;
-          params.transferredDate = transferredDate ? fDate( transferredDate ) : '';
+          params.transferredDate = transferredDate ? fDate(transferredDate) : '';
           req.body.manufactureDate = parentMachine.manufactureDate;
           req.body.globelMachineID = globelMachineID;
           req.body.alias = parentMachine.alias;
@@ -1014,7 +1018,7 @@ exports.transferOwnership = async (req, res, next) => {
               }
               // Step 3 List document for selection to transfer to new machine id
               if (req.body.machineDocuments && req.body.machineDocuments.length > 0) {
-                const responseDocument = await Document.updateMany({ _id: { $in: req.body.machineDocuments } }, setClause );
+                const responseDocument = await Document.updateMany({ _id: { $in: req.body.machineDocuments } }, setClause);
               }
               // Step 4 List of existing connected machines to choose to move with new machine id. 
               if (req.body.machineConnections && req.body.machineConnections.length > 0) {
@@ -1028,9 +1032,9 @@ exports.transferOwnership = async (req, res, next) => {
                 status: parentMachineStatus._id,
                 globelMachineID: globelMachineID
               });
-              if( parentMachineUpdated ) {
+              if (parentMachineUpdated) {
                 await createMachineAuditLogRequest(parentMachine, 'Transfer', req.body.loginUser.userId);
-                let newMachineData = await dbservice.getObjectById(Product, this.fields, newMachineAfterTranspher?._id, machinePopulate );
+                let newMachineData = await dbservice.getObjectById(Product, this.fields, newMachineAfterTranspher?._id, machinePopulate);
                 newParams.machineId = newMachineData?._id;
                 newParams.model = newMachineData?.machineModel?.name;
                 newParams.serialNo = newMachineData?.serialNo;
@@ -1039,16 +1043,16 @@ exports.transferOwnership = async (req, res, next) => {
                 newParams.transferred = true;
                 newParams.billingSite = newMachineData?.billingSite?.name || '';
                 newParams.installationSite = newMachineData?.instalationSite?.name || '';
-                newParams.installationDate = newMachineData?.installationDate ? fDate( newMachineData?.installationDate ) : '';
-                newParams.shippingDate = newMachineData?.shippingDate ? fDate( newMachineData?.shippingDate ) : '';
-                newParams.manufactureDate = newMachineData?.manufactureDate ? fDate( newMachineData?.manufactureDate ) : '';
-                newParams.managers = [ ...newMachineData?.accountManager, ...newMachineData?.projectManager, ...newMachineData?.supportManager ];
+                newParams.installationDate = newMachineData?.installationDate ? fDate(newMachineData?.installationDate) : '';
+                newParams.shippingDate = newMachineData?.shippingDate ? fDate(newMachineData?.shippingDate) : '';
+                newParams.manufactureDate = newMachineData?.manufactureDate ? fDate(newMachineData?.manufactureDate) : '';
+                newParams.managers = [...newMachineData?.accountManager, ...newMachineData?.projectManager, ...newMachineData?.supportManager];
                 newParams.subject = 'Machine Status Notification';
-                if(Array.isArray( newMachineData.machineConnections )){
-                  newParams.connectedMachines = await newMachineData?.machineConnections.map(( mc ) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel.name}`).join(', ');
+                if (Array.isArray(newMachineData.machineConnections)) {
+                  newParams.connectedMachines = await newMachineData?.machineConnections.map((mc) => `${mc?.connectedMachine?.serialNo} - ${mc?.connectedMachine?.machineModel.name}`).join(', ');
                 }
-                await exports.sendEmailAlert( params );
-                await exports.sendEmailAlert( newParams );
+                await exports.sendEmailAlert(req, params);
+                await exports.sendEmailAlert(req, newParams);
                 res.status(StatusCodes.CREATED).json({ Machine: newMachineAfterTranspher });
               }
             }
@@ -1708,66 +1712,68 @@ function getContactName(contacts) {
   }
 }
 
-exports.sendEmailAlert = async ( data ) => {
-  const emailsSet = filterAndDeduplicateEmails( data?.managers )
-  const emailsToSend = Array.from( emailsSet )
+exports.sendEmailAlert = async (req, data) => {
+  const emailsSet = filterAndDeduplicateEmails(data?.managers)
+  const emailsToSend = Array.from(emailsSet)
   let text = '';
-  if(Array.isArray( emailsToSend ) && emailsToSend?.length < 1){
-    return 
+  if (Array.isArray(emailsToSend) && emailsToSend?.length < 1) {
+    return
   }
 
-  if( data ) {
+  if (data) {
     let params = {
       to: emailsToSend,
+      toEmails: emailsToSend,
       subject: data?.subject,
       html: true
     };
 
-    const customer = (!data?.transferredDate && data?.customer) ? `<strong>Customer:</strong> ${data?.customer } <br>` : '';
-    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo}${data?.model ? ' - ': ''}${data?.model || '' }</strong></a>`;
-    const status = ( ( data?.transferred || data?.transferredDate ) && data?.status ) ? `<strong>Status:</strong> ${data?.status } <br>` : '';
-    const previousStatus = data?.previousStatus ? `<strong>Previous Status:</strong> ${data?.previousStatus } <br>` : '';
-    const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite } <br>` : '';
-    const installationSite = data?.installationSite ? `<strong>Installation Site:</strong> ${data?.installationSite } <br>` : '';
-    const connectedMachines = data?.connectedMachines ? `<strong>Connected Machines:</strong> ${data?.connectedMachines } <br>` : '';
-    const manufactureDate = data?.manufactureDate ? `<strong>Manufacture Date: </strong> ${ data?.manufactureDate } <br>` : '';
-    const shippingDate = data?.shippingDate ? `<strong>Shipping Date: </strong> ${ data?.shippingDate } <br>` : '';
-    const decommissionedDate = data?.decommissionedDate ? `<strong>Decommissioned Date: </strong> ${ data?.decommissionedDate } <br>` : '';
-    const installationDate = data?.installationDate ? `<strong>Installation Date: </strong> ${ data?.installationDate } <br>` : '';
-    const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${ data?.transferredDate } <br>` : '';
+    const customer = (!data?.transferredDate && data?.customer) ? `<strong>Customer:</strong> ${data?.customer} <br>` : '';
+    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo}${data?.model ? ' - ' : ''}${data?.model || ''}</strong></a>`;
+    const status = ((data?.transferred || data?.transferredDate) && data?.status) ? `<strong>Status:</strong> ${data?.status} <br>` : '';
+    const previousStatus = data?.previousStatus ? `<strong>Previous Status:</strong> ${data?.previousStatus} <br>` : '';
+    const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite} <br>` : '';
+    const installationSite = data?.installationSite ? `<strong>Installation Site:</strong> ${data?.installationSite} <br>` : '';
+    const connectedMachines = data?.connectedMachines ? `<strong>Connected Machines:</strong> ${data?.connectedMachines} <br>` : '';
+    const manufactureDate = data?.manufactureDate ? `<strong>Manufacture Date: </strong> ${data?.manufactureDate} <br>` : '';
+    const shippingDate = data?.shippingDate ? `<strong>Shipping Date: </strong> ${data?.shippingDate} <br>` : '';
+    const decommissionedDate = data?.decommissionedDate ? `<strong>Decommissioned Date: </strong> ${data?.decommissionedDate} <br>` : '';
+    const installationDate = data?.installationDate ? `<strong>Installation Date: </strong> ${data?.installationDate} <br>` : '';
+    const transferredDate = data?.transferredDate ? `<strong>Transferred Date: </strong> ${data?.transferredDate} <br>` : '';
 
-    if(data?.transferredDate){
-      text = `Machine ${serialNo} has been transferred from customer <strong>${data?.customer || '' }</strong>.`
-    } else if(data?.transferred ){
-      text = `Machine ${serialNo} has been transferred to customer <strong>${data?.customer || '' }</strong>.`
+    if (data?.transferredDate) {
+      text = `Machine ${serialNo} has been transferred from customer <strong>${data?.customer || ''}</strong>.`
+    } else if (data?.transferred) {
+      text = `Machine ${serialNo} has been transferred to customer <strong>${data?.customer || ''}</strong>.`
     } else {
-      text = `Machine ${serialNo} status has been changed ${ data?.previousStatus ? 'from' : '' } <strong>${ data?.previousStatus || '' }</strong>  to <strong>${data?.status || '' }</strong>.`
+      text = `Machine ${serialNo} status has been changed ${data?.previousStatus ? 'from' : ''} <strong>${data?.previousStatus || ''}</strong>  to <strong>${data?.status || ''}</strong>.`
     }
 
     const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/machine.html'), 'utf8');
-    const content = render(contentHTML, { 
+    const content = render(contentHTML, {
       text,
-      serialNo, 
+      serialNo,
       // previousCustomer,
-      customer, 
+      customer,
       previousStatus,
       status,
-      manufactureDate, 
-      shippingDate, 
-      connectedMachines, 
-      decommissionedDate, 
-      installationDate, 
+      manufactureDate,
+      shippingDate,
+      connectedMachines,
+      decommissionedDate,
+      installationDate,
       installationSite,
       billingSite,
       transferredDate,
     });
 
-    const htmlData =  await renderEmail(params.subject, content )
+    const htmlData = await renderEmail(params.subject, content)
     params.htmlData = htmlData;
 
-    try{
-      await awsService.sendEmail( params, emailsToSend );
-    }catch(e){
+    try {
+      req.body = { ...req.body, ...params };
+      await this.email.sendEmail(req);
+    } catch (e) {
       return e.message;
     }
   }

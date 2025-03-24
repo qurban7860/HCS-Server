@@ -1,9 +1,17 @@
 // index.js
 
-const { filterAndDeduplicateEmails, verifyEmail, renderEmail } = require('./util');
+const {
+    filterAndDeduplicateEmails,
+    verifyEmail,
+    renderEmail,
+    emailDataComposer,
+    structureEmailParams
+} = require('./util');
 
 module.exports = {
     filterAndDeduplicateEmails,
     verifyEmail,
-    renderEmail
+    renderEmail,
+    emailDataComposer,
+    structureEmailParams
 };

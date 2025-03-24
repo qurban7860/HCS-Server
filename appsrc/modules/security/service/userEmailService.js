@@ -25,41 +25,42 @@ class UserEmailService {
     this.dbservice = new securityDBService();
   }
 
-  sendMfaEmail = async ( req, res, user ) => {
-    try{ 
+  sendMfaEmail = async (req, res, user) => {
+    try {
       let userMFAData = {};
-      const emailSubject = "Multi-Factor Authentication Code";
+      const emailSubject = "Multi-Factor authentication code";
       const code = Math.floor(100000 + Math.random() * 900000);
       const username = user.name;
       let params = {
-          toEmails: `${user.email}`,
-          subject: emailSubject,
+        to: `${user?.email}`,
+        toEmails: [`${user?.email}`],
+        subject: emailSubject,
       };
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/MFA.html'), 'utf8');
       const content = render(contentHTML, { username, code });
-      const htmlData =  await renderEmail(emailSubject, content )
+      const htmlData = await renderEmail(emailSubject, content)
       params.htmlData = htmlData;
       req.body = { ...params };
 
-      
+
       userMFAData.multiFactorAuthenticationCode = code;
       const currentDate = new Date();
       userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
       await this.dbservice.patchObject(SecurityUser, user._id, userMFAData);
-      await this.email.sendEmail( req );
-      return res.status(StatusCodes.ACCEPTED).send({message:'Authentication Code has been sent on your email!', multiFactorAuthentication:true, userId:user._id});
-    }catch(error){
+      await this.email.sendEmail(req);
+      return res.status(StatusCodes.ACCEPTED).send({ message: 'Authentication Code has been sent on your email!', multiFactorAuthentication: true, userId: user._id });
+    } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('MFA Code Sending Fails!');
     }
   }
 
-  sendUserInviteEmail = async (req, res ) => {
-    try{
+  sendUserInviteEmail = async (req, res) => {
+    try {
       const invitation = await SecurityUserInvite.findById(req.params.id)
-      .populate('customer', 'name type')
-      .populate('contact', 'firstName lastName email');
+        .populate('customer', 'name type')
+        .populate('contact', 'firstName lastName email');
 
       if (!invitation) {
         if (res) {
@@ -81,20 +82,21 @@ class UserEmailService {
       if (configObject?.value) {
         emailSubject = configObject.value;
       }
-      
+
       const params = {
-        toEmails: invitation.email,
+        to: `${invitation?.email}`,
+        toEmails: [`${invitation?.email}`],
         subject: emailSubject,
       };
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/userInvite.html'), 'utf8');
 
-      const content = render(contentHTML, { 
+      const content = render(contentHTML, {
         username: invitation.name,
-        link 
+        link
       });
 
-      const htmlData =  await renderEmail(emailSubject, content )
+      const htmlData = await renderEmail(emailSubject, content)
       req.body = { ...params, htmlData };
 
       await this.email.sendEmail(req);
@@ -104,11 +106,11 @@ class UserEmailService {
       invitation.lastInviteSentAt = new Date();
       await invitation.save();
 
-    if (res) {
-      return res.status(StatusCodes.OK).send('Invitation Sent Successfully!');
-    }
+      if (res) {
+        return res.status(StatusCodes.OK).send('Invitation Sent Successfully!');
+      }
       return null
-    }catch(error){
+    } catch (error) {
       logger.error(new Error(error));
       if (res) {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Invitation Sending Failed!');
@@ -117,38 +119,39 @@ class UserEmailService {
     }
   }
 
-  resetPasswordEmail = async ( req, res, toUser ) => {
-    try{
+  resetPasswordEmail = async (req, res, toUser) => {
+    try {
       const rToken = await generateRandomString();
-      const token = await updateUserToken( rToken );
-      await this.dbservice.patchObject(SecurityUser, toUser._id, { token } );
-      const link = `${ toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl }/auth/new-password/${rToken}/${toUser._id}`;
+      const token = await updateUserToken(rToken);
+      await this.dbservice.patchObject(SecurityUser, toUser._id, { token });
+      const link = `${toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl}/auth/new-password/${rToken}/${toUser._id}`;
 
-          const emailSubject = "Reset Password";
-          const username = toUser?.name;
+      const emailSubject = "Reset password";
+      const username = toUser?.name;
 
-          let params = {
-            toEmails: `${toUser?.email}`,
-            subject: emailSubject,
-          };
+      let params = {
+        to: `${toUser?.email}`,
+        toEmails: [`${toUser?.email}`],
+        subject: emailSubject,
+      };
 
-          const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/forgetPassword.html'), 'utf8');
-          const content = render(contentHTML, { username, link });
-          const htmlData =  await renderEmail(emailSubject, content )
-          params.htmlData = htmlData;
-          params.toUser = toUser
-          req.body = { ...params };
-      
-          await this.email.sendEmail( req );
-          res.status(StatusCodes.OK).send( 'Email sent successfully!');
-    }catch(error){
+      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/forgetPassword.html'), 'utf8');
+      const content = render(contentHTML, { username, link });
+      const htmlData = await renderEmail(emailSubject, content)
+      params.htmlData = htmlData;
+      params.toUser = toUser
+      req.body = { ...params };
+
+      await this.email.sendEmail(req);
+      res.status(StatusCodes.OK).send('Email sent successfully!');
+    } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Forget Password email send fails!');
     }
   }
 
-  passwordUpdatedEmail = async ( req, res, toUser  ) => {
-    try{
+  passwordUpdatedEmail = async (req, res, toUser) => {
+    try {
       const contentHTML = `
           <tr>
             <td align="left" style="padding:0;Margin:0">
@@ -162,23 +165,24 @@ class UserEmailService {
               </p>
             </td>
           </tr>`;
-                      
-      let emailSubject = "Password Reset Successful";
-    
+
+      let emailSubject = "Password reset successful";
+
       let params = {
-        toEmails: `${toUser?.email}`,
+        to: `${toUser?.email}`,
+        toEmails: [`${toUser?.email}`],
         subject: emailSubject,
       };
-      
+
       const content = render(contentHTML);
-      const htmlData =  await renderEmail(emailSubject, content )
+      const htmlData = await renderEmail(emailSubject, content)
       params.htmlData = htmlData;
       params.toUser = toUser
       req.body = { ...params };
-    
-      await this.email.sendEmail( req );
+
+      await this.email.sendEmail(req);
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!'));
-    } catch(error){
+    } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password update failed!'));
     }

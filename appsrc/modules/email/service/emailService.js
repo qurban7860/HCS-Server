@@ -1,42 +1,11 @@
 const ObjectId = require('mongoose').Types.ObjectId;
-var async = require("async");
-const nodemailer = require('nodemailer');
 const { Config } = require('../../config/models');
 const { emailController } = require('../controllers');
 const { simpleEmailService } = require('../../../configs/aws/ses');
 const logger = require('../../config/logger');
+this.nodeMailerService = require('./nodeMailerEmailService');
 
 class EmailService {
-
-    constructor() {
-        this.transporter = process.env.ENV === 'local'
-            ? nodemailer.createTransport({
-                host: "localhost",
-                port: 1025, // Default Maildev SMTP port
-                ignoreTLS: true,
-                secure: false
-            })
-            : null; // Will use AWS SES in production
-    }
-
-    async sendViaNodemailer(params) {
-        try {
-            const mailOptions = {
-                from: params.fromEmail,
-                to: Array.isArray(params.toEmails) ? params.toEmails.join(',') : params.toEmails,
-                cc: params.ccEmails,
-                bcc: params.bccEmails,
-                subject: params.subject,
-                html: params.htmlData,
-                text: params.body
-            };
-
-            await this.transporter.sendMail(mailOptions);
-        } catch (error) {
-            logger.error(new Error(`Failed to send email via Nodemailer: ${error}`));
-            throw new Error('Email sending failed via Nodemailer');
-        }
-    }
 
     async isEmailOn() {
         try {
@@ -101,13 +70,13 @@ class EmailService {
             }
 
             // Use Maildev in development, AWS SES in production
-            if (process.env.ENV === 'local') {
-                await this.sendViaNodemailer(params);
+            if (process.env.ENV === 'local' && process.env.NODE_MAILER_HOST) {
+                await this.nodeMailerService.sendViaNodemailer(params);
             } else {
                 await simpleEmailService(params);
                 req.body.status = "SUBMITTED";
+                await emailController.newEmailLog(req);
             }
-            await emailController.newEmailLog(req);
         } catch (error) {
             req.body.status = "FAILED";
             await emailController.newEmailLog(req);

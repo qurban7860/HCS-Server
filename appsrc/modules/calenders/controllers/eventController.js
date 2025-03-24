@@ -10,15 +10,15 @@ const _ = require('lodash');
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-const awsService = require('../../../base/aws');
 const emailController = require('../../email/controllers/emailController');
 let calenderDBService = require('../service/calenderDBService')
+const EventEmailService = require('../service/eventEmailService')
 this.dbservice = new calenderDBService();
 const { filterAndDeduplicateEmails, verifyEmail, renderEmail } = require('../../email/utils');
 const { fDateTime, fDate } = require('../../../../utils/formatTime');
 const { processFile } = require('../../../../utils/fileProcess');
 const { getEventFileFromReq } = require('./eventFileController');
-
+this.email = new EventEmailService();
 
 const { Event, EventFile } = require('../models');
 const { SecurityUser } = require('../../security/models');
@@ -47,7 +47,7 @@ exports.getEvent = async (req, res, next) => {
   try {
     const response = await this.dbservice.getObjectById(Event, this.fields, req.params.id, this.populate);
     const files = await EventFile.find({ event: req.params.id, isArchived: false, isActive: true });
-    const updatedEvent  = { ...response.toObject(), files };
+    const updatedEvent = { ...response.toObject(), files };
     res.json(updatedEvent);
   } catch (error) {
     logger.error(new Error(error));
@@ -120,7 +120,7 @@ exports.postEvent = async (req, res, next) => {
   } else {
     try {
 
-      if(!req.body.loginUser){
+      if (!req.body.loginUser) {
         req.body.loginUser = await getToken(req);
       }
       // req.body.isCustomerEvent = isCustomerEvent === true || isCustomerEvent === 'true'
@@ -137,7 +137,7 @@ exports.postEvent = async (req, res, next) => {
         files: files || [],
       };
       res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user, "New Event Notification" );
+      await this.email.sendEmailAlert(req, objectWithPopulate, user, "New Event Notification");
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -145,101 +145,6 @@ exports.postEvent = async (req, res, next) => {
   }
 };
 
-exports.sendEmailAlert = async (eventData, securityUser, emailSubject) => {
-  try {
-    const securityUserName = `An${eventData?.isCustomerEvent ? '' : ' Internal' } Event has been booked by ${ securityUser?.name || '' }.`;
-    const uniqueTechnicians = new Set();
-    const primaryTechnicianName = `${eventData?.primaryTechnician?.firstName?.trim() || ''} ${eventData?.primaryTechnician?.lastName?.trim() || ''}`;
-    if (primaryTechnicianName) uniqueTechnicians.add(primaryTechnicianName);
-
-    if (eventData && securityUserName) {
-      const primaryEmail = verifyEmail(eventData?.primaryTechnician?.email);
-      let supportingContactsEmailsSet = filterAndDeduplicateEmails(eventData?.supportingTechnicians);
-
-      if (primaryEmail && !supportingContactsEmailsSet.has(primaryEmail)) {
-        supportingContactsEmailsSet = new Set([primaryEmail, ...supportingContactsEmailsSet]);
-      }
-
-      const notifyContactsEmailsSet = filterAndDeduplicateEmails(eventData?.notifyContacts);
-      for (const email of supportingContactsEmailsSet) {
-        notifyContactsEmailsSet.delete(email);
-      }
-
-      const notifyContactsEmails = Array.from(notifyContactsEmailsSet);
-      const supportingContactsEmails = Array.from(supportingContactsEmailsSet);
-
-      eventData.supportingTechnicians.forEach(sp => {
-        const technicianName = `${sp?.firstName?.trim() || ''} ${sp?.lastName?.trim() || ''}`;
-        uniqueTechnicians.add(technicianName);
-      });
-
-      let emailsToSend;
-      let params = { subject: emailSubject, html: true };
-      const customer = eventData?.isCustomerEvent ? `<strong>Customer:</strong> ${ eventData?.customer?.name || '' } </br>` : '';
-      const serialNo = eventData?.isCustomerEvent ? `<strong>Machine:</strong> ${ eventData?.machines?.map(m => m?.serialNo) || '' } </br>` : '';
-      const site = eventData?.isCustomerEvent ? `<strong>Site:</strong> ${ eventData?.site?.name || '' } </br>` : '';
-      const technicians = `<strong>${eventData?.isCustomerEvent ? 'Technicians' : 'Assignee' }: </strong> ${ Array.from(uniqueTechnicians) || '' } </br>`;
-      const description = eventData?.description || '';
-      const priority = eventData?.priority || '';
-      const status = eventData?.status || '';
-      const createdBy = eventData?.createdBy?.name || '';
-      const createdAt = new Date();
-      const emailLogParams = {
-        subject: emailSubject,
-        toUser: securityUser,
-        customer: eventData?.customer?._id || null,
-        createdBy: securityUser?._id,
-        updatedBy: securityUser?._id,
-      };
-
-      if (process.env.ENV.toUpperCase() === 'LIVE') {
-        emailsToSend = supportingContactsEmails;
-        params.ccAddresses = notifyContactsEmails;
-        params.to = primaryEmail;
-        emailLogParams.ccEmails = notifyContactsEmails;
-      } else {
-        emailsToSend = [
-          'a.hassan@terminustech.com',
-          'zeeshan@terminustech.com',
-          'muzna@terminustech.com',
-          'mubashir@terminustech.com',
-        ];
-      }
-      emailLogParams.toEmails = emailsToSend;
-      const startTime = eventData?.start ? fDateTime(eventData?.start).toString() : '';
-      const endTime = eventData?.end ? fDateTime(eventData?.end).toString() : '';
-      const emailResponse = await addEmail(emailLogParams);
-      this.dbservice.postObject(emailResponse, callbackFunc);
-      function callbackFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
-        }
-      }
-      const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/eventAlert.html'), 'utf8');
-      const content = render(contentHTML, {
-        securityUserName,
-        customer,
-        serialNo,
-        site,
-        technicians,
-        startTime,
-        endTime,
-        description,
-        priority,
-        status,
-        createdBy,
-        createdAt
-      });
-      const htmlData =  await renderEmail(emailSubject, content )
-      params.htmlData = htmlData;
-      await awsService.sendEmail(params, emailsToSend);
-    }
-  } catch (error) {
-    console.log(error);
-    throw `Failed to send email: ${error.message}`;
-  }
-};
 
 
 exports.patchEvent = async (req, res, next) => {
@@ -248,7 +153,7 @@ exports.patchEvent = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(!req.body.loginUser){
+      if (!req.body.loginUser) {
         req.body.loginUser = await getToken(req);
       }
       await this.dbservice.patchObject(Event, req.params.id, getDocumentFromReq(req));
@@ -261,9 +166,8 @@ exports.patchEvent = async (req, res, next) => {
         ...objectWithPopulate._doc,
         files: files || [],
       };
-      console.log("objectWithPopulate : ",objectWithPopulate);
       res.status(StatusCodes.ACCEPTED).json({ Event: objectWithPopulate });
-      exports.sendEmailAlert(objectWithPopulate, user, 'Event update notification');
+      await this.email.sendEmailAlert(req, objectWithPopulate, user, 'Event update notification');
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
@@ -271,10 +175,10 @@ exports.patchEvent = async (req, res, next) => {
   }
 };
 
-const handleEventFiles = async ( req ) => {
-  try{
+const handleEventFiles = async (req) => {
+  try {
     let files = [];
-    if(req?.files?.images){
+    if (req?.files?.images) {
       files = req.files.images;
     } else {
       return;
@@ -300,14 +204,14 @@ const handleEventFiles = async ( req ) => {
     });
     await Promise.all(fileProcessingPromises);
     return
-  } catch( e ){
+  } catch (e) {
     throw new Error("Files Save Failed!");
   }
 }
 
-async function getToken(req){
+async function getToken(req) {
   try {
-    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:'';
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1] : '';
     const decodedToken = await jwt.verify(token, process.env.JWT_SECRETKEY);
     const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
     decodedToken.userIP = clientIP;
@@ -402,46 +306,6 @@ function getDocumentFromReq(req, reqType) {
     doc.updatedIP = loginUser.userIP;
   }
   return doc;
-}
-
-async function addEmail(emailParams) {
-  const { subject, toUser, toEmails, customer, createdBy, updatedBy, ccEmails = [],bccEmails = [] } = emailParams
-  const toUsers = [];
-  var email = {
-    subject,
-    body: '' ,
-    toEmails,
-    fromEmail:process.env.AWS_SES_FROM_EMAIL,
-    customer,
-    toContacts:[],
-    toUsers,
-    ccEmails,
-    bccEmails,
-    isArchived: false,
-    isActive: true,
-    // loginIP: ip,
-    createdBy,
-    updatedBy,
-    createdIP: ''
-  };
-  
-  if(toUser && mongoose.Types.ObjectId.isValid(toUser._id)) {
-    email.toUsers.push(toUser._id);
-    // if(toUser.customer && mongoose.Types.ObjectId.isValid(toUser.customer)) {
-    //   email.customer = toUser.customer;
-    // }
-
-    if(toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact)) {
-      email.toContacts.push(toUser.contact);
-    }
-  }
-  
-  var reqEmail = {};
-
-  reqEmail.body = email;
-  
-  const res = emailController.getDocumentFromReq(reqEmail, 'new');
-  return res;
 }
 
 

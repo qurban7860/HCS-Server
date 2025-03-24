@@ -125,9 +125,9 @@ exports.patchBackup = async (req, res, next) => {
 
 const dbCronTime = process.env.DB_CRON_TIME && process.env.DB_CRON_TIME.trim().length > 0 ? process.env.DB_CRON_TIME : null;
 const dbS3Bucket = process.env.DB_BACKUP_S3_BUCKET && process.env.DB_BACKUP_S3_BUCKET.trim().length > 0 ? process.env.DB_BACKUP_S3_BUCKET : null;
-const dbCronJob =  process.env.DB_CRON_JOB === 'true' || process.env.DB_CRON_JOB === true;
+const dbCronJob = process.env.DB_CRON_JOB === 'true' || process.env.DB_CRON_JOB === true;
 
-if (dbCronTime && dbCronJob && dbS3Bucket ) {
+if (dbCronTime && dbCronJob && dbS3Bucket) {
   cron.schedule(dbCronTime, async () => {
     try {
       await exports.dbBackup();
@@ -143,8 +143,8 @@ if (dbCronTime && dbCronJob && dbS3Bucket ) {
 
 exports.sendEmailforBackup = async (req, res, next) => {
 
-  const emailToSend = process.env.DB_BACKUP_NOTIFY_TO; 
-  let emailSubject = "Database Backup";
+  const emailToSend = process.env.DB_BACKUP_NOTIFY_TO;
+  let emailSubject = "Database backup";
 
   const {
     name,
@@ -168,23 +168,23 @@ exports.sendEmailforBackup = async (req, res, next) => {
 
   const contentHTML = await fs.promises.readFile(path.join(__dirname, '../../email/templates/databaseBackup.html'), 'utf8');
   const content = render(contentHTML, { backupTime, name, databaseName, backupSize, backupLocation });
-  const htmlData =  await renderEmail(emailSubject, content )
+  const htmlData = await renderEmail(emailSubject, content)
   params.htmlData = htmlData;
 
-  try{
+  try {
     await awsService.sendEmail(params);
-  }catch(e){
+  } catch (e) {
     return e.message;
   }
 };
 
 exports.dbBackup = async (req, res, next) => {
-  
+
   const startTime = performance.now();
   const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, -5);
   const s3Bucket = process.env.DB_BACKUP_S3_BUCKET?.trim().length > 0 ? process.env.DB_BACKUP_S3_BUCKET : "db-backups";
   const backupNotifyTo = process.env.DB_BACKUP_NOTIFY_TO?.trim()?.length > 0
-  const collectionToImport = process.env.DB_DB_BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.DB_BACKUP_COLLECTIONS}` : ''; 
+  const collectionToImport = process.env.DB_DB_BACKUP_COLLECTIONS?.trim().length > 0 ? `--collection ${process.env.DB_BACKUP_COLLECTIONS}` : '';
   const cmdToExecute = `mongodump --out ${s3Bucket} ${collectionToImport} --uri="mongodb+srv://${process.env.MONGODB_USERNAME}:${process.env.MONGODB_PASSWD}@${process.env.MONGODB_HOST}/${process.env.MONGODB_NAME}"`;
   exec(cmdToExecute,
     (error, stdout, stderr) => {
@@ -216,7 +216,7 @@ exports.dbBackup = async (req, res, next) => {
       output.on('close', () => {
         console.log('Backup folder has been zipped successfully');
         const S3Path = 'FRAMA-DB';
-        console.log('SIZE: ',totalZipSizeInkb);
+        console.log('SIZE: ', totalZipSizeInkb);
         if (totalZipSizeInkb > 0) {
           uploadToS3(pathToZip, fileNameZip, S3Path)
             .then(() => {
@@ -243,7 +243,7 @@ exports.dbBackup = async (req, res, next) => {
               console.error('Upload failed:', err);
             });
           const endTime = performance.now();
-          const endDateTime =  fDateTime(new Date());
+          const endDateTime = fDateTime(new Date());
           const durationSeconds = (endTime - startTime) / 1000;
           let req = {};
           req.body = {};
@@ -257,10 +257,10 @@ exports.dbBackup = async (req, res, next) => {
             databaseVersion: '1',
             databaseName: process.env.MONGODB_USERNAME,
             backupType: 'SYSTEM',
-            backupSize: `${parseFloat(backupsizeInGb.toFixed(4))|| 0} GB`,
+            backupSize: `${parseFloat(backupsizeInGb.toFixed(4)) || 0} GB`,
             backupTime: endDateTime
           };
-          if( s3Bucket && backupNotifyTo )
+          if (s3Bucket && backupNotifyTo)
             exports.sendEmailforBackup(req);
           else {
             console.error("ADMIN EMAIL for db backup is missing in .env");
