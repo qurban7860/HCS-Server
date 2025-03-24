@@ -14,6 +14,8 @@ const { Config } = require('../../config/models');
 const path = require('path');
 const sharp = require('sharp');
 const dayjs = require('dayjs');
+const EmailService = require('../../email/service/emailService');
+this.email = new EmailService();
 const { renderEmail } = require('../../email/utils');
 const util = require('util');
 
@@ -526,7 +528,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       .populate([{ path: 'customer', select: 'name' }, { path: 'machine', select: 'serialNo' }, { path: 'createdBy', select: 'name' }]);
 
     if (serviceRecObj) {
-      let emailSubject = `Service Report PDF attached`;
+      let emailSubject = `Service report PDF attached`;
 
       let params = {
         to: emailAddress,
@@ -570,16 +572,6 @@ exports.sendServiceReportEmail = async (req, res, next) => {
         res.status(StatusCodes.OK).send('Email Send Fails!');
       }
 
-      const emailResponse = await addEmail(params.subject, params.htmlData, serviceRecObj, params.to);
-      _this.dbservice.postObject(emailResponse, callbackFunc);
-      function callbackFunc(error, response) {
-        if (error) {
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-        } else {
-          res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Email sent successfully!', false));
-        }
-      }
     } else {
       res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Service Report template not found!', true));
     }
@@ -602,7 +594,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
     ]);
 
     if (serviceRecObj) {
-      let emailSubject = `Service Report Approval Request`;
+      let emailSubject = `Service report approval request`;
       const submittedBy = req.body.submittedBy?.displayName;
       const submittedAt = dayjs(req.body.submittedAt).format("DD MMM YYYY h:mm A");
       const serviceDate = dayjs(serviceRecObj.serviceDate).format("DD MMM YYYY h:mm A");
@@ -624,8 +616,8 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
             html: true,
             htmlData: htmlData,
           };
-
-          await awsService.sendEmail(params);
+          req.body = { ...req.body, ...params };
+          await this.email.sendEmail(req);
           await ProductServiceReports.findByIdAndUpdate(
             reportId,
             {
@@ -635,7 +627,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
             },
             { new: true }
           );
-          return { success: true, emailData: { subject: params.subject, htmlData: params.htmlData, to: params.to } };
+          return { success: true };
         } catch (emailError) {
           logger.error(new Error(emailError));
           console.error("Error sending email:", emailError);
@@ -654,20 +646,6 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
           res.status(StatusCodes.BAD_REQUEST).send("Some emails failed to send.");
         }
 
-        // Attempt logging after sending emails
-        for (const result of results) {
-          if (result.success && result.emailData) {
-            try {
-              const { subject, htmlData, to } = result.emailData;
-              const emailResponse = await addEmail(subject, htmlData, serviceRecObj, to);
-              _this.dbservice.postObject(emailResponse);
-              logger.info(`[${subject}] to [${to}] email logged`);
-            } catch (logError) {
-              console.error("Error logging email:", logError);
-              logger.error(new Error(error));
-            }
-          }
-        }
       } catch (e) {
         logger.error(new Error(e));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(e);
@@ -722,47 +700,6 @@ exports.evaluateServiceReport = async (req, res, next) => {
 function validateEmail(email) {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return emailRegex.test(email);
-}
-
-async function addEmail(subject, body, toUser, emailAddresses, fromEmail = '', ccEmails = [], bccEmails = []) {
-  var email = {
-    subject,
-    body,
-    toEmails: emailAddresses,
-    fromEmail: process.env.AWS_SES_FROM_EMAIL,
-    customer: '',
-    toContacts: [],
-    toUsers: [],
-    ccEmails,
-    bccEmails,
-    isArchived: false,
-    isActive: true,
-    // loginIP: ip,
-    createdBy: '',
-    updatedBy: '',
-    createdIP: ''
-  };
-  if (toUser && mongoose.Types.ObjectId.isValid(toUser.id)) {
-    email.toUsers.push(toUser.id);
-    if (toUser.customer != null && toUser.customer != "undefined" && toUser.customer.id && mongoose.Types.ObjectId.isValid(toUser.customer.id)) {
-      email.customer = toUser.customer.id;
-    } else {
-      email.customer = null;
-    }
-
-    if (toUser.contact != null && toUser.contact != undefined && toUser.contact && mongoose.Types.ObjectId.isValid(toUser.contact.id)) {
-      email.toContacts.push(toUser.contact.id);
-    } else {
-      email.toContacts = null;
-    }
-  }
-
-  var reqEmail = {};
-
-  reqEmail.body = email;
-
-  const res = emailController.getDocumentFromReq(reqEmail, 'new');
-  return res;
 }
 
 exports.patchProductServiceReport = async (req, res) => {

@@ -13,7 +13,7 @@ class TicketEmailService {
     sendDbBackupEmail = async (req) => {
         try {
 
-            let subject = "Database Backup";
+            let subject = "Database backup";
             const toEmails = process.env.DB_BACKUP_NOTIFY_TO?.trim();
             if (!toEmails) {
                 logger.error("DB Backup Notify reciver emails not defined!");

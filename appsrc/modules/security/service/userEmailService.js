@@ -28,7 +28,7 @@ class UserEmailService {
   sendMfaEmail = async (req, res, user) => {
     try {
       let userMFAData = {};
-      const emailSubject = "Multi-Factor Authentication Code";
+      const emailSubject = "Multi-Factor authentication code";
       const code = Math.floor(100000 + Math.random() * 900000);
       const username = user.name;
       let params = {
@@ -126,7 +126,7 @@ class UserEmailService {
       await this.dbservice.patchObject(SecurityUser, toUser._id, { token });
       const link = `${toUser?.customer?.type?.toLowerCase() === 'sp' ? adminPortalUrl : portalUrl}/auth/new-password/${rToken}/${toUser._id}`;
 
-      const emailSubject = "Reset Password";
+      const emailSubject = "Reset password";
       const username = toUser?.name;
 
       let params = {
@@ -166,7 +166,7 @@ class UserEmailService {
             </td>
           </tr>`;
 
-      let emailSubject = "Password Reset Successful";
+      let emailSubject = "Password reset successful";
 
       let params = {
         to: `${toUser?.email}`,
