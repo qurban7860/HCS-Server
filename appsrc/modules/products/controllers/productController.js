@@ -1723,6 +1723,7 @@ exports.sendEmailAlert = async (req, data) => {
   if (data) {
     let params = {
       to: emailsToSend,
+      toEmails: emailsToSend,
       subject: data?.subject,
       html: true
     };
