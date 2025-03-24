@@ -11,7 +11,9 @@ const simpleEmailService = async (emailParams) => {
             const Data = await emailDataComposer(params);
             return await SES.sendRawEmail({ RawMessage: { Data } }).promise();
         }
-        await email.sendEmail(params).promise();
+        const emailProcess = await email.sendEmail(params).promise();
+        console.log("email Process : ", emailProcess)
+
     } catch (error) {
         logger.error(new Error(`Email sending failed: ${error}`));
         throw new Error('Email sending failed!');
