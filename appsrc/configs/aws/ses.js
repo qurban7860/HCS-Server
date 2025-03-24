@@ -5,15 +5,13 @@ const { emailDataComposer, structureEmailParams } = require('../../modules/email
 
 const simpleEmailService = async (emailParams) => {
     try {
-        console.log("emailParams : ", emailParams)
         const email = new AWS.SES({ region: process.env.AWS_REGION });
         const params = await structureEmailParams(emailParams);
         if (params?.attachments) {
             const Data = await emailDataComposer(params);
             return await SES.sendRawEmail({ RawMessage: { Data } }).promise();
         }
-        const emailProcess = await email.sendEmail(params).promise();
-        console.log("email Process : ", emailProcess)
+        await email.sendEmail(params).promise();
 
     } catch (error) {
         logger.error(new Error(`Email sending failed: ${error}`));

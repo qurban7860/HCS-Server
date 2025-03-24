@@ -30,9 +30,9 @@ class TicketEmailService {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
       // Determine Email Subject
-      let subject = "Support Ticket Updated";
+      let subject = "Support ticket updated";
       if (req.body.isNew) {
-        subject = "Support Ticket Created";
+        subject = "Support ticket created";
       }
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
@@ -161,9 +161,9 @@ class TicketEmailService {
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
 
       // Determine Email Subject
-      let subject = "Support Ticket Comment Updated";
+      let subject = "Support ticket comment updated";
       if (req.body.isNew) {
-        subject = "Support Ticket Comment Posted";
+        subject = "Support ticket comment posted";
       }
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.ticketId, this.populate);

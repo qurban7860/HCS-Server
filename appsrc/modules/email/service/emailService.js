@@ -73,7 +73,6 @@ class EmailService {
             if (process.env.ENV === 'local' && process.env.NODE_MAILER_HOST) {
                 await this.nodeMailerService.sendViaNodemailer(params);
             } else {
-                console.log("params : ", params)
                 await simpleEmailService(params);
                 req.body.status = "SUBMITTED";
                 await emailController.newEmailLog(req);
