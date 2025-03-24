@@ -5,6 +5,7 @@ const { emailDataComposer, structureEmailParams } = require('../../modules/email
 
 const simpleEmailService = async (emailParams) => {
     try {
+        console.log("emailParams : ", emailParams)
         const email = new AWS.SES({ region: process.env.AWS_REGION });
         const params = await structureEmailParams(emailParams);
         if (params?.attachments) {
