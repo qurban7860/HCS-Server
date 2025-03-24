@@ -106,8 +106,8 @@ class EmailService {
             } else {
                 await simpleEmailService(params);
                 req.body.status = "SUBMITTED";
+                await emailController.newEmailLog(req);
             }
-            await emailController.newEmailLog(req);
         } catch (error) {
             req.body.status = "FAILED";
             await emailController.newEmailLog(req);
