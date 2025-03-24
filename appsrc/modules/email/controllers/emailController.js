@@ -41,33 +41,33 @@ exports.getEmail = async (req, res, next) => {
 
 exports.getEmails = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
-    
+    this.query = req.query != "undefined" ? req.query : {};
+
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
 
     let response = await this.dbservice.getObjectList(req, Email, this.fields, this.query, this.orderBy, this.populate);
-    
-    if(Array.isArray(response) && response.length>0) { 
+
+    if (Array.isArray(response) && response.length > 0) {
       response = JSON.parse(JSON.stringify(response));
       let i = 0
-      for(let email of response) {
-        if(Array.isArray(email.toUsers) && email.toUsers.length>0) {
-          
+      for (let email of response) {
+        if (Array.isArray(email.toUsers) && email.toUsers.length > 0) {
+
           let toUsers = []
-          
-          for(let user of email.toUsers) 
+
+          for (let user of email.toUsers)
             toUsers.push(await SecurityUser.findById(user).select('name').lean());
 
-            response[i].toUsers = toUsers;
+          response[i].toUsers = toUsers;
           i++;
         }
       }
-      
+
     }
-    
+
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -87,11 +87,11 @@ exports.deleteEmail = async (req, res, next) => {
 };
 
 const newEmailLog = async (req) => {
-    try {
-      return await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-    } catch (error) {
-      throw new Error("Email Log Save Failed!");
-    }
+  try {
+    return await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+  } catch (error) {
+    throw new Error("Email Log Save Failed!");
+  }
 };
 
 exports.newEmailLog = newEmailLog;
@@ -102,7 +102,7 @@ exports.postEmail = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      const response = await newEmailLog( req );
+      const response = await newEmailLog(req);
       res.status(StatusCodes.CREATED).json({ Email: response });
     } catch (error) {
       logger.error(new Error(error));
@@ -128,16 +128,21 @@ exports.patchEmail = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { subject, body, toEmails, fromEmail, toContacts, toUsers, customer, 
-  isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
+  const { status, subject, body, toEmails, fromEmail, toContacts, toUsers, customer,
+    isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
     doc = new Email({});
   }
+  if ("status" in req.body) {
+    doc.status = status;
+  }
+
   if ("subject" in req.body) {
     doc.subject = subject;
   }
+
   if ("body" in req.body) {
     doc.body = body;
   }
