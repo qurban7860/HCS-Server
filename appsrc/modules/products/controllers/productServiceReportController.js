@@ -532,6 +532,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
 
       let params = {
         to: emailAddress,
+        toEmails: [emailAddress],
         subject: emailSubject,
         html: true,
       };
@@ -565,8 +566,10 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       const content = render(contentHTML, { username, serviceDate, serviceReportId, serialNo, customer, createdAt, createdBy });
       const htmlData = await renderEmail(emailSubject, content)
       params.htmlData = htmlData;
+      params.attachments = file_;
+      req.body = { ...req.body, ...params };
       try {
-        await awsService.sendEmailWithRawData(params, file_);
+        await this.email.sendEmail(req);
       } catch (e) {
         logger.error(new Error(e));
         res.status(StatusCodes.OK).send('Email Send Fails!');
@@ -612,6 +615,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
           const htmlData = await renderEmail(emailSubject, content);
           let params = {
             to: contact?.email,
+            toEmails: [contact?.email],
             subject: emailSubject,
             html: true,
             htmlData: htmlData,
