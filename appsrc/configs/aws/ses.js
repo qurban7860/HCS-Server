@@ -9,8 +9,7 @@ const simpleEmailService = async (emailParams) => {
         const params = await structureEmailParams(emailParams);
         if (params?.attachments) {
             const Data = await emailDataComposer(params);
-            console.log("SES - Data : ", Data)
-            return await SES.sendRawEmail({ RawMessage: { Data } }).promise();
+            return await email.sendRawEmail({ RawMessage: { Data } }).promise();
         }
         await email.sendEmail(params).promise();
 
