@@ -88,6 +88,7 @@ const emailDataComposer = async (params) => {
 const structureEmailParams = async (params) => {
     return {
         Source: params?.fromEmail,
+        ...(params?.attachments && { from: params?.fromEmail }),
         ...(process.env.AWS_SES_FROM_EMAIL && {
             ReplyToAddresses: [process.env.AWS_SES_FROM_EMAIL],
         }),
