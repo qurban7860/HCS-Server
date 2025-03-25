@@ -532,7 +532,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
 
       let params = {
         to: emailAddress,
-        toEmails: [emailAddress],
+        toEmails: emailAddress,
         subject: emailSubject,
         html: true,
       };
