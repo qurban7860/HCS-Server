@@ -570,9 +570,10 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       req.body = { ...req.body, ...params };
       try {
         await this.email.sendEmail(req);
+        res.status(StatusCodes.OK).send('Email sent successfully!');
       } catch (e) {
         logger.error(new Error(e));
-        res.status(StatusCodes.OK).send('Email Send Fails!');
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send('Email Send Fails!');
       }
 
     } else {

@@ -14,7 +14,6 @@ const simpleEmailService = async (emailParams) => {
         await email.sendEmail(params).promise();
 
     } catch (error) {
-        console.log(" SES - error : ", error)
         logger.error(new Error(`Email sending failed: ${error}`));
         throw new Error(error);
     }
