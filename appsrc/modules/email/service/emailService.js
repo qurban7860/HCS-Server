@@ -23,7 +23,7 @@ class EmailService {
 
     async sendEmail(req) {
         const params = req.body;
-
+        console.log("params : ", params)
         // OVERRIDE EMAILS ADDRESS
         const overrideEmail = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')
             .map(email => email.trim().toLowerCase()).filter(Boolean);
@@ -78,7 +78,6 @@ class EmailService {
                 await emailController.newEmailLog(req);
             }
         } catch (error) {
-            console.log(" error : ", error)
             req.body.status = "FAILED";
             await emailController.newEmailLog(req);
             logger.error(new Error(`Failed to send email: ${error}`));

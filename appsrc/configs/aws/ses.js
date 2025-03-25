@@ -9,13 +9,15 @@ const simpleEmailService = async (emailParams) => {
         const params = await structureEmailParams(emailParams);
         if (params?.attachments) {
             const Data = await emailDataComposer(params);
+            console.log("SES - Data : ", Data)
             return await SES.sendRawEmail({ RawMessage: { Data } }).promise();
         }
         await email.sendEmail(params).promise();
 
     } catch (error) {
+        console.log(" SES - error : ", error)
         logger.error(new Error(`Email sending failed: ${error}`));
-        throw new Error('Email sending failed!');
+        throw new Error(error);
     }
 };
 
