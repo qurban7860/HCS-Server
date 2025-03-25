@@ -125,12 +125,12 @@ const structureEmailParams = async (params) => {
         ...(params?.attachments && {
             attachments: Array.isArray(params?.attachments)
                 ? await params.attachments?.map((file) => ({
-                    Name: file?.originalname,
-                    Content: file?.buffer,
+                    filename: file?.originalname,
+                    content: file?.buffer,
                 }))
                 : [{
-                    Name: params?.attachments?.originalname,
-                    Content: params?.attachments?.buffer,
+                    filename: params?.attachments?.originalname,
+                    content: params?.attachments?.buffer,
                 }],
         }),
 
