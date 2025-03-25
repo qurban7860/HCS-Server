@@ -23,7 +23,6 @@ class EmailService {
 
     async sendEmail(req) {
         const params = req.body;
-        console.log("params : ", params)
         // OVERRIDE EMAILS ADDRESS
         const overrideEmail = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')
             .map(email => email.trim().toLowerCase()).filter(Boolean);
