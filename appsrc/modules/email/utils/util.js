@@ -93,10 +93,10 @@ const structureEmailParams = async (params) => {
         }),
         Destination: {
             ToAddresses: (Array.isArray(params?.toEmails) && params.toEmails.length > 0) ? params.toEmails : [process.env.FALLBACK_EMAIL],
-            ...(params?.ccAddresses && {
+            ...(params?.ccEmails && {
                 CcAddresses: Array.isArray(params?.ccEmails) ? params.ccEmails : [params?.ccEmails].filter(Boolean),
             }),
-            ...(params?.bccAddresses && {
+            ...(params?.bccEmails && {
                 BccAddresses: Array.isArray(params?.bccEmails) ? params.bccEmails : [params?.bccEmails].filter(Boolean),
             })
         },

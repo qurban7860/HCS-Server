@@ -52,7 +52,7 @@ class EmailService {
         req.body.fromEmail = sourceEmail;
         try {
             // ADDING THE USER PARAMETER DETAILS FOR LOG
-            if (req.body.toUser && ObjectId.isValid(req.body.toUser._id)) {
+            if (req.body?.toUser && ObjectId.isValid(req.body?.toUser?._id)) {
                 req.body.toUsers = [req.body.toUser._id];
                 if (req.body.toUser.customer && ObjectId.isValid(req.body.toUser.customer._id)) {
                     req.body.customer = req.body.toUser.customer._id;
@@ -78,6 +78,7 @@ class EmailService {
                 await emailController.newEmailLog(req);
             }
         } catch (error) {
+            console.log(" error : ", error)
             req.body.status = "FAILED";
             await emailController.newEmailLog(req);
             logger.error(new Error(`Failed to send email: ${error}`));
