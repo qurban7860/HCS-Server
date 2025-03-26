@@ -569,7 +569,7 @@ exports.sendServiceReportEmail = async (req, res, next) => {
       params.attachments = file_;
       req.body = { ...req.body, ...params };
       try {
-        await this.email.sendEmail(req);
+        await this.email.sendRawEmail(req);
         res.status(StatusCodes.OK).send('Email sent successfully!');
       } catch (e) {
         logger.error(new Error(e));
