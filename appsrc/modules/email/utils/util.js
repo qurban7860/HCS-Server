@@ -93,10 +93,7 @@ const rawEmailDataComposer = async (params) => {
             to,
             subject,
             html,
-            attachments: attachments?.map((file) => ({
-                filename: file.Name,
-                content: file.Content,
-            })),
+            attachments,
         });
         const data = await new Promise((resolve, reject) => {
             mail.build((err, builtMessage) => {
@@ -177,15 +174,10 @@ const structureRawEmail = async (params) => {
         subject: params.subject,
         html: params.htmlData,
         ...(params?.attachments && {
-            attachments: Array.isArray(params?.attachments)
-                ? await params.attachments?.map((file) => ({
-                    filename: file?.originalname,
-                    content: file?.buffer,
-                }))
-                : [{
-                    filename: params?.attachments?.originalname,
-                    content: params?.attachments?.buffer,
-                }],
+            attachments: [{
+                filename: params?.attachments?.originalname,
+                content: params?.attachments?.buffer,
+            }],
         }),
     };
 }
