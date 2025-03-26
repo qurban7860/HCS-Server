@@ -85,7 +85,7 @@ const emailDataComposer = async (params) => {
 }
 
 
-const structureEmailParams = async (params) => {
+const structureEmail = async (params) => {
     return {
         Source: params?.fromEmail,
         ...(params?.attachments && { from: params?.fromEmail }),
@@ -138,10 +138,35 @@ const structureEmailParams = async (params) => {
     };
 }
 
+const structureRawEmail = async (params) => {
+    return {
+        Source: params?.fromEmail,
+        ...(params?.fromEmail && { from: params?.fromEmail }),
+        ...(process.env.AWS_SES_FROM_EMAIL && {
+            ReplyToAddresses: [process.env.AWS_SES_FROM_EMAIL],
+        }),
+        ...({ to: params.to || params.toEmails }),
+        subject: params.subject,
+        html: params.htmlData,
+        ...(params?.attachments && {
+            attachments: Array.isArray(params?.attachments)
+                ? await params.attachments?.map((file) => ({
+                    filename: file?.originalname,
+                    content: file?.buffer,
+                }))
+                : [{
+                    filename: params?.attachments?.originalname,
+                    content: params?.attachments?.buffer,
+                }],
+        }),
+    };
+}
+
 module.exports = {
     filterAndDeduplicateEmails,
     verifyEmail,
     renderEmail,
     emailDataComposer,
-    structureEmailParams
+    structureEmail,
+    structureRawEmail
 };

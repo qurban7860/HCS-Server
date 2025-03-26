@@ -5,7 +5,8 @@ const {
     verifyEmail,
     renderEmail,
     emailDataComposer,
-    structureEmailParams
+    structureEmail,
+    structureRawEmail
 } = require('./util');
 
 module.exports = {
@@ -13,5 +14,6 @@ module.exports = {
     verifyEmail,
     renderEmail,
     emailDataComposer,
-    structureEmailParams
+    structureEmail,
+    structureRawEmail
 };
