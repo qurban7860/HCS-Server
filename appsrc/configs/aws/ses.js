@@ -6,7 +6,7 @@ const { emailDataComposer, structureEmail, structureRawEmail } = require('../../
 const simpleEmailService = async (emailParams) => {
     try {
         const email = new AWS.SES({ region: process.env.AWS_REGION });
-        if (params?.attachments) {
+        if (emailParams?.attachments) {
             const rawParams = await structureRawEmail(emailParams);
             const Data = await emailDataComposer(rawParams);
             return await email.sendRawEmail({ RawMessage: { Data } }).promise();
