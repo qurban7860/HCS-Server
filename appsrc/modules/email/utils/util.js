@@ -49,7 +49,7 @@ async function renderEmail(subject, content) {
 
 const emailDataComposer = async (params) => {
     try {
-        const { Source, from, Destination, subject = undefined, html = undefined, Message, attachments } = params;
+        const { Source, from, Destination, Message, attachments } = params;
         const toAddresses = Destination?.ToAddresses || [];
         const ccAddresses = Destination?.CcAddresses || [];
         const bccAddresses = Destination?.BccAddresses || [];
@@ -61,9 +61,38 @@ const emailDataComposer = async (params) => {
             cc: ccAddresses,
             bcc: bccAddresses,
             replyTo: process.env.AWS_SES_FROM_EMAIL,
-            subject: Message.Subject?.Data || subject || 'No Subject',
-            html: Message.Body?.Html?.Data || html || undefined,
+            subject: Message.Subject?.Data || 'No Subject',
+            html: Message.Body?.Html?.Data || undefined,
             text: Message.Body?.Text?.Data || 'No Body Content',
+            attachments: attachments?.map((file) => ({
+                filename: file.Name,
+                content: file.Content,
+            })),
+        });
+        const data = await new Promise((resolve, reject) => {
+            mail.build((err, builtMessage) => {
+                if (err) {
+                    return reject(`Error building email: ${err}`);
+                }
+                resolve(builtMessage);
+            });
+        });
+        return data;
+    } catch (error) {
+        throw new Error(error);
+    }
+}
+
+const rawEmailDataComposer = async (params) => {
+    try {
+        const { Source, from, to, subject = 'No Subject', html, attachments } = params;
+
+        const mail = mailComposer({
+            Source,
+            from,
+            to,
+            subject,
+            html,
             attachments: attachments?.map((file) => ({
                 filename: file.Name,
                 content: file.Content,
@@ -166,6 +195,7 @@ module.exports = {
     verifyEmail,
     renderEmail,
     emailDataComposer,
+    rawEmailDataComposer,
     structureEmail,
     structureRawEmail
 };
