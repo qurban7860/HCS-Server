@@ -137,7 +137,7 @@ exports.postEvent = async (req, res, next) => {
         files: files || [],
       };
       res.status(StatusCodes.CREATED).json({ Event: objectWithPopulate });
-      await this.email.sendEmailAlert(req, objectWithPopulate, user, "New Event Notification");
+      await this.email.sendEmailAlert(req, objectWithPopulate, user, "New event notification");
     } catch (error) {
       logger.error(new Error(error));
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);

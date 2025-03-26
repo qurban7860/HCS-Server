@@ -79,24 +79,50 @@ const emailDataComposer = async (params) => {
         });
         return data;
     } catch (error) {
-        logger.error(new Error(`Failed to send email with Attachment: ${error}`));
-        throw new Error('Email sending failed');
+        throw new Error(error);
+    }
+}
+
+const rawEmailDataComposer = async (params) => {
+    try {
+        const { Source, from, to, subject = 'No Subject', html, attachments } = params;
+
+        const mail = mailComposer({
+            Source,
+            from,
+            to,
+            subject,
+            html,
+            attachments,
+        });
+        const data = await new Promise((resolve, reject) => {
+            mail.build((err, builtMessage) => {
+                if (err) {
+                    return reject(`Error building email: ${err}`);
+                }
+                resolve(builtMessage);
+            });
+        });
+        return data;
+    } catch (error) {
+        throw new Error(error);
     }
 }
 
 
-const structureEmailParams = async (params) => {
+const structureEmail = async (params) => {
     return {
         Source: params?.fromEmail,
+        ...(params?.attachments && { from: params?.fromEmail }),
         ...(process.env.AWS_SES_FROM_EMAIL && {
             ReplyToAddresses: [process.env.AWS_SES_FROM_EMAIL],
         }),
         Destination: {
             ToAddresses: (Array.isArray(params?.toEmails) && params.toEmails.length > 0) ? params.toEmails : [process.env.FALLBACK_EMAIL],
-            ...(params?.ccAddresses && {
+            ...(params?.ccEmails && {
                 CcAddresses: Array.isArray(params?.ccEmails) ? params.ccEmails : [params?.ccEmails].filter(Boolean),
             }),
-            ...(params?.bccAddresses && {
+            ...(params?.bccEmails && {
                 BccAddresses: Array.isArray(params?.bccEmails) ? params.bccEmails : [params?.bccEmails].filter(Boolean),
             })
         },
@@ -125,15 +151,34 @@ const structureEmailParams = async (params) => {
         ...(params?.attachments && {
             attachments: Array.isArray(params?.attachments)
                 ? await params.attachments?.map((file) => ({
-                    Name: file?.originalname,
-                    Content: file?.buffer,
+                    filename: file?.originalname,
+                    content: file?.buffer,
                 }))
                 : [{
-                    Name: params?.attachments?.originalname,
-                    Content: params?.attachments?.buffer,
+                    filename: params?.attachments?.originalname,
+                    content: params?.attachments?.buffer,
                 }],
         }),
 
+    };
+}
+
+const structureRawEmail = async (params) => {
+    return {
+        Source: params?.fromEmail,
+        ...(params?.fromEmail && { from: params?.fromEmail }),
+        ...(process.env.AWS_SES_FROM_EMAIL && {
+            ReplyToAddresses: [process.env.AWS_SES_FROM_EMAIL],
+        }),
+        ...({ to: params.to || params.toEmails }),
+        subject: params.subject,
+        html: params.htmlData,
+        ...(params?.attachments && {
+            attachments: [{
+                filename: params?.attachments?.originalname,
+                content: params?.attachments?.buffer,
+            }],
+        }),
     };
 }
 
@@ -142,5 +187,7 @@ module.exports = {
     verifyEmail,
     renderEmail,
     emailDataComposer,
-    structureEmailParams
+    rawEmailDataComposer,
+    structureEmail,
+    structureRawEmail
 };
