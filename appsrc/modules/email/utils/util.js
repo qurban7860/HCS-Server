@@ -79,8 +79,7 @@ const emailDataComposer = async (params) => {
         });
         return data;
     } catch (error) {
-        logger.error(new Error(`Failed to send email with Attachment: ${error}`));
-        throw new Error('Email sending failed');
+        throw new Error(error);
     }
 }
 
