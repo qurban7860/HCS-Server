@@ -49,7 +49,7 @@ async function renderEmail(subject, content) {
 
 const emailDataComposer = async (params) => {
     try {
-        const { Source, from, Destination, Message, attachments } = params;
+        const { Source, from, Destination, subject = undefined, html = undefined, Message, attachments } = params;
         const toAddresses = Destination?.ToAddresses || [];
         const ccAddresses = Destination?.CcAddresses || [];
         const bccAddresses = Destination?.BccAddresses || [];
@@ -61,8 +61,8 @@ const emailDataComposer = async (params) => {
             cc: ccAddresses,
             bcc: bccAddresses,
             replyTo: process.env.AWS_SES_FROM_EMAIL,
-            subject: Message.Subject?.Data || 'No Subject',
-            html: Message.Body?.Html?.Data || undefined,
+            subject: Message.Subject?.Data || subject || 'No Subject',
+            html: Message.Body?.Html?.Data || html || undefined,
             text: Message.Body?.Text?.Data || 'No Body Content',
             attachments: attachments?.map((file) => ({
                 filename: file.Name,
