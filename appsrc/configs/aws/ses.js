@@ -1,6 +1,6 @@
 const AWS = require('aws-sdk');
 const logger = require('../../modules/config/logger');
-const { emailDataComposer, structureEmail, structureRawEmail } = require('../../modules/email/utils/');
+const { emailDataComposer, rawEmailDataComposer, structureEmail, structureRawEmail } = require('../../modules/email/utils/');
 
 
 const simpleEmailService = async (emailParams) => {
@@ -8,7 +8,7 @@ const simpleEmailService = async (emailParams) => {
         const email = new AWS.SES({ region: process.env.AWS_REGION });
         if (emailParams?.attachments) {
             const rawParams = await structureRawEmail(emailParams);
-            const Data = await emailDataComposer(rawParams);
+            const Data = await rawEmailDataComposer(rawParams);
             return await email.sendRawEmail({ RawMessage: { Data } }).promise();
         }
         const params = await structureEmail(emailParams);
