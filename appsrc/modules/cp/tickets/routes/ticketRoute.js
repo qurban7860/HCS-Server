@@ -29,9 +29,9 @@ router.get(`/`, validateCustomerInQuery, controller.getTickets);
 
 router.get(`/:id`, validateTicketID("id"), validateCustomerInQuery, controller.getTicket);
 
-router.post(`/`, uploadHandler, validateRequest(ticketSchema('new')), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.postTicket);
+router.post(`/`, uploadHandler, validateRequest(ticketSchema('new')), validateCustomerInRequest, removeProperties(["assignee", "approvers"]), checkMaxCount, imageOptimization, controller.postTicket);
 
-router.patch(`/:id`, validateTicketID("id"), uploadHandler, validateRequest(ticketSchema()), validateCustomerInRequest, removeProperties(["assignee", "approvers", "status"]), checkMaxCount, imageOptimization, controller.patchTicket);
+router.patch(`/:id`, validateTicketID("id"), uploadHandler, validateRequest(ticketSchema()), validateCustomerInRequest, removeProperties(["assignee", "approvers"]), checkMaxCount, imageOptimization, controller.patchTicket);
 
 // router.delete(`/:id`, validateTicketID("id"), controller.deleteTicket);
 
