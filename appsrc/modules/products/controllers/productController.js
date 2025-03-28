@@ -18,8 +18,8 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceReports, ProductServiceReportValue, ProductLicense } = require('../models');
-const { ProductConfiguration } = require('../../apiclient/models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConfiguration, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceReports, ProductServiceReportValue, ProductLicense } = require('../models');
+// const {  } = require('../../apiclient/models');
 
 const { ErpLog } = require('../../log/models');
 
