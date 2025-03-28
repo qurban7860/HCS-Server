@@ -399,7 +399,6 @@ exports.postTicket = async (req, res, next) => {
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
-      console.error(error);
       if (ticketData) {
         await Ticket.deleteOne({ _id: ticketData._id });
       }
@@ -410,7 +409,6 @@ exports.postTicket = async (req, res, next) => {
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch (error) {
     await CounterController.reversePaddedCounterSequence('supportTicket');
-    console.error(error);
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send(error?.message);
   }

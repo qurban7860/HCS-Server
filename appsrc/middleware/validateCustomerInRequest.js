@@ -27,7 +27,6 @@ module.exports = async (req, res, next) => {
 
       if (_.isEmpty(record.customer) || record.customer.isActive == false || record.customer.isArchived == true)
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer verifcation failed!', true));
-      delete req.body.customer;
       next();
     } else {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Customer not found!', true));
