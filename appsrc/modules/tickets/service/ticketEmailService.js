@@ -148,6 +148,7 @@ class TicketEmailService {
       // Send Email
       params.htmlData = htmlData;
       req.body = { ...params };
+      req.body.ticket = req.params.id
       await this.email.sendEmail(req);
     } catch (error) {
       logger.error(new Error(error));
@@ -218,6 +219,7 @@ class TicketEmailService {
       // Send Email
       params.htmlData = htmlData;
       req.body = { ...params };
+      req.body.ticket = req.params.ticketId
       await this.email.sendEmail(req);
     } catch (error) {
       logger.error(new Error(error));

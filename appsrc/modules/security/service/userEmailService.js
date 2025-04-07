@@ -48,6 +48,7 @@ class UserEmailService {
       const currentDate = new Date();
       userMFAData.multiFactorAuthenticationExpireTime = new Date(currentDate.getTime() + 10 * 60 * 1000);
       await this.dbservice.patchObject(SecurityUser, user._id, userMFAData);
+      req.body.user = user._id;
       await this.email.sendEmail(req);
       return res.status(StatusCodes.ACCEPTED).send({ message: 'Authentication Code has been sent on your email!', multiFactorAuthentication: true, userId: user._id });
     } catch (error) {
@@ -98,6 +99,7 @@ class UserEmailService {
 
       const htmlData = await renderEmail(emailSubject, content)
       req.body = { ...params, htmlData };
+      req.body.inviteUser = req.params.id;
 
       await this.email.sendEmail(req);
 
@@ -141,7 +143,7 @@ class UserEmailService {
       params.htmlData = htmlData;
       params.toUser = toUser
       req.body = { ...params };
-
+      req.body.user = toUser._id;
       await this.email.sendEmail(req);
       res.status(StatusCodes.OK).send('Email sent successfully!');
     } catch (error) {
@@ -179,7 +181,7 @@ class UserEmailService {
       params.htmlData = htmlData;
       params.toUser = toUser
       req.body = { ...params };
-
+      req.body.user = toUser._id;
       await this.email.sendEmail(req);
       res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password updated successfully!'));
     } catch (error) {
@@ -187,7 +189,6 @@ class UserEmailService {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Password update failed!'));
     }
   }
-
 }
 
 

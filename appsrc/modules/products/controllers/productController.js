@@ -1771,6 +1771,7 @@ exports.sendEmailAlert = async (req, data) => {
 
     try {
       req.body = { ...req.body, ...params };
+      req.body.machine = data?.machineId
       await this.email.sendEmail(req);
     } catch (e) {
       return e.message;
