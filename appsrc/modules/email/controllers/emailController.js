@@ -22,6 +22,13 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
+  { path: 'user', select: 'name email' },
+  { path: 'inviteUser', select: 'name email' },
+  { path: 'ticket', select: 'ticketNo' },
+  { path: 'machine', select: 'serialNo name' },
+  { path: 'event', select: 'jiraTicket' },
+  { path: 'serviceReport', select: 'serviceReportUID' },
+  { path: 'dbBackup', select: 'name' },
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'updatedBy', select: 'name' }
