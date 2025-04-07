@@ -5,7 +5,7 @@ const { renderEmail } = require('../../email/utils');
 const logger = require('../../config/logger');
 const emailService = require('../../email/service/emailService');
 
-class TicketEmailService {
+class BackupEmailService {
     constructor() {
         this.email = new emailService();
     }
@@ -53,4 +53,4 @@ class TicketEmailService {
 }
 
 
-module.exports = TicketEmailService;
+module.exports = BackupEmailService;

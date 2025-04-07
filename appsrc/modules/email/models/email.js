@@ -39,6 +39,21 @@ const docSchema = new Schema({
 
         toUsers: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
         // customer information.
+
+        user: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
+
+        inviteUser: { type: Schema.Types.ObjectId, ref: 'SecurityUserInvite' },
+
+        ticket: { type: Schema.Types.ObjectId, ref: 'Ticket' },
+
+        machine: { type: Schema.Types.ObjectId, ref: 'Machine' },
+
+        event: { type: Schema.Types.ObjectId, ref: 'Event' },
+
+        serviceReport: { type: Schema.Types.ObjectId, ref: 'MachineServiceReport' },
+
+        dbBackup: { type: Schema.Types.ObjectId, ref: 'Backup' },
+
 },
         {
                 collection: 'Emails'

@@ -129,6 +129,7 @@ exports.patchEmail = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType) {
   const { status, subject, body, toEmails, fromEmail, toContacts, toUsers, customer,
+    user, inviteUser, ticket, machine, event, serviceReport, dbBackup,
     isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
 
   let doc = {};
@@ -161,6 +162,34 @@ function getDocumentFromReq(req, reqType) {
 
   if ("toUsers" in req.body) {
     doc.toUsers = toUsers;
+  }
+
+  if ("user" in req.body) {
+    doc.user = user;
+  }
+
+  if ("inviteUser" in req.body) {
+    doc.inviteUser = inviteUser;
+  }
+
+  if ("ticket" in req.body) {
+    doc.ticket = ticket;
+  }
+
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+  if ("event" in req.body) {
+    doc.event = event;
+  }
+
+  if ("serviceReport" in req.body) {
+    doc.serviceReport = serviceReport;
+  }
+
+  if ("dbBackup" in req.body) {
+    doc.dbBackup = dbBackup;
   }
 
   if ("ccEmails" in req.body) {
