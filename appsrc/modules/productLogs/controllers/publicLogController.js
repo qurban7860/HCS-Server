@@ -109,11 +109,32 @@ exports.postPublicLog = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: Data is missing or empty");
     }
 
+    // Check if logs exceed the threshold limit
+    const MAX_LOGS_THRESHOLD = parseInt(process.env.MAX_LOGS_THRESHOLD || '1000', 10);
+    if (req.body.logs.length > MAX_LOGS_THRESHOLD) {
+      await APILog.findByIdAndUpdate(
+        apiLogEntry._id,
+        {
+          responseStatusCode: StatusCodes.BAD_REQUEST,
+          response: JSON.stringify({ 
+            error: `Log count exceeds maximum threshold of ${MAX_LOGS_THRESHOLD}`,
+            count: req.body.logs.length
+          }),
+          responseMessage: "Too many logs in single request",
+          noOfRecordsUpdated: 0,
+        },
+        { new: true }
+      );
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: `Log count exceeds maximum threshold of ${MAX_LOGS_THRESHOLD}`,
+        count: req.body.logs.length
+      });
+    }
+
     const { logs, version, type } = req.body;
 
     req.query.type = type;
     const Model = getModel(req);
-    const logsToInsert = [];
     const batchId = uuidv4();
 
     // Convert inches to mm if needed
@@ -162,7 +183,8 @@ exports.postPublicLog = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
     }
 
-    logsToProcess.forEach((logObj) => {
+    // Prepare documents for bulk operation
+    const logsToInsert = logsToProcess.map((logObj) => {
       logObj = convertTimestampToDate(logObj);
 
       logObj.machine = req.machine._id;
@@ -174,12 +196,17 @@ exports.postPublicLog = async (req, res, next) => {
       logObj.apiLogId = apiLogEntry._id;
 
       const fakeReq = { body: logObj };
-      const newLog = addIdentifierData(fakeReq);
-      logsToInsert.push(newLog);
+      return addIdentifierData(fakeReq);
     });
 
     if (logsToInsert.length > 0) {
-      const insertedLogs = await Model.create(logsToInsert);
+      // Use MongoDB's bulk operation for more efficient insertion
+      const bulkOps = logsToInsert.map(doc => ({
+        insertOne: { document: doc }
+      }));
+      
+      const bulkResult = await Model.bulkWrite(bulkOps, { ordered: true });
+      const insertedCount = bulkResult.insertedCount;
       const finalResponseTime = Date.now() - startTime;
 
       await APILog.findByIdAndUpdate(
@@ -188,10 +215,10 @@ exports.postPublicLog = async (req, res, next) => {
           responseStatusCode: StatusCodes.CREATED,
           response: JSON.stringify({
             message: "Machine logs processed successfully",
-            count: insertedLogs.length,
+            count: insertedCount,
           }),
-          responseMessage: `Successfully processed ${insertedLogs.length} ${type} logs`,
-          noOfRecordsUpdated: insertedLogs.length,
+          responseMessage: `Successfully processed ${insertedCount} ${type} logs`,
+          noOfRecordsUpdated: insertedCount,
           responseTime: `${finalResponseTime}`,
         },
         { new: true }
@@ -199,7 +226,7 @@ exports.postPublicLog = async (req, res, next) => {
 
       res.status(StatusCodes.CREATED).json({
         message: "Machine logs processed successfully",
-        count: insertedLogs.length,
+        count: insertedCount,
       });
     } else {
       throw new Error("No valid logs to insert");
@@ -223,7 +250,6 @@ exports.postPublicLog = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
-
 const logApiCall = async ({ req, startTime, responseData, machine = null, createdIP, createdBy }) => {
   const apiLog = new APILog({
     requestMethod: req.method,
