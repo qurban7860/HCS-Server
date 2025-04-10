@@ -78,7 +78,9 @@ exports.postPublicLog = async (req, res, next) => {
         },
         { new: true }
       );
-      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: getReasonPhrase(StatusCodes.BAD_REQUEST)
+      });
     }
 
     if (!mongoose.Types.ObjectId.isValid(req.machine?._id)) {
@@ -92,7 +94,9 @@ exports.postPublicLog = async (req, res, next) => {
         },
         { new: true }
       );
-      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: machine/customer not found");
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: 'Invalid Log Data: machine/customer not found'
+      });
     }
 
     if (!Array.isArray(req.body?.logs) || req.body?.logs?.length === 0) {
@@ -106,7 +110,9 @@ exports.postPublicLog = async (req, res, next) => {
         },
         { new: true }
       );
-      return res.status(StatusCodes.BAD_REQUEST).send("Invalid Log Data: Data is missing or empty");
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: 'Invalid Log Data: Data is missing or empty'
+      });
     }
 
     // Check if logs exceed the threshold limit
@@ -152,7 +158,9 @@ exports.postPublicLog = async (req, res, next) => {
           },
           { new: true }
         );
-        return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement values found in logs');
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          error: 'Invalid measurement values found in logs'
+        });
       }
       if (convertedLogs.error) {
         await APILog.findByIdAndUpdate(
@@ -165,7 +173,9 @@ exports.postPublicLog = async (req, res, next) => {
           },
           { new: true }
         );
-        return res.status(StatusCodes.BAD_REQUEST).send(convertedLogs.error);
+        return res.status(StatusCodes.BAD_REQUEST).json({
+          error: convertedLogs.error
+        });
       }
       logsToProcess = convertedLogs;
     } else if (logs.some(log => log.measurementUnit && log.measurementUnit !== 'mm')) {
@@ -180,7 +190,9 @@ exports.postPublicLog = async (req, res, next) => {
         },
         { new: true }
       );
-      return res.status(StatusCodes.BAD_REQUEST).send(errorMessage);
+      return res.status(StatusCodes.BAD_REQUEST).json({
+        error: errorMessage
+      });
     }
 
     // Prepare documents for bulk operation
