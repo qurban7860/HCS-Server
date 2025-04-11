@@ -1,0 +1,39 @@
+meta {
+  name: post Component
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/jobs/components
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "label": "E-SHAPE",
+    "labelDirectory": "LBL_NVR",
+    "quantity": 2,
+    "length": 2.01,
+    "profileShape": "",
+    "webWidth": 20.12,
+    "flangeHeight": 12.20,
+    "materialThickness": 2.12,
+    "materialGrade": "C3",
+    "dimensions": {
+      "startX": 12,
+      "startY": 23,
+      "EndX": 34,
+      "EndY": 45
+    },
+    "operations": {
+      "offset": 123.456,
+      "tool": "655437a2f231090c1ada04ba"
+    }
+  }
+}

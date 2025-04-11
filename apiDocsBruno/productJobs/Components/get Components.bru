@@ -1,0 +1,15 @@
+meta {
+  name: get Components
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/jobs/components
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

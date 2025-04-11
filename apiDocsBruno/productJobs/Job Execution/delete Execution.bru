@@ -1,0 +1,19 @@
+meta {
+  name: delete Execution
+  type: http
+  seq: 6
+}
+
+delete {
+  url: {{baseUrl}}/jobs/jobExecutions/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

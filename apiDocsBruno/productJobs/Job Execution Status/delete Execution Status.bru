@@ -1,0 +1,19 @@
+meta {
+  name: delete Execution Status
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/jobs/jobExecutionStatuses/:id
+  body: none
+  auth: bearer
+}
+
+params:path {
+  id: 
+}
+
+auth:bearer {
+  token: {{token}}
+}

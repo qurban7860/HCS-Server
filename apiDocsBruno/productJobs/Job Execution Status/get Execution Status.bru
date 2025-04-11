@@ -1,0 +1,15 @@
+meta {
+  name: get Execution Status
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/jobs/jobExecutionStatuses/67f78cfb3e01d78ab0d0c3f5
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

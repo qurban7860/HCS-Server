@@ -1,0 +1,25 @@
+meta {
+  name: post Job
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/jobs
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "measurementUnit": "mm",
+    "profile": "LBL-NVR",
+    "frameset": "unknown",
+    "version": "1.20",
+    "components": ["67f791ec80a953be3af64fa5","67f791229b1099b9e7bc393f","67f790dc2d17deb7b7ebaeca","67f78fc23e01d78ab0d0c4a0", "67f78f923e01d78ab0d0c498"]
+  }
+}
