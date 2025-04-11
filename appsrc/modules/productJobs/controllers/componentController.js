@@ -30,7 +30,7 @@ exports.getComponent = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
@@ -41,7 +41,7 @@ exports.getComponents = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
@@ -58,7 +58,7 @@ exports.postComponent = async (req, res, next) => {
       return res.status(StatusCodes.CREATED).json(component);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -73,7 +73,7 @@ exports.patchComponent = async (req, res, next) => {
       return res.status(StatusCodes.ACCEPTED).json(component);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -84,7 +84,7 @@ exports.deleteComponent = async (req, res, next) => {
     return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Component deleted successfully", false));
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 

@@ -166,7 +166,7 @@ class dbService {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         }
       } else {
-        throw new Error(error);
+        throw error;
       }
     }
   }
