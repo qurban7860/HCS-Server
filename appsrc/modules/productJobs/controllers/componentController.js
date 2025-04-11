@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const { StatusCodes, getReasonPhrase } = require('http-status-codes');
+const { Types: { ObjectId } } = require('mongoose');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 let JobgDBService = require('../service/jobDBService')
@@ -51,6 +52,7 @@ exports.postComponent = async (req, res, next) => {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
+      validateOperations(req);
       this.query = req.query != "undefined" ? req.query : {};
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       this.query._id = response._id;
@@ -69,6 +71,7 @@ exports.patchComponent = async (req, res, next) => {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
+      validateOperations(req);
       const component = await this.dbservice.patchObjectAndGet(Component, req.params.id, getDocumentFromReq(req), this.populate);
       return res.status(StatusCodes.ACCEPTED).json(component);
     } catch (error) {
@@ -88,6 +91,13 @@ exports.deleteComponent = async (req, res, next) => {
   }
 };
 
+const validateOperations = (req) => {
+  const operations = req.body?.operations || undefined;
+  if (!req.body?.operations || (!Array.isArray(operations) && operations?.length > 0))
+    throw new Error('Operations not defined!')
+  if (operations?.some(o => !ObjectId.isValid(o?.tool)))
+    throw new Error('Invalid operations found!')
+}
 
 function getDocumentFromReq(req, reqType) {
 
