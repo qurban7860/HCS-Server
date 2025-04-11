@@ -1,0 +1,15 @@
+meta {
+  name: get Executions
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/jobs/jobExecutions
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

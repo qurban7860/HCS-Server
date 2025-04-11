@@ -24,7 +24,7 @@ exports.getJobExecutionStatus = async (req, res, next) => {
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 
@@ -35,21 +35,23 @@ exports.getJobExecutionStatuses = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 
 exports.postJobExecutionStatus = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json(response);
+      this.query._id = response._id;
+      const jobExecutionStatus = await this.dbservice.getObject(JobExecutionStatus, this.query, this.populate);
+      return res.status(StatusCodes.CREATED).json(jobExecutionStatus);
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
     }
   }
 };
@@ -57,25 +59,25 @@ exports.postJobExecutionStatus = async (req, res, next) => {
 exports.patchJobExecutionStatus = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
-      const result = await this.dbservice.patchObject(JobExecutionStatus, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      const jobExecutionStatus = await this.dbservice.patchObjectAndGet(JobExecutionStatus, req.params.id, getDocumentFromReq(req), this.populate);
+      return res.status(StatusCodes.ACCEPTED).json(jobExecutionStatus);
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
     }
   }
 };
 
 exports.deleteJobExecutionStatus = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(JobExecutionStatus, req.params.id);
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    await this.dbservice.deleteObject(JobExecutionStatus, req.params.id);
+    return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Job execution status deleted successfully!', false));
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 

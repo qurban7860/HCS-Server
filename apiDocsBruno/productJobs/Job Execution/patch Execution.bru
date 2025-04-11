@@ -1,0 +1,21 @@
+meta {
+  name: patch Execution
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/jobs/jobExecutions/67f7ac3e2446314028bd0c26
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isArchived": true
+  }
+}

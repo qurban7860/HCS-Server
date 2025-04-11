@@ -7,16 +7,14 @@ const router = express.Router();
 
 router.use(checkAuth);
 
-const basicRoute = 'jobs';
+router.get(`/`, controller.getJobs);
 
-router.get(`/${basicRoute}/`, controller.getJobs);
+router.get(`/:id`, controller.getJob);
 
-router.get(`/${basicRoute}/:id`, controller.getJob);
+router.post(`/`, controller.postJob);
 
-router.post(`/${basicRoute}/`, controller.postJob);
+router.patch(`/:id`, controller.patchJob);
 
-router.patch(`/${basicRoute}/:id`, controller.patchJob);
-
-router.delete(`/${basicRoute}/:id`, controller.patchJob);
+router.delete(`/:id`, controller.deleteJob);
 
 module.exports = router;

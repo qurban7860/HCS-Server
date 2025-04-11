@@ -1,0 +1,15 @@
+meta {
+  name: delete Job
+  type: http
+  seq: 5
+}
+
+delete {
+  url: {{baseUrl}}/jobs/67f79abade431decf1c57fb2
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

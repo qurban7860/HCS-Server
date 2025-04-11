@@ -1,14 +1,15 @@
 //'use strict'
 
 const apiPath = process.env.API_ROOT;
-const logFormatRoute = require('./logFormatRoute');
-const pm2LogRoute = require('./pm2LogRoute');
+const componentRoute = require('./componentRoute');
+const jobExecutionRoute = require('./jobExecutionRoute');
+const jobExecutionStatusRoute = require('./jobExecutionStatusRoute');
+const jobRoute = require('./jobRoute');
 
-exports.registerlogRoutes = (app, apiPath) => {
-    const rootPathForModule = `${apiPath}/logs`
-    app.use(`${rootPathForModule}`, logFormatRoute);
-    app.use(`${rootPathForModule}`, pm2LogRoute);
-    
-
-
+exports.registerJobRoutes = (app, apiPath) => {
+    const rootPathForModule = `${apiPath}/jobs`
+    app.use(`${rootPathForModule}`, componentRoute);
+    app.use(`${rootPathForModule}`, jobExecutionRoute);
+    app.use(`${rootPathForModule}`, jobExecutionStatusRoute);
+    app.use(`${rootPathForModule}`, jobRoute);
 }

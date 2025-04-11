@@ -36,7 +36,7 @@ exports.getJob = async (req, res, next) => {
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 
@@ -47,21 +47,24 @@ exports.getJobs = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 
 exports.postJob = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
+      this.query = req.query != "undefined" ? req.query : {};
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json(response);
+      this.query._id = response._id;
+      const job = await this.dbservice.getObject(Job, this.query, this.populate);
+      return res.status(StatusCodes.CREATED).json(job);
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
     }
   }
 };
@@ -69,14 +72,14 @@ exports.postJob = async (req, res, next) => {
 exports.patchJob = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Job, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      const job = await this.dbservice.patchObject(Job, req.params.id, getDocumentFromReq(req));
+      return res.status(StatusCodes.ACCEPTED).json(job);
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
     }
   }
 };
@@ -84,10 +87,10 @@ exports.patchJob = async (req, res, next) => {
 exports.deleteJob = async (req, res, next) => {
   try {
     const result = await this.dbservice.deleteObject(Job, req.params.id);
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Job deleted successfully!', false));
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 

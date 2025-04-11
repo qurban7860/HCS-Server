@@ -27,10 +27,10 @@ exports.getComponent = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
     const response = await this.dbservice.getObject(Component, this.query, this.populate);
-    res.json(response);
+    return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 
@@ -41,21 +41,24 @@ exports.getComponents = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 
 exports.postComponent = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
+      this.query = req.query != "undefined" ? req.query : {};
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
-      res.status(StatusCodes.CREATED).json(response);
+      this.query._id = response._id;
+      const component = await this.dbservice.getObject(Component, this.query, this.populate);
+      return res.status(StatusCodes.CREATED).json(component);
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
     }
   }
 };
@@ -63,25 +66,25 @@ exports.postComponent = async (req, res, next) => {
 exports.patchComponent = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
-      const result = await this.dbservice.patchObject(Component, req.params.id, getDocumentFromReq(req));
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      const component = await this.dbservice.patchObjectAndGet(Component, req.params.id, getDocumentFromReq(req), this.populate);
+      return res.status(StatusCodes.ACCEPTED).json(component);
     } catch (error) {
       logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
     }
   }
 };
 
 exports.deleteComponent = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Component, req.params.id);
-    res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
+    await this.dbservice.deleteObject(Component, req.params.id);
+    return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Component deleted successfully", false));
   } catch (error) {
     logger.error(new Error(error));
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error._message, true));
   }
 };
 

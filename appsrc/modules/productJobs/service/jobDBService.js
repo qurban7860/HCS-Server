@@ -67,6 +67,17 @@ class JobDBService {
       return error;
     }
   }
+
+  async patchObjectAndGet(model, id, document, populate, callback) {
+    try {
+      const response = await this.db.patchObjectAndGet(model, id, document, populate, callback);
+      return response;
+    }
+    catch (error) {
+      return error;
+    }
+  }
+
 }
 
 

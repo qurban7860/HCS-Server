@@ -20,7 +20,7 @@ router.post(`/${basicRoute}/`, controller.postJobExecution);
 
 router.patch(`/${basicRoute}/:id`, controller.patchJobExecution);
 
-router.patch(`/${basicRoute}/:id/status`, controller.patchJobExecutionStatus);
+router.patch(`/${basicRoute}/:jobExecution/status/:id`, controller.patchJobExecutionStatus);
 
 router.delete(`/${basicRoute}/:id`, controller.deleteJobExecution);
 
