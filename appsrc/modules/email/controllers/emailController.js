@@ -22,18 +22,17 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  { path: 'user', select: 'name email' },
+  { path: 'user', select: 'name email', populate: { path: 'customer', select: 'name' } },
   { path: 'inviteUser', select: 'name email' },
-  { path: 'ticket', select: 'ticketNo' },
+  { path: 'ticket', select: 'ticketNo', populate: { path: 'customer', select: 'name' } },
   { path: 'machine', select: 'serialNo name' },
   { path: 'event', select: 'jiraTicket' },
-  { path: 'serviceReport', select: 'serviceReportUID' },
+  { path: 'serviceReport', select: 'serviceReportUID', populate: { path: 'customer', select: 'name' } },
   { path: 'dbBackup', select: 'name' },
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
-
 
 
 exports.getEmail = async (req, res, next) => {
