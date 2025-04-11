@@ -44,7 +44,7 @@ class JobDBService {
         return await this.db.deleteObject(model, id, res);
       }
     } catch (error) {
-      return error;
+      throw error;
     }
   }
 
