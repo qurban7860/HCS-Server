@@ -31,7 +31,8 @@ exports.getComponent = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
@@ -42,14 +43,15 @@ exports.getComponents = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
 exports.postComponent = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
       validateOperations(req);
@@ -60,7 +62,8 @@ exports.postComponent = async (req, res, next) => {
       return res.status(StatusCodes.CREATED).json(component);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+      return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -68,7 +71,7 @@ exports.postComponent = async (req, res, next) => {
 exports.patchComponent = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
       validateOperations(req);
@@ -76,7 +79,8 @@ exports.patchComponent = async (req, res, next) => {
       return res.status(StatusCodes.ACCEPTED).json(component);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+      return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+        .send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -87,16 +91,25 @@ exports.deleteComponent = async (req, res, next) => {
     return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Component deleted successfully", false));
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
 const validateOperations = (req) => {
-  const operations = req.body?.operations || undefined;
-  if (!req.body?.operations || (!Array.isArray(operations) && operations?.length > 0))
-    throw new Error('Operations not defined!')
-  if (operations?.some(o => !ObjectId.isValid(o?.tool)))
-    throw new Error('Invalid operations found!')
+  let operations = req.body?.operations;
+  let error;
+  if (!operations || (!Array.isArray(operations) || operations?.length < 1)) {
+    error = new Error('Operations not defined!');
+    error.statusCode = StatusCodes.BAD_REQUEST;
+    throw error
+  }
+
+  if (operations?.some(o => !ObjectId.isValid(o?.tool))) {
+    error = new Error('Invalid operation tool found!')
+    error.statusCode = StatusCodes.BAD_REQUEST;
+    throw error
+  }
 }
 
 function getDocumentFromReq(req, reqType) {
