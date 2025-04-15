@@ -427,7 +427,7 @@ exports.patchTicket = async (req, res, next) => {
     const fields = ["reporter", "assignee", "priority", "status"];
     const changedFields = {};
 
-    fields.forEach((field) => {
+    for (const field of fields) {
       const newValue = req.body?.[field];
       const oldValue = oldObj?.[field];
 
@@ -439,8 +439,9 @@ exports.patchTicket = async (req, res, next) => {
         const fieldLabel = sentenceCase(field);
         changedFields[`previous${fieldLabel}`] = oldValue;
         changedFields[`new${fieldLabel}`] = newValue;
+        break; // exits the loop after first change
       }
-    });
+    }
     console.log(" changedFields : ", changedFields)
     if (Object.keys(changedFields).length > 0) {
       changedFields.loginUser = req.body?.loginUser
