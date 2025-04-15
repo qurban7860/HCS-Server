@@ -433,7 +433,7 @@ exports.patchTicket = async (req, res, next) => {
 
       // Allow null for reporter/assignee, and still treat it as a change
       const isNullable = ["reporter", "assignee"].includes(field);
-      const isChanged = isNullable ? newValue !== oldValue : (newValue && newValue !== oldValue);
+      const isChanged = isNullable ? newValue != undefined && newValue !== oldValue : (req.body?.[field] && newValue !== oldValue);
 
       if (isChanged) {
         const fieldLabel = sentenceCase(field);
