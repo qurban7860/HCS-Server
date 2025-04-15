@@ -81,11 +81,20 @@ function getDocFromReq(obj) {
     "newStatus"
   ];
 
+  const nullableFields = new Set([
+    "previousReporter",
+    "newReporter",
+    "previousAssignee",
+    "newAssignee"
+  ]);
+
   allowedFields.forEach((f) => {
     if (f in obj) {
-      if (
-        // obj[f] !== null && 
-        // obj[f] !== "null" && 
+      if (nullableFields.has(f)) {
+        doc[f] = obj[f];
+      } else if (
+        obj[f] !== null &&
+        obj[f] !== "null" &&
         obj[f] !== undefined &&
         obj[f] !== "undefined" &&
         obj[f] !== ""
