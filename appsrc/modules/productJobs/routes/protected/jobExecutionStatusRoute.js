@@ -1,9 +1,7 @@
 const express = require('express');
-const checkAuth = require('../../../middleware/check-auth');
-
-const controllers = require('../controllers');
+const checkAuth = require('../../../../middleware/check-auth');
+const controllers = require('../../controllers');
 const controller = controllers.jobExecutionStatusController;
-
 const router = express.Router();
 
 router.use(checkAuth);

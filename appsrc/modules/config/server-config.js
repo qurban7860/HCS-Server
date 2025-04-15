@@ -137,6 +137,7 @@ class App {
   }
 
   registerRoutes() {
+    productJobs.registerPublicJobRoutes(this.app, apiPath);
     productRoutes.registerProductRoutes(this.app, apiPath);
     customerRoutes.registerCustomerRoutes(this.app, apiPath);
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
