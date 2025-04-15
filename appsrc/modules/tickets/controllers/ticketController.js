@@ -428,21 +428,19 @@ exports.patchTicket = async (req, res, next) => {
     const changedFields = {};
 
     for (const field of fields) {
-      const newValue = req.body?.[field];
-      const oldValue = oldObj?.[field];
+      if (field in req.body) {
+        const newValue = req.body[field];
+        const oldValue = oldObj?.[field];
+        const isChanged = newValue !== oldValue;
 
-      // Allow null for reporter/assignee, and still treat it as a change
-      const isNullable = ["reporter", "assignee"].includes(field);
-      const isChanged = isNullable ? newValue != undefined && newValue !== oldValue : (req.body?.[field] && newValue !== oldValue);
-
-      if (isChanged) {
-        const fieldLabel = sentenceCase(field);
-        changedFields[`previous${fieldLabel}`] = oldValue;
-        changedFields[`new${fieldLabel}`] = newValue;
-        break; // exits the loop after first change
+        if (isChanged) {
+          const fieldLabel = sentenceCase(field);
+          changedFields[`previous${fieldLabel}`] = oldValue;
+          changedFields[`new${fieldLabel}`] = newValue;
+        }
       }
     }
-    console.log(" changedFields : ", changedFields)
+
     if (Object.keys(changedFields).length > 0) {
       changedFields.loginUser = req.body?.loginUser
       changedFields.ticket = req.params.id
