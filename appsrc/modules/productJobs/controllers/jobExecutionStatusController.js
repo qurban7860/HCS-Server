@@ -24,7 +24,7 @@ exports.getJobExecutionStatus = async (req, res, next) => {
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
@@ -35,7 +35,7 @@ exports.getJobExecutionStatuses = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
@@ -51,7 +51,7 @@ exports.postJobExecutionStatus = async (req, res, next) => {
       return res.status(StatusCodes.CREATED).json(jobExecutionStatus);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+      return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -66,7 +66,7 @@ exports.patchJobExecutionStatus = async (req, res, next) => {
       return res.status(StatusCodes.ACCEPTED).json(jobExecutionStatus);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+      return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -77,7 +77,7 @@ exports.deleteJobExecutionStatus = async (req, res, next) => {
     return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Job execution status deleted successfully!', false));
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 

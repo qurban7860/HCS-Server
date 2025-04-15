@@ -37,7 +37,7 @@ exports.getJob = async (req, res, next) => {
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
@@ -48,14 +48,14 @@ exports.getJobs = async (req, res, next) => {
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
 exports.postJob = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
       validateComponents(req)
@@ -66,7 +66,7 @@ exports.postJob = async (req, res, next) => {
       return res.status(StatusCodes.CREATED).json(job);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+      return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -74,7 +74,7 @@ exports.postJob = async (req, res, next) => {
 exports.patchJob = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
+    return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
       validateComponents(req);
@@ -82,7 +82,7 @@ exports.patchJob = async (req, res, next) => {
       return res.status(StatusCodes.ACCEPTED).json(job);
     } catch (error) {
       logger.error(new Error(error));
-      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+      return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
     }
   }
 };
@@ -91,19 +91,27 @@ exports.deleteJob = async (req, res, next) => {
   try {
     const result = await this.dbservice.deleteObject(Job, req.params.id);
     console.log({ result })
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Job deleted successfully!', false));
+    return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Job deleted successfully!', false));
   } catch (error) {
     logger.error(new Error(error));
-    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
+    return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
+      .send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
   }
 };
 
 const validateComponents = (req) => {
   const components = req.body?.components || undefined;
-  if (!req.body?.components || (!Array.isArray(components) && components?.length > 0))
-    throw new Error('Components not defined!')
-  if (components?.some(c => !ObjectId.isValid(c)))
-    throw new Error('Invalid components found!')
+  let error;
+  if (!req.body?.components || (!Array.isArray(components) || components?.length < 1)) {
+    error = new Error('Components not defined!');
+    error.statusCode = StatusCodes.BAD_REQUEST;
+    throw error
+  }
+  if (components?.some(c => !ObjectId.isValid(c))) {
+    error = new Error('Invalid components found!')
+    error.statusCode = StatusCodes.BAD_REQUEST;
+    throw error
+  }
 }
 
 function getDocumentFromReq(req, reqType) {
