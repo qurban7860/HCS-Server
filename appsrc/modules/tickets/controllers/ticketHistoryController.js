@@ -108,6 +108,6 @@ function getDocFromReq(obj) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   }
-
+  console.log("doc : ", doc);
   return doc;
 }
