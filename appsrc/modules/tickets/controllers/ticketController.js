@@ -428,7 +428,7 @@ exports.patchTicket = async (req, res, next) => {
     const changedFields = {};
 
     fields.forEach((field) => {
-      if (req.body?.[field] && req.body?.[field] !== oldObj?.[field]) {
+      if (req.body?.[field] !== oldObj?.[field]) {
         const newField = sentenceCase(field);
         changedFields[`previous${newField}`] = oldObj?.[field];
         changedFields[`new${newField}`] = req.body?.[field];
