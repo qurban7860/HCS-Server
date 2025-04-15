@@ -1,14 +1,10 @@
 const express = require('express');
-const { check } = require('express-validator');
-const checkAuth = require('../../../middleware/check-auth');
-const checkCustomer = require('../../../middleware/check-customer');
-
-const controllers = require('../controllers');
+const checkAuth = require('../../../../middleware/check-auth');
+const controllers = require('../../controllers');
 const controller = controllers.jobExecutionController;
-
 const router = express.Router();
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth);
 
 const basicRoute = 'jobExecutions';
 
