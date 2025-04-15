@@ -434,7 +434,7 @@ exports.patchTicket = async (req, res, next) => {
         changedFields[`new${newField}`] = req.body?.[field];
       }
     });
-
+    console.log(" changedFields : ", changedFields)
     if (Object.keys(changedFields).length > 0) {
       changedFields.loginUser = req.body?.loginUser
       changedFields.ticket = req.params.id
