@@ -5,7 +5,8 @@ const baseSchema = require('../../../base/baseSchema');
 
 const docSchema = new Schema({
     measurementUnit: { type: String, required: true },
-    profile: { type: String, required: true },
+    profileName: { type: String, required: true },
+    profileDescription: { type: String, required: true },
     frameset: { type: String, required: true },
     version: { type: String, required: true },
     components: [{ type: Schema.Types.ObjectId, ref: 'JobComponent', required: true }]
@@ -15,8 +16,7 @@ const docSchema = new Schema({
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
-docSchema.add(baseSchema.docAuditSchema);
-
+docSchema.add(baseSchema.docAuditSchemaForPublic);
 docSchema.plugin(uniqueValidator);
 
 module.exports = mongoose.model('ProductJob', docSchema);
