@@ -78,7 +78,7 @@ class EventEmailService {
         const htmlData = await renderEmail(emailSubject, content)
         params.htmlData = htmlData;
         req.body = { ...params };
-
+        req.body.event = eventData?._id
         await this.email.sendEmail(req);
       }
     } catch (error) {

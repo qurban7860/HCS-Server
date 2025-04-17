@@ -1,0 +1,15 @@
+meta {
+  name: patch Execution Status
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/jobs/jobExecutions/67f7ac7b2446314028bd0c33/status/67f78cee3e01d78ab0d0c3eb
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

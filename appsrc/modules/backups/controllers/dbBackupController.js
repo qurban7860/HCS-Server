@@ -72,6 +72,7 @@ const postBackup = async (req, res) => {
     }
     try {
         const result = await dbService.postObject(getDocFromReq(req, 'new'));
+        return result
     } catch (error) {
         logger.error(error);
         throw new Error(error)
@@ -114,7 +115,8 @@ const dbBackup = async () => {
                 backupSize,
                 backupTime: endDateTime
             };
-            await postBackup(req);
+            const DBbackupData = await postBackup(req);
+            req.body.dbBackup = DBbackupData?._id;
             req.body.backupSize = `${backupSize?.toFixed(2) || 0} MB`
             req.body.backupStatus = "completed"
             await emailService.sendDbBackupEmail(req);

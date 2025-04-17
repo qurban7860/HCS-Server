@@ -22,11 +22,17 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
+  { path: 'user', select: 'name email', populate: { path: 'customer', select: 'name' } },
+  { path: 'inviteUser', select: 'name email' },
+  { path: 'ticket', select: 'ticketNo', populate: { path: 'customer', select: 'name' } },
+  { path: 'machine', select: 'serialNo name' },
+  { path: 'event', select: 'jiraTicket' },
+  { path: 'serviceReport', select: 'serviceReportUID', populate: { path: 'customer', select: 'name' } },
+  { path: 'dbBackup', select: 'name' },
   { path: 'createdBy', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
-
 
 
 exports.getEmail = async (req, res, next) => {
@@ -129,6 +135,7 @@ exports.patchEmail = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType) {
   const { status, subject, body, toEmails, fromEmail, toContacts, toUsers, customer,
+    user, inviteUser, ticket, machine, event, serviceReport, dbBackup,
     isActive, isArchived, ccEmails, bccEmails, loginUser } = req.body;
 
   let doc = {};
@@ -161,6 +168,34 @@ function getDocumentFromReq(req, reqType) {
 
   if ("toUsers" in req.body) {
     doc.toUsers = toUsers;
+  }
+
+  if ("user" in req.body) {
+    doc.user = user;
+  }
+
+  if ("inviteUser" in req.body) {
+    doc.inviteUser = inviteUser;
+  }
+
+  if ("ticket" in req.body) {
+    doc.ticket = ticket;
+  }
+
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+  if ("event" in req.body) {
+    doc.event = event;
+  }
+
+  if ("serviceReport" in req.body) {
+    doc.serviceReport = serviceReport;
+  }
+
+  if ("dbBackup" in req.body) {
+    doc.dbBackup = dbBackup;
   }
 
   if ("ccEmails" in req.body) {

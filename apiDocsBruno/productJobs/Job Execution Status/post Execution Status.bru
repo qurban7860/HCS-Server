@@ -1,0 +1,22 @@
+meta {
+  name: post Execution Status
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/jobs/jobExecutionStatuses
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Completed",
+    "isDefault": false
+  }
+}

@@ -1,0 +1,23 @@
+meta {
+  name: post Execution
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/jobs/jobExecutions
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "machine": "64ae5b71dc483f373399482f",
+    "job": "67f79b14de431decf1c57fca",
+    "status": "67f78cd13e01d78ab0d0c3e1"
+  }
+}

@@ -5,7 +5,7 @@ const { renderEmail } = require('../../email/utils');
 const logger = require('../../config/logger');
 const emailService = require('../../email/service/emailService');
 
-class TicketEmailService {
+class BackupEmailService {
     constructor() {
         this.email = new emailService();
     }
@@ -42,7 +42,7 @@ class TicketEmailService {
 
             // Send Email
             params.htmlData = htmlData;
-            req.body = { ...params };
+            req.body = { ...req.body, ...params };
             await this.email.sendEmail(req);
         } catch (error) {
             logger.error(new Error(error));
@@ -53,4 +53,4 @@ class TicketEmailService {
 }
 
 
-module.exports = TicketEmailService;
+module.exports = BackupEmailService;

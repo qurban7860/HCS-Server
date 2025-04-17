@@ -1,0 +1,21 @@
+meta {
+  name: patch Job
+  type: http
+  seq: 3
+}
+
+patch {
+  url: {{baseUrl}}/jobs/67f79abade431decf1c57fb2
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "isArchived": true
+  }
+}

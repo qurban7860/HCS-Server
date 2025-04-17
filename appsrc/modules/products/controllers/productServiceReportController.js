@@ -622,6 +622,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
             htmlData: htmlData,
           };
           req.body = { ...req.body, ...params };
+          req.body.serviceReport = req.params.id;
           await this.email.sendEmail(req);
           await ProductServiceReports.findByIdAndUpdate(
             reportId,

@@ -399,7 +399,6 @@ exports.postTicket = async (req, res, next) => {
     try {
       await ticketFileController.saveTicketFiles(req);
     } catch (error) {
-      console.error(error);
       if (ticketData) {
         await Ticket.deleteOne({ _id: ticketData._id });
       }
@@ -410,7 +409,6 @@ exports.postTicket = async (req, res, next) => {
     return res.status(StatusCodes.ACCEPTED).json(ticketData);;
   } catch (error) {
     await CounterController.reversePaddedCounterSequence('supportTicket');
-    console.error(error);
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send(error?.message);
   }
@@ -429,13 +427,19 @@ exports.patchTicket = async (req, res, next) => {
     const fields = ["reporter", "assignee", "priority", "status"];
     const changedFields = {};
 
-    fields.forEach((field) => {
-      if (req.body?.[field] && req.body?.[field] !== oldObj?.[field]) {
-        const newField = sentenceCase(field);
-        changedFields[`previous${newField}`] = oldObj?.[field];
-        changedFields[`new${newField}`] = req.body?.[field];
+    for (const field of fields) {
+      if (field in req.body) {
+        const newValue = req.body[field];
+        const oldValue = oldObj?.[field];
+        const isChanged = newValue !== oldValue;
+
+        if (isChanged) {
+          const fieldLabel = sentenceCase(field);
+          changedFields[`previous${fieldLabel}`] = oldValue;
+          changedFields[`new${fieldLabel}`] = newValue;
+        }
       }
-    });
+    }
 
     if (Object.keys(changedFields).length > 0) {
       changedFields.loginUser = req.body?.loginUser

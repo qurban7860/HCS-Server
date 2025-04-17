@@ -1,0 +1,15 @@
+meta {
+  name: get Jobs
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/jobs
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

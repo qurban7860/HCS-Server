@@ -18,8 +18,7 @@ let rtnMsg = require('../../config/static/static')
 let productDBService = require('../service/productDBService')
 const dbservice = new productDBService();
 
-const { Product, ProductProfile, ProductCategory, ProductModel, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceReports, ProductServiceReportValue, ProductLicense } = require('../models');
-const { ProductConfiguration } = require('../../apiclient/models');
+const { Product, ProductProfile, ProductCategory, ProductModel, ProductConfiguration, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceReports, ProductServiceReportValue, ProductLicense } = require('../models');
 
 const { ErpLog } = require('../../log/models');
 
@@ -1772,6 +1771,7 @@ exports.sendEmailAlert = async (req, data) => {
 
     try {
       req.body = { ...req.body, ...params };
+      req.body.machine = data?.machineId
       await this.email.sendEmail(req);
     } catch (e) {
       return e.message;

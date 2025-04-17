@@ -220,7 +220,7 @@ exports.getLogsGraph = async (req, res, next) => {
                       {
                         $not: {
                           $regexMatch: {
-                            input: { $ifNull: ["$componentLength", "0"] },
+                            input: { $toString: { $ifNull: ["$componentLength", "0"] } },
                             regex: /^-?\d*\.?\d+$/
                           }
                         }
@@ -230,7 +230,7 @@ exports.getLogsGraph = async (req, res, next) => {
                   "0",
                   {
                     $replaceAll: {
-                      input: { $ifNull: ["$componentLength", "0"] },
+                      input: { $toString: { $ifNull: ["$componentLength", "0"] } },
                       find: ",",
                       replacement: ""
                     }
@@ -259,7 +259,7 @@ exports.getLogsGraph = async (req, res, next) => {
                     {
                       $not: {
                         $regexMatch: {
-                          input: { $ifNull: ["$time", "0"] },
+                          input: { $toString: { $ifNull: ["$time", "0"] } },
                           regex: /^-?\d*\.?\d+$/
                         }
                       }
@@ -289,7 +289,7 @@ exports.getLogsGraph = async (req, res, next) => {
                     {
                       $not: {
                         $regexMatch: {
-                          input: { $ifNull: ["$waste", "0"] },
+                          input: { $toString: { $ifNull: ["$waste", "0"] } },
                           regex: /^-?\d*\.?\d+$/
                         }
                       }
@@ -299,7 +299,7 @@ exports.getLogsGraph = async (req, res, next) => {
                 "0",
                 {
                   $replaceAll: {
-                    input: { $ifNull: ["$waste", "0"] },
+                    input: { $toString: { $ifNull: ["$waste", "0"] } },
                     find: ",",
                     replacement: ""
                   }
@@ -374,14 +374,20 @@ exports.postLog = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid Log Data: Data is missing or empty');
   }
 
+  // Check if logs exceed the threshold limit
+  const MAX_LOGS_THRESHOLD = parseInt(process.env.MAX_LOGS_THRESHOLD || '1000', 10);
+  if (req.body.logs.length > MAX_LOGS_THRESHOLD) {
+    return res.status(StatusCodes.BAD_REQUEST).json({
+      error: `Log count exceeds maximum threshold of ${MAX_LOGS_THRESHOLD}`,
+      count: req.body.logs.length
+    });
+  }
+
   try {
     const { logs, machine, customer, version, loginUser, skip, type } = req.body;
     req.query.type = type;
-    const Model = getModel( req );
+    const Model = getModel(req);
     let { update } = req.body;
-    const logsToInsert = [];
-    const logsToUpdate = [];
-
     const batchId = uuidv4();
 
     if (skip)
@@ -402,48 +408,93 @@ exports.postLog = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send('Invalid measurement unit. Only "in" and "mm" are allowed.');
     }
 
-    await Promise.all(logsToProcess?.map(async (logObj) => {
-        logObj = convertTimestampToDate(logObj);
-        logObj.machine = machine;
-        logObj.customer = customer;
-        logObj.loginUser = loginUser;
-        logObj.type = type;
-        logObj.version = version;
-        logObj.batchId = batchId;
-        const fakeReq = { body: logObj, query: { type } };
-        const query = { machine: logObj.machine, date: fakeReq.body.date };
-        const existingLog = await Model.findOne(query).select('_id').lean();
+    // Prepare arrays for bulk operations
+    const logsToInsert = [];
+    const logsToUpdate = [];
 
-        if (existingLog && skip) {
-          return;
-        }
+    // First pass: find existing logs to determine which need to be inserted vs updated
+    const logQueries = logsToProcess.map(logObj => {
+      logObj = convertTimestampToDate(logObj);
+      return {
+        machine,
+        date: logObj.date
+      };
+    });
 
-        if (existingLog && update) {
-          const updatedLog = getDocumentFromReq(fakeReq, res );
-          logsToUpdate.push({ _id: existingLog._id, update: updatedLog });
-        } else if (!existingLog) {
-          const newLog = getDocumentFromReq(fakeReq, 'new');
-          logsToInsert.push(newLog);
-        }
-    }));
+    // Use bulk find operation to get all existing logs in one query
+    const existingLogs = await Model.find({
+      $or: logQueries
+    }).select('_id machine date').lean();
+
+    // Create a map for quick lookup
+    const existingLogsMap = {};
+    existingLogs.forEach(log => {
+      const key = `${log.machine}-${new Date(log.date).getTime()}`;
+      existingLogsMap[key] = log._id;
+    });
+
+    // Process each log
+    logsToProcess.forEach(logObj => {
+      logObj = convertTimestampToDate(logObj);
+      logObj.machine = machine;
+      logObj.customer = customer;
+      logObj.loginUser = loginUser;
+      logObj.type = type;
+      logObj.version = version;
+      logObj.batchId = batchId;
+      
+      const dateKey = new Date(logObj.date).getTime();
+      const lookupKey = `${machine}-${dateKey}`;
+      const existingLogId = existingLogsMap[lookupKey];
+      
+      const fakeReq = { body: logObj, query: { type } };
+
+      if (existingLogId && skip) {
+        return; // Skip this log
+      }
+
+      if (existingLogId && update) {
+        const updatedLog = getDocumentFromReq(fakeReq, res);
+        logsToUpdate.push({ 
+          updateOne: {
+            filter: { _id: existingLogId },
+            update: { $set: updatedLog }
+          }
+        });
+      } else if (!existingLogId) {
+        const newLog = getDocumentFromReq(fakeReq, 'new');
+        logsToInsert.push({ 
+          insertOne: { 
+            document: newLog 
+          }
+        });
+      }
+    });
+
+    // Perform bulk operations
+    const results = { inserted: 0, updated: 0 };
 
     if (logsToInsert.length > 0) {
-      await Model.create(logsToInsert);
+      const insertResult = await Model.bulkWrite(logsToInsert, { ordered: true });
+      results.inserted = insertResult.insertedCount;
     }
 
     if (logsToUpdate.length > 0) {
-      await Promise.all(logsToUpdate.map((log) =>
-        Model.updateOne({ _id: log._id }, { $set: log.update })
-      ));
+      const updateResult = await Model.bulkWrite(logsToUpdate, { ordered: true });
+      results.updated = updateResult.modifiedCount;
     }
 
-    res.status(StatusCodes.CREATED).json({ message: 'Logs processed successfully' });
+    res.status(StatusCodes.CREATED).json({ 
+      message: 'Logs processed successfully',
+      inserted: results.inserted,
+      updated: results.updated,
+      total: results.inserted + results.updated
+    });
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
-
 exports.patchLog = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {

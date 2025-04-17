@@ -1,15 +1,16 @@
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
+let rtnMsg = require('../config/static/static')
 
 
 class dbService {
-  
+
   constructor() {
   }
 
   async getObjectById(model, fields, id, populate, callback) {
     //console.log('populate :'+populate);
-    if(callback) {
+    if (callback) {
       model.findById(id, fields).populate(populate).exec((err, documents) => {
         if (err) {
           callback(err, {});
@@ -25,7 +26,7 @@ class dbService {
   }
 
   async getObject(model, query, populate, callback) {
-    if(callback) {
+    if (callback) {
       model.findOne(query).populate(populate).exec((err, document) => {
         if (err) {
           callback(err, {});
@@ -67,26 +68,26 @@ class dbService {
       locale: 'en',
       strength: 2
     };
-  
+
     let query_ = model.find(query).collation(collationOptions).select(fields).populate(populate).sort(orderBy);
-  
+
     let countDocuments;
     let pageSize;
     let page;
-    
-    
+
+
     if (req.body.page) {
       page = parseInt(req.body.page) || 0; // Current page number
       pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       countDocuments = await model.find(query).countDocuments();
       query_ = query_.skip((page) * pageSize).limit(pageSize);
-    }  
+    }
 
     try {
       let documents = await query_.exec();
-      if(req.body.page || req.body.page === 0) {
+      if (req.body.page || req.body.page === 0) {
         let listDocuments = {
-          data:documents,
+          data: documents,
           ...(req.body.page && {
             totalPages: Math.ceil(countDocuments / pageSize),
             currentPage: page,
@@ -96,7 +97,7 @@ class dbService {
         }
         documents = listDocuments;
       }
-  
+
       if (callback) {
         callback(null, documents || []);
       } else {
@@ -117,7 +118,7 @@ class dbService {
       locale: 'en',
       strength: 2
     };
-    if(callback) {
+    if (callback) {
       model.aggregate([
         aggregate
       ]).collation(collationOptions).exec((err, documents) => {
@@ -135,10 +136,9 @@ class dbService {
 
   async deleteObject(model, id, res, callback) {
     try {
-      
       let existingRecord = await model.findById(id);
-     
-      if(existingRecord == null) {
+
+      if (existingRecord == null) {
         const error = new Error("Invalid record");
         error.statusCode = StatusCodes.BAD_REQUEST;
         throw error;
@@ -148,32 +148,33 @@ class dbService {
         throw error;
       }
 
-      
-  
       if (callback) {
-      
         model.deleteOne({ _id: id }).then(function (result) {
           callback(null, result);
         }).catch(function (err) {
           callback(err);
         });
       } else {
-   
         return await model.deleteOne({ _id: id });
       }
+
     } catch (error) {
-      if (error.statusCode) {
-        res.status(error.statusCode).send(error.message);
+      if (res) {
+        if (error.statusCode) {
+          res.status(error.statusCode).send(error.message);
+        } else {
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        }
       } else {
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+        throw error;
       }
     }
   }
-  
+
 
 
   async postObject(Object, callback) {
-    if(callback) {
+    if (callback) {
       Object.save((error, data) => {
         if (error) {
           console.error(error);
@@ -184,12 +185,12 @@ class dbService {
       });
     }
     else {
-      return await Object.save(); 
+      return await Object.save();
     }
   }
 
   async patchObject(model, id, Object, callback) {
-    if(callback) {
+    if (callback) {
       model.updateOne({ _id: id }, Object).then(function (doc) {
         callback(null, doc);
       }).catch(function (error) {
@@ -197,8 +198,22 @@ class dbService {
         callback(error);
       });
     }
-    else{
+    else {
       return await model.updateOne({ _id: id }, Object);
+    }
+  }
+
+  async patchObjectAndGet(model, id, Object, populate, callback) {
+    if (callback) {
+      model.findOneAndUpdate({ _id: id }, { $set: Object }, { new: true }).populate(populate).exec((err, documents) => {
+        if (err) {
+          callback(err, {});
+        } else {
+          callback(null, documents != null ? documents : {});
+        }
+      });
+    } else {
+      return await model.findOneAndUpdate({ _id: id }, { $set: Object }, { new: true }).populate(populate);
     }
   }
 }
