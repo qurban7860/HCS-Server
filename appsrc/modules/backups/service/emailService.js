@@ -42,7 +42,7 @@ class BackupEmailService {
 
             // Send Email
             params.htmlData = htmlData;
-            req.body = { ...params };
+            req.body = { ...req.body, ...params };
             await this.email.sendEmail(req);
         } catch (error) {
             logger.error(new Error(error));

@@ -72,6 +72,7 @@ const postBackup = async (req, res) => {
     }
     try {
         const result = await dbService.postObject(getDocFromReq(req, 'new'));
+        return result
     } catch (error) {
         logger.error(error);
         throw new Error(error)
