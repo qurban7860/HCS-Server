@@ -116,9 +116,13 @@ const validateComponents = (req) => {
 
 function getDocumentFromReq(req, reqType) {
 
-  const { measurementUnit, profile, frameset, version, components, isActive, isArchived, loginUser } = req.body;
+  const { measurementUnit, profileName, profileDescription, frameset, version, components, isActive, isArchived, loginUser } = req.body;
+  const { clientInfo } = req;
+
+  console.log(' clientInfo : ', clientInfo);
 
   let doc = {};
+
   if (reqType && reqType == "new") {
     doc = new Job({});
   }
@@ -127,8 +131,12 @@ function getDocumentFromReq(req, reqType) {
     doc.measurementUnit = measurementUnit;
   }
 
-  if ("profile" in req.body) {
-    doc.profile = profile;
+  if ("profileName" in req.body) {
+    doc.profileName = profileName;
+  }
+
+  if ("profileDescription" in req.body) {
+    doc.profileDescription = profileDescription;
   }
 
   if ("frameset" in req.body) {
@@ -151,16 +159,24 @@ function getDocumentFromReq(req, reqType) {
     doc.isArchived = isArchived;
   }
 
-  if (reqType == "new" && "loginUser" in req.body) {
+  if (reqType == "new" && "clientInfo" in req) {
+    doc.createdByIdentifier = clientInfo.identifier;
+    doc.updatedByIdentifier = clientInfo.identifier;
+    doc.createdIP = clientInfo.ip;
+    doc.updatedIP = clientInfo.ip;
+  } else if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
     doc.updatedIP = loginUser.userIP;
+  } else if ("clientInfo" in req) {
+    doc.updatedByIdentifier = clientInfo.identifier;
+    doc.updatedIP = clientInfo.ip;
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   }
-
+  console.log(' Job Doc : ', doc)
   return doc;
 }
 

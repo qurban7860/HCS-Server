@@ -22,7 +22,7 @@ const docSchema = new Schema({
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
-docSchema.add(baseSchema.docAuditSchema);
+docSchema.add(baseSchema.docAuditSchemaForPublic);
 
 docSchema.plugin(uniqueValidator);
 

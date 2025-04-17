@@ -6,12 +6,14 @@ const jobExecutionStatusRoute = require('./protected/jobExecutionStatusRoute');
 const jobRoute = require('./protected/jobRoute');
 
 const publicComponentRoute = require('./public/componentRoute');
+const publicJobExecutionRoute = require('./public/jobExecutionRoute');
 const publicJobRoute = require('./public/jobRoute');
 // Public Routes (no auth required)
 
 exports.registerPublicJobRoutes = (app, apiPath) => {
     const rootPathForModule = `${apiPath}/public/jobs`
     app.use(`${rootPathForModule}`, publicComponentRoute);
+    app.use(`${rootPathForModule}`, publicJobExecutionRoute);
     app.use(`${rootPathForModule}`, publicJobRoute);
 }
 

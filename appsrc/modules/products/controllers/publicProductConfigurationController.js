@@ -132,7 +132,7 @@ function replaceDotsWithSlashes(obj) {
 
 function getDocFromReq(req) {
 
-  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, clientInfo } = req.body;
+  const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, loginUser, clientInfo } = req.body;
 
   let doc = new ProductConfiguration({});
 
@@ -178,13 +178,22 @@ function getDocFromReq(req) {
     doc.isArchived = req.body.isArchived === true || req.body.isArchived === 'true' ? true : false;
   }
 
-  if ("clientInfo" in req.body) {
+  if (reqType == "new" && "clientInfo" in req) {
     doc.createdByIdentifier = clientInfo.identifier;
+    doc.updatedByIdentifier = clientInfo.identifier;
     doc.createdIP = clientInfo.ip;
-    doc.createdAt = new Date();
+    doc.updatedIP = clientInfo.ip;
+  } else if (reqType == "new" && "loginUser" in req.body) {
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("clientInfo" in req) {
     doc.updatedByIdentifier = clientInfo.identifier;
     doc.updatedIP = clientInfo.ip;
-    doc.updatedAt = new Date();
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
   }
   return doc;
 }
