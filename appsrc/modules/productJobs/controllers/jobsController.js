@@ -176,7 +176,6 @@ function getDocumentFromReq(req, reqType) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   }
-  console.log(' Job Doc : ', doc)
   return doc;
 }
 
