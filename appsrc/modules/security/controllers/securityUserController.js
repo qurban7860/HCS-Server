@@ -308,10 +308,10 @@ exports.patchSecurityUser = async (req, res, next) => {
               isArchived: false,
               _id: { $ne: req.params.id },
               $or: [
-                { email: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } },
-                { email: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } },
-                { login: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } },
-                { login: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } }
+                { email: { $regex: { $toString: req.body.email?.toLowerCase()?.trim() }, $options: 'i' } },
+                { email: { $regex: { $toString: req.body.login?.toLowerCase()?.trim() }, $options: 'i' } },
+                { login: { $regex: { $toString: req.body.email?.toLowerCase()?.trim() }, $options: 'i' } },
+                { login: { $regex: { $toString: req.body.login?.toLowerCase()?.trim() }, $options: 'i' } }
               ]
             };
 
