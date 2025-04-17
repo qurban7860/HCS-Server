@@ -1,6 +1,7 @@
 const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
 const validateCustomerInQuery = require('../../../../middleware/validateCustomerInQuery');
+const validateCustomerInRequest = require('../../../../middleware/validateCustomerInRequest');
 const controllers = require('../../../security/controllers');
 const controller = controllers.securityUserController;
 const checkIDs = require('../../../../middleware/validateParamIDs');
@@ -18,8 +19,8 @@ router.get(`${baseRoute}/`, validateCustomerInQuery, controller.getSecurityUsers
 router.get(`${baseRoute}/:id`, checkIDs(validate.id), validateCustomerInQuery, controller.getSecurityUser);
 
 // - /api/1.0.0/cp/security/users/:id
-router.patch(`${baseRoute}/:id`, checkIDs(validate.id), controller.patchSecurityUser);
+router.patch(`${baseRoute}/:id`, validateCustomerInRequest, checkIDs(validate.id), controller.patchSecurityUser);
 // - /api/1.0.0/cp/security/users/updatePassword/:id
-router.patch(`${baseRoute}/updatePassword/:id`, checkIDs(validate.id), controller.patchSecurityUser);
+router.patch(`${baseRoute}/updatePassword/:id`, validateCustomerInRequest, checkIDs(validate.id), controller.patchSecurityUser);
 
 module.exports = router; 
