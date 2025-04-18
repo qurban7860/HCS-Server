@@ -4,8 +4,9 @@ const uniqueValidator = require('mongoose-unique-validator');
 const baseSchema = require('../../../base/baseSchema');
 
 const docSchema = new Schema({
+    job: { type: Schema.Types.ObjectId, ref: 'ProductJob', required: true },
     label: { type: String, required: true },
-    labelDirectory: { type: String, required: true },
+    labelDirection: { type: String, required: true },
     quantity: { type: Number, required: true },
     length: { type: Number, required: true },
     profileShape: { type: String },
@@ -13,15 +14,15 @@ const docSchema = new Schema({
     flangeHeight: { type: Number },
     materialThickness: { type: Number },
     materialGrade: { type: String },
-    dimensions: {
+    positions: {
         startX: { type: Number },
         startY: { type: Number },
-        EndX: { type: Number },
-        EndY: { type: Number }
+        endX: { type: Number },
+        endY: { type: Number }
     },
     operations: [{
         offset: { type: Number, required: true },
-        tool: { type: Schema.Types.ObjectId, ref: 'MachineTool', required: true },
+        operationType: { type: Schema.Types.ObjectId, ref: 'MachineTool', required: true },
     }]
 }, {
     collection: 'JobComponents'

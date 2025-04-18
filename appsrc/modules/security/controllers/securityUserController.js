@@ -276,8 +276,7 @@ exports.patchSecurityUser = async (req, res, next) => {
           if (!(_.isEmpty(user))) {
             if (req.body.loginUser?.userId == user._id || !hasSuperAdminRole) {
               return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, "User is not authorized to access this feature!", true));
-            }
-            else {
+            } else {
               if (user?.isArchived && !req.body?.isArchived) {
                 const userAvailability = await SecurityUser.findOne({ login: user.login, isArchived: false }).lean();
                 if (userAvailability) {
@@ -307,14 +306,16 @@ exports.patchSecurityUser = async (req, res, next) => {
             let queryString = {
               isArchived: false,
               _id: { $ne: req.params.id },
-              $or: [
-                { email: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } },
-                { email: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } },
-                { login: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } },
-                { login: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } }
-              ]
+              $or: []
             };
-
+            if (req.body.email) {
+              queryString.$or.push({ email: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } })
+              queryString.$or.push({ login: { $regex: req.body.email?.toLowerCase()?.trim(), $options: 'i' } })
+            }
+            if (req.body.login) {
+              queryString.$or.push({ email: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } })
+              queryString.$or.push({ login: { $regex: req.body.login?.toLowerCase()?.trim(), $options: 'i' } })
+            }
 
             this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
             async function getObjectCallback(error, response) {

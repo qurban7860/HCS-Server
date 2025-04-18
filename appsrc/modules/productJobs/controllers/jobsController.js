@@ -5,36 +5,28 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 let JobgDBService = require('../service/jobDBService')
 this.dbservice = new JobgDBService();
-const { Job } = require('../models');
+const { Job, Component } = require('../models');
+const { ProductTool } = require('../../products/models');
+const { getDocumentFromReq: createComponent, componentPopulate } = require('../controllers/componentController');
+const { getDocumentFromReq: createTool } = require('../../products/controllers/productToolController');
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  {
-    path: 'components',
-    select: 'label labelDirectory quantity length profileShape webWidth flangeHeight materialThickness materialGrade dimensions operations',
-    populate: {
-      path: 'operations',
-      select: 'offset tool',
-      populate: {
-        path: 'tool',
-        select: 'name',
-      }
-    }
-  },
+  { path: 'machine', select: 'serialNo name customer', populate: { path: 'customer', select: 'name' } },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
-
-
 
 exports.getJob = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
-    const response = await this.dbservice.getObject(Job, this.query, this.populate);
-    res.json(response);
+    let job = await this.dbservice.getObject(Job, this.query, this.populate);
+    const jobComponents = await this.dbservice.getObjectList(req, Component, this.fields, { job: req.params.id }, this.orderBy, componentPopulate);
+    job = { ...job, components: jobComponents };
+    return res.json(job);
   } catch (error) {
     logger.error(new Error(error));
     return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
@@ -58,11 +50,35 @@ exports.postJob = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
-      validateComponents(req)
+      const components = req.body.components
       this.query = req.query != "undefined" ? req.query : {};
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       this.query._id = response._id;
-      const job = await this.dbservice.getObject(Job, this.query, this.populate);
+
+      // Process each component
+      const results = await Promise.all(
+        components.map(async (component) => {
+          const operations = await Promise.all(
+            (component.operations || []).map(async (operation) => {
+              let tool = await findTool(operation.operationType);
+              if (!tool) {
+                const created = await this.dbservice.postObject(createTool({ body: { name: operation.operationType } }, 'new'));
+                tool = created?._id
+              }
+              operation.operationType = tool._id || tool;
+              return operation;
+            })
+          );
+          component.operations = operations;
+          component.job = response._id;
+          return await this.dbservice.postObject(createComponent({ body: { ...component } }, 'new'));
+        })
+      );
+
+      let job = await this.dbservice.getObject(Job, this.query, this.populate);
+      const jobComponents = await this.dbservice.getObjectList(req, Component, this.fields, { job: response?._id }, this.orderBy, componentPopulate);
+      job = { ...job, components: jobComponents };
+
       return res.status(StatusCodes.CREATED).json(job);
     } catch (error) {
       logger.error(new Error(error));
@@ -77,7 +93,6 @@ exports.patchJob = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
-      validateComponents(req);
       const job = await this.dbservice.patchObject(Job, req.params.id, getDocumentFromReq(req));
       return res.status(StatusCodes.ACCEPTED).json(job);
     } catch (error) {
@@ -99,27 +114,14 @@ exports.deleteJob = async (req, res, next) => {
   }
 };
 
-const validateComponents = (req) => {
-  const components = req.body?.components || undefined;
-  let error;
-  if (!req.body?.components || (!Array.isArray(components) || components?.length < 1)) {
-    error = new Error('Components not defined!');
-    error.statusCode = StatusCodes.BAD_REQUEST;
-    throw error
-  }
-  if (components?.some(c => !ObjectId.isValid(c))) {
-    error = new Error('Invalid components found!')
-    error.statusCode = StatusCodes.BAD_REQUEST;
-    throw error
-  }
+const findTool = async (toolName) => {
+  return await ProductTool.findOne({ name: { $regex: `^${toolName}$`, $options: 'i' } })
 }
 
 function getDocumentFromReq(req, reqType) {
 
-  const { measurementUnit, profileName, profileDescription, frameset, version, components, isActive, isArchived, loginUser } = req.body;
+  const { machine, unitOfLength, profileName, profileDescription, frameset, csvVersion, isActive, isArchived, loginUser } = req.body;
   const { clientInfo } = req;
-
-  console.log(' clientInfo : ', clientInfo);
 
   let doc = {};
 
@@ -127,8 +129,12 @@ function getDocumentFromReq(req, reqType) {
     doc = new Job({});
   }
 
-  if ("measurementUnit" in req.body) {
-    doc.measurementUnit = measurementUnit;
+  if ("machine" in req.body) {
+    doc.machine = machine;
+  }
+
+  if ("unitOfLength" in req.body) {
+    doc.unitOfLength = unitOfLength;
   }
 
   if ("profileName" in req.body) {
@@ -143,12 +149,8 @@ function getDocumentFromReq(req, reqType) {
     doc.frameset = frameset;
   }
 
-  if ("version" in req.body) {
-    doc.version = version;
-  }
-
-  if ("components" in req.body) {
-    doc.components = components;
+  if ("csvVersion" in req.body) {
+    doc.csvVersion = csvVersion;
   }
 
   if ("isActive" in req.body) {

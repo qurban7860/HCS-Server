@@ -4,15 +4,26 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 let JobgDBService = require('../service/jobDBService')
 this.dbservice = new JobgDBService();
-const { JobExecution, JobExecutionStatus } = require('../models');
+const { JobComponentExecution, JobComponentExecutionStatus } = require('../models');
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 
 this.populate = [
-  { path: 'machine', select: 'serialNo name customer', populate: { path: 'customer', select: 'name' } },
   { path: 'job', select: 'unitOfLength profileName profileDescription frameset version' },
+  {
+    path: 'jobComponent',
+    select: 'label labelDirection quantity length profileShape webWidth flangeHeight materialThickness materialGrade positions operations',
+    populate: {
+      path: 'operations',
+      select: 'offset operationType',
+      populate: {
+        path: 'operationType',
+        select: 'name',
+      }
+    }
+  },
   {
     path: 'statusTimeline', select: 'updatedAt updatedIP updatedBy status',
     populate: {
@@ -30,11 +41,11 @@ this.populate = [
 
 
 
-exports.getJobExecution = async (req, res, next) => {
+exports.getJobComponentExecution = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
-    const response = await this.dbservice.getObject(JobExecution, this.query, this.populate);
+    const response = await this.dbservice.getObject(JobComponentExecution, this.query, this.populate);
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -42,10 +53,10 @@ exports.getJobExecution = async (req, res, next) => {
   }
 };
 
-exports.getJobExecutions = async (req, res, next) => {
+exports.getJobComponentExecutions = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    let response = await this.dbservice.getObjectList(req, JobExecution, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, JobComponentExecution, this.fields, this.query, this.orderBy, this.populate);
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -53,7 +64,7 @@ exports.getJobExecutions = async (req, res, next) => {
   }
 };
 
-exports.postJobExecution = async (req, res, next) => {
+exports.postJobComponentExecution = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -65,7 +76,7 @@ exports.postJobExecution = async (req, res, next) => {
         this.query.isDefault = true;
         this.query.isActive = true;
         this.query.isArchived = false;
-        const defaultStatus = await this.dbservice.getObject(JobExecutionStatus, this.query, this.populate)
+        const defaultStatus = await this.dbservice.getObject(JobComponentExecutionStatus, this.query, this.populate)
         if (defaultStatus?._id) {
           req.body.status = defaultStatus._id
         }
@@ -73,8 +84,8 @@ exports.postJobExecution = async (req, res, next) => {
 
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       this.query._id = response._id;
-      const jobExecution = await this.dbservice.getObject(JobExecution, this.query, this.populate);
-      return res.status(StatusCodes.CREATED).json(jobExecution);
+      const jobComponentExecution = await this.dbservice.getObject(JobComponentExecution, this.query, this.populate);
+      return res.status(StatusCodes.CREATED).json(jobComponentExecution);
     } catch (error) {
       logger.error(new Error(error));
       return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR)
@@ -83,7 +94,7 @@ exports.postJobExecution = async (req, res, next) => {
   }
 };
 
-exports.patchJobExecution = async (req, res, next) => {
+exports.patchJobComponentExecution = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
@@ -91,8 +102,8 @@ exports.patchJobExecution = async (req, res, next) => {
     try {
       if (req.body?.status)
         delete req.body.status
-      const jobExecution = await this.dbservice.patchObjectAndGet(JobExecution, req.params.id, getDocumentFromReq(req), this.populate);
-      return res.status(StatusCodes.ACCEPTED).json(jobExecution);
+      const jobComponentExecution = await this.dbservice.patchObjectAndGet(JobComponentExecution, req.params.id, getDocumentFromReq(req), this.populate);
+      return res.status(StatusCodes.ACCEPTED).json(jobComponentExecution);
     } catch (error) {
       logger.error(new Error(error));
       return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
@@ -100,18 +111,18 @@ exports.patchJobExecution = async (req, res, next) => {
   }
 };
 
-exports.patchJobExecutionStatus = async (req, res, next) => {
+exports.patchJobComponentExecutionStatus = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
   } else {
     try {
-      this.query._id = req.params.jobExecution;
+      this.query._id = req.params.jobComponentExecution;
       const status = req.params.id;
-      const jobExecution = await this.dbservice.getObject(JobExecution, this.query, this.populate);
+      const jobComponentExecution = await this.dbservice.getObject(JobComponentExecution, this.query, this.populate);
 
-      const timeline = jobExecution?.statusTimeline;
+      const timeline = jobComponentExecution?.statusTimeline;
       if (Array.isArray(timeline) && timeline?.length > 0) {
         const latestStatus = timeline[0]?.status;
         if (status === latestStatus?._id) {
@@ -119,11 +130,11 @@ exports.patchJobExecutionStatus = async (req, res, next) => {
         }
       }
 
-      const whereClause = { _id: req.params.jobExecution, isActive: true, isArchived: false };
+      const whereClause = { _id: req.params.jobComponentExecution, isActive: true, isArchived: false };
       const statusTimeline = { status, updatedBy: req.body.loginUser.userId, updatedIP: req.body.loginUser.userIP };
       const updateClause = { $push: { statusTimeline: { $each: [statusTimeline], $position: 0 } } };
 
-      const updatedProcess = await JobExecution.updateOne(whereClause, updateClause);
+      const updatedProcess = await JobComponentExecution.updateOne(whereClause, updateClause);
       if (updatedProcess) {
         return res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordCustomMessageJSON(StatusCodes.ACCEPTED, 'Status updated successfully!', false));
       } else {
@@ -136,9 +147,9 @@ exports.patchJobExecutionStatus = async (req, res, next) => {
   }
 };
 
-exports.deleteJobExecution = async (req, res, next) => {
+exports.deleteJobComponentExecution = async (req, res, next) => {
   try {
-    await this.dbservice.deleteObject(JobExecution, req.params.id);
+    await this.dbservice.deleteObject(JobComponentExecution, req.params.id);
     return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, "Job Execution deleted successfully!", false));
   } catch (error) {
     logger.error(new Error(error));
@@ -148,19 +159,19 @@ exports.deleteJobExecution = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType) {
 
-  const { machine, job, startTime, endTime, status, isActive, isArchived, loginUser } = req.body;
+  const { job, jobComponent, startTime, endTime, status, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new JobExecution({});
-  }
-
-  if ("machine" in req.body) {
-    doc.machine = machine;
+    doc = new JobComponentExecution({});
   }
 
   if ("job" in req.body) {
     doc.job = job;
+  }
+
+  if ("jobComponent" in req.body) {
+    doc.jobComponent = jobComponent;
   }
 
   if ("startTime" in req.body) {
