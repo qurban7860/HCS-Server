@@ -4,7 +4,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 let JobgDBService = require('../service/jobDBService')
 this.dbservice = new JobgDBService();
-const { JobExecutionStatus, JobExecution } = require('../models');
+const { JobComponentExecutionStatus, JobComponentExecution } = require('../models');
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 this.fields = {};
 this.query = {};
@@ -14,11 +14,13 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-exports.getJobExecutionStatus = async (req, res, next) => {
+
+
+exports.getJobComponentExecutionStatus = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id;
-    const response = await this.dbservice.getObject(JobExecutionStatus, this.query, this.populate);
+    const response = await this.dbservice.getObject(JobComponentExecutionStatus, this.query, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -26,10 +28,10 @@ exports.getJobExecutionStatus = async (req, res, next) => {
   }
 };
 
-exports.getJobExecutionStatuses = async (req, res, next) => {
+exports.getJobComponentExecutionStatuses = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    let response = await this.dbservice.getObjectList(req, JobExecutionStatus, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, JobComponentExecutionStatus, this.fields, this.query, this.orderBy, this.populate);
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -37,7 +39,7 @@ exports.getJobExecutionStatuses = async (req, res, next) => {
   }
 };
 
-exports.postJobExecutionStatus = async (req, res, next) => {
+exports.postJobComponentExecutionStatus = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
@@ -45,8 +47,8 @@ exports.postJobExecutionStatus = async (req, res, next) => {
     try {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       this.query._id = response._id;
-      const jobExecutionStatus = await this.dbservice.getObject(JobExecutionStatus, this.query, this.populate);
-      return res.status(StatusCodes.CREATED).json(jobExecutionStatus);
+      const jobComponentExecutionStatus = await this.dbservice.getObject(JobComponentExecutionStatus, this.query, this.populate);
+      return res.status(StatusCodes.CREATED).json(jobComponentExecutionStatus);
     } catch (error) {
       logger.error(new Error(error));
       return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
@@ -54,7 +56,7 @@ exports.postJobExecutionStatus = async (req, res, next) => {
   }
 };
 
-exports.patchJobExecutionStatus = async (req, res, next) => {
+exports.patchJobComponentExecutionStatus = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, getReasonPhrase(StatusCodes.BAD_REQUEST), true));
@@ -72,20 +74,20 @@ exports.patchJobExecutionStatus = async (req, res, next) => {
           }
         };
 
-        const response = await this.dbservice.getObject(JobExecution, query);
+        const response = await this.dbservice.getObject(JobComponentExecution, query);
 
         if (response?._id) {
           return res.status(StatusCodes.BAD_REQUEST).send(
             rtnMsg.recordCustomMessageJSON(
               StatusCodes.BAD_REQUEST,
-              'Status is used in job executions!',
+              'Status is used in job component executions!',
               true
             )
           );
         }
       }
-      const jobExecutionStatus = await this.dbservice.patchObjectAndGet(JobExecutionStatus, req.params.id, getDocumentFromReq(req), this.populate);
-      return res.status(StatusCodes.ACCEPTED).json(jobExecutionStatus);
+      const jobComponentExecutionStatus = await this.dbservice.patchObjectAndGet(JobComponentExecutionStatus, req.params.id, getDocumentFromReq(req), this.populate);
+      return res.status(StatusCodes.ACCEPTED).json(jobComponentExecutionStatus);
     } catch (error) {
       logger.error(new Error(error));
       return res.status(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR).send(rtnMsg.recordCustomMessageJSON(error?.statusCode || StatusCodes.INTERNAL_SERVER_ERROR, error.message, true));
@@ -93,9 +95,9 @@ exports.patchJobExecutionStatus = async (req, res, next) => {
   }
 };
 
-exports.deleteJobExecutionStatus = async (req, res, next) => {
+exports.deleteJobComponentExecutionStatus = async (req, res, next) => {
   try {
-    await this.dbservice.deleteObject(JobExecutionStatus, req.params.id);
+    await this.dbservice.deleteObject(JobComponentExecutionStatus, req.params.id);
     return res.status(StatusCodes.OK).send(rtnMsg.recordCustomMessageJSON(StatusCodes.OK, 'Job execution status deleted successfully!', false));
   } catch (error) {
     logger.error(new Error(error));
@@ -109,7 +111,7 @@ function getDocumentFromReq(req, reqType) {
 
   let doc = {};
   if (reqType && reqType == "new") {
-    doc = new JobExecutionStatus({});
+    doc = new JobComponentExecutionStatus({});
   }
 
   if ("name" in req.body) {

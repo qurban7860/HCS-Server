@@ -4,12 +4,12 @@ const uniqueValidator = require('mongoose-unique-validator');
 const baseSchema = require('../../../base/baseSchema');
 
 const docSchema = new Schema({
-    measurementUnit: { type: String, required: true },
+    machine: { type: Schema.Types.ObjectId, ref: 'Machine', required: true },
+    unitOfLength: { type: String, required: true },
     profileName: { type: String, required: true },
     profileDescription: { type: String, required: true },
     frameset: { type: String, required: true },
-    version: { type: String, required: true },
-    components: [{ type: Schema.Types.ObjectId, ref: 'JobComponent', required: true }]
+    csvVersion: { type: String, required: true },
 }, {
     collection: 'ProductJobs'
 });

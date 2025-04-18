@@ -13,15 +13,17 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   {
     path: 'operations',
-    select: 'offset tool',
+    select: 'offset operationType',
     populate: {
-      path: 'tool',
+      path: 'operationType',
       select: 'name'
     }
   },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
+
+exports.componentPopulate = this.populate;
 
 exports.getComponent = async (req, res, next) => {
   try {
@@ -105,8 +107,8 @@ const validateOperations = (req) => {
     throw error
   }
 
-  if (operations?.some(o => !ObjectId.isValid(o?.tool))) {
-    error = new Error('Invalid operation tool found!')
+  if (operations?.some(o => !ObjectId.isValid(o?.operationType))) {
+    error = new Error('Invalid operation found!')
     error.statusCode = StatusCodes.BAD_REQUEST;
     throw error
   }
@@ -114,19 +116,23 @@ const validateOperations = (req) => {
 
 function getDocumentFromReq(req, reqType) {
 
-  const { label, labelDirectory, quantity, length, profileShape, webWidth, flangeHeight, materialThickness, materialGrade, dimensions, operations, isActive, isArchived, loginUser } = req.body;
+  const { job, label, labelDirection, quantity, length, profileShape, webWidth, flangeHeight, materialThickness, materialGrade, positions, operations, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
     doc = new Component({});
   }
 
+  if ("job" in req.body) {
+    doc.job = job;
+  }
+
   if ("label" in req.body) {
     doc.label = label;
   }
 
-  if ("labelDirectory" in req.body) {
-    doc.labelDirectory = labelDirectory;
+  if ("labelDirection" in req.body) {
+    doc.labelDirection = labelDirection;
   }
 
   if ("quantity" in req.body) {
@@ -156,8 +162,8 @@ function getDocumentFromReq(req, reqType) {
     doc.materialGrade = materialGrade;
   }
 
-  if ("dimensions" in req.body) {
-    doc.dimensions = dimensions;
+  if ("positions" in req.body) {
+    doc.positions = positions;
   }
 
   if ("operations" in req.body) {

@@ -1,6 +1,8 @@
 module.exports = {
-    jobsController: require('./jobsController'),
     componentController: require('./componentController'),
+    jobComponentExecutionController: require('./jobComponentExecutionController'),
+    jobComponentExecutionStatusController: require('./jobComponentExecutionStatusController'),
     jobExecutionController: require('./jobExecutionController'),
-    jobExecutionStatusController: require('./jobExecutionStatusController')
+    jobExecutionStatusController: require('./jobExecutionStatusController'),
+    jobsController: require('./jobsController'),
 }
