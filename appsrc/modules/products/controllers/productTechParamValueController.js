@@ -84,7 +84,7 @@ exports.getSoftwareVersion = async (req, res, next) => {
     }).populate({ path: "techParam", select: "code" }).lean();
 
     if (!records.length) {
-      return res.status(StatusCodes.NOT_FOUND).send("No records found!");
+      return res.status(StatusCodes.ACCEPTED).json({});
     }
 
     // Extract software version data
