@@ -316,7 +316,8 @@ exports.getProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   const listPopulate = [
-    { path: 'machineModel', select: '_id name category' },
+    { path: 'parentMachine', select: '_id serialNo name ' },
+    { path: 'machineModel', select: '_id name category', populate: { path: 'category', select: '_id name' } },
     { path: 'status', select: '_id name slug' },
     { path: 'customer', select: '_id clientCode name' },
     {
