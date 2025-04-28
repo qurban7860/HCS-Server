@@ -1,0 +1,26 @@
+meta {
+  name: post Ticket Fault
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/tickets/settings/faults/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "icon": "mdi:issue",
+    "name": "Issue",
+    "slug": "slug",
+    "description": "description!",
+    "displayOrderNo": "1",
+    "isDefault": true
+  }
+}
