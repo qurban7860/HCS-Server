@@ -2,6 +2,7 @@
 module.exports = {
     TicketChangeReason: require('./changeReason'),
     TicketChangeType: require('./changeType'),
+    TicketFault: require('./fault'),
     TicketImpact: require('./impact'),
     TicketInvestigationReason: require('./investigationReason'),
     TicketIssueType: require('./issueType'),

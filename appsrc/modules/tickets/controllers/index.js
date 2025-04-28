@@ -1,6 +1,8 @@
 module.exports = {
     changeReasonController: require('./changeReasonController'),
     changeTypeController: require('./changeTypeController'),
+    changeTypeController: require('./changeTypeController'),
+    faultController: require('./faultController'),
     impactController: require('./impactController'),
     investigationReasonController: require('./investigationReasonController'),
     issueTypeController: require('./issueTypeController'),

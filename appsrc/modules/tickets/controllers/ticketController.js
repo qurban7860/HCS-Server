@@ -25,6 +25,7 @@ const CounterController = require('../../counter/controllers/counterController')
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
 const { requestTypePopulate } = require('./requestTypeController');
+const { getDefaultTicketFaults } = require('./faultController');
 const TicketEmailService = require('../service/ticketEmailService');
 this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -40,6 +41,7 @@ this.populate = [
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
+  { path: 'faults', select: 'name icon color' },
   { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
@@ -379,6 +381,12 @@ exports.postTicket = async (req, res, next) => {
       req.body.reporter = userData?.contact;
     }
 
+
+    if (!req.body.faults || Array.isArray(req.body.faults) && !req.body.faults?.length < 1) {
+      req.body.faults = await getDefaultTicketFaults(req);
+      console.log(" faults : ", req.body.faults);
+    }
+
     if (!req.body.issueType || req.body.issueType == 'null') {
       const issueTypeData = await this.dbservice.getObject(TicketIssueType, queryObject);
       req.body.issueType = issueTypeData?._id;
@@ -472,7 +480,7 @@ function getDocFromReq(req, reqType) {
 
   const allowedFields = [
     "customer", "machine", "issueType", "requestType", "description", "hlc", "plc", "summary", "changeType",
-    "reporter", "assignee", "approvers", "impact", "priority", "status", "changeReason", "implementationPlan",
+    "reporter", "assignee", "approvers", "impact", "faults", "priority", "status", "changeReason", "implementationPlan",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
     "rootCause", "workaround", "plannedStartDate", "startTime", "plannedEndDate", "endTime", "isActive", "isArchived"
   ];

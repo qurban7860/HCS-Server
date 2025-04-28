@@ -1,5 +1,6 @@
 const changeReasonRoute = require('./changeReasonRoute');
 const changeTypeRoute = require('./changeTypeRoute');
+const faultRoute = require('./faultRoute');
 const impactRoute = require('./impactRoute');
 const investigationReasonRoute = require('./investigationReasonRoute');
 const issueTypeRoute = require('./issueTypeRoute');
@@ -17,6 +18,7 @@ exports.registerTicketRoutes = (app, apiPath) => {
     const rootPath = `${apiPath}/tickets`
     app.use(`${rootPath}`, changeReasonRoute);
     app.use(`${rootPath}`, changeTypeRoute);
+    app.use(`${rootPath}`, faultRoute);
     app.use(`${rootPath}`, impactRoute);
     app.use(`${rootPath}`, investigationReasonRoute);
     app.use(`${rootPath}`, issueTypeRoute);
