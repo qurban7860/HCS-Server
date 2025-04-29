@@ -27,7 +27,7 @@ const docSchema = new Schema({
 
         issueType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketIssueType' },
 
-        faults: [{ type: Schema.Types.ObjectId, required: true, ref: 'TicketFault' }],
+        faults: [{ type: Schema.Types.ObjectId, ref: 'TicketFault' }],
 
         requestType: { type: Schema.Types.ObjectId, required: true, ref: 'TicketRequestType' },
 
