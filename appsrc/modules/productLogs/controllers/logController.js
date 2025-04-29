@@ -220,7 +220,7 @@ exports.getLogsGraph = async (req, res, next) => {
                       {
                         $not: {
                           $regexMatch: {
-                            input: { $ifNull: ["$componentLength", "0"] },
+                            input: { $toString: { $ifNull: ["$componentLength", "0"] } },
                             regex: /^-?\d*\.?\d+$/
                           }
                         }
@@ -230,7 +230,7 @@ exports.getLogsGraph = async (req, res, next) => {
                   "0",
                   {
                     $replaceAll: {
-                      input: { $ifNull: ["$componentLength", "0"] },
+                      input: { $toString: { $ifNull: ["$componentLength", "0"] } },
                       find: ",",
                       replacement: ""
                     }
@@ -259,7 +259,7 @@ exports.getLogsGraph = async (req, res, next) => {
                     {
                       $not: {
                         $regexMatch: {
-                          input: { $ifNull: ["$time", "0"] },
+                          input: { $toString: { $ifNull: ["$time", "0"] } },
                           regex: /^-?\d*\.?\d+$/
                         }
                       }
@@ -289,7 +289,7 @@ exports.getLogsGraph = async (req, res, next) => {
                     {
                       $not: {
                         $regexMatch: {
-                          input: { $ifNull: ["$waste", "0"] },
+                          input: { $toString: { $ifNull: ["$waste", "0"] } },
                           regex: /^-?\d*\.?\d+$/
                         }
                       }
@@ -299,7 +299,7 @@ exports.getLogsGraph = async (req, res, next) => {
                 "0",
                 {
                   $replaceAll: {
-                    input: { $ifNull: ["$waste", "0"] },
+                    input: { $toString: { $ifNull: ["$waste", "0"] } },
                     find: ",",
                     replacement: ""
                   }
