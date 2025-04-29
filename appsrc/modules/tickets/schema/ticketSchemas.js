@@ -65,7 +65,7 @@ const ticketSchema = (reqType) => {
 
         approvers: Yup.array().nullable().label('Assignee')
             .test('is-objectid', 'Invalid Assignee!', (assigneeIds) => {
-                if (!assigneeIds || Array.isArray(assigneeIds) || assigneeIds?.length == 0)
+                if (!assigneeIds || (Array.isArray(assigneeIds) && assigneeIds?.length == 0))
                     return true;
                 return assigneeIds?.some(id => ObjectId.isValid(id))
             }),
@@ -110,6 +110,13 @@ const ticketSchema = (reqType) => {
                 if (!investigationReasonId || investigationReasonId == "null")
                     return true;
                 return ObjectId.isValid(investigationReasonId);
+            }),
+
+        faults: Yup.array().label('Faults')
+            .test('is-objectid', 'Invalid Fault!', (faultsIds) => {
+                if (!faultsIds || (Array.isArray(faultsIds) && faultsIds?.length == 0))
+                    return true;
+                return faultsIds?.some(id => ObjectId.isValid(id))
             }),
 
         files: Yup.mixed().label("Files").nullable().notRequired(),

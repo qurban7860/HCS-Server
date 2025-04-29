@@ -382,13 +382,6 @@ exports.postTicket = async (req, res, next) => {
       req.body.reporter = userData?.contact;
     }
 
-    if (req.body.faults || Array.isArray(req.body.faults) && req.body.faults?.length > 0) {
-      const isInvalidFault = req.body.faults.some(f => !ObjectId.isValid(f))
-      if (isInvalidFault) {
-        throw new Error("Invalid Fault found!")
-      }
-    }
-
     if (!req.body.faults || Array.isArray(req.body.faults) && req.body.faults?.length < 1) {
       req.body.faults = await getDefaultTicketFaults(req);
     }
