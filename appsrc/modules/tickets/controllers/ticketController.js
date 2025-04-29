@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const { StatusCodes, getReasonPhrase } = require('http-status-codes');
+const { Types: { ObjectId } } = require('mongoose');
 const logger = require('../../config/logger');
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
@@ -381,10 +382,15 @@ exports.postTicket = async (req, res, next) => {
       req.body.reporter = userData?.contact;
     }
 
+    if (req.body.faults || Array.isArray(req.body.faults) && req.body.faults?.length > 0) {
+      const isInvalidFault = req.body.faults.some(f => !ObjectId.isValid(f))
+      if (isInvalidFault) {
+        throw new Error("Invalid Fault found!")
+      }
+    }
 
-    if (!req.body.faults || Array.isArray(req.body.faults) && !req.body.faults?.length < 1) {
+    if (!req.body.faults || Array.isArray(req.body.faults) && req.body.faults?.length < 1) {
       req.body.faults = await getDefaultTicketFaults(req);
-      console.log(" faults : ", req.body.faults);
     }
 
     if (!req.body.issueType || req.body.issueType == 'null') {
