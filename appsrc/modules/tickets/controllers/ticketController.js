@@ -17,7 +17,8 @@ const {
   TicketRequestType,
   TicketPriority,
   TicketStatus,
-  TicketStatusType
+  TicketStatusType,
+  TicketFault
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
 const applyTicketFilter = require('../utils/ticketFilter');
@@ -268,7 +269,8 @@ exports.getTicketSettings = async (req, res, next) => {
       issueTypes,
       requestTypes,
       priorities,
-      statuses
+      statuses,
+      faults
     ] = await Promise.all([
       this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy),
       this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy),
@@ -277,7 +279,8 @@ exports.getTicketSettings = async (req, res, next) => {
       this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy),
       this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate),
       this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy),
-      this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate)
+      this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate),
+      this.dbservice.getObjectList(req, TicketFault, this.settingFields, this.query, this.orderBy),
     ]);
 
     const result = {
@@ -288,7 +291,8 @@ exports.getTicketSettings = async (req, res, next) => {
       issueTypes,
       requestTypes,
       priorities,
-      statuses
+      statuses,
+      faults
     }
 
     return res.status(StatusCodes.OK).json(result);
@@ -505,3 +509,9 @@ function getDocFromReq(req, reqType) {
   }
   return doc;
 }
+
+
+
+
+
+
