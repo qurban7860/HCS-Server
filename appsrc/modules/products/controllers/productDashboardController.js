@@ -179,6 +179,10 @@ exports.getProducedLength = async (req, res, next) => {
       $or: [
         { measurementUnit: { $ne: "in" } },
         { measurementUnit: { $exists: false } }
+      ],
+      $or: [
+        { componentType: { $exists: false } },
+        { componentType: "PRODUCTION" }
       ]
     });
 
@@ -219,6 +223,10 @@ exports.getWasteLength = async (req, res, next) => {
       $or: [
         { measurementUnit: { $ne: "in" } },
         { measurementUnit: { $exists: false } }
+      ],
+      $or: [
+        { componentType: { $exists: false } },
+        { componentType: { $ne: "PRODUCTION" } }
       ]
     });
 
