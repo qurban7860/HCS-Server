@@ -186,7 +186,7 @@ exports.getLogsGraph = async (req, res, next) => {
         limit = 24;
         break;
       case 'daily':
-        groupBy = { $dateToString: { format: "%m/%d", date: "$date" } };
+        groupBy = { $dateToString: { format: "%d/%m", date: "$date" } };
         dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
         limit = 30;
         break;
