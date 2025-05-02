@@ -85,10 +85,18 @@ exports.getLogs = async (req, res, next) => {
           $lte: endDate
         };
       }
+    } else if (this.query?.hourly === 'last24Hours') {
+      const now = new Date();
+      const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+      this.query.date = {
+        $gte: twentyFourHoursAgo,
+        $lte: now
+      };
     }
 
     delete this.query?.fromDate;
     delete this.query?.toDate;
+    delete this.query?.hourly;
 
     if (this.query?.customer && !this.query?.machine) {
       const activeMachines = await Product.find({ 
@@ -172,6 +180,11 @@ exports.getLogsGraph = async (req, res, next) => {
     const currentDate = new Date();
 
     switch ( periodType && periodType?.toLowerCase()) {
+      case 'hourly':
+        groupBy = {  $dateToString: { format: "%H:00", date: "$date" } };
+        dateRange = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000); 
+        limit = 24;
+        break;
       case 'daily':
         groupBy = { $dateToString: { format: "%m/%d", date: "$date" } };
         dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
@@ -200,7 +213,7 @@ exports.getLogsGraph = async (req, res, next) => {
         limit = 5;
         break;
       default:
-        return res.status(400).send("Invalid periodType! Must be daily, monthly, quarterly, or yearly.");
+        return res.status(400).send("Invalid periodType! Must be hourly, daily, monthly, quarterly, or yearly.");
     }
 
     match.date = { $gte: dateRange };
