@@ -1,4 +1,3 @@
-
 const getDateFromUnitAndValue = ({ unit, value }) => {
     if (!unit || isNaN(value)) {
         return null;
@@ -10,6 +9,10 @@ const getDateFromUnitAndValue = ({ unit, value }) => {
     const date = new Date();
 
     switch (lowerUnit) {
+        case "hour":
+        case "hourly":
+            date.setHours(date.getHours() - numericValue);
+            break;
         case "day":
         case "daily":
             date.setDate(date.getDate() - numericValue);
@@ -23,7 +26,7 @@ const getDateFromUnitAndValue = ({ unit, value }) => {
             date.setFullYear(date.getFullYear() - numericValue);
             break;
         default:
-            throw new Error("Invalid unit. Use Day, Month, or Year.");
+            throw new Error("Invalid unit. Use Hour, Day, Month, or Year.");
     }
 
     return date;
