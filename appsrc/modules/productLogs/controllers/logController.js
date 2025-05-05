@@ -191,7 +191,12 @@ exports.getLogsGraph = async (req, res, next) => {
         limit = 30;
         break;
       case 'monthly':
-        groupBy = { $dateToString: { format: "%Y-%m", date: "$date" } };
+        groupBy = {
+          $concat: [
+            { $dateToString: { format: "%b ", date: "$date" } },
+            { $substr: [ { $toString: { $year: "$date" } }, 2, 2 ] } 
+          ]
+        };
         dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 12));
         limit = 12;
         break;
