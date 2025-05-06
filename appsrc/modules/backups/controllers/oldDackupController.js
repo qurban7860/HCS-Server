@@ -87,8 +87,6 @@ exports.postBackup = async (req, res, next) => {
       const response = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
       if (res) {
         res.status(StatusCodes.CREATED).json({ Backup: response });
-      } else {
-        console.log({ Backup: response });
       }
     } catch (error) {
       logger.error(new Error(error));
