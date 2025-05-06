@@ -68,17 +68,17 @@ class TicketEmailService {
       // Check for Updates
       if (!req.body?.isNew && oldObj) {
 
-        if (oldObj?.status && oldObj?.status?.toString() != ticketData.status?._id?.toString()) {
+        if (oldObj?.status?._id && oldObj?.status?._id?.toString() != ticketData.status?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri}<br/>Status has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           status = `<strong>Status: </strong>${ticketData?.status?.name || ""}<br>`;
         }
 
-        if (oldObj?.priority && oldObj?.priority?.toString() != ticketData.priority?._id?.toString()) {
+        if (oldObj?.priority?._id && oldObj?.priority?._id?.toString() != ticketData.priority?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Priority has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           priority = `<strong>Priority: </strong>${ticketData?.priority?.name || ""}<br>`;
         }
 
-        if (oldObj?.reporter && oldObj?.reporter?.toString() != ticketData.reporter?._id?.toString()) {
+        if (oldObj?.reporter?._id && oldObj?.reporter?._id?.toString() != ticketData.reporter?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
         }
 
@@ -91,7 +91,7 @@ class TicketEmailService {
           description = `<strong>Description: </strong>${ticketData?.description || ""}<br>`;
         }
 
-        if (oldObj.assignee?.toString() != ticketData?.assignee?._id?.toString()) {
+        if (oldObj.assignee?._id?.toString() != ticketData?.assignee?._id?.toString()) {
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
           text = `Support Ticket ${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
         }
@@ -101,7 +101,7 @@ class TicketEmailService {
           Array.isArray(ticketData?.approvers) &&
           (
             oldObj?.approvers?.length !== ticketData.approvers.length ||
-            !oldObj?.approvers?.every(id => ticketData?.approvers?.some(appr => appr._id?.toString() == id?.toString()))
+            !oldObj?.approvers?.every(appr => ticketData?.approvers?.some(appr => appr._id?.toString() == appr?._id?.toString()))
           )
         ) {
           text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
