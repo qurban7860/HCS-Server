@@ -402,6 +402,69 @@ exports.getProducts = async (req, res, next) => {
   }
 };
 
+exports.getMachineLifeCycle = async (req, res, next) => {
+  if (!req.params.id || !ObjectId.isValid(req.params.id)) {
+    return res.status(StatusCodes.BAD_REQUEST).send("Machine uuid is not valid!");
+  }
+
+  try {
+    const machine = await Product.findById(req.params.id)
+      .select('globelMachineID createdBy updatedBy createdAt updatedAt')
+      .populate(this.populate)
+      .lean();
+
+    if (!machine) {
+      return res.status(StatusCodes.NOT_FOUND).send("Machine not found.");
+    }
+
+    let lifeCycleData = {
+      createdBy: machine.createdBy,
+      updatedBy: machine.updatedBy,
+      createdAt: machine.createdAt,
+      updatedAt: machine.updatedAt,
+      transferredHistory: []
+    };
+
+    if (machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)) {
+      const transferHistory = await Product.find({ globelMachineID: machine.globelMachineID })
+        .select('purchaseDate shippingDate transferredDate transferredToMachine transferredFromMachine customer manufactureDate installationDate decommissionedDate supportExpireDate')
+        .populate([
+          { path: 'customer', select: '_id clientCode name' },
+          { path: 'transferredToMachine', select: '_id serialNo name customer' },
+          { path: 'transferredFromMachine', select: '_id serialNo name customer' },
+        ])
+        .lean();
+
+      transferHistory.forEach(item => {
+        lifeCycleData.transferredHistory.push({
+          purchaseDate: item.purchaseDate || item.shippingDate,
+          shippingDate: item.shippingDate,
+          transferredDate: item.transferredDate,
+          manufactureDate: item.manufactureDate,
+          installationDate: item.installationDate,
+          transferredToMachine: item.transferredToMachine,
+          transferredFromMachine: item.transferredFromMachine,
+          decommissionedDate: item.decommissionedDate,
+          supportExpireDate: item.supportExpireDate,
+          customer: item.customer
+        });
+      });
+
+      lifeCycleData.transferredHistory.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
+
+      if (lifeCycleData.transferredHistory.length === 1 && lifeCycleData.transferredHistory[0]?._id?.toString() === machine?._id?.toString()) {
+        lifeCycleData.transferredHistory = [];
+      }
+    }
+
+    res.status(StatusCodes.OK).json(lifeCycleData);
+
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error fetching machine life cycle.");
+  }
+};
+
 exports.getProductId = async (req, res, next) => {
   const queryString = await processUserRoles(req);
 

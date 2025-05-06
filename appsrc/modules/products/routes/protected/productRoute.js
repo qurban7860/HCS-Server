@@ -42,6 +42,8 @@ router.patch(`${baseRouteForObject}/:id/updateStatus/:statusid`, controller.patc
 
 router.get(`${baseRouteForObject}/:id`, checkIDs(validate.idAndMachine), controller.getProduct);
 
+router.get(`${baseRouteForObject}/:id/machineLifeCycle/`, controller.getMachineLifeCycle);
+
 router.post(`${baseRouteForObject}`, controller.postProduct);
 
 router.patch(`${baseRouteForObject}/:id`, checkIDs(validate.idAndMachine), verifyDelete, controller.patchProduct);
