@@ -186,13 +186,13 @@ docSchema.pre('find', function() {
     this.populate('portalKey.createdBy', 'name');
   });
   
-  docSchema.pre('findOne', function() {
-    this.populate('portalKey.createdBy', 'name');
-  });
-  
-  docSchema.pre('findById', function() {
-    this.populate('portalKey.createdBy', 'name');
-  });
+docSchema.pre('findOne', function() {
+this.populate('portalKey.createdBy', 'name');
+});
+
+docSchema.pre('findById', function() {
+this.populate('portalKey.createdBy', 'name');
+});
 
 docSchema.plugin(uniqueValidator);
 
