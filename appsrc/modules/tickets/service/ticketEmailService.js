@@ -101,7 +101,7 @@ class TicketEmailService {
           Array.isArray(ticketData?.approvers) &&
           (
             oldObj?.approvers?.length !== ticketData.approvers.length ||
-            !oldObj?.approvers?.every(appr => ticketData?.approvers?.some(appr => appr._id?.toString() == appr?._id?.toString()))
+            !oldObj?.approvers?.every(apr => ticketData?.approvers?.some(appr => appr._id?.toString() == apr?._id?.toString()))
           )
         ) {
           text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;

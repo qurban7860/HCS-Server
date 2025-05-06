@@ -432,7 +432,6 @@ exports.patchTicket = async (req, res, next) => {
     const oldObj = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
     if (oldObj?.status?.statusType?.isResolved) {
       const userData = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body?.loginUser?.userId, [{ path: "customer", select: "type" }]);
-      console.log({ userData })
       if (userData?.customer?.type?.toLowerCase() !== 'sp') {
         return res.status(StatusCodes.BAD_REQUEST).send("You are not allowed to change resolved ticket status!");
       }
