@@ -409,7 +409,7 @@ exports.getMachineLifeCycle = async (req, res, next) => {
 
   try {
     const machine = await Product.findById(req.params.id)
-      .select('globelMachineID createdBy updatedBy createdAt updatedAt')
+      .select('globelMachineID createdBy updatedBy createdAt updatedAt portalKey')
       .populate(this.populate)
       .lean();
 
@@ -422,8 +422,22 @@ exports.getMachineLifeCycle = async (req, res, next) => {
       updatedBy: machine.updatedBy,
       createdAt: machine.createdAt,
       updatedAt: machine.updatedAt,
-      transferredHistory: []
+      portalKey: machine.portalKey,
+      transferredHistory: [],
+      serviceReports: [] 
     };
+
+    const serviceReports = await ProductServiceReports.find({
+      machine: req.params.id,
+      isArchived: { $ne: true },
+      isActive: { $ne: false }
+    })
+    .select('serviceDate')
+    .lean(); 
+
+    lifeCycleData.serviceReports = serviceReports.map(report => ({
+      serviceDate: report.serviceDate
+    }));
 
     if (machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)) {
       const transferHistory = await Product.find({ globelMachineID: machine.globelMachineID })
@@ -449,8 +463,6 @@ exports.getMachineLifeCycle = async (req, res, next) => {
           customer: item.customer
         });
       });
-
-      lifeCycleData.transferredHistory.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
 
       if (lifeCycleData.transferredHistory.length === 1 && lifeCycleData.transferredHistory[0]?._id?.toString() === machine?._id?.toString()) {
         lifeCycleData.transferredHistory = [];
