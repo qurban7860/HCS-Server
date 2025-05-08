@@ -155,7 +155,7 @@ exports.getLogsByApiId = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     const LogModel = getModel(req);
-    const { customer, machine, periodType, logGraphType, timezone = "UTC" } = req.query;
+    const { customer, machine, periodType, logGraphType, startDate, endDate, timezone = "UTC" } = req.query;
 
     const match = {};
     if (mongoose.Types.ObjectId.isValid(customer)) {
@@ -173,22 +173,21 @@ exports.getLogsGraph = async (req, res, next) => {
         };
       }
     }
+
     if (mongoose.Types.ObjectId.isValid(machine)) {
       match.machine = new mongoose.Types.ObjectId(machine);
     }
 
-    let groupBy, dateRange, limit;
+    let groupBy, limit;
     const currentDate = new Date();
 
     switch (periodType && periodType?.toLowerCase()) {
       case "hourly":
         groupBy = { $dateToString: { format: "%H:00", date: "$date", timezone: timezone } };
-        dateRange = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
         limit = 24;
         break;
       case "daily":
         groupBy = { $dateToString: { format: "%d/%m", date: "$date", timezone: timezone } };
-        dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
         limit = 30;
         break;
       case "monthly":
@@ -198,7 +197,6 @@ exports.getLogsGraph = async (req, res, next) => {
             { $substr: [{ $toString: { $year: { $dateFromString: { dateString: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: timezone } } } } } }, 2, 2] },
           ],
         };
-        dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 12));
         limit = 12;
         break;
       case "quarterly":
@@ -210,19 +208,41 @@ exports.getLogsGraph = async (req, res, next) => {
             { $toString: { $ceil: { $divide: [{ $month: { $dateFromString: { dateString: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: timezone } } } } }, 3] } } },
           ],
         };
-        dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 15));
         limit = 4;
         break;
       case "yearly":
         groupBy = { $dateToString: { format: "%Y", date: "$date", timezone: timezone } };
-        dateRange = new Date(currentDate.setFullYear(currentDate.getFullYear() - 5));
         limit = 5;
         break;
       default:
         return res.status(400).send("Invalid periodType! Must be hourly, daily, monthly, quarterly, or yearly.");
     }
 
-    match.date = { $gte: dateRange };
+    if (startDate || endDate) {
+      match.date = {};
+      if (startDate) match.date.$gte = new Date(startDate);
+      if (endDate) match.date.$lte = new Date(endDate);
+    } else {
+      let dateRange;
+      switch (periodType?.toLowerCase()) {
+        case 'hourly':
+          dateRange = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'daily':
+          dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
+          break;
+        case 'monthly':
+          dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 12));
+          break;
+        case 'quarterly':
+          dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 15));
+          break;
+        case 'yearly':
+          dateRange = new Date(currentDate.setFullYear(currentDate.getFullYear() - 5));
+          break;
+      }
+      match.date = { $gte: dateRange };
+    }
 
     const groupStage = {
       $group: {
@@ -357,6 +377,7 @@ exports.getLogsGraph = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
+
 exports.deleteLog = async (req, res, next) => {
   try {
     req.query.type = req.query?.type || req.body?.type;
