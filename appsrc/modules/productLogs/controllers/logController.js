@@ -155,7 +155,7 @@ exports.getLogsByApiId = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     const LogModel = getModel(req);
-    const { customer, machine, periodType, logGraphType, timezone = "UTC" } = req.query;
+    const { customer, machine, periodType, logGraphType, startDate, endDate, timezone = "UTC" } = req.query;
 
     const match = {};
     if (mongoose.Types.ObjectId.isValid(customer)) {
@@ -184,12 +184,10 @@ exports.getLogsGraph = async (req, res, next) => {
     switch (periodType && periodType?.toLowerCase()) {
       case "hourly":
         groupBy = { $dateToString: { format: "%H:00", date: "$date", timezone: timezone } };
-        dateRange = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
         limit = 24;
         break;
       case "daily":
         groupBy = { $dateToString: { format: "%d/%m", date: "$date", timezone: timezone } };
-        dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
         limit = 30;
         break;
       case "monthly":
@@ -214,7 +212,6 @@ exports.getLogsGraph = async (req, res, next) => {
         break;
       case "yearly":
         groupBy = { $dateToString: { format: "%Y", date: "$date", timezone: timezone } };
-        dateRange = new Date(currentDate.setFullYear(currentDate.getFullYear() - 5));
         limit = 5;
         break;
       default:
