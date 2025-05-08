@@ -32,7 +32,6 @@ const validateRequest = (schema) => async (req, res, next) => {
     if (!schema) {
       throw new Error("Request Validation Failed!")
     }
-    console.log("body : ", req.body)
 
     const { loginUser, ...otherFields } = req.body;
 

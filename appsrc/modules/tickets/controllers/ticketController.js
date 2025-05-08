@@ -433,7 +433,13 @@ exports.patchTicket = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     req.params.ticketId = req.params.id;
-    const oldObj = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id);
+    const oldObj = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
+    if (oldObj?.status?.statusType?.isResolved) {
+      const userData = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body?.loginUser?.userId, [{ path: "customer", select: "type" }]);
+      if (userData?.customer?.type?.toLowerCase() !== 'sp') {
+        return res.status(StatusCodes.BAD_REQUEST).send("You are not allowed to change resolved ticket status!");
+      }
+    }
     await this.dbservice.patchObject(Ticket, req.params.id, getDocFromReq(req));
     const fields = ["reporter", "assignee", "priority", "status"];
     const changedFields = {};
@@ -442,11 +448,11 @@ exports.patchTicket = async (req, res, next) => {
       if (field in req.body) {
         const newValue = req.body[field];
         const oldValue = oldObj?.[field];
-        const isChanged = newValue !== oldValue;
+        const isChanged = newValue !== oldValue?._id;
 
         if (isChanged) {
           const fieldLabel = sentenceCase(field);
-          changedFields[`previous${fieldLabel}`] = oldValue;
+          changedFields[`previous${fieldLabel}`] = oldValue?._id;
           changedFields[`new${fieldLabel}`] = newValue;
         }
       }

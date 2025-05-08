@@ -49,7 +49,7 @@ const docSchema = new Schema({
         
         timeUnit : { type: String },
         
-        date : { type: Date },
+        date : { type: Date, timestamp: true },
         
         customer : { type: Schema.Types.ObjectId , ref: 'Customer' },
         
