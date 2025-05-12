@@ -14,7 +14,7 @@ const baseRouteForObject = `/machines/:machineId/dashboard`;
 
 router.use(checkAuth, checkCustomer);
 
-// router.get(`${baseRouteForObject}`, checkProductID, controller.getProductDashboard);
+router.get(`${baseRouteForObject}`, checkProductID, controller.getProductDashboard);
 router.get(`${baseRouteForObject}/producedLength`, checkProductID, controller.getProducedLength);
 router.get(`${baseRouteForObject}/wasteLength`, checkProductID, controller.getWasteLength);
 router.get(`${baseRouteForObject}/productionRate`, checkProductID, controller.getProductionRate);
