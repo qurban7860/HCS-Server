@@ -183,7 +183,7 @@ exports.getLogsGraph = async (req, res, next) => {
 
     switch (periodType && periodType?.toLowerCase()) {
       case "hourly":
-        groupBy = { $dateToString: { format: "%H:00", date: "$date", timezone: timezone } };
+        groupBy = { $dateToString: { format: "%m/%d %H", date: "$date", timezone: timezone } };
         limit = 24;
         break;
       case "daily":
