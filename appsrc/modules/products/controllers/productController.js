@@ -1033,6 +1033,26 @@ exports.transferOwnership = async (req, res, next) => {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
         }
 
+        // Verify if this machine has already been transferred to any customer
+        const alreadyTransferred = await Product.findOne({
+          transferredFromMachine: req.body.machine,
+          isActive: true,
+          isArchived: false
+        }).select('_id customer').populate('customer', 'name');
+        
+        if (alreadyTransferred) {
+          return res.status(StatusCodes.BAD_REQUEST).send(
+            `This machine has already been transferred to customer "${alreadyTransferred.customer?.name || 'Unknown'}". A machine can only be transferred once.`
+          );
+        }
+        
+        // Also check if the machine's status is already 'transferred'
+        if (parentMachine.status && parentMachine.status.slug === 'transferred') {
+          return res.status(StatusCodes.BAD_REQUEST).send(
+            "This machine has already been transferred and cannot be transferred again."
+          );
+        }
+
         const transferredDate = req.body.transferredDate;
         if (parentMachine) {
           req.body.serialNo = parentMachine.serialNo;
