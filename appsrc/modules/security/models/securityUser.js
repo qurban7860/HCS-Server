@@ -4,6 +4,20 @@ const uniqueValidator = require('mongoose-unique-validator');
 const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
+
+const allowedModules = [
+    'machineSettings',
+    'machineProfiles',
+    'machineConfig',
+    'machineNotes',
+    'assemblyDrawings',
+    'machineDocuments',
+    'machineLogs',
+    'supportService',
+    'machineGraphs',
+    'machineServiceReports'
+];
+
 const docSchema = new Schema({
 
     customer: { type: Schema.ObjectId, ref: 'Customer', required: true },
@@ -48,17 +62,8 @@ const docSchema = new Schema({
     roles: [
         { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
     ],
-    modules: {
-        machineSettings: { type: Boolean, default: false },
-        machineProfiles: { type: Boolean, default: false },
-        machineConfig: { type: Boolean, default: false },
-        machineNotes: { type: Boolean, default: false },
-        assemblyDrawings: { type: Boolean, default: false },
-        machineDocuments: { type: Boolean, default: false },
-        machineLogs: { type: Boolean, default: false },
-        machineGraphs: { type: Boolean, default: false },
-        machineServiceReports: { type: Boolean, default: false }
-    },
+
+    modules: { type: [String], enum: allowedModules, default: [] },
 
     regions: [
         { type: Schema.Types.ObjectId, ref: 'Region' }
