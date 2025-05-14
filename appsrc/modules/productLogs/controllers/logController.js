@@ -220,8 +220,8 @@ exports.getLogsGraph = async (req, res, next) => {
 
     if (startDate || endDate) {
       match.date = {};
-      if (startDate) match.date.$gte = new Date(startDate).setHours(0, 0, 0, 0);
-      if (endDate) match.date.$lte = new Date(endDate).setHours(23, 59, 59, 999);
+      if (startDate) match.date.$gte = new Date(startDate);
+      if (endDate) match.date.$lte = new Date(endDate);
     } else {
       let dateRange;
       switch (periodType?.toLowerCase()) {
