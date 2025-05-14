@@ -27,7 +27,7 @@ const convertAllInchesBitsToMM = (logs, type) => {
           }
           dataInInches[key] = numValue;
           const mmValue = (numValue * 25.4).toFixed(2);
-          log[key] = Number(mmValue).toLocaleString('en-US', { maximumFractionDigits: 2 });
+          log[key] = Number(mmValue);
         }
       });
       
