@@ -80,7 +80,20 @@ async function calculateMachineStatisticsPipeline(machineId) {
           },
 
           wComponent: {
-            $cond: [{ $ne: ["$componentType", "PRODUCTION"] }, 1, 0],
+            $cond: [{ $regexMatch: { input: { $toLower: "$componentType" }, regex: "waste" } }, 1, 0],
+          },
+
+          otherComponents: {
+            $cond: [
+              { 
+                $and: [
+                  { $ne: ["$componentType", "PRODUCTION"] },
+                  { $not: { $regexMatch: { input: { $toLower: "$componentType" }, regex: "waste" } } }
+                ]
+              }, 
+              1, 
+              0
+            ],
           },
 
           Waste: {
@@ -188,6 +201,8 @@ async function calculateMachineStatisticsPipeline(machineId) {
           ProducedComponentLengthM: { $sum: { $divide: ["$ComponentLength", 1000.0] } },
 
           WasteComponents: { $sum: "$wComponent" },
+          
+          OtherComponents: { $sum: "$otherComponents" },
 
           WasteLengthM: { $sum: { $divide: ["$Waste", 1000.0] } },
 
@@ -226,6 +241,11 @@ async function calculateMachineStatisticsPipeline(machineId) {
               count: "$WasteComponents",
               length: { $round: ["$WasteLengthM", 2] },
             },
+            {
+              label: "Other Components",
+              count: "$OtherComponents",
+              length: null,
+            },
           ],
           wasteData: [
             {
@@ -256,11 +276,11 @@ async function calculateMachineStatisticsPipeline(machineId) {
           ],
           totalData: [
             {
-              label: "Records Count",
+              label: "Components Count",
               value: "$count",
             },
             {
-              label: "Processed Length",
+              label: "Processed Length + Waste",
               value: { $round: [{ $add: ["$ProducedComponentLengthM", "$WasteLengthM"] }, 2] },
             },
             {
