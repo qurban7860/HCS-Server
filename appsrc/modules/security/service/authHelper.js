@@ -39,10 +39,28 @@ async function comparePasswords(encryptedPass, textPass, next) {
   return isValidPassword;
 };
 
-async function issueToken(userID, userEmail, sessionID, roles, modules, dataAccessibilityLevel) {
-  let token;
-  const filteredRoles = roles.filter(role => role.isActive && !role.isArchived).map(role => role.roleType);
-  let tokenData = { userId: userID, email: userEmail, modules, sessionId: sessionID, dataAccessibilityLevel: dataAccessibilityLevel, roleTypes: filteredRoles };
+async function issueToken({
+  userId,
+  email,
+  sessionId,
+  roles,
+  modules,
+  dataAccessibilityLevel,
+  type
+}) {
+  let token = '';
+
+  const roleTypes = roles.filter(role => role.isActive && !role.isArchived)?.map(role => role.roleType);
+
+  let tokenData = {
+    userId,
+    email,
+    modules,
+    sessionId,
+    dataAccessibilityLevel,
+    roleTypes,
+    type
+  };
 
   try {
     token = jwt.sign(

@@ -41,7 +41,7 @@ this.populate = [
   { path: 'projectManager', select: 'firstName lastName email' },
   { path: 'supportManager', select: 'firstName lastName email' },
   { path: 'groupCustomer', select: '_id name ref clientCode' },
-  
+
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
   { path: 'mainSite.primaryBillingContact', select: 'firstName lastName' },
@@ -50,7 +50,7 @@ this.populate = [
 
 
 this.populateList = [
-  
+
   { path: 'groupCustomer', select: '_id name' },
   { path: 'mainSite', select: 'address name phoneNumbers email' },
   { path: 'accountManager', select: 'firstName lastName phoneNumbers' },
@@ -254,7 +254,7 @@ exports.postCustomer = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    if(req.body.ref?.trim().length > 0) {
+    if (req.body.ref?.trim().length > 0) {
       let refCode = "^" + req.body.ref.trim() + "$";
       let queryRef = {
         ref: {
@@ -263,8 +263,8 @@ exports.postCustomer = async (req, res, next) => {
         }
       };
       const refFound = await Customer.findOne(queryRef).lean().select('_id');
-      console.log({refFound});
-      if(refFound) {
+      console.log({ refFound });
+      if (refFound) {
         return res.status(StatusCodes.BAD_REQUEST).send(`The reference already exists within the system, indicating duplication constraints.`);
       }
     }
@@ -325,7 +325,7 @@ exports.patchCustomer = async (req, res, next) => {
       CustomerObj = await Customer.findOne(queryCustomer);
     }
 
-    if(req.body.ref?.trim().length > 0) {
+    if (req.body.ref?.trim().length > 0) {
       let refCode = "^" + req.body.ref.trim() + "$";
       let queryRef = {
         ref: {
@@ -334,7 +334,7 @@ exports.patchCustomer = async (req, res, next) => {
         }, _id: { $ne: req.params.id }
       };
       const refFound = await Customer.findOne(queryRef).lean().select('_id');
-      if(refFound) {
+      if (refFound) {
         return res.status(StatusCodes.BAD_REQUEST).send(`The reference already exists within the system, indicating duplication constraints.`);
       }
     }
@@ -344,7 +344,7 @@ exports.patchCustomer = async (req, res, next) => {
         let customer = await Customer.findById(req.params.id);
         if (customer.type === 'SP') {
           const message = req.body.isArchived ? 'SP Customer cannot be deleted!' : 'SP Customer cannot be deactivated!';
-          return res.status(StatusCodes.BAD_REQUEST).send( message );
+          return res.status(StatusCodes.BAD_REQUEST).send(message);
         } else {
           if ("isArchived" in req.body && req.body.isArchived === true) {
             const productListNonArchived = await Product.find({ customer: req.params.id, isArchived: false }).select('serialNo').slice();
@@ -427,7 +427,7 @@ async function updateArchivedStatus(req) {
     const isArchived = req.body.isArchived;
     const whereClause = { customer: customerId, isArchived: !isArchived };
     const setClause = { isArchived: isArchived, archivedByCustomer: isArchived };
-    if(!isArchived) {
+    if (!isArchived) {
       whereClause.archivedByCustomer = true;
     }
     await CustomerSite.updateMany(whereClause, setClause);
@@ -599,7 +599,7 @@ function getGUIDs(inputData) {
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { name, clientCode, ref, tradingName, groupCustomer, type, mainSite, sites, contacts, website,
+  const { name, clientCode, ref, tradingName, groupCustomer, type, mainSite, sites, contacts, website, modules,
     billingContact, primaryBillingContact, technicalContact, primaryTechnicalContact, isTechnicalContactSameAsBillingContact,
     accountManager, projectManager, supportSubscription, supportManager, isFinancialCompany, excludeReports,
     isActive, isArchived, loginUser } = req.body;
@@ -662,7 +662,7 @@ function getDocumentFromReq(req, reqType) {
       doc.mainSite.customer = doc._id;
     }
 
-    if(!isTechnicalContactSameAsBillingContact) {
+    if (!isTechnicalContactSameAsBillingContact) {
       if (technicalContact != undefined && typeof technicalContact !== "string") {
         var reqprimaryTechnicalContact = {};
         reqprimaryTechnicalContact.body = technicalContact;
@@ -731,6 +731,7 @@ function getDocumentFromReq(req, reqType) {
     doc.excludeReports = excludeReports;
   }
 
+  if ("modules" in req.body) doc.modules = modules;
 
   if ("isActive" in req.body) {
     doc.isActive = isActive;

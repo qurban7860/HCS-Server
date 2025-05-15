@@ -485,7 +485,6 @@ async function getDocumentFromReq(req, reqType) {
     registrationRequest,
     expireAt,
     roles,
-    modules,
     isActive,
     isArchived,
     multiFactorAuthentication,
@@ -517,7 +516,6 @@ async function getDocumentFromReq(req, reqType) {
   if ("email" in req.body) doc.email = email?.toLowerCase()?.trim();
   if ("currentEmployee" in req.body) doc.currentEmployee = currentEmployee;
   if ("roles" in req.body) doc.roles = roles;
-  if ("modules" in req.body) doc.modules = modules;
   if ("dataAccessibilityLevel" in req.body) doc.dataAccessibilityLevel = dataAccessibilityLevel;
   if ("regions" in req.body) doc.regions = regions;
   if ("customers" in req.body) doc.customers = customers;

@@ -5,19 +5,6 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 
-const allowedModules = [
-    'machineSettings',
-    'machineProfiles',
-    'machineConfig',
-    'machineNotes',
-    'assemblyDrawings',
-    'machineDocuments',
-    'machineLogs',
-    'supportService',
-    'machineGraphs',
-    'machineServiceReports'
-];
-
 const docSchema = new Schema({
 
     customer: { type: Schema.ObjectId, ref: 'Customer', required: true },
@@ -62,8 +49,6 @@ const docSchema = new Schema({
     roles: [
         { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
     ],
-
-    modules: { type: [String], enum: allowedModules, default: [] },
 
     regions: [
         { type: Schema.Types.ObjectId, ref: 'Region' }
