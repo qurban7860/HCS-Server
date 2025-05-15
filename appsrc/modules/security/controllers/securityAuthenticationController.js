@@ -240,7 +240,7 @@ exports.multifactorverifyCode = async (req, res, next) => {
                 customer: existingUser?.customer?._id,
                 contact: existingUser?.contact?._id,
                 roles: existingUser.roles,
-                modules: existingUser?.modules || [],
+                modules: existingUser?.customer?.modules || [],
                 dataAccessibilityLevel: existingUser.dataAccessibilityLevel
               }
             });
@@ -278,7 +278,7 @@ exports.refreshToken = async (req, res, next) => {
       email: existingUser.login,
       sessionId: req.sessionID,
       roles: existingUser.roles,
-      modules: existingUser?.modules,
+      modules: existingUser?.customer?.modules || [],
       dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
       type: existingUser?.customer?.type
     });
@@ -296,7 +296,7 @@ exports.refreshToken = async (req, res, next) => {
           email: existingUser.email,
           displayName: existingUser.name,
           roles: existingUser.roles,
-          modules: existingUser?.modules || [],
+          modules: existingUser?.customer?.modules || [],
           customer: existingUser?.customer?._id,
           type: existingUser?.customer?.type,
           contact: existingUser?.contact?._id,
@@ -404,7 +404,7 @@ async function validateAndLoginUser(req, res, existingUser) {
       email: existingUser.login,
       sessionId: req.sessionID,
       roles: existingUser.roles,
-      modules: existingUser?.modules,
+      modules: existingUser?.customer?.modules || [],
       dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
       type: existingUser?.customer?.type
     });
@@ -464,7 +464,7 @@ async function validateAndLoginUser(req, res, existingUser) {
         customer: existingUser.customer?._id,
         contact: existingUser.contact?._id,
         roles: existingUser.roles,
-        modules: existingUser?.modules || [],
+        modules: existingUser?.customer?.modules || [],
         dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
       },
     };
