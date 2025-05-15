@@ -30,14 +30,10 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
+  { path: 'customer', select: 'name type modules isActive isArchived' },
+  { path: 'contact', select: 'name isActive isArchived' },
   { path: 'roles', select: '' },
 ];
-
-
-this.populateList = [
-  { path: '', select: '' }
-];
-
 
 exports.login = async (req, res, next) => {
   const errors = validationResult(req);
@@ -80,7 +76,7 @@ exports.login = async (req, res, next) => {
 
 
     if (matchedwhiteListIPs && !matchedBlackListIps) {
-      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, { path: 'roles', select: '' }], getObjectCallback);
+      this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
       async function getObjectCallback(error, response) {
 
         if (error) {
@@ -225,11 +221,7 @@ exports.multifactorverifyCode = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let existingUser = await SecurityUser.findOne({ _id: req.body.userID })
-      .populate({ path: 'customer', select: 'name type isActive isArchived' })
-      .populate({ path: 'contact', select: 'name isActive isArchived' })
-      .populate('roles');
-
+    let existingUser = await this.dbservice.getObject(SecurityUser, { _id: req.body.userID }, this.populate);
     if (existingUser) {
       if (existingUser.multiFactorAuthenticationCode == req.body.code) {
         const currentTime = new Date();
@@ -276,12 +268,21 @@ exports.refreshToken = async (req, res, next) => {
     if (!errors.isEmpty()) {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
+    let existingUser = await this.dbservice.getObject(SecurityUser, { _id: req.body.userID }, this.populate);
 
     if (!existingUser?._id) {
       return res.status(StatusCodes.BAD_REQUEST).send('User not found');
     }
-    const accessToken = await issueToken(existingUser._id, existingUser.login, req.sessionID, existingUser.roles, existingUser?.modules, existingUser.dataAccessibilityLevel);
+    const accessToken = await issueToken({
+      userId: existingUser._id,
+      email: existingUser.login,
+      sessionId: req.sessionID,
+      roles: existingUser.roles,
+      modules: existingUser?.modules,
+      dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+      type: existingUser?.customer?.type
+    });
+
     if (accessToken) {
       const token = await updateUserToken(accessToken);
       await this.dbservice.patchObject(SecurityUser, existingUser._id, { token });
@@ -297,6 +298,7 @@ exports.refreshToken = async (req, res, next) => {
           roles: existingUser.roles,
           modules: existingUser?.modules || [],
           customer: existingUser?.customer?._id,
+          type: existingUser?.customer?.type,
           contact: existingUser?.contact?._id,
           dataAccessibilityLevel: existingUser.dataAccessibilityLevel
         }
@@ -348,9 +350,7 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const existingUser = await SecurityUser.findOne({ login: req.body.email, isActive: true, isArchived: false })
-      .populate([{ path: 'customer', select: 'name type isActive isArchived' },
-      { path: 'contact', select: 'name isActive isArchived' }]);
+    let existingUser = await this.dbservice.getObject(SecurityUser, { login: req.body.email, isActive: true, isArchived: false }, this.populate);
     if (existingUser) {
       await this.userEmailService.resetPasswordEmail(req, res, existingUser)
     } else {
@@ -364,8 +364,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
   try {
     let _this = this;
     const existingUser = await SecurityUser.findById(req.body.userId)
-      .populate([{ path: 'customer', select: 'name type isActive isArchived' },
-      { path: 'contact', select: 'name isActive isArchived' }]);
+      .populate(this.populate);
     if (existingUser) {
       if (existingUser.token && existingUser.token.accessToken == req.body.token) {
         const tokenExpired = await isTokenExpired(existingUser.token.tokenExpiry);
@@ -400,14 +399,15 @@ exports.verifyForgottenPassword = async (req, res, next) => {
 async function validateAndLoginUser(req, res, existingUser) {
   try {
 
-    const accessToken = await issueToken(
-      existingUser._id,
-      existingUser.login,
-      req.sessionID,
-      existingUser.roles,
-      existingUser?.modules || [],
-      existingUser.dataAccessibilityLevel
-    );
+    const accessToken = await issueToken({
+      userId: existingUser._id,
+      email: existingUser.login,
+      sessionId: req.sessionID,
+      roles: existingUser.roles,
+      modules: existingUser?.modules,
+      dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+      type: existingUser?.customer?.type
+    });
 
     if (!accessToken) {
       return res
