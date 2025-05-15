@@ -82,6 +82,26 @@ exports.getCustomerContacts = async (req, res, next) => {
     if (this.customerId)
       this.query.customer = this.customerId;
 
+    const contacts = await this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate);
+    res.json(contacts);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
+exports.getCustomerAllContacts = async (req, res, next) => {
+  try {
+    this.orderBy = { firstName: 1, lastName: 1 };
+    this.query = req.query != "undefined" ? req.query : {};
+    if (this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
+    this.customerId = req.params.customerId;
+    if (this.customerId)
+      this.query.customer = this.customerId;
+
     const finalQuery = await applyUserFilter(req);
     if (finalQuery) {
       const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
@@ -93,7 +113,6 @@ exports.getCustomerContacts = async (req, res, next) => {
     const contacts = await this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate);
     res.json(contacts);
   } catch (error) {
-    console.log(" error : ", error)
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }

@@ -36,7 +36,7 @@ class dbService {
       });
     }
     else {
-      return await model.findOne(query).populate(populate);
+      return await model.findOne(query).populate(populate).lean();
     }
   }
 

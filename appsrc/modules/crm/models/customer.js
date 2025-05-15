@@ -5,86 +5,102 @@ const GUID = require('mongoose-guid')(mongoose);
 const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
+
+const allowedModules = [
+        'machineSettings',
+        'machineProfiles',
+        'machineConfig',
+        'machineNotes',
+        'assemblyDrawings',
+        'machineDocuments',
+        'machineLogs',
+        'supportService',
+        'machineGraphs',
+        'machineServiceReports'
+];
+
 const docSchema = new Schema({
 
-        name: { type: String , required: true },
+        name: { type: String, required: true },
         // name of organization
-        
-        clientCode: { type: String, maxlength: 20},
+
+        clientCode: { type: String, maxlength: 20 },
         // This code may help us to identify customer with 3rd party system (ABEL). 
-        
-        ref: { type: String, maxlength: 200},
+
+        ref: { type: String, maxlength: 200 },
         // reference code for referring and fetching data.
-      
+
         // tradingName: { type: String },
-        tradingName: [{ type: String  }],
+        tradingName: [{ type: String }],
 
         groupCustomer: { type: Schema.Types.ObjectId, ref: 'Customer' },
 
         website: { type: String },
         // website address of organization / site . 
-        
+
         //brand/trade name if the organization has it
-        
+
         type: { type: String },
         //its value can be "SP", "Customer"
-                
+
         // site: { type: Schema.Types , ref: 'CustomerSite' },
         // // main site object
 
-        mainSite: { type: Schema.Types.ObjectId , ref: 'CustomerSite' },
+        mainSite: { type: Schema.Types.ObjectId, ref: 'CustomerSite' },
         // it will be considered main site/location or headoffice 
-        
+
         sites: [{ type: Schema.Types.ObjectId, ref: 'CustomerSite' }],
         //list of sites associated with the organization
-        
+
+
         contacts: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
         // list of contact associated with organization
-        
+
         primaryBillingContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         // primary Billing Contact for the customer
-        
+
         primaryTechnicalContact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
         // primary Technical Contact for the customer
-        
-        accountManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+
+        accountManager: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
         // account manager for this customer from Howick Side 
-        
-        projectManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+
+        projectManager: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
         // technical project manager for this customer from Howick Side
-        
-        supportManager: [{ type: Schema.Types.ObjectId , ref: 'CustomerContact' }],
+
+        supportManager: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
         // support project manager for this customer from Howick Side
 
-        supportSubscription: { type: Boolean , default: false },
+        supportSubscription: { type: Boolean, default: false },
         // support subscription forthis customer from Howick Side
 
 
-
-        isFinancialCompany: { type: Boolean , default: false },
+        isFinancialCompany: { type: Boolean, default: false },
         // Company deals financial matters.
 
-        excludeReports : { type: Boolean , default: false },
+        excludeReports: { type: Boolean, default: false },
         // Company deals financial matters.
 
-        verifications : [{
-                verifiedBy : { type: Schema.Types.ObjectId , ref: 'SecurityUser' },
+        modules: { type: [String], enum: allowedModules, default: [] },
+
+        verifications: [{
+                verifiedBy: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
                 verifiedDate: { type: Date }
         }]
 },
-{
-        collection: 'Customers'
-});
+        {
+                collection: 'Customers'
+        });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
-docSchema.index({"name":1})
-docSchema.index({"type":1})
-docSchema.index({"mainSite":1})
-docSchema.index({"isActive":1})
-docSchema.index({"isArchived":1})
+docSchema.index({ "name": 1 })
+docSchema.index({ "type": 1 })
+docSchema.index({ "mainSite": 1 })
+docSchema.index({ "isActive": 1 })
+docSchema.index({ "isArchived": 1 })
 
 docSchema.plugin(uniqueValidator);
 

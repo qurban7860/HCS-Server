@@ -4,18 +4,18 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const logger = require('../../config/logger');
 const _ = require('lodash');
 let rtnMsg = require('../../config/static/static');
-const { 
-  isTokenExpired, 
-  comparePasswords, 
-  issueToken, 
-  updateUserToken, 
+const {
+  isTokenExpired,
+  comparePasswords,
+  issueToken,
+  updateUserToken,
   addAccessLog,
   removeSessions,
   removeAndCreateNewSession,
   isValidUser,
   isValidCustomer,
   isValidContact,
-  isValidRole, 
+  isValidRole,
 } = require('../service/authHelper');
 const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, SecuritySession } = require('../models');
 const ipRangeCheck = require("ip-range-check");
@@ -30,14 +30,10 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  {path: 'roles', select: ''},
+  { path: 'customer', select: 'name type modules isActive isArchived' },
+  { path: 'contact', select: 'name isActive isArchived' },
+  { path: 'roles', select: '' },
 ];
-
-
-this.populateList = [
-  { path: '', select: '' }
-];
-
 
 exports.login = async (req, res, next) => {
   const errors = validationResult(req);
@@ -48,39 +44,39 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
-    let queryString = { $or:[{login: req.body.email}, {email: req.body.email}], isArchived: false };
+    let queryString = { $or: [{ login: req.body.email }, { email: req.body.email }], isArchived: false };
 
-    let blackListIP = await SecurityConfigBlackListIP.find({isActive: true, isArchived: false });
+    let blackListIP = await SecurityConfigBlackListIP.find({ isActive: true, isArchived: false });
 
     let matchedBlackListIps = false;
     blackListIP.forEach((ipObj) => {
-      if(clientIP == ipObj.blackListIP) {
+      if (clientIP == ipObj.blackListIP) {
         matchedBlackListIps = true;
-      } else if(ipRangeCheck(clientIP, ipObj.blackListIP)){
+      } else if (ipRangeCheck(clientIP, ipObj.blackListIP)) {
         matchedBlackListIps = true;
       }
     });
 
 
     let matchedwhiteListIPs = false;
-    if(!matchedBlackListIps) {
+    if (!matchedBlackListIps) {
       let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
-      if(validIps && validIps.length > 0) {
+      if (validIps && validIps.length > 0) {
         validIps.forEach((ipObj) => {
-          if(clientIP == ipObj.whiteListIP) {
+          if (clientIP == ipObj.whiteListIP) {
             matchedwhiteListIPs = true;
-          } else if(ipRangeCheck(clientIP, ipObj.whiteListIP)){
+          } else if (ipRangeCheck(clientIP, ipObj.whiteListIP)) {
             matchedwhiteListIPs = true;
           }
-        });  
+        });
       } else {
         matchedwhiteListIPs = true;
       }
     }
 
 
-    if(matchedwhiteListIPs && !matchedBlackListIps){
-      this.dbservice.getObject(SecurityUser, queryString, [{ path: 'customer', select: 'name type isActive isArchived' }, { path: 'contact', select: 'name isActive isArchived' }, {path: 'roles', select: ''}], getObjectCallback);
+    if (matchedwhiteListIPs && !matchedBlackListIps) {
+      this.dbservice.getObject(SecurityUser, queryString, this.populate, getObjectCallback);
       async function getObjectCallback(error, response) {
 
         if (error) {
@@ -88,11 +84,11 @@ exports.login = async (req, res, next) => {
           return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
         } else {
           const existingUser = response;
-          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser)  && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) && 
-          (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
+          if (!(_.isEmpty(existingUser)) && isValidCustomer(existingUser.customer) && isValidUser(existingUser) && isValidContact(existingUser.contact) && isValidRole(existingUser.roles) &&
+            (typeof existingUser.lockUntil === "undefined" || existingUser.lockUntil == null || new Date() >= existingUser.lockUntil)
           ) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
-            if(blockedCustomer) {
+            if (blockedCustomer) {
               const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
               dbService.postObject(securityLogs, callbackFunc);
               async function callbackFunc(error, response) {
@@ -103,7 +99,7 @@ exports.login = async (req, res, next) => {
               return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized customer to access!!");
             } else {
               let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
-              if(blockedUser) {
+              if (blockedUser) {
                 securityLogs = await addAccessLog('blockedUser', req.body.email, existingUser._id, clientIP);
                 dbService.postObject(securityLogs, callbackFunc);
                 async function callbackFunc(error, response) {
@@ -112,79 +108,78 @@ exports.login = async (req, res, next) => {
                   }
                 }
                 return res.status(StatusCodes.BAD_GATEWAY).send("Not authorized user to access!!");
-              }  
+              }
             }
 
-                let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
-                if(passwordsResponse) {
+            let passwordsResponse = await comparePasswords(req.body.password, existingUser.password);
+            if (passwordsResponse) {
 
-                  if(existingUser && existingUser.loginFailedCounts && existingUser.loginFailedCounts > 0) {
-                    let updateUser = {
-                      lockUntil : "",
-                      lockedBy : "",
-                      loginFailedCounts: 0,
-                    };
-      
-                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
-                    async function callbackPatchFunc(error, response) {
-                      if (error) {
-                        logger.error(new Error(error));
-                      }
-                    }
-                  }
+              if (existingUser && existingUser.loginFailedCounts && existingUser.loginFailedCounts > 0) {
+                let updateUser = {
+                  lockUntil: "",
+                  lockedBy: "",
+                  loginFailedCounts: 0,
+                };
 
-                  return await validateAndLoginUser(req, res, existingUser);
-                }
-                else {
-                  const minutesToWaitUntil = 15;
-                  if(existingUser && existingUser.loginFailedCounts && 
-                    ((existingUser.loginFailedCounts == 2   && (!existingUser.lockUntil || new Date() >= existingUser.lockUntil )) || existingUser.loginFailedCounts == 4 )) {
-                    var now = new Date();
-                    lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
-                    
-                    if(existingUser.loginFailedCounts == 4) 
-                      lockUntil.setFullYear(lockUntil.getFullYear() + 100);
-
-                    let updateUser = {
-                      lockUntil : lockUntil,
-                      lockedBy : "System"
-                    };
-      
-                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
-                    async function callbackPatchFunc(error, response) {
-                      if (error) {
-                        logger.error(new Error(error));
-                      }
-                    }
-                  } 
-
-                  if (!(_.isEmpty(existingUser) ))
-                  {
-                    const updateCount = { $inc: { loginFailedCounts: 1 } };
-                    _this.dbservice.patchObject(SecurityUser, existingUser._id, updateCount, callbackPatchFunc);
-                    async function callbackPatchFunc(error, response) {
-                      if (error) {
-                        logger.error(new Error(error));
-                      }
-                    }
-                  }
-
-                  const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP);
-                  dbService.postObject(securityLogs, callbackFunc);
-                  async function callbackFunc(error, response) {
-                    if (error) {
-                      logger.error(new Error(error));
-                      return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
-                    } else {
-
-                      return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.BAD_REQUEST));
-                    } 
+                _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                async function callbackPatchFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
                   }
                 }
+              }
+
+              return await validateAndLoginUser(req, res, existingUser);
+            }
+            else {
+              const minutesToWaitUntil = 15;
+              if (existingUser && existingUser.loginFailedCounts &&
+                ((existingUser.loginFailedCounts == 2 && (!existingUser.lockUntil || new Date() >= existingUser.lockUntil)) || existingUser.loginFailedCounts == 4)) {
+                var now = new Date();
+                lockUntil = new Date(now.getTime() + minutesToWaitUntil * 60 * 1000);
+
+                if (existingUser.loginFailedCounts == 4)
+                  lockUntil.setFullYear(lockUntil.getFullYear() + 100);
+
+                let updateUser = {
+                  lockUntil: lockUntil,
+                  lockedBy: "System"
+                };
+
+                _this.dbservice.patchObject(SecurityUser, existingUser._id, updateUser, callbackPatchFunc);
+                async function callbackPatchFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                  }
+                }
+              }
+
+              if (!(_.isEmpty(existingUser))) {
+                const updateCount = { $inc: { loginFailedCounts: 1 } };
+                _this.dbservice.patchObject(SecurityUser, existingUser._id, updateCount, callbackPatchFunc);
+                async function callbackPatchFunc(error, response) {
+                  if (error) {
+                    logger.error(new Error(error));
+                  }
+                }
+              }
+
+              const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP);
+              dbService.postObject(securityLogs, callbackFunc);
+              async function callbackFunc(error, response) {
+                if (error) {
+                  logger.error(new Error(error));
+                  return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error);
+                } else {
+
+                  return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordInvalidCredenitalsMessage(StatusCodes.BAD_REQUEST));
+                }
+              }
+            }
           }
           else {
             let securityLogs = null;
-            if(existingUser) {
+            if (existingUser) {
               securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser);
             } else {
               securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP);
@@ -196,14 +191,14 @@ exports.login = async (req, res, next) => {
               }
             }
 
-            if(existingUser.lockUntil && existingUser.lockUntil > new Date()) {
-              const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60)+ 1);
-              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, diffInMinutes > 525600 ? "User Blocked!":`Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
+            if (existingUser.lockUntil && existingUser.lockUntil > new Date()) {
+              const diffInMinutes = parseInt((existingUser.lockUntil - new Date()) / (1000 * 60) + 1);
+              return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, diffInMinutes > 525600 ? "User Blocked!" : `Please wait for ${diffInMinutes} mintues. As attempts limit exceeded!`, true));
             } else {
               return res.status(470).send(rtnMsg.recordCustomMessageJSON(470, "Access denied", true));
             }
           }
-          
+
         }
       }
     } else {
@@ -213,7 +208,7 @@ exports.login = async (req, res, next) => {
         if (error) {
           logger.error(new Error(error));
         } else {
-          res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden"+(!matchedwhiteListIPs ? ".":"!"));
+          res.status(StatusCodes.UNAUTHORIZED).send("Access to this resource is forbidden" + (!matchedwhiteListIPs ? "." : "!"));
         }
       }
     }
@@ -226,18 +221,14 @@ exports.multifactorverifyCode = async (req, res, next) => {
   if (!errors.isEmpty()) {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    let existingUser = await SecurityUser.findOne({ _id: req.body.userID })
-    .populate({ path: 'customer', select: 'name type isActive isArchived' })
-    .populate({ path: 'contact', select: 'name isActive isArchived' })
-    .populate('roles');
-
-    if(existingUser){
+    let existingUser = await this.dbservice.getObject(SecurityUser, { _id: req.body.userID }, this.populate);
+    if (existingUser) {
       if (existingUser.multiFactorAuthenticationCode == req.body.code) {
         const currentTime = new Date();
         const multiFactorAuthenticationExpireTime = new Date(existingUser.multiFactorAuthenticationExpireTime);
-        if (currentTime <= multiFactorAuthenticationExpireTime) {  
-          const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
-          if(userSession){
+        if (currentTime <= multiFactorAuthenticationExpireTime) {
+          const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString() });
+          if (userSession) {
             return res.json({
               accessToken: existingUser?.token?.accessToken,
               userId: existingUser._id,
@@ -249,13 +240,14 @@ exports.multifactorverifyCode = async (req, res, next) => {
                 customer: existingUser?.customer?._id,
                 contact: existingUser?.contact?._id,
                 roles: existingUser.roles,
+                modules: existingUser?.customer?.modules || [],
                 dataAccessibilityLevel: existingUser.dataAccessibilityLevel
               }
             });
           } else {
             return res.status(StatusCodes.BAD_REQUEST).send("Authentication Failed!");
           }
-        } 
+        }
         else {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'The code is no longer valid.', true));
         }
@@ -263,29 +255,38 @@ exports.multifactorverifyCode = async (req, res, next) => {
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid code', true));
       }
     }
-    else{
+    else {
       return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Code not found', true));
     }
   }
 };
 
 exports.refreshToken = async (req, res, next) => {
-  try{
+  try {
     var _this = this;
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } 
-    let existingUser = await SecurityUser.findOne({ _id: req.body.userID });
+    }
+    let existingUser = await this.dbservice.getObject(SecurityUser, { _id: req.body.userID }, this.populate);
 
-    if( !existingUser?._id ){
+    if (!existingUser?._id) {
       return res.status(StatusCodes.BAD_REQUEST).send('User not found');
     }
-    const accessToken = await issueToken(existingUser._id, existingUser.login,req.sessionID, existingUser.dataAccessibilityLevel);
-    if ( accessToken ) {
-      const token =await updateUserToken( accessToken);
-      await this.dbservice.patchObject(SecurityUser, existingUser._id, { token } );
-      const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
+    const accessToken = await issueToken({
+      userId: existingUser._id,
+      email: existingUser.login,
+      sessionId: req.sessionID,
+      roles: existingUser.roles,
+      modules: existingUser?.customer?.modules || [],
+      dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+      type: existingUser?.customer?.type
+    });
+
+    if (accessToken) {
+      const token = await updateUserToken(accessToken);
+      await this.dbservice.patchObject(SecurityUser, existingUser._id, { token });
+      const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString() });
       return res.json({
         accessToken,
         userId: existingUser._id,
@@ -295,13 +296,15 @@ exports.refreshToken = async (req, res, next) => {
           email: existingUser.email,
           displayName: existingUser.name,
           roles: existingUser.roles,
+          modules: existingUser?.customer?.modules || [],
           customer: existingUser?.customer?._id,
+          type: existingUser?.customer?.type,
           contact: existingUser?.contact?._id,
           dataAccessibilityLevel: existingUser.dataAccessibilityLevel
         }
       });
     }
-  } catch (error){
+  } catch (error) {
     logger.error(new Error(error));
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
@@ -326,17 +329,17 @@ exports.logout = async (req, res, next) => {
   await removeSessions(req.params.userID);
 
   const wss = getAllWebSockets();
-  wss.map((ws)=> {  
-    ws.send(Buffer.from(JSON.stringify({'eventName':'userLoggedOut',userId:req.params.userID})));
+  wss.map((ws) => {
+    ws.send(Buffer.from(JSON.stringify({ 'eventName': 'userLoggedOut', userId: req.params.userID })));
   });
-  
-  if(req.session) {
+
+  if (req.session) {
     req.session.isLoggedIn = false;
-    req.session.destroy((a,b,c) => {
+    req.session.destroy((a, b, c) => {
       return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
     })
   } else {
-      return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
+    return res.status(StatusCodes.OK).send(rtnMsg.recordLogoutMessage(StatusCodes.OK));
   }
 
 };
@@ -347,11 +350,9 @@ exports.forgetPassword = async (req, res, next) => {
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
-    const existingUser = await SecurityUser.findOne({ login: req.body.email, isActive: true, isArchived: false })
-        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
-                  { path: 'contact', select: 'name isActive isArchived' }]);
-    if (existingUser ) {
-        await this.userEmailService.resetPasswordEmail( req, res, existingUser )
+    let existingUser = await this.dbservice.getObject(SecurityUser, { login: req.body.email, isActive: true, isArchived: false }, this.populate);
+    if (existingUser) {
+      await this.userEmailService.resetPasswordEmail(req, res, existingUser)
     } else {
       res.status(StatusCodes.BAD_REQUEST).send('Unable to locate the system user');
     }
@@ -363,10 +364,9 @@ exports.verifyForgottenPassword = async (req, res, next) => {
   try {
     let _this = this;
     const existingUser = await SecurityUser.findById(req.body.userId)
-        .populate([{ path: 'customer', select: 'name type isActive isArchived' },
-                  { path: 'contact', select: 'name isActive isArchived' }]);
-    if (existingUser) {    
-      if (existingUser.token && existingUser.token.accessToken == req.body.token) {    
+      .populate(this.populate);
+    if (existingUser) {
+      if (existingUser.token && existingUser.token.accessToken == req.body.token) {
         const tokenExpired = await isTokenExpired(existingUser.token.tokenExpiry);
         if (!tokenExpired) {
           const hashedPassword = await bcrypt.hash(req.body.password, 12);
@@ -398,14 +398,16 @@ exports.verifyForgottenPassword = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   try {
-    
-    const accessToken = await issueToken(
-      existingUser._id,
-      existingUser.login,
-      req.sessionID,
-      existingUser.roles,
-      existingUser.dataAccessibilityLevel
-    );
+
+    const accessToken = await issueToken({
+      userId: existingUser._id,
+      email: existingUser.login,
+      sessionId: req.sessionID,
+      roles: existingUser.roles,
+      modules: existingUser?.customer?.modules || [],
+      dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+      type: existingUser?.customer?.type
+    });
 
     if (!accessToken) {
       return res
@@ -418,9 +420,9 @@ async function validateAndLoginUser(req, res, existingUser) {
     if (!session || !session.session || !session.session.sessionId) {
       throw new Error("Unable to start session.");
     }
-    
-    const token = await updateUserToken( accessToken);
-    await dbService.patchObject(SecurityUser, existingUser._id, { token } );
+
+    const token = await updateUserToken(accessToken);
+    await dbService.patchObject(SecurityUser, existingUser._id, { token });
     const querySecurityLog = {
       user: existingUser._id,
       logoutTime: { $exists: false },
@@ -435,22 +437,22 @@ async function validateAndLoginUser(req, res, existingUser) {
       "login",
       req.body.email,
       existingUser._id,
-      ( req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress )
+      (req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress)
     );
     await dbService.postObject(loginLogResponse);
 
     const wss = getAllWebSockets();
-    wss?.forEach(( ws ) => {
+    wss?.forEach((ws) => {
       ws.send(
         Buffer.from(
           JSON.stringify({ eventName: "newUserLogin", userId: existingUser._id })
-      ));
+        ));
     });
 
     if (existingUser.multiFactorAuthentication) {
       return await userEmailService.sendMfaEmail(req, res, existingUser);
     }
-    const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString()});
+    const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString() });
     const userResponse = {
       accessToken,
       userId: existingUser._id,
@@ -462,6 +464,7 @@ async function validateAndLoginUser(req, res, existingUser) {
         customer: existingUser.customer?._id,
         contact: existingUser.contact?._id,
         roles: existingUser.roles,
+        modules: existingUser?.customer?.modules || [],
         dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
       },
     };

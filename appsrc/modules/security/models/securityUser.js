@@ -4,83 +4,84 @@ const uniqueValidator = require('mongoose-unique-validator');
 const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
+
 const docSchema = new Schema({
-        
-        customer: { type: Schema.ObjectId, ref: 'Customer', required: true },
-        // guid of customer from customers collection.
-        
-        contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
-        // guid of contact of customer if linked to contact
-            
-        name: { type: String, required: true},
-        // Full name of user
-        
-        phone: { type: String },
-        // phone/mobile numbers. Phone number must with country code.  
-        
-        email: { type: String },
-        // Email addresses. 
-        
-        login: { type: String, required: true },
-        // Login. Email & Login may have same values . 
-        
-        password: { type: String, required: true },
-        // password to access portal
 
-        multiFactorAuthenticationCode: {type: String},
-        // code to access portal
+    customer: { type: Schema.ObjectId, ref: 'Customer', required: true },
+    // guid of customer from customers collection.
 
-        multiFactorAuthentication: {type: Boolean, default: false},
-        //Authentification 
+    contact: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+    // guid of contact of customer if linked to contact
 
-        multiFactorAuthenticationExpireTime: {type: Date},
-        // Date/Time for code expiry.
+    name: { type: String, required: true },
+    // Full name of user
 
-        expireAt: { type: Date},
-        // Date/Time for password expiry.
+    phone: { type: String },
+    // phone/mobile numbers. Phone number must with country code.  
 
-        currentEmployee: { type: Boolean, default: false },
-        
-        invitationStatus: { type: Boolean, default: false },
+    email: { type: String },
+    // Email addresses. 
 
-        dataAccessibilityLevel: {type: String, enum: ['RESTRICTED','GLOBAL'], default: 'RESTRICTED'},
+    login: { type: String, required: true },
+    // Login. Email & Login may have same values . 
 
-        roles: [
-            { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
-        ],
+    password: { type: String, required: true },
+    // password to access portal
 
-        regions: [
-            { type: Schema.Types.ObjectId, ref: 'Region' }
-        ],
+    multiFactorAuthenticationCode: { type: String },
+    // code to access portal
 
-        customers: [
-            { type: Schema.Types.ObjectId, ref: 'Customer' }
-        ],
+    multiFactorAuthentication: { type: Boolean, default: false },
+    //Authentification 
 
-        machines: [
-            { type: Schema.Types.ObjectId, ref: 'Machine' }
-        ],
-        
-        registrationRequest:  { type: Schema.Types.ObjectId, ref: 'PortalRegistration' },
+    multiFactorAuthenticationExpireTime: { type: Date },
+    // Date/Time for code expiry.
 
-        whiteListIPs: [{ type: String}],
-        // list of white IPs
-        
-        token: {
-            accessToken: {type: Object},
-            tokenCreation: { type: Date},
-            // Date/Time for token  creation.
-            tokenExpiry: { type: Date}
-            // Date/Time for token expiry.
-        },
+    expireAt: { type: Date },
+    // Date/Time for password expiry.
 
-        lockUntil : {type: Date},
-        lockedBy: {type: String, enum: ['SYSTEM','ADMIN']},
-        loginFailedCounts: {type: Number, default: 0}
+    currentEmployee: { type: Boolean, default: false },
+
+    invitationStatus: { type: Boolean, default: false },
+
+    dataAccessibilityLevel: { type: String, enum: ['RESTRICTED', 'GLOBAL'], default: 'RESTRICTED' },
+
+    roles: [
+        { type: Schema.Types.ObjectId, ref: 'SecurityRole' }
+    ],
+
+    regions: [
+        { type: Schema.Types.ObjectId, ref: 'Region' }
+    ],
+
+    customers: [
+        { type: Schema.Types.ObjectId, ref: 'Customer' }
+    ],
+
+    machines: [
+        { type: Schema.Types.ObjectId, ref: 'Machine' }
+    ],
+
+    registrationRequest: { type: Schema.Types.ObjectId, ref: 'PortalRegistration' },
+
+    whiteListIPs: [{ type: String }],
+    // list of white IPs
+
+    token: {
+        accessToken: { type: Object },
+        tokenCreation: { type: Date },
+        // Date/Time for token  creation.
+        tokenExpiry: { type: Date }
+        // Date/Time for token expiry.
+    },
+
+    lockUntil: { type: Date },
+    lockedBy: { type: String, enum: ['SYSTEM', 'ADMIN'] },
+    loginFailedCounts: { type: Number, default: 0 }
 },
-{
+    {
         collection: 'SecurityUsers'
-});
+    });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -88,11 +89,11 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-docSchema.index({"name":1})
-docSchema.index({"customer":1})
-docSchema.index({"contact":1})
-docSchema.index({"email":1})
-docSchema.index({"login":1})
-docSchema.index({"token.accessToken":1})
+docSchema.index({ "name": 1 })
+docSchema.index({ "customer": 1 })
+docSchema.index({ "contact": 1 })
+docSchema.index({ "email": 1 })
+docSchema.index({ "login": 1 })
+docSchema.index({ "token.accessToken": 1 })
 
 module.exports = mongoose.model('SecurityUser', docSchema);

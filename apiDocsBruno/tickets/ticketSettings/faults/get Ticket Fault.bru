@@ -1,0 +1,15 @@
+meta {
+  name: get Ticket Fault
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/tickets/settings/faults/6780f71374ff68176cc7df99
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}

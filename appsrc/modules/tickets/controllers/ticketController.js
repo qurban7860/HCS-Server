@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const { StatusCodes, getReasonPhrase } = require('http-status-codes');
+const { Types: { ObjectId } } = require('mongoose');
 const logger = require('../../config/logger');
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
@@ -16,7 +17,8 @@ const {
   TicketRequestType,
   TicketPriority,
   TicketStatus,
-  TicketStatusType
+  TicketStatusType,
+  TicketFault
 } = require('../models');
 const { SecurityUser } = require('../../security/models');
 const applyTicketFilter = require('../utils/ticketFilter');
@@ -25,6 +27,7 @@ const CounterController = require('../../counter/controllers/counterController')
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
 const { statusPopulate } = require('./statusController');
 const { requestTypePopulate } = require('./requestTypeController');
+const { getDefaultTicketFaults } = require('./faultController');
 const TicketEmailService = require('../service/ticketEmailService');
 this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -40,6 +43,7 @@ this.populate = [
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
+  { path: 'faults', select: 'name icon color' },
   { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
@@ -265,7 +269,8 @@ exports.getTicketSettings = async (req, res, next) => {
       issueTypes,
       requestTypes,
       priorities,
-      statuses
+      statuses,
+      faults
     ] = await Promise.all([
       this.dbservice.getObjectList(req, TicketChangeReason, this.settingFields, this.query, this.orderBy),
       this.dbservice.getObjectList(req, TicketChangeType, this.settingFields, this.query, this.orderBy),
@@ -274,7 +279,8 @@ exports.getTicketSettings = async (req, res, next) => {
       this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy),
       this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate),
       this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy),
-      this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate)
+      this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate),
+      this.dbservice.getObjectList(req, TicketFault, this.settingFields, this.query, this.orderBy),
     ]);
 
     const result = {
@@ -285,7 +291,8 @@ exports.getTicketSettings = async (req, res, next) => {
       issueTypes,
       requestTypes,
       priorities,
-      statuses
+      statuses,
+      faults
     }
 
     return res.status(StatusCodes.OK).json(result);
@@ -379,6 +386,10 @@ exports.postTicket = async (req, res, next) => {
       req.body.reporter = userData?.contact;
     }
 
+    if (!req.body.faults || Array.isArray(req.body.faults) && req.body.faults?.length < 1) {
+      req.body.faults = await getDefaultTicketFaults(req);
+    }
+
     if (!req.body.issueType || req.body.issueType == 'null') {
       const issueTypeData = await this.dbservice.getObject(TicketIssueType, queryObject);
       req.body.issueType = issueTypeData?._id;
@@ -422,7 +433,13 @@ exports.patchTicket = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
     req.params.ticketId = req.params.id;
-    const oldObj = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id);
+    const oldObj = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
+    if (oldObj?.status?.statusType?.isResolved) {
+      const userData = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body?.loginUser?.userId, [{ path: "customer", select: "type" }]);
+      if (userData?.customer?.type?.toLowerCase() !== 'sp') {
+        return res.status(StatusCodes.BAD_REQUEST).send("You are not allowed to change resolved ticket status!");
+      }
+    }
     await this.dbservice.patchObject(Ticket, req.params.id, getDocFromReq(req));
     const fields = ["reporter", "assignee", "priority", "status"];
     const changedFields = {};
@@ -431,11 +448,11 @@ exports.patchTicket = async (req, res, next) => {
       if (field in req.body) {
         const newValue = req.body[field];
         const oldValue = oldObj?.[field];
-        const isChanged = newValue !== oldValue;
+        const isChanged = newValue !== oldValue?._id;
 
         if (isChanged) {
           const fieldLabel = sentenceCase(field);
-          changedFields[`previous${fieldLabel}`] = oldValue;
+          changedFields[`previous${fieldLabel}`] = oldValue?._id;
           changedFields[`new${fieldLabel}`] = newValue;
         }
       }
@@ -472,7 +489,7 @@ function getDocFromReq(req, reqType) {
 
   const allowedFields = [
     "customer", "machine", "issueType", "requestType", "description", "hlc", "plc", "summary", "changeType",
-    "reporter", "assignee", "approvers", "impact", "priority", "status", "changeReason", "implementationPlan",
+    "reporter", "assignee", "approvers", "impact", "faults", "priority", "status", "changeReason", "implementationPlan",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
     "rootCause", "workaround", "plannedStartDate", "startTime", "plannedEndDate", "endTime", "isActive", "isArchived"
   ];
@@ -498,3 +515,9 @@ function getDocFromReq(req, reqType) {
   }
   return doc;
 }
+
+
+
+
+
+

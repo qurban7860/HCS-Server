@@ -11,8 +11,11 @@ const baseRoute = `/document`;
 
 router.use(checkAuth);
 
+// - /api/1.0.0/cp/documents/document/
+router.get(`${baseRoute}/`, validateMachineInQuery, controller.getDocuments);
+
 // - /api/1.0.0/cp/documents/document/:id
-router.get(`${baseRoute}/:id`, checkIDs(validate.id), validateMachineInQuery, validateMachineDrawingCustomer, controller.getDocument);
+router.get(`${baseRoute}/:id`, checkIDs(validate.id), validateMachineInQuery, controller.getDocument);
 
 
 module.exports = router;

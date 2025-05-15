@@ -316,7 +316,8 @@ exports.getProduct = async (req, res, next) => {
 
 exports.getProducts = async (req, res, next) => {
   const listPopulate = [
-    { path: 'machineModel', select: '_id name category' },
+    { path: 'parentMachine', select: '_id serialNo name ' },
+    { path: 'machineModel', select: '_id name category', populate: { path: 'category', select: '_id name' } },
     { path: 'status', select: '_id name slug' },
     { path: 'customer', select: '_id clientCode name' },
     {
@@ -398,6 +399,81 @@ exports.getProducts = async (req, res, next) => {
         res.json(products);
       }
     }
+  }
+};
+
+exports.getMachineLifeCycle = async (req, res, next) => {
+  if (!req.params.id || !ObjectId.isValid(req.params.id)) {
+    return res.status(StatusCodes.BAD_REQUEST).send("Machine uuid is not valid!");
+  }
+
+  try {
+    const machine = await Product.findById(req.params.id)
+      .select('globelMachineID createdBy updatedBy createdAt updatedAt portalKey')
+      .populate(this.populate)
+      .lean();
+
+    if (!machine) {
+      return res.status(StatusCodes.NOT_FOUND).send("Machine not found.");
+    }
+
+    let lifeCycleData = {
+      createdBy: machine.createdBy,
+      updatedBy: machine.updatedBy,
+      createdAt: machine.createdAt,
+      updatedAt: machine.updatedAt,
+      portalKey: machine.portalKey,
+      transferredHistory: [],
+      serviceReports: [] 
+    };
+
+    const serviceReports = await ProductServiceReports.find({
+      machine: req.params.id,
+      isArchived: { $ne: true },
+      isActive: { $ne: false }
+    })
+    .select('serviceDate')
+    .lean(); 
+
+    lifeCycleData.serviceReports = serviceReports.map(report => ({
+      serviceDate: report.serviceDate
+    }));
+
+    if (machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)) {
+      const transferHistory = await Product.find({ globelMachineID: machine.globelMachineID })
+        .select('purchaseDate shippingDate transferredDate transferredToMachine transferredFromMachine customer manufactureDate installationDate decommissionedDate supportExpireDate')
+        .populate([
+          { path: 'customer', select: '_id clientCode name' },
+          { path: 'transferredToMachine', select: '_id serialNo name customer' },
+          { path: 'transferredFromMachine', select: '_id serialNo name customer' },
+        ])
+        .lean();
+
+      transferHistory.forEach(item => {
+        lifeCycleData.transferredHistory.push({
+          purchaseDate: item.purchaseDate || item.shippingDate,
+          shippingDate: item.shippingDate,
+          transferredDate: item.transferredDate,
+          manufactureDate: item.manufactureDate,
+          installationDate: item.installationDate,
+          transferredToMachine: item.transferredToMachine,
+          transferredFromMachine: item.transferredFromMachine,
+          decommissionedDate: item.decommissionedDate,
+          supportExpireDate: item.supportExpireDate,
+          customer: item.customer
+        });
+      });
+
+      if (lifeCycleData.transferredHistory.length === 1 && lifeCycleData.transferredHistory[0]?._id?.toString() === machine?._id?.toString()) {
+        lifeCycleData.transferredHistory = [];
+      }
+    }
+
+    res.status(StatusCodes.OK).json(lifeCycleData);
+
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Error fetching machine life cycle.");
   }
 };
 
@@ -955,6 +1031,26 @@ exports.transferOwnership = async (req, res, next) => {
         let alreadyTransferredParentMachine = await dbservice.getObject(Product, { customer: req.body.customerId, transferredFromMachine: req.body.machine, isActive: true, isArchived: false }, this.populate);
         if (alreadyTransferredParentMachine) {
           return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordDuplicateRecordMessage(StatusCodes.BAD_REQUEST));
+        }
+
+        // Verify if this machine has already been transferred to any customer
+        const alreadyTransferred = await Product.findOne({
+          transferredFromMachine: req.body.machine,
+          isActive: true,
+          isArchived: false
+        }).select('_id customer').populate('customer', 'name');
+        
+        if (alreadyTransferred) {
+          return res.status(StatusCodes.BAD_REQUEST).send(
+            `This machine has already been transferred to customer "${alreadyTransferred.customer?.name || 'Unknown'}". A machine can only be transferred once.`
+          );
+        }
+        
+        // Also check if the machine's status is already 'transferred'
+        if (parentMachine.status && parentMachine.status.slug === 'transferred') {
+          return res.status(StatusCodes.BAD_REQUEST).send(
+            "This machine has already been transferred and cannot be transferred again."
+          );
         }
 
         const transferredDate = req.body.transferredDate;

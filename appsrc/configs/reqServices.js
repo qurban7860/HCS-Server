@@ -40,7 +40,7 @@ const validateRequest = (schema) => async (req, res, next) => {
     if (req.is("multipart/form-data")) {
       const formDataObject = {};
       for (const [key, value] of Object.entries(body)) {
-        formDataObject[key] = Array.isArray(value) ? value[0] : value;
+        formDataObject[key] = value;
       }
       body = formDataObject;
     }

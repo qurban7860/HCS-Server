@@ -85,10 +85,19 @@ exports.getLogs = async (req, res, next) => {
           $lte: endDate
         };
       }
-    }
+    } 
+    // else if (this.query?.hourly === 'last24Hours') {
+    //   const now = new Date();
+    //   const twentyFourHoursAgo = new Date(now - 24 * 60 * 60 * 1000);
+    //   this.query.date = {
+    //     $gte: twentyFourHoursAgo,
+    //     $lte: now
+    //   };
+    // }
 
     delete this.query?.fromDate;
     delete this.query?.toDate;
+    delete this.query?.hourly;
 
     if (this.query?.customer && !this.query?.machine) {
       const activeMachines = await Product.find({ 
@@ -146,64 +155,94 @@ exports.getLogsByApiId = async (req, res, next) => {
 exports.getLogsGraph = async (req, res, next) => {
   try {
     const LogModel = getModel(req);
-    const { customer, machine, periodType, logGraphType } = req.query;
+    const { customer, machine, periodType, logGraphType, startDate, endDate, timezone = "UTC" } = req.query;
 
     const match = {};
     if (mongoose.Types.ObjectId.isValid(customer)) {
       match.customer = new mongoose.Types.ObjectId(customer);
 
       if (!machine) {
-        const activeMachines = await Product.find({ 
+        const activeMachines = await Product.find({
           customer: match.customer,
           isActive: true,
-          isArchived: false 
-        }).select('_id');
-        
-        match.machine = { 
-          $in: activeMachines.map(machine => machine._id) 
+          isArchived: false,
+        }).select("_id");
+
+        match.machine = {
+          $in: activeMachines.map((machine) => machine._id),
         };
       }
     }
+
     if (mongoose.Types.ObjectId.isValid(machine)) {
       match.machine = new mongoose.Types.ObjectId(machine);
     }
 
-    let groupBy, dateRange, limit;
+    let groupBy, limit;
     const currentDate = new Date();
 
-    switch ( periodType && periodType?.toLowerCase()) {
-      case 'daily':
-        groupBy = { $dateToString: { format: "%m/%d", date: "$date" } };
-        dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
+    switch (periodType && periodType?.toLowerCase()) {
+      case "hourly":
+        groupBy = { $dateToString: { format: "%m/%d %H", date: "$date", timezone: timezone } };
+        limit = 24;
+        break;
+      case "daily":
+        groupBy = { $dateToString: { format: "%d/%m", date: "$date", timezone: timezone } };
         limit = 30;
         break;
-      case 'monthly':
-        groupBy = { $dateToString: { format: "%Y-%m", date: "$date" } };
-        dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 12));
-        limit = 12;
-        break;
-      case 'quarterly':
+      case "monthly":
         groupBy = {
           $concat: [
-            { $toString: { $year: "$date" } },
+            { $dateToString: { format: "%b ", date: "$date", timezone: timezone } },
+            { $substr: [{ $toString: { $year: { $dateFromString: { dateString: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: timezone } } } } } }, 2, 2] },
+          ],
+        };
+        limit = 12;
+        break;
+      case "quarterly":
+        groupBy = {
+          $concat: [
+            { $toString: { $year: { $dateFromString: { dateString: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: timezone } } } } } },
             "-",
             "Q",
-            { $toString: { $ceil: { $divide: [{ $month: "$date" }, 3] } } },
-          ]
+            { $toString: { $ceil: { $divide: [{ $month: { $dateFromString: { dateString: { $dateToString: { format: "%Y-%m-%d", date: "$date", timezone: timezone } } } } }, 3] } } },
+          ],
         };
-        dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 15));
         limit = 4;
         break;
-      case 'yearly':
-        groupBy = { $dateToString: { format: "%Y", date: "$date" } };
-        dateRange = new Date(currentDate.setFullYear(currentDate.getFullYear() - 5));
+      case "yearly":
+        groupBy = { $dateToString: { format: "%Y", date: "$date", timezone: timezone } };
         limit = 5;
         break;
       default:
-        return res.status(400).send("Invalid periodType! Must be daily, monthly, quarterly, or yearly.");
+        return res.status(400).send("Invalid periodType! Must be hourly, daily, monthly, quarterly, or yearly.");
     }
 
-    match.date = { $gte: dateRange };
+    if (startDate || endDate) {
+      match.date = {};
+      if (startDate) match.date.$gte = new Date(startDate);
+      if (endDate) match.date.$lte = new Date(endDate);
+    } else {
+      let dateRange;
+      switch (periodType?.toLowerCase()) {
+        case 'hourly':
+          dateRange = new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+          break;
+        case 'daily':
+          dateRange = new Date(currentDate.setDate(currentDate.getDate() - 30));
+          break;
+        case 'monthly':
+          dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 12));
+          break;
+        case 'quarterly':
+          dateRange = new Date(currentDate.setMonth(currentDate.getMonth() - 15));
+          break;
+        case 'yearly':
+          dateRange = new Date(currentDate.setFullYear(currentDate.getFullYear() - 5));
+          break;
+      }
+      match.date = { $gte: dateRange };
+    }
 
     const groupStage = {
       $group: {
@@ -221,32 +260,67 @@ exports.getLogsGraph = async (req, res, next) => {
                         $not: {
                           $regexMatch: {
                             input: { $toString: { $ifNull: ["$componentLength", "0"] } },
-                            regex: /^-?\d*\.?\d+$/
-                          }
-                        }
-                      }
-                    ]
+                            regex: /^-?\d*\.?\d+$/,
+                          },
+                        },
+                      },
+                    ],
                   },
                   "0",
                   {
                     $replaceAll: {
                       input: { $toString: { $ifNull: ["$componentLength", "0"] } },
                       find: ",",
-                      replacement: ""
-                    }
-                  }
-                ]
+                      replacement: "",
+                    },
+                  },
+                ],
               },
               to: "double",
               onError: 0,
-              onNull: 0
-            }
-          }
+              onNull: 0,
+            },
+          },
+        },
+        waste: {
+          $sum: {
+            $convert: {
+              input: {
+                $cond: [
+                  {
+                    $or: [
+                      { $eq: [{ $type: "$waste" }, "null"] },
+                      { $eq: [{ $type: "$waste" }, "missing"] },
+                      {
+                        $not: {
+                          $regexMatch: {
+                            input: { $toString: { $ifNull: ["$waste", "0"] } },
+                            regex: /^-?\d*\.?\d+$/,
+                          },
+                        },
+                      },
+                    ],
+                  },
+                  "0",
+                  {
+                    $replaceAll: {
+                      input: { $toString: { $ifNull: ["$waste", "0"] } },
+                      find: ",",
+                      replacement: "",
+                    },
+                  },
+                ],
+              },
+              to: "double",
+              onError: 0,
+              onNull: 0,
+            },
+          },
         }
-      }
+      },
     };
 
-    if (logGraphType === 'productionRate') {
+    if (logGraphType === "productionRate") {
       groupStage.$group.time = {
         $sum: {
           $convert: {
@@ -260,57 +334,21 @@ exports.getLogsGraph = async (req, res, next) => {
                       $not: {
                         $regexMatch: {
                           input: { $toString: { $ifNull: ["$time", "0"] } },
-                          regex: /^-?\d*\.?\d+$/
-                        }
-                      }
-                    }
-                  ]
+                          regex: /^-?\d*\.?\d+$/,
+                        },
+                      },
+                    },
+                  ],
                 },
                 "0",
-                { $ifNull: ["$time", "0"] }
-              ]
+                { $ifNull: ["$time", "0"] },
+              ],
             },
             to: "double",
             onError: 0,
-            onNull: 0
-          }
-        }
-      };
-    } else {
-      groupStage.$group.waste = {
-        $sum: {
-          $convert: {
-            input: {
-              $cond: [
-                {
-                  $or: [
-                    { $eq: [{ $type: "$waste" }, "null"] },
-                    { $eq: [{ $type: "$waste" }, "missing"] },
-                    {
-                      $not: {
-                        $regexMatch: {
-                          input: { $toString: { $ifNull: ["$waste", "0"] } },
-                          regex: /^-?\d*\.?\d+$/
-                        }
-                      }
-                    }
-                  ]
-                },
-                "0",
-                {
-                  $replaceAll: {
-                    input: { $toString: { $ifNull: ["$waste", "0"] } },
-                    find: ",",
-                    replacement: ""
-                  }
-                }
-              ]
-            },
-            to: "double",
-            onError: 0,
-            onNull: 0
-          }
-        }
+            onNull: 0,
+          },
+        },
       };
     }
 
@@ -321,17 +359,16 @@ exports.getLogsGraph = async (req, res, next) => {
         $project: {
           _id: 1,
           componentLength: { $round: ["$componentLength", 2] },
-          ...(logGraphType === 'productionRate'
-            ? { 
-                time: { 
-                  $round: ["$time", 2]
-                } 
-              }
-            : { waste: { $round: ["$waste", 2] } })
-        }
+          waste: { $round: ["$waste", 2] },
+          ...(logGraphType === "productionRate" && {
+            time: {
+              $round: ["$time", 2],
+            },
+          }),
+        },
       },
-      { $sort: { "_id": -1 } },
-      { $limit: limit }
+      { $sort: { _id: -1 } },
+      { $limit: limit },
     ]);
 
     return res.json(graphResults);
@@ -340,6 +377,7 @@ exports.getLogsGraph = async (req, res, next) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error.message);
   }
 };
+
 exports.deleteLog = async (req, res, next) => {
   try {
     req.query.type = req.query?.type || req.body?.type;
