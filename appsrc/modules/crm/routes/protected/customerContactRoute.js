@@ -20,7 +20,7 @@ const baseRoute = `/customers/:customerId/contacts`;
 router.use(checkAuth, roleCheck);
 
 // - /api/1.0.0/crm/customers/contacts/
-router.get('/customers/contacts/all', controller.getCustomerContacts);
+router.get('/customers/contacts/all', controller.getCustomerAllContacts);
 
 // - /api/1.0.0/crm/contacts/search
 router.get(`${baseRoute}/search`, controller.searchCustomerContacts);
