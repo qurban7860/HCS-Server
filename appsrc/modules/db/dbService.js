@@ -76,7 +76,7 @@ class dbService {
     let page;
 
 
-    if (req.body.page) {
+    if (req && req?.body?.page) {
       page = parseInt(req.body.page) || 0; // Current page number
       pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       countDocuments = await model.find(query).countDocuments();
@@ -85,7 +85,7 @@ class dbService {
 
     try {
       let documents = await query_.exec();
-      if (req.body.page || req.body.page === 0) {
+      if (req && req?.body?.page || req?.body?.page === 0) {
         let listDocuments = {
           data: documents,
           ...(req.body.page && {

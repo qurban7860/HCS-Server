@@ -1,6 +1,6 @@
 const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
-const controllers = require('../../../documents/controllers');;
+const controllers = require('../controllers/');
 const controller = controllers.documentController;
 const router = express.Router();
 const checkIDs = require('../../../../middleware/validateParamIDs');
