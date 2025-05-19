@@ -115,13 +115,15 @@ exports.getSecurityUsers = async (req, res, next) => {
   } else this.fields = {}
 
   // In case customer type is passed
-  const customerType = req.query.customer && req.query.customer.type;
+  const customerType = req.query?.customer && req.query?.customer?.type;
   if (customerType)
     delete this.query.customer;
-
   // In case contact department type is passed
-  const departmentType = req.query.contact?.department?.departmentType;
-  delete this.query.contact;
+  const departmentType = req.query?.contact?.department?.departmentType;
+  if (departmentType)
+    delete this.query.contact;
+
+
 
   this.dbservice.getObjectList(req, SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, users) {
