@@ -1,0 +1,19 @@
+meta {
+  name: get Contact Users
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/security/users/
+  body: none
+  auth: bearer
+}
+
+params:query {
+  ~roles.roleType: Support
+}
+
+auth:bearer {
+  token: {{token}}
+}
