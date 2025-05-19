@@ -24,6 +24,9 @@ router.get(`${baseRoute}/validate`, controller.validateUser);
 // - /api/1.0.0/security/users
 router.get(`${baseRoute}/`, controller.getSecurityUsers);
 
+// - /api/1.0.0/security/users/contact/:id
+router.get(`${baseRoute}/contact/:id`, checkIDs(validate.id), controller.getContactSecurityUsers);
+
 // - /api/1.0.0/security/users/:id
 router.get(`${baseRoute}/:id`, checkIDs(validate.id), controller.getSecurityUser);
 
