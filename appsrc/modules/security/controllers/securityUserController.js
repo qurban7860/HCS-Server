@@ -163,6 +163,7 @@ exports.getSecurityUsers = async (req, res, next) => {
 exports.getContactSecurityUsers = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
+    this.query.contact = req.params.id;
     if (req.query.roleType) {
       let filteredRoles = await SecurityRole.find({ roleType: { $in: req.query.roleType }, isActive: true, isArchived: false });
 
