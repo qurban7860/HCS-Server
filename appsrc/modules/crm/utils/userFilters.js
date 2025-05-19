@@ -44,7 +44,7 @@ async function applyUserFilter(req) {
 
                     for (let region of regions) {
                         if (Array.isArray(region.countries) && region.countries.length > 0)
-                            countries = [...region.countries];
+                            countries = [...countries, ...region.countries];
                     }
 
                     if (Array.isArray(countries) && countries.length > 0) {

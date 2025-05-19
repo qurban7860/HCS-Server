@@ -157,7 +157,7 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     if (this.query.forCustomer || this.query.forMachine || this.query.forDrawing) {
-      if (this.query.forDrawing)
+      if (this.query.searchKey && this.query.searchColumn && this.query.forDrawing) {
         if (this.query.searchColumn == "machine.serialNo") {
           const regexCondition = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
           const machineIds = await Product.find({ "serialNo": regexCondition, isArchived: false }, "_id").lean();
@@ -165,9 +165,18 @@ exports.getDocuments = async (req, res, next) => {
           const documentIds = await ProductDrawing.find({ "machine": { $in: machineIds?.map(m => m?._id) }, isArchived: false }, "document").lean();
           // console.log("documentIds : ", documentIds)
           this.query._id = { $in: documentIds?.map(d => d?.document) };
-          delete this.query.searchKey;
-          delete this.query.searchColumn;
+        } else if (this.query.searchColumn.includes(".")) {
+          const [parentField, childField] = this.query.searchColumn.split(".");
+          this.query[parentField] = {
+            [childField]: regexCondition
+          };
+        } else {
+          this.query[this.query.searchColumn] = { $regex: escapeRegExp(this.query.searchKey), $options: "i" };
         }
+        delete this.query.searchKey;
+        delete this.query.searchColumn;
+      }
+
       isDrawing = true;
       let query;
       if (this.query.forCustomer && this.query.forMachine) {
