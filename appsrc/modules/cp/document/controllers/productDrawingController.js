@@ -44,8 +44,8 @@ exports.getProductDrawings = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query.isArchived = false
-    const regexCondition = { $regex: 'Assembly Drawings', $options: 'i' };
-    const docCategoryQuery = { name: regexCondition, customerAccess: true, isArchived: false, isActive: true }
+
+    const docCategoryQuery = { customerAccess: true, isArchived: false, isActive: true }
     if (this.query.forCustomer) {
       docCategoryQuery.customer = true;
       delete this.query.forCustomer
@@ -59,7 +59,7 @@ exports.getProductDrawings = async (req, res, next) => {
 
     const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, this.fields, docCategoryQuery);
     this.query.documentCategory = { $in: docCategories?.map((dc) => dc?._id.toString()) }
-    const docTypeQuery = { name: regexCondition, customerAccess: true, isArchived: false, isActive: true }
+    const docTypeQuery = { customerAccess: true, isArchived: false, isActive: true }
     const docTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, docTypeQuery);
     this.query.documentType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
     if (
