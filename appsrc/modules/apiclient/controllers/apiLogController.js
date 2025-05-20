@@ -161,6 +161,71 @@ exports.postApiLog = async (req, res, next) => {
   }
 };
 
+exports.getApiLogSummary = async (req, res, next) => {
+  try {
+    const { fromDate, toDate, apiType } = req.query;
+    const match = {};
+
+    if (fromDate && toDate) {
+      match.createdAt = {
+        $gte: new Date(fromDate),   // Use Date objects, not strings
+        $lte: new Date(toDate)
+      };
+    }
+
+    if (apiType) {
+      match.apiType = apiType;
+    }
+
+    const summary = await apilog.aggregate([
+      { $match: match },
+    
+      // unwind machine array to group by each machine ObjectId separately
+      { $unwind: "$machine" },
+    
+      // group by machine ObjectId
+      {
+        $group: {
+          _id: "$machine",
+          count: { $sum: 1 },
+          lastCallTime: { $max: "$createdAt" }
+        }
+      },
+    
+      // lookup to fetch machine details by _id
+      {
+        $lookup: {
+          from: "Machines",          // collection name for Machine (lowercase plural)
+          localField: "_id",
+          foreignField: "_id",
+          as: "machine"
+        }
+      },
+    
+      // unwind machineInfo to object (not array)
+      { $unwind: { path: "$machine", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          count: 1,
+          lastCallTime: 1,
+          serialNo: "$machine.serialNo",
+          // machine: "$machine"
+        }
+      },
+    
+      // sort by count descending
+      { $sort: { count: -1 } }
+    ]);
+    
+
+    res.json(summary);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Internal Server Error");
+  }
+};
+
 function getDocumentFromReq(req, reqType) {
   const { machine, customer, apiType, refUUID, responseTime, response, responseStatusCode, responseMessage, loginUser } = req.body;
 
