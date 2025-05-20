@@ -112,6 +112,15 @@ exports.postDocumentType = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
+      const docTypeQuery = { name: { $regex: req.body.name?.trim(), $options: 'i' } };
+      const docType = await this.dbservice.getObject(DocumentType, docTypeQuery, this.populate);
+      if (docType?.isArchived) {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Archived document type using the given name already exist!'));
+      }
+      if (docType?._id) {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type using the given name already exist!'));
+      }
+
       if (req.body.isDefault === 'true' || req.body.isDefault === true && ObjectId.isValid(req.body.docCategory)) {
         let documentCategoryObject = await DocumentCategory.findOne({ _id: req.body.docCategory }).select('_id customer machine drawing').lean();
         if (documentCategoryObject) {
@@ -153,15 +162,15 @@ exports.patchDocumentType = async (req, res, next) => {
       if (req.body?.isArchived) {
         const docType = await this.dbservice.getObject(DocumentType, { _id: req.params.id }, "");
         if (docType?.isPrimaryDrawing) {
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Primary drawing type can not be archived!'));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Primary drawing type cannot be archived!'));
         }
         const doc = await this.dbservice.getObject(Document, { docType: req.params.id, isArchived: false }, "");
         if (doc?._id) {
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type used in document can not be archived!'));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type used in document cannot be archived!'));
         }
         const drawing = await this.dbservice.getObject(ProductDrawing, { documentType: req.params.id, isArchived: false }, "");
         if (drawing?._id) {
-          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type used in drawing can not be archived!'));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type used in drawing cannot be archived!'));
         }
       }
       if (req.body.isDefault === 'true' || req.body.isDefault === true) {
