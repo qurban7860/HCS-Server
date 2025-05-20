@@ -13,7 +13,7 @@ class DocumentService {
 
   async getObject(model, query, populate, callback) {
     try {
-      if(callback) {
+      if (callback) {
         return this.db.getObject(model, query, populate, callback)
       }
       else {
@@ -26,7 +26,7 @@ class DocumentService {
 
   async getObjectById(model, fields, id, populate, callback) {
     try {
-      if(callback) {
+      if (callback) {
         return this.db.getObjectById(model, fields, id, populate, callback)
       }
       else {
@@ -40,7 +40,7 @@ class DocumentService {
 
   async getObjectList(req, model, fields, query, orderBy, populate, callback) {
     try {
-      if(callback) {
+      if (callback) {
         return this.db.getObjectList(req, model, fields, query, orderBy, populate, callback);
       }
       else {
@@ -51,45 +51,45 @@ class DocumentService {
     }
   }
 
-  async deleteObject(model, id, callback){
-    try{
-      if(callback) {
+  async deleteObject(model, id, callback) {
+    try {
+      if (callback) {
         return this.db.deleteObject(model, id, callback);
       }
       else {
         return await this.db.deleteObject(model, id);
       }
     }
-    catch(error){
+    catch (error) {
       return error;
     }
   }
 
-  async postObject(document, callback){
-    try{
-      if(callback) {
+  async postObject(document, callback) {
+    try {
+      if (callback) {
         return this.db.postObject(document, callback);
       }
       else {
         return await this.db.postObject(document);
       }
     }
-    catch(error){
-      return error;
+    catch (error) {
+      throw error;
     }
   }
-  
-  async patchObject(model, id, document, callback){
-    try{
-      if(callback) {
+
+  async patchObject(model, id, document, callback) {
+    try {
+      if (callback) {
         return this.db.patchObject(model, id, document, callback);
       }
       else {
         return await this.db.patchObject(model, id, document);
       }
     }
-    catch(error){
-      return error;
+    catch (error) {
+      throw error;
     }
   }
 }

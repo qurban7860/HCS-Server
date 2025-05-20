@@ -177,7 +177,6 @@ class dbService {
     if (callback) {
       Object.save((error, data) => {
         if (error) {
-          console.error(error);
           callback(error);
         } else {
           callback(null, data);
@@ -194,7 +193,6 @@ class dbService {
       model.updateOne({ _id: id }, Object).then(function (doc) {
         callback(null, doc);
       }).catch(function (error) {
-        console.error(error);
         callback(error);
       });
     }

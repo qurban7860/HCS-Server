@@ -13,26 +13,28 @@ const docSchema = new Schema({
         description: { type: String },
         // detailed description of field
 
-        docCategory: { type: Schema.Types.ObjectId , ref: 'DocumentCategory' },
+        docCategory: { type: Schema.Types.ObjectId, ref: 'DocumentCategory' },
         // document category.
 
-        customerAccess: {type: Boolean, default: false},
+        customerAccess: { type: Boolean, default: false },
         //can customer access documents and files under this type.
 
-        isDefault: { type: Boolean, default:false },
+        isDefault: { type: Boolean, default: false },
+
+        isPrimaryDrawing: { type: Boolean, default: false }
 },
-{
-        collection: 'DocumentTypes'
-});
+        {
+                collection: 'DocumentTypes'
+        });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
-docSchema.index({"name":1})
-docSchema.index({"docCategory":1})
-docSchema.index({"isActive":1})
-docSchema.index({"isArchived":1})
+docSchema.index({ "name": 1 })
+docSchema.index({ "docCategory": 1 })
+docSchema.index({ "isActive": 1 })
+docSchema.index({ "isArchived": 1 })
 
 docSchema.plugin(uniqueValidator);
 
