@@ -43,7 +43,7 @@ this.populateHistory = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-
+exports.documentPopolate = this.populate
 
 exports.getDocument = async (req, res, next) => {
   try {
@@ -51,7 +51,6 @@ exports.getDocument = async (req, res, next) => {
     this.query._id = req.params.id
     this.query.customerAccess = true
     this.query.isArchived = false
-    delete this.query.machine;
     let document_ = await this.dbservice.getObject(Document, this.query, this.populate);
     if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
 
