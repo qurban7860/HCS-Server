@@ -8,6 +8,7 @@ const counterSchema = new Schema({
     counters: {
         serviceReport: { type: Number, default: 0 },
         supportTicket: { type: Number, default: 0 },
+        article: { type: Number, default: 0 },
     },
 
     paddingSize: { 

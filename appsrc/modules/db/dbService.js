@@ -9,7 +9,7 @@ class dbService {
   }
 
   async getObjectById(model, fields, id, populate, callback) {
-    //console.log('populate :'+populate);
+    
     if (callback) {
       model.findById(id, fields).populate(populate).exec((err, documents) => {
         if (err) {
