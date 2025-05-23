@@ -75,7 +75,14 @@ const validExtensions = [
   'rtf',
   'json',
   'txt',
-  'xlsm'
+  'xlsm',
+  // videos
+  'mp4',
+  'avi',
+  'mov',
+  'wmv',
+  'flv',
+  'mkv',
 ];
 
 const fileUpload = multer({
@@ -93,20 +100,20 @@ const fileUpload = multer({
     filename: (req, file, cb) => {
       const { ext } = path.parse(file.originalname);
       let fileExt = ext.slice(1);
-      if(fileExt)
+      if (fileExt)
         fileExt = fileExt.toLowerCase()
       cb(null, uuid() + '.' + fileExt);
     }
   }),
-  
+
   fileFilter: (req, file, cb) => {
     let errorMessage = '';
     const { ext } = path.parse(file.originalname);
     let fileExt = ext.slice(1);
 
-    if(fileExt)
+    if (fileExt)
       fileExt = fileExt.toLowerCase()
-    
+
     const isValid = (validExtensions.indexOf(fileExt.trim())) != -1 ? true : false;
     if (!isValid) {
       errorMessage = rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Invalid mime type!', true);
@@ -140,7 +147,7 @@ const checkMaxCount = async (req, res, next) => {
       return res.status(StatusCodes.BAD_REQUEST).send(`Number of files should not exceed ${maxCount}`);
     }
     // Store maxCount in request object for further use
-    req.maxCount = maxCount; 
+    req.maxCount = maxCount;
     next();
   } catch (err) {
     logger.error(new Error(err));
@@ -150,20 +157,21 @@ const checkMaxCount = async (req, res, next) => {
 
 const imageOptimization = async (req, res, next) => {
   try {
-    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); 
-    let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); 
-    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-    if(req.files && req.files['images']) {
+    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i");
+    let configObject = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true : false;
+    if (req.files && req.files['images']) {
       const documents_ = req.files['images'];
-      await Promise.all(documents_.map(async ( docx ) => {
+      await Promise.all(documents_.map(async (docx) => {
         docx.eTag = await awsService.generateEtag(docx.path);
-        if(configObject){
+        if (configObject) {
           await awsService.processImageFile(docx);
         }
       }));
     }
     next();
-  } catch (err) {;
+  } catch (err) {
+    ;
     logger.error(new Error(err));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
