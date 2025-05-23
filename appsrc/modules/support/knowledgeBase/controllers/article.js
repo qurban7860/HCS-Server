@@ -57,27 +57,20 @@ exports.postArticle = async (req, res) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 
-  const exists = await ArticleCategory.exists({ _id: mongoose.Types.ObjectId(req.body.category) });
-  if (!exists) {
+  const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
+  if (!isCategoryExists) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
+  }
+
+  const exists = await this.dbservice.isExists(Article, { title: req.body.title });
+  if (exists) {
+    return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
   }
 
   try {
     
     const articleNumber = await CounterController.getPaddedCounterSequence('article');
     req.body.articleNo = articleNumber.toString() || '';
-    
-    const data = {
-      articleNo: req.body.articleNo,
-      title: req.body.title,
-      category: req.body.category,
-      description: req.body.description?.trim(),
-      status: req.body.status,
-      customerAccess: req.body.customerAccess,
-      isActive: req.body.isActive ?? true,
-      isArchived: req.body.isArchived ?? false
-    };
-
     const response = await this.dbservice.postObject(getArticleFromReq(req, "new"));
     res.status(StatusCodes.CREATED).json({ Article: response });
   } catch (error) {
@@ -92,22 +85,17 @@ exports.patchArticle = async (req, res) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 
-  const exists = await ArticleCategory.exists({ _id: mongoose.Types.ObjectId(req.body.category) });
-  if (!exists) {
+  const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
+  if (!isCategoryExists) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
   }
 
-  try {
-    const updates = {
-      ...(req.body.title && { title: req.body.title.trim() }),
-      ...(req.body.category && { category: req.body.category }),
-      ...(req.body.description && { description: req.body.description.trim() }),
-      ...(req.body.status !== undefined && { status: req.body.status }),
-      ...(req.body.customerAccess !== undefined && { customerAccess: req.body.customerAccess }),
-      ...(req.body.isActive !== undefined && { isActive: req.body.isActive }),
-      ...(req.body.isArchived !== undefined && { isArchived: req.body.isArchived })
-    };
+  const exists = await this.dbservice.isExists(Article, { title: req.body.title, _id: { $ne: req.params.id } });
+  if (exists) {
+    return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
+  }
 
+  try {
     const result = await this.dbservice.patchObject(Article, req.params.id, getArticleFromReq(req, "update"));
     res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
   } catch (error) {
@@ -131,7 +119,7 @@ function getArticleFromReq(req, reqType) {
     doc.title = title;
   }
   if ("description" in req.body) {
-    doc.description = description;
+    doc.description = description.trim();
   }
 
   if ("category" in req.body) {

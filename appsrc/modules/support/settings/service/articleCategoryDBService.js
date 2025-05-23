@@ -10,6 +10,19 @@ class articleCategoryDBService {
     this.db = new dbService();
   }
 
+  async isExists(model, query, callback) {
+    try {
+      if (callback) {
+        return this.db.isExists(model, query, callback)
+      }
+      else {
+        return await this.db.isExists(model, query);
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
   async getObject(model, query, populate, callback) {
     try {
       if (callback) {

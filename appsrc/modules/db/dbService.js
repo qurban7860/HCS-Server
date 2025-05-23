@@ -40,6 +40,21 @@ class dbService {
     }
   }
 
+  async isExists(model, query, callback) {
+    if (callback) {
+      model.exists(query).exec((err, document) => {
+        if (err) {
+          callback(err, {});
+        } else {
+          callback(null, document || {});
+        }
+      });
+    }
+    else {
+      return await model.exists(query);
+    }
+  }
+
   // async getObjectList(req, model, fields, query, orderBy, populate, callback) {
   //   console.log("without pagination");
   //   const collationOptions = {
