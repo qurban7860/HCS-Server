@@ -64,20 +64,21 @@ exports.postArticle = async (req, res) => {
 
   try {
     
-
-    const nextSerialNumber = await CounterController.getPaddedCounterSequence('article');
-    req.body.serialNumber = nextSerialNumber.toString() || '';
+    const articleNumber = await CounterController.getPaddedCounterSequence('article');
+    req.body.articleNo = articleNumber.toString() || '';
     
     const data = {
-      serialNumber: req.body.serialNumber,
+      articleNo: req.body.articleNo,
       title: req.body.title,
       category: req.body.category,
       description: req.body.description?.trim(),
+      status: req.body.status,
+      customerAccess: req.body.customerAccess,
       isActive: req.body.isActive ?? true,
       isArchived: req.body.isArchived ?? false
     };
 
-    const response = await this.dbservice.postObject(new Article(data));
+    const response = await this.dbservice.postObject(getArticleFromReq(req, "new"));
     res.status(StatusCodes.CREATED).json({ Article: response });
   } catch (error) {
     logger.error(new Error(error));
@@ -101,14 +102,67 @@ exports.patchArticle = async (req, res) => {
       ...(req.body.title && { title: req.body.title.trim() }),
       ...(req.body.category && { category: req.body.category }),
       ...(req.body.description && { description: req.body.description.trim() }),
+      ...(req.body.status !== undefined && { status: req.body.status }),
+      ...(req.body.customerAccess !== undefined && { customerAccess: req.body.customerAccess }),
       ...(req.body.isActive !== undefined && { isActive: req.body.isActive }),
       ...(req.body.isArchived !== undefined && { isArchived: req.body.isArchived })
     };
 
-    const result = await this.dbservice.patchObject(Article, req.params.id, updates);
+    const result = await this.dbservice.patchObject(Article, req.params.id, getArticleFromReq(req, "update"));
     res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
+
+
+function getArticleFromReq(req, reqType) {
+  const { articleNo, title, description, category, status, customerAccess, isActive, isArchived, loginUser } = req.body;
+
+  let doc = {};
+  if (reqType && reqType == "new") {
+    doc = new Article({});
+  }
+  if ("articleNo" in req.body) {
+    doc.articleNo = articleNo;
+  }
+  if ("title" in req.body) {
+    doc.title = title;
+  }
+  if ("description" in req.body) {
+    doc.description = description;
+  }
+
+  if ("category" in req.body) {
+    doc.category = category;
+  }
+
+  if ("status" in req.body) {
+    doc.status = status;
+  }
+
+  if ("customerAccess" in req.body) {
+    doc.customerAccess = customerAccess;
+  }
+
+  if ("isActive" in req.body) {
+    doc.isActive = isActive;
+  }
+  if ("isArchived" in req.body) {
+    doc.isArchived = isArchived;
+  }
+
+  if (reqType == "new" && "loginUser" in req.body) {
+    doc.createdBy = loginUser.userId;
+    doc.updatedBy = loginUser.userId;
+    doc.createdIP = loginUser.userIP;
+    doc.updatedIP = loginUser.userIP;
+  } else if ("loginUser" in req.body) {
+    doc.updatedBy = loginUser.userId;
+    doc.updatedIP = loginUser.userIP;
+  }
+
+  return doc;
+
+}
