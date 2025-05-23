@@ -43,7 +43,7 @@ this.populate = [
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
-  { path: 'faults', select: 'name icon color' },
+  { path: 'faults', select: 'name icon color description' },
   { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
@@ -74,7 +74,7 @@ this.listPopulate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-this.settingFields = "name issueType slug icon color isDefault isResolved";
+this.settingFields = "name issueType slug icon color description isDefault isResolved";
 
 exports.getTicket = async (req, res, next) => {
   try {
