@@ -85,14 +85,18 @@ exports.patchArticle = async (req, res) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 
-  const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
-  if (!isCategoryExists) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
+  if("category" in req.body){
+    const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
+    if (!isCategoryExists) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
+    }
   }
-
-  const exists = await this.dbservice.isExists(Article, { title: req.body.title, _id: { $ne: req.params.id } });
-  if (exists) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
+  
+  if("title" in req.body){
+    const exists = await this.dbservice.isExists(Article, { title: req.body.title, _id: { $ne: req.params.id } });
+    if (exists) {
+      return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
+    }
   }
 
   try {
@@ -103,7 +107,6 @@ exports.patchArticle = async (req, res) => {
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
-
 
 function getArticleFromReq(req, reqType) {
   const { articleNo, title, description, category, status, customerAccess, isActive, isArchived, loginUser } = req.body;
