@@ -72,7 +72,7 @@ exports.postArticle = async (req, res) => {
     const articleNumber = await CounterController.getPaddedCounterSequence('article');
     req.body.articleNo = articleNumber.toString() || '';
     const response = await this.dbservice.postObject(getArticleFromReq(req, "new"));
-    res.status(StatusCodes.CREATED).json({ Article: response });
+    res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
