@@ -231,25 +231,12 @@ const convertHeicToPng = async (file) => {
 
 const imageOptimization = async (req, res, next) => {
   try {
-<<<<<<< ours
     const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); 
     let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); 
     configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
     
     if(req.files && req.files['images']) {
-||||||| ancestor
-    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); 
-    let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); 
-    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-    if(req.files && req.files['images']) {
-=======
-    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i");
-    let configObject = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
-    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true : false;
-    if (req.files && req.files['images']) {
->>>>>>> theirs
       const documents_ = req.files['images'];
-<<<<<<< ours
       
       await Promise.all(documents_.map(async (docx) => {
         try {
@@ -270,29 +257,11 @@ const imageOptimization = async (req, res, next) => {
           logger.error(`Error processing file ${docx.originalname}: ${error.message}`);
           // Don't throw here - let other files continue processing
           logger.warn(`Skipping optimization for ${docx.originalname} due to error`);
-||||||| ancestor
-      await Promise.all(documents_.map(async ( docx ) => {
-        docx.eTag = await awsService.generateEtag(docx.path);
-        if(configObject){
-          await awsService.processImageFile(docx);
-=======
-      await Promise.all(documents_.map(async (docx) => {
-        docx.eTag = await awsService.generateEtag(docx.path);
-        if (configObject) {
-          await awsService.processImageFile(docx);
->>>>>>> theirs
         }
       }));
     }
     next();
-<<<<<<< ours
   } catch (err) {
-||||||| ancestor
-  } catch (err) {;
-=======
-  } catch (err) {
-    ;
->>>>>>> theirs
     logger.error(new Error(err));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
