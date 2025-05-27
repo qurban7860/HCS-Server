@@ -5,6 +5,7 @@ const logger = require('../../config/logger');
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
+const awsService = require('../../../base/aws');
 const ticketFileController = require('./ticketFileController');
 const ticketChangeController = require('./ticketHistoryController');
 const {
@@ -43,7 +44,7 @@ this.populate = [
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
   { path: 'issueType', select: 'name icon color' },
-  { path: 'faults', select: 'name icon color' },
+  { path: 'faults', select: 'name icon color description' },
   { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
   { path: 'impact', select: 'name icon color' },
@@ -51,7 +52,7 @@ this.populate = [
   { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug isResolved' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
-  { path: 'files', select: 'name fileType extension thumbnail eTag' },
+  { path: 'files', select: 'name fileType extension thumbnail eTag path' },
   { path: 'createdBy', select: 'name contact', populate: { path: 'contact', select: 'firstName lastName' } },
   { path: 'updatedBy', select: 'name' }
 ];
@@ -74,7 +75,7 @@ this.listPopulate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-this.settingFields = "name issueType slug icon color isDefault isResolved";
+this.settingFields = "name issueType slug icon color description isDefault isResolved";
 
 exports.getTicket = async (req, res, next) => {
   try {
@@ -88,6 +89,16 @@ exports.getTicket = async (req, res, next) => {
       }
     }
     let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
+
+    if (Array.isArray(result.files) && result.files.length > 0) {
+      for (const file of result.files) {
+        if (file?.fileType?.startsWith('video')) {
+          file.src = await awsService.generateDownloadURL({ key: file.path, name: file.name, extension: file.extension });
+        }
+        delete file.path;
+      }
+    }
+
     if (!result?._id) {
       return res.status(StatusCodes.NOT_ACCEPTABLE).json("No resource found!");
     }

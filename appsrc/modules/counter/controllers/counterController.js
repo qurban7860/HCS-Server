@@ -11,9 +11,15 @@ class CounterController {
             isActive: true,
             counters: {
                 serviceReport: 0,
-                supportTicket: 0
+                supportTicket: 0,
+                article: 0
             }
         });
+    }
+    // If specific counterType does not exist, initialize it to 0
+    if (!(counterType in counter.counters)) {
+      counter.counters[counterType] = 0;
+      await counter.save();
     }
 
     // Then increment the specific counter
@@ -36,9 +42,16 @@ static async BackSequence(counterType) {
           isActive: true,
           counters: {
               serviceReport: 0,
-              supportTicket: 0
+              supportTicket: 0,
+              article: 0
           }
       });
+  }
+
+  // If the specific counterType doesn't exist in the counters object, set it to 0
+  if (!Object.prototype.hasOwnProperty.call(counter.counters, counterType)) {
+    counter.counters[counterType] = 0;
+    await counter.save();
   }
 
   // Then decrement the specific counter
@@ -58,7 +71,8 @@ static async BackSequence(counterType) {
         isActive: true,
         counters: {
           serviceReport: 0,
-          supportTicket: 0
+          supportTicket: 0,
+          article: 0
         },
       }));
 

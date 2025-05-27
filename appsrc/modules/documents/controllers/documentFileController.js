@@ -440,7 +440,6 @@ exports.patchDocumentFile = async (req, res, next) => {
 exports.downloadDocumentFile = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log(errors)
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
@@ -459,7 +458,6 @@ exports.downloadDocumentFile = async (req, res, next) => {
             'image/svg'
           ];
 
-          console.log("file.fileType", file.fileType);
           const isImage = file?.fileType && allowedMimeTypes.includes(file.fileType);
           const regex = new RegExp("^OPTIMIZE_IMAGE_ON_DOWNLOAD$", "i");
           let configObject = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value'); configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true : false;

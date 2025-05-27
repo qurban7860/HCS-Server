@@ -15,7 +15,7 @@ let documentDBService = require('../service/documentDBService')
 this.dbservice = new documentDBService();
 
 const { DocumentCategory, Document, DocumentType } = require('../models');
-
+const { ProductDrawing } = require('../../products/models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -32,10 +32,10 @@ this.populate = [
 exports.getDocumentCategory = async (req, res, next) => {
   try {
     let response = await this.dbservice.getObjectById(DocumentCategory, this.fields, req.params.id, this.populate);
-    if(response) {
+    if (response) {
       response = JSON.parse(JSON.stringify(response))
-      let docTypeQuery = { docCategory : req.params.id, isArchived:false, isActive:true };
-      let docTypeFields = { name:1, description:1, customerAccess:1 }
+      let docTypeQuery = { docCategory: req.params.id, isArchived: false, isActive: true };
+      let docTypeFields = { name: 1, description: 1, customerAccess: 1 }
       const documentTypes = await this.dbservice.getObjectList(req, DocumentType, docTypeFields, docTypeQuery, {}, []);
       response.documentTypes = documentTypes;
       res.json(response);
@@ -50,7 +50,7 @@ exports.getDocumentCategory = async (req, res, next) => {
 
 exports.getDocumentCategories = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {};  
+    this.query = req.query != "undefined" ? req.query : {};
     const response = await this.dbservice.getObjectList(req, DocumentCategory, this.fields, this.query, this.orderBy, this.populate);
     res.json(response);
   } catch (error) {
@@ -61,8 +61,8 @@ exports.getDocumentCategories = async (req, res, next) => {
 
 
 exports.deleteDocumentCategory = async (req, res, next) => {
-  const response = await this.dbservice.getObject(Document, {category: req.params.id}, "");
-  if(response === null) {
+  const response = await this.dbservice.getObject(Document, { category: req.params.id }, "");
+  if (response === null) {
     try {
       const result = await this.dbservice.deleteObject(DocumentCategory, req.params.id);
       res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
@@ -81,15 +81,23 @@ exports.postDocumentCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.body.customer || req.body.machine || req.body.drawing) {
-        if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      const docCategoryQuery = { name: { $regex: req.body.name?.trim(), $options: 'i' } };
+      const docCategory = await this.dbservice.getObject(DocumentCategory, docCategoryQuery, this.populate);
+      if (docCategory?.isArchived) {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Archived document category using the given name already exist!'));
+      }
+      if (docCategory?._id) {
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document category using the given name already exist!'));
+      }
+      if (req.body.customer || req.body.machine || req.body.drawing) {
+        if (req.body.isDefault === 'true' || req.body.isDefault === true) {
           let updateDefaultString = [];
           let updateDefaultQuery = {};
           if (req.body.machine) updateDefaultString.push({ machine: true });
           if (req.body.customer) updateDefaultString.push({ customer: true });
           if (req.body.drawing) updateDefaultString.push({ drawing: true });
-          
-          
+
+
           if (!req.body.machine) updateDefaultQuery.machine = false;
           if (!req.body.customer) updateDefaultQuery.customer = false;
           if (!req.body.drawing) updateDefaultQuery.drawing = false;
@@ -99,8 +107,8 @@ exports.postDocumentCategory = async (req, res, next) => {
           }
           let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
 
-          await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
-            if (err) console.error(err);  
+          await DocumentCategory.updateMany({ _id: { $in: docxCategories } }, { $set: { isDefault: false } }, function (err, result) {
+            if (err) console.error(err);
             else console.log(result);
           });
         }
@@ -122,15 +130,30 @@ exports.patchDocumentCategory = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     try {
-      if(req.body.customer || req.body.machine || req.body.drawing) {
-        if(req.body.isDefault === 'true' || req.body.isDefault === true) {
+      if (req.body?.isArchived) {
+        const docType = await this.dbservice.getObject(DocumentCategory, { _id: req.params.id }, "");
+        if (docType?.isPrimaryDrawing) {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Primary drawing type cannot be archived!'));
+        }
+        const doc = await this.dbservice.getObject(Document, { docCategory: req.params.id, isArchived: false }, "");
+        if (doc?._id) {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type used in document cannot be archived!'));
+        }
+        const drawing = await this.dbservice.getObject(ProductDrawing, { documentCategory: req.params.id, isArchived: false }, "");
+        if (drawing?._id) {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessage(StatusCodes.BAD_REQUEST, 'Document type used in drawing cannot be archived!'));
+        }
+      }
+
+      if (req.body.customer || req.body.machine || req.body.drawing) {
+        if (req.body.isDefault === 'true' || req.body.isDefault === true) {
           let updateDefaultString = [];
           let updateDefaultQuery = {};
           if (req.body.machine) updateDefaultString.push({ machine: true });
           if (req.body.customer) updateDefaultString.push({ customer: true });
           if (req.body.drawing) updateDefaultString.push({ drawing: true });
-          
-          
+
+
           if (!req.body.machine) updateDefaultQuery.machine = false;
           if (!req.body.customer) updateDefaultQuery.customer = false;
           if (!req.body.drawing) updateDefaultQuery.drawing = false;
@@ -140,8 +163,8 @@ exports.patchDocumentCategory = async (req, res, next) => {
           }
           let docxCategories = await DocumentCategory.find(updateDefaultQuery).select('_id').lean();
 
-          await DocumentCategory.updateMany({_id: {$in: docxCategories}}, { $set: { isDefault: false } }, function(err, result) {
-            if (err) console.error(err);  
+          await DocumentCategory.updateMany({ _id: { $in: docxCategories } }, { $set: { isDefault: false } }, function (err, result) {
+            if (err) console.error(err);
             else console.log(result);
           });
         }
@@ -160,7 +183,7 @@ exports.patchDocumentCategory = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { name, description, customerAccess, customer, machine, drawing, isDefault, 
+  const { name, description, customerAccess, customer, machine, drawing, isDefault,
     isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
@@ -177,7 +200,7 @@ function getDocumentFromReq(req, reqType) {
     doc.customerAccess = customerAccess;
   }
 
-  if ("isDefault" in req.body){
+  if ("isDefault" in req.body) {
     doc.isDefault = isDefault;
   }
 

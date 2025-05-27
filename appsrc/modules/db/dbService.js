@@ -9,7 +9,7 @@ class dbService {
   }
 
   async getObjectById(model, fields, id, populate, callback) {
-    //console.log('populate :'+populate);
+    
     if (callback) {
       model.findById(id, fields).populate(populate).exec((err, documents) => {
         if (err) {
@@ -37,6 +37,21 @@ class dbService {
     }
     else {
       return await model.findOne(query).populate(populate).lean();
+    }
+  }
+
+  async isExists(model, query, callback) {
+    if (callback) {
+      model.exists(query).exec((err, document) => {
+        if (err) {
+          callback(err, {});
+        } else {
+          callback(null, document || {});
+        }
+      });
+    }
+    else {
+      return await model.exists(query);
     }
   }
 
@@ -76,7 +91,7 @@ class dbService {
     let page;
 
 
-    if (req.body.page) {
+    if (req && req?.body?.page) {
       page = parseInt(req.body.page) || 0; // Current page number
       pageSize = parseInt(req.body.pageSize) || 100; // Number of documents per page
       countDocuments = await model.find(query).countDocuments();
@@ -85,7 +100,7 @@ class dbService {
 
     try {
       let documents = await query_.exec();
-      if (req.body.page || req.body.page === 0) {
+      if (req && req?.body?.page || req?.body?.page === 0) {
         let listDocuments = {
           data: documents,
           ...(req.body.page && {
@@ -177,7 +192,6 @@ class dbService {
     if (callback) {
       Object.save((error, data) => {
         if (error) {
-          console.error(error);
           callback(error);
         } else {
           callback(null, data);
@@ -194,7 +208,6 @@ class dbService {
       model.updateOne({ _id: id }, Object).then(function (doc) {
         callback(null, doc);
       }).catch(function (error) {
-        console.error(error);
         callback(error);
       });
     }

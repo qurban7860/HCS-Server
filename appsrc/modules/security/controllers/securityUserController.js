@@ -160,6 +160,40 @@ exports.getSecurityUsers = async (req, res, next) => {
 
 };
 
+exports.getContactSecurityUsers = async (req, res, next) => {
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    this.query.contact = req.params.id;
+    if (req.query.roleType) {
+      let filteredRoles = await SecurityRole.find({ roleType: { $in: req.query.roleType }, isActive: true, isArchived: false });
+
+      if (Array.isArray(filteredRoles) && filteredRoles.length > 0) {
+        let filteredRolesIds = filteredRoles.map((r) => r._id);
+        this.query.roles = { $in: filteredRolesIds };
+      }
+      delete this.query.roleType;
+      delete req.query.roleType;
+    }
+
+    let users = await this.dbservice.getObjectList(req, SecurityUser, this.fields, this.query, this.orderBy, this.populateList);
+    users = JSON.parse(JSON.stringify(users));
+
+    let i = 0;
+    for (let user of users) {
+      const wss = getSocketConnectionByUserId(user._id);
+      users[i].isOnline = false;
+      if (Array.isArray(wss) && wss.length > 0 && wss[0].userData._id) {
+        users[i].isOnline = true;
+      }
+      i++;
+    }
+    return res.json(users);
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
+  }
+};
+
 exports.deleteSecurityUser = async (req, res, next) => {
 
   let user = await SecurityUser.findById(req.params.id);

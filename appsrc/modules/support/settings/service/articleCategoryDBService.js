@@ -1,14 +1,26 @@
-const models = require('../models');
 const mongoose = require('mongoose');
 var async = require("async");
 
-let dbService = require('../../db/dbService');
+let dbService = require('../../../db/dbService');
 const { response } = require('express');
 
 
-class DocumentService {
+class articleCategoryDBService {
   constructor() {
     this.db = new dbService();
+  }
+
+  async isExists(model, query, callback) {
+    try {
+      if (callback) {
+        return this.db.isExists(model, query, callback)
+      }
+      else {
+        return await this.db.isExists(model, query);
+      }
+    } catch (error) {
+      return error;
+    }
   }
 
   async getObject(model, query, populate, callback) {
@@ -38,14 +50,9 @@ class DocumentService {
     }
   }
 
-  async getObjectList(req, model, fields, query, orderBy, populate, callback) {
+  async getObjectList(req, model, fields, query, orderBy) {
     try {
-      if (callback) {
-        return this.db.getObjectList(req, model, fields, query, orderBy, populate, callback);
-      }
-      else {
-        return await this.db.getObjectList(req, model, fields, query, orderBy, populate);
-      }
+      return await this.db.getObjectList(req, model, fields, query, orderBy);
     } catch (error) {
       return error;
     }
@@ -95,4 +102,4 @@ class DocumentService {
 }
 
 
-module.exports = DocumentService;
+module.exports = articleCategoryDBService;
