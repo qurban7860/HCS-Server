@@ -101,9 +101,16 @@ const saveTicketFiles = async (req) => {
         thumbnail: processedFile.base64thumbNailData || undefined,
       };
 
-      const ticketFile = await getDocFromReq(req, 'new');
-      return this.dbservice.postObject(ticketFile);
+      let ticketFile = await getDocFromReq(req, 'new');
 
+      ticketFile = await this.dbservice.postObject(ticketFile);
+      let result = { ...ticketFile?._doc }
+      if (result?.fileType?.startsWith('video')) {
+        result.src = await awsService.generateDownloadURL({ key: result.path, name: result.name, extension: result.extension });
+        delete result.path;
+      }
+
+      return result;
     });
 
     const savedFiles = await Promise.all(fileProcessingPromises);
