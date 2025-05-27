@@ -55,6 +55,18 @@ async function listBuckets(params) {
   return await s3.listBuckets(params).promise();
 }
 
+const generateDownloadURL = async (key) => {
+  if (!key) throw new Error('Missing object key for resource URL');
+
+  const expiresInMinutes = Number(process.env.AWS_RESOURCE_EXPIRE_TIME_IN_MINUTS || 60);
+  const params = {
+    Bucket: process.env.AWS_S3_BUCKET,
+    Key: key,
+    Expires: 60 * expiresInMinutes,
+  };
+
+  return s3.getSignedUrlPromise('getObject', params);
+};
 
 async function copyFile(user) {
   let oldFileName = user._id;
@@ -63,24 +75,24 @@ async function copyFile(user) {
   let oldFilePath = `${bucketName}/${oldFileFolder}`;
   let newFilePath = `profile_image/1_${oldFileName}_1.txt`
   const copyData = await s3.copyObject({
-    Bucket: bucketName, 
-    CopySource: oldFilePath, 
+    Bucket: bucketName,
+    CopySource: oldFilePath,
     Key: newFilePath,
-    ACL:'public-read'
+    ACL: 'public-read'
   }).promise();
-  
-  if(copyData && copyData.CopyObjectResult) {
-    user.image = process.env.BASE_S3_LINK+newFilePath;
+
+  if (copyData && copyData.CopyObjectResult) {
+    user.image = process.env.BASE_S3_LINK + newFilePath;
     await user.save();
     const deleteData = await s3.deleteObject({
       Bucket: bucketName,
       Key: oldFileFolder
     }).promise();
-    return process.env.BASE_S3_LINK+newFilePath;
+    return process.env.BASE_S3_LINK + newFilePath;
   }
 }
 
-async function uploadFileS3(filename, folder, content, ext = 'txt', includeFolderInPath = true ) {
+async function uploadFileS3(filename, folder, content, ext = 'txt', includeFolderInPath = true) {
   let bucketName = process.env.AWS_S3_BUCKET;
   let data = null;
 
@@ -137,9 +149,9 @@ async function getSecretValue(secretName) {
 async function sendEmail(params, toAddresses) {
   // Create sendEmail params 
   let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
-  const regex = new RegExp("^COMPANY-NAME$", "i"); 
-  let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-  if(configObject && configObject?.value)
+  const regex = new RegExp("^COMPANY-NAME$", "i");
+  let configObject = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+  if (configObject && configObject?.value)
     sourceEmail = configObject.value;
 
   let emailParams = {
@@ -168,17 +180,17 @@ async function sendEmail(params, toAddresses) {
     ],
   };
 
-  if( toAddresses && toAddresses.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL )
+  if (toAddresses && toAddresses.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL)
     emailParams.Destination.ToAddresses = toAddresses;
 
-  if( params?.ccAddresses && params?.ccAddresses?.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL ){
+  if (params?.ccAddresses && params?.ccAddresses?.length > 0 && !process.env.NOTIFY_RECEIVER_EMAIL) {
     emailParams.Destination.CcAddresses = params.ccAddresses;
   }
 
-  if(process.env.NOTIFY_RECEIVER_EMAIL)
+  if (process.env.NOTIFY_RECEIVER_EMAIL)
     emailParams.Destination.ToAddresses = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')?.map(c => c?.trim()?.toLowerCase());
 
-  if(params.html) {
+  if (params.html) {
     emailParams.Message.Body = {
       Html: {
         Charset: "UTF-8",
@@ -187,9 +199,9 @@ async function sendEmail(params, toAddresses) {
     }
   }
   // Create the promise and SES service object
-  if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
-    let SES = new AWS.SES({region: process.env.AWS_REGION})
-    SES.sendEmail(emailParams, function(err, data) {
+  if (process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true) {
+    let SES = new AWS.SES({ region: process.env.AWS_REGION })
+    SES.sendEmail(emailParams, function (err, data) {
       if (err) console.log(err, err.stack);
       else console.log(data);
     });
@@ -201,20 +213,20 @@ const mailcomposer = require('mailcomposer');
 
 async function sendEmailWithRawData(params, file) {
   let sourceEmail = `"HOWICK LIMITED" <${process.env.AWS_SES_FROM_EMAIL}>`;
-  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value');
-  if( configObject && configObject?.value )
+  const regex = new RegExp("^COMPANY-NAME$", "i"); let configObject = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+  if (configObject && configObject?.value)
     sourceEmail = configObject.value;
 
-  if(process.env.NOTIFY_RECEIVER_EMAIL ){
+  if (process.env.NOTIFY_RECEIVER_EMAIL) {
     params.to = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')?.map(c => c?.trim()?.toLowerCase());
   }
-  
+
   const mail = mailcomposer({
     Source: sourceEmail,
     from: sourceEmail,
     to: params.to,
     subject: params.subject,
-    html : params.htmlData,
+    html: params.htmlData,
     attachments: [
       {
         filename: file.originalname,
@@ -223,17 +235,17 @@ async function sendEmailWithRawData(params, file) {
     ],
   });
 
-  
+
   mail.build(async (err, message) => {
     if (err) {
       console.error(`Error sending raw email: ${err}`);
     }
-    if( process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true ){
-      let SES = new AWS.SES({region: process.env.AWS_REGION})
-      let response = await SES.sendRawEmail({RawMessage: {Data: message}}).promise();
+    if (process.env.EMAIL_NOTIFICATIONS == 'true' || process.env.EMAIL_NOTIFICATIONS == true) {
+      let SES = new AWS.SES({ region: process.env.AWS_REGION })
+      let response = await SES.sendRawEmail({ RawMessage: { Data: message } }).promise();
       console.log(response);
     }
-  }); 
+  });
 }
 
 async function downloadFileS3(filePath) {
@@ -302,9 +314,9 @@ async function getImageResolution(imageBuffer) {
     const metadata = await sharp(imageBuffer).metadata();
     const width = metadata.width;
     const height = metadata.height;
-    
+
     console.log(`Image Resolution: ${width} x ${height}`);
-    
+
     // You can return the resolution or perform other actions as needed
     return { width, height };
   } catch (err) {
@@ -413,14 +425,14 @@ const processAWSFile = async (data) => {
   });
 };
 
-const deleteFile = async ( fileName ) => {
+const deleteFile = async (fileName) => {
   const params = {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: fileName,
   };
 
   try {
-    await s3.deleteObject( params ).promise();
+    await s3.deleteObject(params).promise();
   } catch (err) {
     console.error(`Error deleting file:`, err);
   }
@@ -434,6 +446,7 @@ module.exports = {
   copyFile,
   listBuckets,
   downloadFileS3,
+  generateDownloadURL,
   fetchAWSFileInfo,
   generateEtag,
   processImageFile,

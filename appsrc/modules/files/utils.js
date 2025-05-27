@@ -10,8 +10,9 @@ async function processFile(file, userId, folder = '') {
   let base64thumbNailData;
   let base64fileData = null;
 
-  if (file.buffer) {
-    base64fileData = file.buffer;
+  if (file.buffer || file.mimetype.startsWith('video/')) {
+    // Keep raw buffer for video
+    base64fileData = file.buffer || fs.readFileSync(file.path);
   } else {
     base64fileData = await readFileAsBase64(file.path);
   }
@@ -21,6 +22,7 @@ async function processFile(file, userId, folder = '') {
     if (thumbnailPath)
       base64thumbNailData = await readFileAsBase64(thumbnailPath);
   }
+
   const fileName = userId + "-" + new Date().getTime();
   const s3Data = await awsService.uploadFileS3(fileName, folder || 'uploads', base64fileData, fileExt, folder !== '');
   s3Data.eTag = await awsService.generateEtag(file.path);

@@ -5,6 +5,7 @@ const logger = require('../../config/logger');
 let ticketDBService = require('../service/ticketDBService')
 this.dbservice = new ticketDBService();
 const _ = require('lodash');
+const awsService = require('../../../base/aws');
 const ticketFileController = require('./ticketFileController');
 const ticketChangeController = require('./ticketHistoryController');
 const {
@@ -51,7 +52,7 @@ this.populate = [
   { path: 'status', select: 'name icon color statusType', populate: { path: 'statusType', select: ' name icon color slug isResolved' } },
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
-  { path: 'files', select: 'name fileType extension thumbnail eTag' },
+  { path: 'files', select: 'name fileType extension thumbnail eTag path' },
   { path: 'createdBy', select: 'name contact', populate: { path: 'contact', select: 'firstName lastName' } },
   { path: 'updatedBy', select: 'name' }
 ];
@@ -88,6 +89,16 @@ exports.getTicket = async (req, res, next) => {
       }
     }
     let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
+
+    if (Array.isArray(result.files) && result.files.length > 0) {
+      for (const file of result.files) {
+        if (file?.fileType?.startsWith('video')) {
+          file.src = await awsService.generateDownloadURL(file.path);
+        }
+        delete file.path;
+      }
+    }
+
     if (!result?._id) {
       return res.status(StatusCodes.NOT_ACCEPTABLE).json("No resource found!");
     }
