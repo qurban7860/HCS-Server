@@ -93,7 +93,7 @@ exports.getTicket = async (req, res, next) => {
     if (Array.isArray(result.files) && result.files.length > 0) {
       for (const file of result.files) {
         if (file?.fileType?.startsWith('video')) {
-          file.src = await awsService.generateDownloadURL(file.path);
+          file.src = await awsService.generateDownloadURL({ key: file.path, name: file.name, extension: file.extension });
         }
         delete file.path;
       }

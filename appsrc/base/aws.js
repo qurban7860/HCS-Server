@@ -42,10 +42,10 @@ async function checkFileHeader(path) {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: path
   };
-  try{
+  try {
     await s3.headObject(params).promise();
     return s3.getSignedUrl('getObject', params);
-  }catch(e) {
+  } catch (e) {
     console.log(e.message);
     return false;
   }
@@ -55,7 +55,7 @@ async function listBuckets(params) {
   return await s3.listBuckets(params).promise();
 }
 
-const generateDownloadURL = async (key) => {
+const generateDownloadURL = async ({ key, name, extension }) => {
   if (!key) throw new Error('Missing object key for resource URL');
 
   const expiresInMinutes = Number(process.env.AWS_RESOURCE_EXPIRE_TIME_IN_MINUTS || 60);
@@ -63,6 +63,7 @@ const generateDownloadURL = async (key) => {
     Bucket: process.env.AWS_S3_BUCKET,
     Key: key,
     Expires: 60 * expiresInMinutes,
+    ResponseContentDisposition: `attachment; filename="${name}.${extension}"`,
   };
 
   return s3.getSignedUrlPromise('getObject', params);

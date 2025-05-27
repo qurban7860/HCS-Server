@@ -106,7 +106,7 @@ const saveTicketFiles = async (req) => {
       ticketFile = await this.dbservice.postObject(ticketFile);
       let result = { ...ticketFile?._doc }
       if (result?.fileType?.startsWith('video')) {
-        result.src = await awsService.generateDownloadURL(result.path);
+        result.src = await awsService.generateDownloadURL({ key: result.path, name: result.name, extension: result.extension });
         delete result.path;
       }
 
