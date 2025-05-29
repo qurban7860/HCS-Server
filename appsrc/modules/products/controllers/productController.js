@@ -403,73 +403,64 @@ exports.getProducts = async (req, res, next) => {
 };
 
 exports.getMachineLifeCycle = async (req, res, next) => {
-  if (!req.params.id || !ObjectId.isValid(req.params.id)) {
-    return res.status(StatusCodes.BAD_REQUEST).send("Machine uuid is not valid!");
-  }
-
   try {
     const machine = await Product.findById(req.params.id)
-      .select('globelMachineID createdBy updatedBy createdAt updatedAt portalKey')
-      .populate(this.populate)
+      .select('manufactureDate purchaseDate shippingDate installationDate decommissionedDate transferredDate portalKey')
       .lean();
 
     if (!machine) {
       return res.status(StatusCodes.NOT_FOUND).send("Machine not found.");
     }
 
-    let lifeCycleData = {
-      createdBy: machine.createdBy,
-      updatedBy: machine.updatedBy,
-      createdAt: machine.createdAt,
-      updatedAt: machine.updatedAt,
-      portalKey: machine.portalKey,
-      transferredHistory: [],
-      serviceReports: [] 
-    };
+    let allLifeCycleDates = [];
+    const currentDate = new Date();
+
+    if (machine.manufactureDate) {
+      allLifeCycleDates.push({ type: 'Manufacture Date', date: machine.manufactureDate });
+    }
+    if (machine.purchaseDate) {
+      allLifeCycleDates.push({ type: 'Purchase Date', date: machine.purchaseDate });
+    }
+    if (machine.shippingDate) {
+      allLifeCycleDates.push({ type: 'Shipping Date', date: machine.shippingDate });
+    }
+    if (machine.installationDate) {
+      allLifeCycleDates.push({ type: 'Installation Date', date: machine.installationDate });
+    }
+    if (machine.decommissionedDate) {
+      allLifeCycleDates.push({ type: 'Decommissioned Date', date: machine.decommissionedDate });
+    }
+    if (machine.transferredDate) {
+      allLifeCycleDates.push({ type: 'Transfer Date', date: machine.transferredDate });
+    }
+
+    if (Array.isArray(machine.portalKey) && machine.portalKey.length > 0) {
+      machine.portalKey.forEach(keyItem => {
+        if (keyItem.createdAt) {
+          allLifeCycleDates.push({ type: 'Portal Connection Date', date: keyItem.createdAt });
+        }
+      });
+    } else if (machine.portalKey && typeof machine.portalKey === 'object' && machine.portalKey.createdAt) {
+      allLifeCycleDates.push({ type: 'Portal Connection Date', date: machine.portalKey.createdAt });
+    }
 
     const serviceReports = await ProductServiceReports.find({
       machine: req.params.id,
       isArchived: { $ne: true },
       isActive: { $ne: false }
     })
-    .select('serviceDate')
-    .lean(); 
+      .select('serviceDate')
+      .lean();
 
-    lifeCycleData.serviceReports = serviceReports.map(report => ({
-      serviceDate: report.serviceDate
-    }));
-
-    if (machine?.globelMachineID && ObjectId.isValid(machine?.globelMachineID)) {
-      const transferHistory = await Product.find({ globelMachineID: machine.globelMachineID })
-        .select('purchaseDate shippingDate transferredDate transferredToMachine transferredFromMachine customer manufactureDate installationDate decommissionedDate supportExpireDate')
-        .populate([
-          { path: 'customer', select: '_id clientCode name' },
-          { path: 'transferredToMachine', select: '_id serialNo name customer' },
-          { path: 'transferredFromMachine', select: '_id serialNo name customer' },
-        ])
-        .lean();
-
-      transferHistory.forEach(item => {
-        lifeCycleData.transferredHistory.push({
-          purchaseDate: item.purchaseDate || item.shippingDate,
-          shippingDate: item.shippingDate,
-          transferredDate: item.transferredDate,
-          manufactureDate: item.manufactureDate,
-          installationDate: item.installationDate,
-          transferredToMachine: item.transferredToMachine,
-          transferredFromMachine: item.transferredFromMachine,
-          decommissionedDate: item.decommissionedDate,
-          supportExpireDate: item.supportExpireDate,
-          customer: item.customer
-        });
-      });
-
-      if (lifeCycleData.transferredHistory.length === 1 && lifeCycleData.transferredHistory[0]?._id?.toString() === machine?._id?.toString()) {
-        lifeCycleData.transferredHistory = [];
+    serviceReports.forEach(report => {
+      if (report.serviceDate) {
+        allLifeCycleDates.push({ type: 'Service Report Date', date: report.serviceDate });
       }
-    }
+    });
 
-    res.status(StatusCodes.OK).json(lifeCycleData);
+    allLifeCycleDates = allLifeCycleDates?.filter(item => isValidDate(item.date) && ( new Date(item.date) <= currentDate) )?.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+    res.status(StatusCodes.OK).json(allLifeCycleDates || []);
 
   } catch (error) {
     logger.error(new Error(error));
