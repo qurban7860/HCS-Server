@@ -416,36 +416,32 @@ exports.getMachineLifeCycle = async (req, res, next) => {
       return res.status(StatusCodes.NOT_FOUND).send("Machine not found.");
     }
 
-    const lifeCycleDates = [];
+    let lifeCycleDates = []; 
 
-    if (machine.manufactureDate) {
-      lifeCycleDates.push({ type: 'Manufacture Date', date: machine.manufactureDate });
-    }
-    if (machine.purchaseDate) {
-      lifeCycleDates.push({ type: 'Purchase Date', date: machine.purchaseDate });
-    }
-    if (machine.shippingDate) {
-      lifeCycleDates.push({ type: 'Shipping Date', date: machine.shippingDate });
-    }
-    if (machine.installationDate) {
-      lifeCycleDates.push({ type: 'Installation Date', date: machine.installationDate });
-    }
-    if (machine.decommissionedDate) {
-      lifeCycleDates.push({ type: 'Decommissioned Date', date: machine.decommissionedDate });
-    }
-    if (machine.transferredDate) {
-      lifeCycleDates.push({ type: 'Transfer Date', date: machine.transferredDate });
-    }
+    const currentDate = new Date(); 
+
+    const addDateIfValid = (type, dateValue) => {
+      if (dateValue) {
+        const eventDate = new Date(dateValue);
+        if (eventDate <= currentDate) {
+          lifeCycleDates.push({ type: type, date: dateValue });
+        }
+      }
+    };
+
+    addDateIfValid('Manufacture Date', machine.manufactureDate);
+    addDateIfValid('Purchase Date', machine.purchaseDate);
+    addDateIfValid('Shipping Date', machine.shippingDate);
+    addDateIfValid('Installation Date', machine.installationDate);
+    addDateIfValid('Decommissioned Date', machine.decommissionedDate);
+    addDateIfValid('Transfer Date', machine.transferredDate);
 
     if (Array.isArray(machine.portalKey) && machine.portalKey.length > 0) {
       machine.portalKey.forEach(keyItem => {
-        if (keyItem.createdAt) {
-          lifeCycleDates.push({ type: 'Portal Connection Date', date: keyItem.createdAt });
-        }
+        addDateIfValid('Portal Connection Date', keyItem.createdAt);
       });
-    }
-    else if (machine.portalKey && typeof machine.portalKey === 'object' && machine.portalKey.createdAt) {
-      lifeCycleDates.push({ type: 'Portal Connection Date', date: machine.portalKey.createdAt });
+    } else if (machine.portalKey && typeof machine.portalKey === 'object' && machine.portalKey.createdAt) {
+      addDateIfValid('Portal Connection Date', machine.portalKey.createdAt);
     }
 
     const serviceReports = await ProductServiceReports.find({
@@ -457,12 +453,10 @@ exports.getMachineLifeCycle = async (req, res, next) => {
       .lean();
 
     serviceReports.forEach(report => {
-      if (report.serviceDate) {
-        lifeCycleDates.push({ type: 'Service Report Date', date: report.serviceDate });
-      }
+      addDateIfValid('Service Report Date', report.serviceDate);
     });
 
-    lifeCycleDates.sort((a, b) => new Date(a.date) - new Date(b.date));
+    lifeCycleDates.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     res.status(StatusCodes.OK).json(lifeCycleDates);
 
