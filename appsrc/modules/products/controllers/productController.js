@@ -449,12 +449,12 @@ exports.getMachineLifeCycle = async (req, res, next) => {
       isArchived: { $ne: true },
       isActive: { $ne: false }
     })
-      .select('serviceDate')
+      .select('serviceDate serviceReportUID _id')
       .lean();
 
     serviceReports.forEach(report => {
       if (report.serviceDate) {
-        allLifeCycleDates.push({ type: 'Service Report Date', date: report.serviceDate });
+       allLifeCycleDates.push({ type: 'Service Report Date', date: report.serviceDate, serviceReportUID: report.serviceReportUID, id: report._id });
       }
     });
 
