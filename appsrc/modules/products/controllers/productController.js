@@ -728,7 +728,7 @@ exports.patchProduct = async (req, res, next) => {
     if (machine?.customer?._id !== req.body?.customer) {
       let loginuser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
       const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
-      if (loginuser?.roles?.some(r => allowedRoles?.includes(r))) {
+      if (loginuser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
         await machineEmailService.machineCustomerChange({ req, machine, loginuser })
       } else {
         return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
