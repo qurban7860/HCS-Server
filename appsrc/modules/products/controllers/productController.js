@@ -1,6 +1,4 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const _ = require('lodash');
@@ -16,6 +14,7 @@ const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
 
 let productDBService = require('../service/productDBService')
+let machineEmailService = require('../service/emailService')
 const dbservice = new productDBService();
 
 const { Product, ProductProfile, ProductCategory, ProductModel, ProductConfiguration, ProductConnection, ProductStatus, ProductAuditLog, ProductTechParamValue, ProductToolInstalled, ProductNote, ProductDrawing, ProductServiceReports, ProductServiceReportValue, ProductLicense } = require('../models');
@@ -424,7 +423,7 @@ exports.getMachineLifeCycle = async (req, res, next) => {
       updatedAt: machine.updatedAt,
       portalKey: machine.portalKey,
       transferredHistory: [],
-      serviceReports: [] 
+      serviceReports: []
     };
 
     const serviceReports = await ProductServiceReports.find({
@@ -432,8 +431,8 @@ exports.getMachineLifeCycle = async (req, res, next) => {
       isArchived: { $ne: true },
       isActive: { $ne: false }
     })
-    .select('serviceDate')
-    .lean(); 
+      .select('serviceDate')
+      .lean();
 
     lifeCycleData.serviceReports = serviceReports.map(report => ({
       serviceDate: report.serviceDate
@@ -726,7 +725,6 @@ exports.postConnectedProduct = async (req) => {
 exports.patchProduct = async (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
-    console.log("errors machine patch request", errors);
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     await updateArchivedStatus(req);
@@ -742,15 +740,22 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
 
+    if (machine?.customer?._id !== req.body?.customer) {
+      let loginuser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
+      const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
+      if (loginuser?.roles?.some(r => allowedRoles?.includes(r))) {
+        await machineEmailService.machineCustomerChange({ req, machine, loginuser })
+      } else {
+        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'You do not have the right to change the customer!'));
+      }
+    }
     if (machine && req.body.isVerified) {
-
       if (!Array.isArray(machine.verifications))
         machine.verifications = [];
 
       for (let verif of machine.verifications) {
         if (verif.verifiedBy == req.body.loginUser.userId)
           return res.status(StatusCodes.BAD_REQUEST).json({ message: "Already verified" });
-
       }
       machine.verifications.push({
         verifiedBy: req.body.loginUser.userId,
@@ -760,8 +765,6 @@ exports.patchProduct = async (req, res, next) => {
       return res.status(StatusCodes.ACCEPTED).json(machine);
     }
 
-
-
     if (machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus) {
       let queryString = { slug: 'intransfer' }
       let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
@@ -770,29 +773,20 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
     else {
-      if (machine && Array.isArray(machine.machineConnections) &&
-        Array.isArray(req.body.machineConnections)) {
-
+      if (machine && Array.isArray(machine.machineConnections) && Array.isArray(req.body.machineConnections)) {
         let oldMachineConnections = machine.machineConnections;
         let newMachineConnections = req.body.machineConnections;
-
         let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
-
         if (!isSame) {
-
           let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
-
-          if (toBeDisconnected.length > 0)
+          if (toBeDisconnected.length > 0) {
             machine = await disconnectMachine_(machine.id, toBeDisconnected);
-
-
+          }
           let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
-
-          if (toBeConnected.length > 0)
+          if (toBeConnected.length > 0) {
             machine = await connectMachines(machine.id, toBeConnected);
-
+          }
           req.body.machineConnections = machine.machineConnections;
-
         }
       }
     }
@@ -835,8 +829,7 @@ exports.patchProduct = async (req, res, next) => {
             }
           }
         }
-        let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
-        // console.log("machineAuditLog", machineAuditLog);
+        // let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
         // await postProductAuditLog(machineAuditLog);
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -1039,13 +1032,13 @@ exports.transferOwnership = async (req, res, next) => {
           isActive: true,
           isArchived: false
         }).select('_id customer').populate('customer', 'name');
-        
+
         if (alreadyTransferred) {
           return res.status(StatusCodes.BAD_REQUEST).send(
             `This machine has already been transferred to customer "${alreadyTransferred.customer?.name || 'Unknown'}". A machine can only be transferred once.`
           );
         }
-        
+
         // Also check if the machine's status is already 'transferred'
         if (parentMachine.status && parentMachine.status.slug === 'transferred') {
           return res.status(StatusCodes.BAD_REQUEST).send(
