@@ -30,7 +30,7 @@ async function validateRecaptcha({ req, res }) {
     const response = await axios.post(
       'https://www.google.com/recaptcha/api/siteverify',
       new URLSearchParams({
-        secret: process.env.RECAPTCHA_KEY,
+        secret: process.env.RECAPCHA_SECRET_KEY,
         response: req.body.recaptchaToken
       }).toString(),
       {
