@@ -685,7 +685,6 @@ exports.postConnectedProduct = async (req) => {
   let ProductObj = {};
 
   if (!errors.isEmpty()) {
-    console.log("errors machine patch request", errors);
     return ProductObj;
   } else {
     let machineConnections = req.body.machineConnections;
@@ -722,7 +721,7 @@ exports.patchProduct = async (req, res, next) => {
     let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
     if (machine.status?.slug && machine.status.slug === 'transferred' && !("isArchived" in req.body)) {
       if (!("isVerified" in req.body)) {
-        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'Transferred machine cannot be edited'));
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Transferred machine cannot be edited'));
       }
     }
 
@@ -732,7 +731,7 @@ exports.patchProduct = async (req, res, next) => {
       if (loginuser?.roles?.some(r => allowedRoles?.includes(r))) {
         await machineEmailService.machineCustomerChange({ req, machine, loginuser })
       } else {
-        return res.status(StatusCodes.FORBIDDEN).send(rtnMsg.recordCustomMessageJSON(StatusCodes.FORBIDDEN, 'You do not have the right to change the customer!'));
+        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
       }
     }
     if (machine && req.body.isVerified) {
