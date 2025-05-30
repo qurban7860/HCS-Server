@@ -9,7 +9,7 @@ class dbService {
   }
 
   async getObjectById(model, fields, id, populate, callback) {
-    //console.log('populate :'+populate);
+    
     if (callback) {
       model.findById(id, fields).populate(populate).exec((err, documents) => {
         if (err) {
@@ -37,6 +37,21 @@ class dbService {
     }
     else {
       return await model.findOne(query).populate(populate).lean();
+    }
+  }
+
+  async isExists(model, query, callback) {
+    if (callback) {
+      model.exists(query).exec((err, document) => {
+        if (err) {
+          callback(err, {});
+        } else {
+          callback(null, document || {});
+        }
+      });
+    }
+    else {
+      return await model.exists(query);
     }
   }
 

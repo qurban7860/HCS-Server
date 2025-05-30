@@ -44,7 +44,8 @@ const jiraRoute = require('../jira/routes');
 const ticketRoute = require('../tickets/routes');
 const backupRoute = require('../backups/routes');
 const customerPortalRoutes = require('../cp/routes');
-
+const articleRoutes = require('../support/knowledgeBase/routes');
+const articleCategoryRoutes = require('../support/settings/routes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -143,6 +144,8 @@ class App {
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
     dashboardRoute.registerDashboardRoutes(this.app, apiPath);
     documentRoute.registerDocumentRoutes(this.app, apiPath);
+    articleRoutes.registerArticleRoutes(this.app, apiPath);
+    articleCategoryRoutes.registerArticleCategoryRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     calenderRoute.registerEventRoutes(this.app, apiPath);
