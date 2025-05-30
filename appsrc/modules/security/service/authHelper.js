@@ -25,7 +25,7 @@ async function generateRandomString() {
 async function validateRecaptcha({ req, res }) {
   try {
     if (!req.body.recaptchaToken) {
-      return { success: false, message: 'Missing reCAPTCHA token' };
+      return res.status(400).json({ isError: true, MessageCode: 400, Message: 'Missing reCAPTCHA token' });
     }
     const response = await axios.post(
       'https://www.google.com/recaptcha/api/siteverify',
@@ -43,11 +43,11 @@ async function validateRecaptcha({ req, res }) {
     const data = response.data;
 
     if (!data?.success || data?.score < 0.5) {
-      return res.status(400).json({ success: false, message: 'Failed reCAPTCHA verification' });
+      return res.status(400).json({ isError: true, MessageCode: 400, Message: 'Failed reCAPTCHA verification' });
     }
     return (data.success || data.score > 0.5)
   } catch (err) {
-    res.status(500).json({ success: false, message: 'Internal error verifying reCAPTCHA' });
+    res.status(500).json({ isError: true, MessageCode: 500, Message: err?.message || 'reCAPTCHA verification failed!' });
   }
 }
 
