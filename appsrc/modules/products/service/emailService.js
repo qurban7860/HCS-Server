@@ -22,11 +22,11 @@ class machineEmailService {
             }
 
             const appUrl = process.env.CLIENT_APP_URL;
-            const machineUrl = `https://${appUrl}/products/machines/${req.params.id}/view`;
+            const machineUrl = `${appUrl}products/machines/${req.params.id}/view`;
             const adminMachineUri = `<a href=${machineUrl} target="_blank" ><strong>${machine?.serialNo}</strong></a>`;
 
             // TO EMAILS
-            const text = `Machine ${adminMachineUri}<br/>customer has been changed by <strong>${loginUser?.name || ""} (${loginUser?.email || ''})</strong>.`;
+            const text = `Machine ${adminMachineUri} customer has been changed by <strong>${loginUser?.name || ""} (${loginUser?.email || ''})</strong>.`;
 
             // SUBJECT
             const subjectQuery = { name: /^MACHINE-CUSTOMER-UPDATE-SUBJECT$/i, type: "ADMIN-CONFIG", isArchived: false, isActive: true }
