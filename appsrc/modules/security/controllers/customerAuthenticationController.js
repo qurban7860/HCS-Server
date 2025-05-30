@@ -21,6 +21,7 @@ const {
   isValidUser,
   isValidContact,
   isValidRole,
+  validateRecaptcha
 } = require('../service/authHelper');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -43,6 +44,7 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
+    await validateRecaptcha({ req, res })
     let queryString = { $or: [{ login: req.body.email }, { email: req.body.email }], isArchived: false };
     let blackListIP = await SecurityConfigBlackListIP.find({ isActive: true, isArchived: false });
     let matchedBlackListIps = false;
