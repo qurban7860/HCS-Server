@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const securitySignInLogController = require('../controllers/securitySignInLogController');
 const logger = require('../../config/logger');
@@ -19,6 +20,35 @@ async function generateRandomString() {
     }
     resolve(result);
   });
+}
+
+async function validateRecaptcha({ req, res }) {
+  try {
+    if (!req.body.recaptchaToken) {
+      return { success: false, message: 'Missing reCAPTCHA token' };
+    }
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      new URLSearchParams({
+        secret: process.env.RECAPTCHA_KEY,
+        response: req.body.recaptchaToken
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    const data = response.data;
+
+    if (!data?.success || data?.score < 0.5) {
+      return res.status(400).json({ success: false, message: 'Failed reCAPTCHA verification' });
+    }
+    return (data.success || data.score > 0.5)
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Internal error verifying reCAPTCHA' });
+  }
 }
 
 async function isTokenExpired(tokenExpiry) {
@@ -234,5 +264,6 @@ module.exports = {
   isValidUser,
   isValidCustomer,
   isValidContact,
-  isValidRole
+  isValidRole,
+  validateRecaptcha
 }

@@ -16,6 +16,7 @@ const {
   isValidCustomer,
   isValidContact,
   isValidRole,
+  validateRecaptcha
 } = require('../service/authHelper');
 const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, SecuritySession } = require('../models');
 const ipRangeCheck = require("ip-range-check");
@@ -44,6 +45,7 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
+    await validateRecaptcha({ req, res })
     let queryString = { $or: [{ login: req.body.email }, { email: req.body.email }], isArchived: false };
 
     let blackListIP = await SecurityConfigBlackListIP.find({ isActive: true, isArchived: false });
