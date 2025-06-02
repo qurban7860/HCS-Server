@@ -725,15 +725,7 @@ exports.patchProduct = async (req, res, next) => {
       }
     }
 
-    if (machine?.customer?._id !== req.body?.customer) {
-      let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
-      const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
-      if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
-        await machineEmailService.machineCustomerChange({ req, machine, loginUser })
-      } else {
-        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
-      }
-    }
+
     if (machine && req.body.isVerified) {
       if (!Array.isArray(machine.verifications))
         machine.verifications = [];
@@ -781,12 +773,22 @@ exports.patchProduct = async (req, res, next) => {
     dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
     async function callbackFunc(error, result) {
       if (error) {
+        console.log({ error })
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
         );
       } else {
+        if (machine?.customer?._id !== req.body?.customer) {
+          let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
+          const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
+          if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
+            await machineEmailService.machineCustomerChange({ req, machine, loginUser })
+          } else {
+            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
+          }
+        }
         if (req.body?.isUpdateConnectedMachines) {
           if (Array.isArray(req.body?.machineConnections) && req.body?.machineConnections?.length > 0) {
             try {
