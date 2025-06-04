@@ -8,6 +8,7 @@ const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
 const { Ticket, TicketComment } = require('../models');
 const { fDateTime } = require('../../../../utils/formatTime');
+const { getMentionEmails } = require('../../../../utils/getMentionEmails');
 
 class TicketEmailService {
   constructor() {
@@ -176,7 +177,10 @@ class TicketEmailService {
       const summary = `</strong>${ticketData?.summary || ""}`;
 
       // Ensure unique emails using a Set
-      const toEmails = new Set();
+      const emails = getMentionEmails(comment?.comment)
+      const toEmails = new Set()
+      emails.forEach(email => toEmails.add(email))
+
       if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
       if (ticketData.assignee?.email && !req.body.isInternal) toEmails.add(ticketData.assignee.email);
       // Get Ticket No Prefix
