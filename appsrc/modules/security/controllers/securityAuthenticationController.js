@@ -16,8 +16,10 @@ const {
   isValidCustomer,
   isValidContact,
   isValidRole,
+  validateRecaptcha
 } = require('../service/authHelper');
 const { SecurityUser, SecuritySignInLog, SecurityConfigBlackListIP, SecurityConfigWhiteListIP, SecurityConfigBlockedCustomer, SecurityConfigBlockedUser, SecuritySession } = require('../models');
+const { CustomerContact } = require('../../crm/models');
 const ipRangeCheck = require("ip-range-check");
 let securityDBService = require('../service/securityDBService');
 const dbService = this.dbservice = new securityDBService();
@@ -44,6 +46,7 @@ exports.login = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
 
   } else {
+    await validateRecaptcha({ req, res })
     let queryString = { $or: [{ login: req.body.email }, { email: req.body.email }], isArchived: false };
 
     let blackListIP = await SecurityConfigBlackListIP.find({ isActive: true, isArchived: false });
@@ -222,6 +225,8 @@ exports.multifactorverifyCode = async (req, res, next) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let existingUser = await this.dbservice.getObject(SecurityUser, { _id: req.body.userID }, this.populate);
+    const userContacts = await this.dbservice.getObjectList(req, CustomerContact, this.fields, { customer: existingUser?.customer?._id });
+
     if (existingUser) {
       if (existingUser.multiFactorAuthenticationCode == req.body.code) {
         const currentTime = new Date();
@@ -242,7 +247,8 @@ exports.multifactorverifyCode = async (req, res, next) => {
                 roles: existingUser.roles,
                 modules: existingUser?.customer?.modules || [],
                 dataAccessibilityLevel: existingUser.dataAccessibilityLevel
-              }
+              },
+              userContacts,
             });
           } else {
             return res.status(StatusCodes.BAD_REQUEST).send("Authentication Failed!");
@@ -286,6 +292,8 @@ exports.refreshToken = async (req, res, next) => {
     if (accessToken) {
       const token = await updateUserToken(accessToken);
       await this.dbservice.patchObject(SecurityUser, existingUser._id, { token });
+      const userContacts = await this.dbservice.getObjectList(req, CustomerContact, this.fields, { customer: existingUser?.customer?._id });
+
       const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString() });
       return res.json({
         accessToken,
@@ -300,8 +308,9 @@ exports.refreshToken = async (req, res, next) => {
           customer: existingUser?.customer?._id,
           type: existingUser?.customer?.type,
           contact: existingUser?.contact?._id,
-          dataAccessibilityLevel: existingUser.dataAccessibilityLevel
-        }
+          dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
+        },
+        userContacts,
       });
     }
   } catch (error) {
@@ -309,8 +318,6 @@ exports.refreshToken = async (req, res, next) => {
     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error?.message);
   }
 };
-
-
 
 exports.logout = async (req, res, next) => {
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
@@ -452,6 +459,7 @@ async function validateAndLoginUser(req, res, existingUser) {
     if (existingUser.multiFactorAuthentication) {
       return await userEmailService.sendMfaEmail(req, res, existingUser);
     }
+    const userContacts = await CustomerContact.find({ isActive: true, isArchived: false, customer: existingUser?.customer?._id });
     const userSession = await SecuritySession.findOne({ "session.user": existingUser._id?.toString() });
     const userResponse = {
       accessToken,
@@ -467,6 +475,7 @@ async function validateAndLoginUser(req, res, existingUser) {
         modules: existingUser?.customer?.modules || [],
         dataAccessibilityLevel: existingUser.dataAccessibilityLevel,
       },
+      userContacts,
     };
 
     return res.json(userResponse);

@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
 const securitySignInLogController = require('../controllers/securitySignInLogController');
 const logger = require('../../config/logger');
@@ -19,6 +20,35 @@ async function generateRandomString() {
     }
     resolve(result);
   });
+}
+
+async function validateRecaptcha({ req, res }) {
+  try {
+    if (!req.body.recaptchaToken) {
+      return res.status(400).json({ isError: true, MessageCode: 400, Message: 'Missing reCAPTCHA token' });
+    }
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      new URLSearchParams({
+        secret: process.env.RECAPCHA_SECRET_KEY,
+        response: req.body.recaptchaToken
+      }).toString(),
+      {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        }
+      }
+    );
+
+    const data = response.data;
+
+    if (!data?.success || data?.score < 0.5) {
+      return res.status(400).json({ isError: true, MessageCode: 400, Message: 'Failed reCAPTCHA verification' });
+    }
+    return (data.success || data.score > 0.5)
+  } catch (err) {
+    res.status(500).json({ isError: true, MessageCode: 500, Message: err?.message || 'reCAPTCHA verification failed!' });
+  }
 }
 
 async function isTokenExpired(tokenExpiry) {
@@ -234,5 +264,6 @@ module.exports = {
   isValidUser,
   isValidCustomer,
   isValidContact,
-  isValidRole
+  isValidRole,
+  validateRecaptcha
 }
