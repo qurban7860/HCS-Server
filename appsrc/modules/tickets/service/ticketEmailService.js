@@ -177,12 +177,18 @@ class TicketEmailService {
       const summary = `</strong>${ticketData?.summary || ""}`;
 
       // Ensure unique emails using a Set
-      const emails = getMentionEmails(comment?.comment)
       const toEmails = new Set()
-      emails.forEach(email => toEmails.add(email))
 
-      if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
-      if (ticketData.assignee?.email && !req.body.isInternal) toEmails.add(ticketData.assignee.email);
+      if (ticketData.reporter?.email && !req.body.isInternal) {
+        toEmails.add(ticketData.reporter.email);
+      }
+      if (req.body.isInternal) {
+        toEmails.add(ticketData.assignee.email);
+        const emails = getMentionEmails(comment?.comment)
+        if (Array.isArray(emails) && emails?.length > 0) {
+          emails?.forEach(email => toEmails.add(email))
+        }
+      }
       // Get Ticket No Prefix
       const regex = new RegExp("^Ticket_Prefix$", "i");
       const configObject = await Config.findOne({
