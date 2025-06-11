@@ -43,7 +43,7 @@ this.populate = [
   { path: 'reporter', select: 'firstName lastName' },
   { path: 'assignee', select: 'firstName lastName' },
   { path: 'approvers', select: 'firstName lastName' },
-  { path: 'issueType', select: 'name icon color' },
+  { path: 'issueType', select: 'name icon color slug' },
   { path: 'faults', select: 'name icon color description' },
   { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
