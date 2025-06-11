@@ -30,11 +30,7 @@ class TicketEmailService {
     try {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
-      // Determine Email Subject
-      let subject = "Support ticket updated";
-      if (req.body.isNew) {
-        subject = "Support ticket created";
-      }
+
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
@@ -57,13 +53,22 @@ class TicketEmailService {
         isArchived: false,
         isActive: true
       }).select("value");
-      let portalUri = `${adminPortalUrl}/support/supportTickets/${req.params.id}/view`
-      let url = portalUri;
+
+      const ticketName = `${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}`
+
+      // Determine Email Subject
+      let subject = '';
+      if (req.body.isNew) {
+        subject = `Support ticket ${ticketName} created`;
+      }
+
+      let url = `${adminPortalUrl}/support/supportTickets/${req.params.id}/view`
 
       // Generate Ticket URL for Admin Portal
-      const adminTicketUri = `<a href=${portalUri} target="_blank" >
-        <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
+      const adminTicketUri = `<a href=${url} target="_blank" >
+        <strong>${ticketName}</strong>
       </a>`;
+
       let text = "";
 
       // Check for Updates
@@ -72,29 +77,35 @@ class TicketEmailService {
         if (oldObj?.status?._id && oldObj?.status?._id?.toString() != ticketData.status?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri}<br/>Status has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           status = `<strong>Status: </strong>${ticketData?.status?.name || ""}<br>`;
+          subject = `Support ticket ${ticketName}. Status updated`
         }
 
         if (oldObj?.priority?._id && oldObj?.priority?._id?.toString() != ticketData.priority?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Priority has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           priority = `<strong>Priority: </strong>${ticketData?.priority?.name || ""}<br>`;
+          subject = `Support ticket ${ticketName}. Priority updated`
         }
 
         if (oldObj?.reporter?._id && oldObj?.reporter?._id?.toString() != ticketData.reporter?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+          subject = `Support ticket ${ticketName}. Reporter updated`
         }
 
         if (oldObj?.summary && oldObj?.summary?.trim() !== ticketData.summary?.trim()) {
           text = `Support Ticket ${adminTicketUri} <br/>Summary has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+          subject = `Support ticket ${ticketName}. Summary updated`
         }
 
         if (oldObj?.description && oldObj?.description?.trim() !== ticketData.description?.trim()) {
           text = `Support Ticket ${adminTicketUri} <br/>Description has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           description = `<strong>Description: </strong>${ticketData?.description || ""}<br>`;
+          subject = `Support ticket ${ticketName}. Description updated`
         }
 
         if (oldObj.assignee?._id?.toString() != ticketData?.assignee?._id?.toString()) {
           if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
           text = `Support Ticket ${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+          subject = `Support ticket ${ticketName}. Assignee updated`
         }
 
         if (
@@ -106,6 +117,7 @@ class TicketEmailService {
           )
         ) {
           text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+          subject = `Support ticket ${ticketName}. Approvers updated`
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
@@ -162,11 +174,6 @@ class TicketEmailService {
       const portalUrl = process.env.PORTAL_APP_URL;
       const adminPortalUrl = process.env.ADMIN_PORTAL_APP_URL
 
-      // Determine Email Subject
-      let subject = "Support ticket comment updated";
-      if (req.body.isNew) {
-        subject = "Support ticket comment posted";
-      }
       // Fetch Ticket Data
       const ticketData = await this.dbservice.getObjectById(Ticket, this.fields, req.params.ticketId, this.populate);
       const comment = await this.dbservice.getObjectById(TicketComment, this.fields, req.params.id, this.populate);
@@ -200,12 +207,17 @@ class TicketEmailService {
         isActive: true
       }).select("value");
 
+      const ticketName = `${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}`
+
+      // Determine Email Subject
+      let subject = `Support ticket ${ticketName}. Comment updated`;
+      if (req.body.isNew) {
+        subject = `Support ticket ${ticketName}. New comment`;
+      }
+
       // Generate Ticket URL for Admin Portal
-      let portalUri = `${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view`
-      let url = portalUri;
-      const adminTicketUri = `<a href=${url} target="_blank" >
-            <strong>${configObject?.value?.trim() || ""} ${ticketData?.ticketNo}</strong>
-          </a>`;
+      let url = `${adminPortalUrl}/support/supportTickets/${req.params.ticketId}/view`
+      const adminTicketUri = `<a href=${url} target="_blank" ><strong>${ticketName}</strong></a>`;
       let text = `Support Ticket ${adminTicketUri} <br/>Comment has been ${!req.body?.isNew ? "modified" : "posted"} by <strong>${username || ""} (${comment?.updatedBy?.contact?.email || ""})</strong>.`;
 
 
