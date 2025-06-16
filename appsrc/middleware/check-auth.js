@@ -3,48 +3,49 @@ const jwt = require('jsonwebtoken');
 const HttpError = require('../modules/config/models/http-error');
 const { SecuritySession } = require('../modules/security/models');
 const logger = require('../modules/config/logger');
+const activityReporter = require('./activityReporter');
 
 module.exports = async (req, res, next) => {
   if (req.headers["howickportalkey"] && req.headers["machineserialno"] && req.headers["ipcserialno"] && req.headers["computerguid"]) {
     return next();
   }
-  if (req.method === 'OPTIONS' || 
-  req.url.toLowerCase() === '/gettoken' || 
-  req.url.toLowerCase() === '/forgetpassword' || 
-  req.url.includes("verifyInviteCode")  || 
-  req.url.includes("setInvitedUserPasswordDetails")  || 
-  req.url.toLowerCase() === '/forgetpassword/verifytoken') {
+  if (req.method === 'OPTIONS' ||
+    req.url.toLowerCase() === '/gettoken' ||
+    req.url.toLowerCase() === '/forgetpassword' ||
+    req.url.includes("verifyInviteCode") ||
+    req.url.includes("setInvitedUserPasswordDetails") ||
+    req.url.toLowerCase() === '/forgetpassword/verifytoken') {
     return next();
   }
   try {
-    
-    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1]:''; // Authorization: 'Bearer TOKEN'
-        
+
+    const token = req && req.headers && req.headers.authorization ? req.headers.authorization.split(' ')[1] : ''; // Authorization: 'Bearer TOKEN'
+
 
     if (!token || token.length == 0) {
       throw new Error('AuthError');
       return next();
 
-    } 
-    
+    }
+
     const decodedToken = jwt.verify(token, process.env.JWT_SECRETKEY);
-    
-    if(decodedToken && decodedToken.userId) {
 
-      let session = await SecuritySession.findOne({"session.user":decodedToken.userId});
+    if (decodedToken && decodedToken.userId) {
 
-      if(decodedToken.sessionId && session.session.sessionId!=decodedToken.sessionId) {
+      let session = await SecuritySession.findOne({ "session.user": decodedToken.userId });
+
+      if (decodedToken.sessionId && session.session.sessionId != decodedToken.sessionId) {
         throw new Error('AuthError');
         return next();
       }
 
-      if(session) {
+      if (session) {
         let expireAt = new Date(session.expires);
         let timeDifference = Math.ceil(expireAt.getTime() - new Date().getTime());
 
-        if(timeDifference<1) {
-          await SecuritySession.deleteMany({"session.user":decodedToken.userId});
-          await SecuritySession.deleteMany({"session.user":{$exists:false}});
+        if (timeDifference < 1) {
+          await SecuritySession.deleteMany({ "session.user": decodedToken.userId });
+          await SecuritySession.deleteMany({ "session.user": { $exists: false } });
 
           throw new Error('AuthError');
           return next()
@@ -54,17 +55,21 @@ module.exports = async (req, res, next) => {
         throw new Error('AuthError');
         return next()
       }
-     
+
     }
 
     const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
     decodedToken.userIP = clientIP;
     req.body.loginUser = decodedToken;
 
-    if(req.query?.pagination?.page) {
+    if (req.query?.pagination?.page) {
       req.body.page = req.query?.pagination?.page;
       req.body.pageSize = req.query?.pagination?.pageSize;
       delete req.query?.pagination;
+    }
+    const userActivityServerURL = process.env.ACTIVITY_SERVER_URL
+    if (userActivityServerURL) {
+      await activityReporter(req)
     }
     next();
   } catch (err) {

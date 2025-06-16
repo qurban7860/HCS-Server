@@ -1,13 +1,12 @@
 const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
-const roleCheck = require('../../../../middleware/role-check');
 const checkCustomer = require('../../../../middleware/check-customer');
 const customerDataFilter = require('../../../../middleware/customer-data-filter');
 const controllers = require('../../../tickets/controllers');
 const controller = controllers.changeReasonController;
 const router = express.Router();
 
-const baseRoute = `/settings/changeReasons`; 
+const baseRoute = `/settings/changeReasons`;
 
 router.use(checkAuth, customerDataFilter);
 

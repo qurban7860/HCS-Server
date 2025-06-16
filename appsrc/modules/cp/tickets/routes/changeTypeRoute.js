@@ -1,13 +1,12 @@
 const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
-const roleCheck = require('../../../../middleware/role-check');
 const checkCustomer = require('../../../../middleware/check-customer');
 const customerDataFilter = require('../../../../middleware/customer-data-filter');
 const controllers = require('../../../tickets/controllers');
 const controller = controllers.changeTypeController;
 const router = express.Router();
 
-const baseRoute = `/settings/changeTypes`; 
+const baseRoute = `/settings/changeTypes`;
 
 router.use(checkAuth, customerDataFilter);
 
