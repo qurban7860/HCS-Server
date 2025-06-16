@@ -1,6 +1,5 @@
 const express = require('express');
 const checkAuth = require('../../../../middleware/check-auth');
-const roleCheck = require('../../../../middleware/role-check');
 const checkCustomer = require('../../../../middleware/check-customer');
 const customerDataFilter = require('../../../../middleware/customer-data-filter');
 const checkIDs = require('../../../../middleware/validateParamIDs');
@@ -10,7 +9,7 @@ const router = express.Router();
 const validate = require('../../../tickets/utils/validate');
 
 // - /api/1.0.0/cp/tickets/history
-const baseRoute = `/:ticketId/history`; 
+const baseRoute = `/:ticketId/history`;
 
 router.use(checkAuth, customerDataFilter);
 
