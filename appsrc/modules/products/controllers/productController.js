@@ -1804,7 +1804,7 @@ exports.sendEmailAlert = async (req, data) => {
     };
 
     const customer = (!data?.transferredDate && data?.customer) ? `<strong>Customer:</strong> ${data?.customer} <br>` : '';
-    const serialNo = `<a href="${process.env.CLIENT_APP_URL}products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo}${data?.model ? ' - ' : ''}${data?.model || ''}</strong></a>`;
+    const serialNo = `<a href="${process.env.ADMIN_PORTAL_APP_URL}/products/machines/${data?.machineId}/view" target="_blank" ><strong>${data?.serialNo}${data?.model ? ' - ' : ''}${data?.model || ''}</strong></a>`;
     const status = ((data?.transferred || data?.transferredDate) && data?.status) ? `<strong>Status:</strong> ${data?.status} <br>` : '';
     const previousStatus = data?.previousStatus ? `<strong>Previous Status:</strong> ${data?.previousStatus} <br>` : '';
     const billingSite = data?.billingSite ? `<strong>Billing Site:</strong> ${data?.billingSite} <br>` : '';

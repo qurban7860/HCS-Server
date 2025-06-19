@@ -25,7 +25,7 @@ const {
 } = require('../service/authHelper');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
-this.clientURL = process.env.CLIENT_APP_URL;
+this.clientURL = process.env.ADMIN_PORTAL_APP_URL;
 this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };

@@ -21,8 +21,8 @@ class machineEmailService {
                 return
             }
 
-            const appUrl = process.env.CLIENT_APP_URL;
-            const machineUrl = `${appUrl}products/machines/${req.params.id}/view`;
+            const appUrl = process.env.ADMIN_PORTAL_APP_URL;
+            const machineUrl = `${appUrl}/products/machines/${req.params.id}/view`;
             const adminMachineUri = `<a href=${machineUrl} target="_blank" ><strong>${machine?.serialNo}</strong></a>`;
 
             // TO EMAILS
