@@ -100,6 +100,7 @@ class TicketEmailService {
         if (oldObj?.reporter?._id?.toString() != ticketData.reporter?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           subject = `Support ticket ${ticketName}. Reporter updated`
+          if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
         }
 
         if (
@@ -123,7 +124,7 @@ class TicketEmailService {
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
-        } else {
+        } else if (oldObj?.reporter?._id?.toString() == ticketData.reporter?._id?.toString()) {
           if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
           ticketData?.assignees?.forEach((assignee) => {
             if (assignee.email) toEmails.add(assignee.email);
