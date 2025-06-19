@@ -21,7 +21,21 @@ const { Product } = require('../../products/models');
 const ObjectId = require('mongoose').Types.ObjectId;
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
-this.fields = {};
+
+this.fields = {
+  password: 0,
+  multiFactorAuthentication: 0,
+  multiFactorAuthenticationCode: 0,
+  multiFactorAuthenticationExpireTime: 0,
+  expireAt: 0,
+  lockUntil: 0,
+  lockedBy: 0,
+  loginFailedCounts: 0,
+  dataAccessibilityLevel: 0,
+  token: 0,
+  loginFailedCounts: 0
+};
+
 this.query = {};
 this.orderBy = { name: 1 };
 this.populate = [
@@ -100,7 +114,7 @@ exports.getSecurityUsers = async (req, res, next) => {
   if (req.query.roleType) {
     let filteredRoles = await SecurityRole.find({ roleType: { $in: req.query.roleType }, isActive: true, isArchived: false });
 
-    if (Array.isArray(filteredRoles) && filteredRoles.length > 0) {
+    if (Array.isArray(filteredRoles)) {
       let filteredRolesIds = filteredRoles.map((r) => r._id);
       this.query.roles = { $in: filteredRolesIds };
     }
@@ -108,22 +122,15 @@ exports.getSecurityUsers = async (req, res, next) => {
     delete req.query.roleType;
   }
 
-  // In case to fetch only specified fields
-  if (req.query.fields) {
-    this.fields = req.query.fields.split(',').join(' ');
-    delete req.query.fields;
-  } else this.fields = {}
-
-  // In case customer type is passed
+  // // In case customer type is passed
   const customerType = req.query?.customer && req.query?.customer?.type;
   if (customerType)
     delete this.query.customer;
-  // In case contact department type is passed
-  const departmentType = req.query?.contact?.department?.departmentType;
-  if (departmentType)
-    delete this.query.contact;
 
-
+  // // In case contact department type is passed
+  // const departmentType = req.query?.contact?.department?.departmentType;
+  // if (departmentType)
+  //   delete this.query.contact;
 
   this.dbservice.getObjectList(req, SecurityUser, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, users) {
@@ -133,15 +140,15 @@ exports.getSecurityUsers = async (req, res, next) => {
     } else {
       users = JSON.parse(JSON.stringify(users));
 
-      // Filter users based on customer type
+      // // Filter users based on customer type
       if (customerType) {
         users = users.filter((user) => user.customer && user.customer.type === customerType);
       }
 
-      // Filter users based on department type
-      if (departmentType) {
-        users = users.filter((user) => user.contact?.department && user.contact?.department?.departmentType === departmentType);
-      }
+      // // Filter users based on department type
+      // if (departmentType) {
+      //   users = users.filter((user) => user.contact?.department && user.contact?.department?.departmentType === departmentType);
+      // }
 
       let i = 0;
       for (let user of users) {
