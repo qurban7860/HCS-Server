@@ -19,7 +19,7 @@ class TicketEmailService {
       { path: 'requestType', select: 'name' },
       { path: 'priority', select: 'name' },
       { path: 'reporter', select: 'firstName lastName email customer', populate: { path: 'customer', select: 'type' } },
-      { path: 'assignee', select: 'firstName lastName email customer', populate: { path: 'customer', select: 'type' } },
+      { path: 'assignees', select: 'firstName lastName email customer', populate: { path: 'customer', select: 'type' } },
       { path: 'approvers', select: 'firstName lastName email customer', populate: { path: 'customer', select: 'type' } },
       { path: 'createdBy', select: 'name contact', populate: { path: 'contact', select: 'firstName lastName email' } },
       { path: 'updatedBy', select: 'name contact', populate: { path: 'contact', select: 'firstName lastName email' } },
@@ -74,47 +74,49 @@ class TicketEmailService {
       // Check for Updates
       if (!req.body?.isNew && oldObj) {
 
-        if (oldObj?.status?._id && oldObj?.status?._id?.toString() != ticketData.status?._id?.toString()) {
+        if (oldObj?.status?._id?.toString() != ticketData.status?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri}<br/>Status has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           status = `<strong>Status: </strong>${ticketData?.status?.name || ""}<br>`;
           subject = `Support ticket ${ticketName}. Status updated`
         }
 
-        if (oldObj?.priority?._id && oldObj?.priority?._id?.toString() != ticketData.priority?._id?.toString()) {
+        if (oldObj?.priority?._id?.toString() != ticketData.priority?._id?.toString()) {
           text = `Support Ticket ${adminTicketUri} <br/>Priority has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           priority = `<strong>Priority: </strong>${ticketData?.priority?.name || ""}<br>`;
           subject = `Support ticket ${ticketName}. Priority updated`
         }
 
-        if (oldObj?.reporter?._id && oldObj?.reporter?._id?.toString() != ticketData.reporter?._id?.toString()) {
-          text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
-          subject = `Support ticket ${ticketName}. Reporter updated`
-        }
-
-        if (oldObj?.summary && oldObj?.summary?.trim() !== ticketData.summary?.trim()) {
+        if (oldObj?.summary?.trim() !== ticketData.summary?.trim()) {
           text = `Support Ticket ${adminTicketUri} <br/>Summary has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           subject = `Support ticket ${ticketName}. Summary updated`
         }
 
-        if (oldObj?.description && oldObj?.description?.trim() !== ticketData.description?.trim()) {
+        if (oldObj?.description?.trim() !== ticketData.description?.trim()) {
           text = `Support Ticket ${adminTicketUri} <br/>Description has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           description = `<strong>Description: </strong>${ticketData?.description || ""}<br>`;
           subject = `Support ticket ${ticketName}. Description updated`
         }
 
-        if (oldObj.assignee?._id?.toString() != ticketData?.assignee?._id?.toString()) {
-          if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
-          text = `Support Ticket ${adminTicketUri} <br/>Assignee has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
-          subject = `Support ticket ${ticketName}. Assignee updated`
+        if (oldObj?.reporter?._id?.toString() != ticketData.reporter?._id?.toString()) {
+          text = `Support Ticket ${adminTicketUri} <br/>Reporter has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+          subject = `Support ticket ${ticketName}. Reporter updated`
         }
 
         if (
-          Array.isArray(oldObj?.approvers) &&
-          Array.isArray(ticketData?.approvers) &&
-          (
-            oldObj?.approvers?.length !== ticketData.approvers.length ||
-            !oldObj?.approvers?.every(apr => ticketData?.approvers?.some(appr => appr._id?.toString() == apr?._id?.toString()))
-          )
+          Array.isArray(oldObj?.assignees) && Array.isArray(ticketData?.assignees) &&
+          (!oldObj?.assignees?.every(as => ticketData?.assignees?.some(assignee => assignee._id?.toString() == as?._id?.toString())))
+        ) {
+          text = `Support Ticket ${adminTicketUri} <br/>Assignees has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
+          subject = `Support ticket ${ticketName}. Assignees updated`
+          if (ticketData.assignees?.email) toEmails.add(ticketData.assignees.email);
+          ticketData?.assignees?.forEach((assignee) => {
+            if (assignee.email) toEmails.add(assignee.email);
+          });
+        }
+
+        if (
+          Array.isArray(oldObj?.approvers) && Array.isArray(ticketData?.approvers) &&
+          (!oldObj?.approvers?.every(apr => ticketData?.approvers?.some(appr => appr._id?.toString() == apr?._id?.toString())))
         ) {
           text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           subject = `Support ticket ${ticketName}. Approvers updated`
@@ -123,7 +125,9 @@ class TicketEmailService {
           });
         } else {
           if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
-          if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+          ticketData?.assignees?.forEach((assignee) => {
+            if (assignee.email) toEmails.add(assignee.email);
+          });
         }
 
       } else {
@@ -131,7 +135,9 @@ class TicketEmailService {
         text = `Support Ticket ${adminTicketUri} has been created by <strong>${username || ""}</strong>.`;
         // Collect Unique Email Addresses
         if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
-        if (ticketData.assignee?.email) toEmails.add(ticketData.assignee.email);
+        ticketData?.assignees?.forEach((assignee) => {
+          if (assignee.email) toEmails.add(assignee.email);
+        });
         if (ticketData.approvers?.length) {
           ticketData?.approvers.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
@@ -142,7 +148,9 @@ class TicketEmailService {
       if (!text) {
         return;
       }
-
+      if (toEmails.has(req.body.loginUser.email)) {
+        toEmails.delete(req.body.loginUser.email)
+      }
       // Prepare Email Params
       let params = {
         toEmails: Array.from(toEmails),
@@ -160,9 +168,9 @@ class TicketEmailService {
 
       // Send Email
       params.htmlData = htmlData;
-      req.body = { ...params };
+      req.body = { ...req.body, ...params };
       req.body.ticket = req.params.id
-      await this.email.sendEmail(req);
+      // await this.email.sendEmail(req);
     } catch (error) {
       logger.error(new Error(error));
       throw error;
@@ -190,9 +198,9 @@ class TicketEmailService {
         toEmails.add(ticketData?.reporter?.email);
       }
       if (req.body.isInternal) {
-        if (ticketData?.assignee?.email) {
-          toEmails?.add(ticketData?.assignee.email);
-        }
+        ticketData?.assignees?.forEach((assignee) => {
+          if (assignee.email) toEmails.add(assignee.email);
+        });
         const emails = getMentionEmails(comment?.comment)
         if (Array.isArray(emails) && emails?.length > 0) {
           emails?.forEach(email => toEmails?.add(email))
@@ -224,7 +232,9 @@ class TicketEmailService {
       if (!text) {
         return;
       }
-
+      if (toEmails.has(req.body.loginUser.email)) {
+        toEmails.delete(req.body.loginUser.email)
+      }
       // Prepare Email Params
       let params = {
         toEmails: Array.from(toEmails),
@@ -242,7 +252,7 @@ class TicketEmailService {
 
       // Send Email
       params.htmlData = htmlData;
-      req.body = { ...params };
+      req.body = { ...req.body, ...params };
       req.body.ticket = req.params.ticketId
       await this.email.sendEmail(req);
     } catch (error) {

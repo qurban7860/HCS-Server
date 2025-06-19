@@ -7,28 +7,28 @@ const docSchema = new Schema({
 
         ticket: { type: String, required: true, ref: 'Ticket' },
 
-        previousReporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
-        newReporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        previousReporter: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
+        newReporter: { type: Schema.Types.ObjectId, ref: 'SecurityUser' },
 
-        previousAssignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
-        newAssignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        previousAssignees: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
+        newAssignees: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
         previousPriority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
         newPriority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
-        
+
         previousStatus: { type: Schema.Types.ObjectId, ref: 'TicketStatus' },
         newStatus: { type: Schema.Types.ObjectId, ref: 'TicketStatus' },
-        
+
 },
-{
-        collection: 'TicketChangeHistories'
-});
+        {
+                collection: 'TicketChangeHistories'
+        });
 
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 docSchema.set('timestamps', true);
-docSchema.index({"ticket":1})
-docSchema.index({"updatedBy": 1, "updatedAt": -1 });
+docSchema.index({ "ticket": 1 })
+docSchema.index({ "updatedBy": 1, "updatedAt": -1 });
 
 
 module.exports = mongoose.model('TicketChangeHistory', docSchema);

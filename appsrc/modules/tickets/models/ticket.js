@@ -11,11 +11,11 @@ const docSchema = new Schema({
 
         machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
 
-        reporter: { type: Schema.Types.ObjectId, required: true, ref: 'CustomerContact' },
+        reporter: { type: Schema.Types.ObjectId, required: true, ref: 'SecurityUser' },
 
-        assignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        assignees: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
-        approvers: [{ type: Schema.Types.ObjectId, ref: 'CustomerContact' }],
+        approvers: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
         changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
 

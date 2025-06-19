@@ -40,9 +40,9 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
-  { path: 'reporter', select: 'firstName lastName' },
-  { path: 'assignee', select: 'firstName lastName' },
-  { path: 'approvers', select: 'firstName lastName' },
+  { path: 'reporter', select: 'name' },
+  { path: 'assignees', select: 'name' },
+  { path: 'approvers', select: 'name' },
   { path: 'issueType', select: 'name icon color slug' },
   { path: 'faults', select: 'name icon color description' },
   { path: 'requestType', select: 'name icon color' },
@@ -53,16 +53,16 @@ this.populate = [
   { path: 'changeReason', select: 'name icon color' },
   { path: 'investigationReason', select: 'name icon color' },
   { path: 'files', select: 'name fileType extension thumbnail eTag path' },
-  { path: 'createdBy', select: 'name contact', populate: { path: 'contact', select: 'firstName lastName' } },
+  { path: 'createdBy', select: 'name email' },
   { path: 'updatedBy', select: 'name' }
 ];
 
 this.listPopulate = [
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'serialNo name machineModel', populate: { path: 'machineModel', select: ' name' } },
-  { path: 'reporter', select: 'firstName lastName' },
-  { path: 'assignee', select: 'firstName lastName' },
-  { path: 'approvers', select: 'firstName lastName' },
+  { path: 'reporter', select: 'name' },
+  { path: 'assignees', select: 'name' },
+  { path: 'approvers', select: 'name' },
   { path: 'issueType', select: 'name icon color' },
   { path: 'requestType', select: 'name icon color' },
   { path: 'changeType', select: 'name icon color' },
@@ -452,20 +452,27 @@ exports.patchTicket = async (req, res, next) => {
       }
     }
     await this.dbservice.patchObject(Ticket, req.params.id, getDocFromReq(req));
-    const fields = ["reporter", "assignee", "priority", "status"];
+    const fields = ["reporter", "assignees", "priority", "status"];
     const changedFields = {};
 
     for (const field of fields) {
       if (field in req.body) {
         const newValue = req.body[field];
         const oldValue = oldObj?.[field];
-        const isChanged = newValue !== oldValue?._id;
+        const fieldLabel = sentenceCase(field);
 
-        if (isChanged) {
-          const fieldLabel = sentenceCase(field);
+        if (newValue !== oldValue?._id) {
           changedFields[`previous${fieldLabel}`] = oldValue?._id;
           changedFields[`new${fieldLabel}`] = newValue;
         }
+        if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+          if (newValue?.every(nv => oldValue?.some(ol => nv != ol))) {
+            changedFields[`previous${fieldLabel}`] = oldValue;
+            changedFields[`new${fieldLabel}`] = newValue;
+          }
+        }
+
+
       }
     }
 
@@ -500,7 +507,7 @@ function getDocFromReq(req, reqType) {
 
   const allowedFields = [
     "customer", "machine", "issueType", "requestType", "description", "hlc", "plc", "summary", "changeType",
-    "reporter", "assignee", "approvers", "impact", "faults", "priority", "status", "changeReason", "implementationPlan",
+    "reporter", "assignees", "approvers", "impact", "faults", "priority", "status", "changeReason", "implementationPlan",
     "backoutPlan", "testPlan", "components", "groups", "shareWith", "investigationReason",
     "rootCause", "workaround", "plannedStartDate", "startTime", "plannedEndDate", "endTime", "isActive", "isArchived"
   ];

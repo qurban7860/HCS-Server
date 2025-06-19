@@ -13,10 +13,10 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'ticket', select: 'ticketNo' },
-  { path: 'newReporter', select: 'firstName lastName' },
-  { path: 'previousReporter', select: 'firstName lastName' },
-  { path: 'newAssignee', select: 'firstName lastName' },
-  { path: 'previousAssignee', select: 'firstName lastName' },
+  { path: 'newReporter', select: 'name' },
+  { path: 'previousReporter', select: 'name' },
+  { path: 'newAssignees', select: 'name' },
+  { path: 'previousAssignees', select: 'name' },
   { path: 'newPriority', select: 'name icon color' },
   { path: 'previousPriority', select: 'name icon color' },
   { path: 'newStatus', select: 'name icon color' },
@@ -73,8 +73,8 @@ function getDocFromReq(obj) {
     "ticket",
     "previousReporter",
     "newReporter",
-    "previousAssignee",
-    "newAssignee",
+    "previousAssignees",
+    "newAssignees",
     "previousPriority",
     "newPriority",
     "previousStatus",
@@ -84,8 +84,6 @@ function getDocFromReq(obj) {
   const nullableFields = new Set([
     "previousReporter",
     "newReporter",
-    "previousAssignee",
-    "newAssignee"
   ]);
 
   allowedFields.forEach((f) => {
@@ -108,6 +106,5 @@ function getDocFromReq(obj) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
   }
-  console.log("doc : ", doc);
   return doc;
 }

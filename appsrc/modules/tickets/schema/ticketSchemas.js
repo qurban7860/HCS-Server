@@ -56,18 +56,18 @@ const ticketSchema = (reqType) => {
                 return ObjectId.isValid(reporterId);
             }),
 
-        assignee: Yup.string().nullable().label('Assignee')
-            .test('is-objectid', 'Invalid Assignee!', (assigneeId) => {
-                if (!assigneeId || assigneeId == "null")
-                    return true;
-                return ObjectId.isValid(assigneeId);
-            }),
-
-        approvers: Yup.array().nullable().label('Assignee')
+        assignees: Yup.array().nullable().label('Assignees')
             .test('is-objectid', 'Invalid Assignee!', (assigneeIds) => {
                 if (!assigneeIds || (Array.isArray(assigneeIds) && assigneeIds?.length == 0))
                     return true;
                 return assigneeIds?.some(id => ObjectId.isValid(id))
+            }),
+
+        approvers: Yup.array().nullable().label('Approvers')
+            .test('is-objectid', 'Invalid Approvers!', (approverIds) => {
+                if (!approverIds || (Array.isArray(approverIds) && approverIds?.length == 0))
+                    return true;
+                return approverIds?.some(id => ObjectId.isValid(id))
             }),
 
         changeType: Yup.string().nullable().label('Change Type')
