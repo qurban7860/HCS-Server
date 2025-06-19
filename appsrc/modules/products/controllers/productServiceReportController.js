@@ -605,7 +605,7 @@ exports.sendServiceReportApprovalEmail = async (req, res, next) => {
       const serviceReportId = serviceRecObj.serviceReportUID;
       const serialNo = serviceRecObj.machine?.serialNo;
       const customer = serviceRecObj.customer?.name;
-      const viewServiceReportUrl = `${process.env.CLIENT_APP_URL || "https://admin.portal.howickltd.com/"}products/machines/${machineId}/serviceReports/${reportId}/view`;
+      const viewServiceReportUrl = `${process.env.ADMIN_PORTAL_APP_URL || "https://admin.portal.howickltd.com"}/products/machines/${machineId}/serviceReports/${reportId}/view`;
 
       const contentHTML = await fs.promises.readFile(path.join(__dirname, "../../email/templates/serviceReportApproval.html"), "utf8");
 
