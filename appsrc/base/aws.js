@@ -69,29 +69,29 @@ const generateDownloadURL = async ({ key, name, extension }) => {
   return s3.getSignedUrlPromise('getObject', params);
 };
 
-async function copyFile(user) {
-  let oldFileName = user._id;
-  let bucketName = process.env.AWS_S3_BUCKET;
-  let oldFileFolder = `profile_image/${oldFileName}.txt`;
-  let oldFilePath = `${bucketName}/${oldFileFolder}`;
-  let newFilePath = `profile_image/1_${oldFileName}_1.txt`
-  const copyData = await s3.copyObject({
-    Bucket: bucketName,
-    CopySource: oldFilePath,
-    Key: newFilePath,
-    ACL: 'public-read'
-  }).promise();
+// async function copyFile(user) {
+//   let oldFileName = user._id;
+//   let bucketName = process.env.AWS_S3_BUCKET;
+//   let oldFileFolder = `profile_image/${oldFileName}.txt`;
+//   let oldFilePath = `${bucketName}/${oldFileFolder}`;
+//   let newFilePath = `profile_image/1_${oldFileName}_1.txt`
+//   const copyData = await s3.copyObject({
+//     Bucket: bucketName,
+//     CopySource: oldFilePath,
+//     Key: newFilePath,
+//     ACL: 'public-read'
+//   }).promise();
 
-  if (copyData && copyData.CopyObjectResult) {
-    user.image = process.env.BASE_S3_LINK + newFilePath;
-    await user.save();
-    const deleteData = await s3.deleteObject({
-      Bucket: bucketName,
-      Key: oldFileFolder
-    }).promise();
-    return process.env.BASE_S3_LINK + newFilePath;
-  }
-}
+//   if (copyData && copyData.CopyObjectResult) {
+//     user.image = process.env.BASE_S3_LINK + newFilePath;
+//     await user.save();
+//     const deleteData = await s3.deleteObject({
+//       Bucket: bucketName,
+//       Key: oldFileFolder
+//     }).promise();
+//     return process.env.BASE_S3_LINK + newFilePath;
+//   }
+// }
 
 async function uploadFileS3(filename, folder, content, ext = 'txt', includeFolderInPath = true) {
   let bucketName = process.env.AWS_S3_BUCKET;
@@ -444,7 +444,7 @@ module.exports = {
   sendEmailWithRawData,
   uploadFileS3,
   checkFileHeader,
-  copyFile,
+  // copyFile,
   listBuckets,
   downloadFileS3,
   generateDownloadURL,
