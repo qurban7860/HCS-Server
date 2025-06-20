@@ -21,7 +21,8 @@ const {
   TicketStatusType,
   TicketFault
 } = require('../models');
-const { SecurityUser } = require('../../security/models');
+const { SecurityUser, SecurityRole } = require('../../security/models');
+const { Config } = require('../../config/models');
 const applyTicketFilter = require('../utils/ticketFilter');
 const getDateFromUnitAndValue = require('../utils/getDateFromUnit');
 const CounterController = require('../../counter/controllers/counterController');
@@ -393,11 +394,35 @@ exports.postTicket = async (req, res, next) => {
     }
 
     if (!req.body.reporter || req.body.reporter == 'null') {
-      const userData = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body?.loginUser?.userId);
-      req.body.reporter = userData?.contact;
+      req.body.reporter = req.body?.loginUser?.userId;
     }
 
-    if (!req.body.faults || Array.isArray(req.body.faults) && req.body.faults?.length < 1) {
+
+
+    if (
+      (!Array.isArray(req.body?.assignees) || req.body?.assignees?.length === 0) ||
+      (!Array.isArray(req.body?.approvers) || req.body?.approvers?.length === 0)
+    ) {
+      const configurations = await Config.find();
+
+      if (!Array.isArray(req.body?.assignees) || req.body?.assignees?.length === 0) {
+        const asssigneeRoleType = configurations.find((c) => c?.name?.trim() === 'SupportTicketAssigneeRoleType')?.value?.trim();
+        const asssigneeRoles = await SecurityRole.find({ roleType: { $in: asssigneeRoleType }, isActive: true, isArchived: false });
+        const defaultAsssignee = configurations.find((c) => c?.name?.trim() === 'DefaultSupportTicketAssignee')?.value?.split(',')?.map((e) => e.trim()?.toLowerCase());
+        const asssigneeSecurityUsers = await SecurityUser.find({ roles: { $in: asssigneeRoles?.map(r => r?._id) }, email: { $in: defaultAsssignee } }).populate([{ path: "customer", select: "type" }]);
+        req.body.assignees = asssigneeSecurityUsers?.filter(s => s?.customer?.type == 'SP')?.map(s => s?._id);;
+      }
+
+      if (!Array.isArray(req.body?.approvers) || req.body?.approvers?.length === 0) {
+        const approverRoleType = configurations.find((c) => c?.name?.trim() === 'SupportTicketApproverRoleType')?.value?.trim();
+        const approverRoles = await SecurityRole.find({ roleType: { $in: approverRoleType }, isActive: true, isArchived: false });
+        const defaultApprover = configurations.find((c) => c?.name?.trim() === 'DefaultSupportTicketApprover')?.value?.split(',')?.map((e) => e.trim()?.toLowerCase());
+        const approverSecurityUsers = await SecurityUser.find({ roles: { $in: approverRoles?.map(r => r?._id) }, email: { $in: defaultApprover } }).populate([{ path: "customer", select: "type" }]);
+        req.body.approvers = approverSecurityUsers?.filter(s => s?.customer?.type == 'SP')?.map(s => s?._id);
+      }
+    }
+
+    if (!Array.isArray(req.body.faults) || req.body.faults?.length === 0) {
       req.body.faults = await getDefaultTicketFaults(req);
     }
 
@@ -471,8 +496,6 @@ exports.patchTicket = async (req, res, next) => {
             changedFields[`new${fieldLabel}`] = newValue;
           }
         }
-
-
       }
     }
 
