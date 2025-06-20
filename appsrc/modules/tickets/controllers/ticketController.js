@@ -421,7 +421,7 @@ exports.postTicket = async (req, res, next) => {
         req.body.approvers = approverSecurityUsers?.filter(s => s?.customer?.type == 'SP')?.map(s => s?._id);
       }
     }
-    console.log({ body: req.body })
+
     if (!Array.isArray(req.body.faults) || req.body.faults?.length === 0) {
       req.body.faults = await getDefaultTicketFaults(req);
     }
