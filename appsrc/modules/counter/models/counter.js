@@ -9,6 +9,8 @@ const counterSchema = new Schema({
         serviceReport: { type: Number, default: 0 },
         supportTicket: { type: Number, default: 0 },
         article: { type: Number, default: 0 },
+        project: { type: Number, default: 0 },
+        release: { type: Number, default: 0 },
     },
 
     paddingSize: { 
