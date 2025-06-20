@@ -1872,7 +1872,7 @@ function fetchAddressCSV(address) {
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { serialNo, name, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel,
+  const { serialNo, name, generation, efficiency, parentMachine, parentSerialNo, globelMachineID, status, supplier, machineModel,
     workOrderRef, financialCompany, customer, instalationSite, billingSite, operators,
     accountManager, projectManager, supportManager, license, logo, siteMilestone,
     tools, description, internalTags, customerTags, manufactureDate, purchaseDate, transferredDate, installationDate, decommissionedDate, shippingDate, supportExpireDate,
@@ -1890,6 +1890,12 @@ function getDocumentFromReq(req, reqType) {
   }
   if ("name" in req.body) {
     doc.name = name;
+  }
+  if ("generation" in req.body) {
+    doc.generation = generation;
+  }
+  if ("efficiency" in req.body) {
+    doc.efficiency = efficiency;
   }
   if ("parentMachine" in req.body) {
     doc.parentMachine = parentMachine;

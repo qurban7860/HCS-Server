@@ -26,6 +26,12 @@ const docSchema = new Schema({
     
     alias: [{ type: String  }],
 
+    efficiency: { type: String },
+    // efficiency of machine in percentage
+
+    generation: { type: String },
+    // generation of machine
+
     description: { type: String },
     // detailed description of machine
 
