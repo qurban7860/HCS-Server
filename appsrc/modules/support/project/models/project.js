@@ -8,6 +8,10 @@ const docSchema = new Schema({
     projectNo: { type: String },
     
     name: { type: String , required: true },
+
+    startDate: { type: Date },
+
+    endDate: { type: Date },
     
     description: { type: String },
 
