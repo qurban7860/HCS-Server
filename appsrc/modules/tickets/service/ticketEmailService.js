@@ -175,7 +175,7 @@ class TicketEmailService {
       params.htmlData = htmlData;
       req.body = { ...req.body, ...params };
       req.body.ticket = req.params.id
-      // await this.email.sendEmail(req);
+      await this.email.sendEmail(req);
     } catch (error) {
       logger.error(new Error(error));
       throw error;
