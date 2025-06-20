@@ -104,8 +104,9 @@ class TicketEmailService {
         }
 
         if (
-          Array.isArray(oldObj?.assignees) && Array.isArray(ticketData?.assignees) &&
-          (!oldObj?.assignees?.every(as => ticketData?.assignees?.some(assignee => assignee._id?.toString() == as?._id?.toString())))
+          (Array.isArray(oldObj?.assignees) || Array.isArray(ticketData?.assignees)) &&
+          ((oldObj?.assignees?.length !== ticketData?.assignees?.length) ||
+            (ticketData?.assignees?.some(as => oldObj?.assignees?.some(a => a._id?.toString() !== as?._id?.toString()))))
         ) {
           text = `Support Ticket ${adminTicketUri} <br/>Assignees has been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           subject = `Support ticket ${ticketName}. Assignees updated`
@@ -116,8 +117,9 @@ class TicketEmailService {
         }
 
         if (
-          Array.isArray(oldObj?.approvers) && Array.isArray(ticketData?.approvers) &&
-          (!oldObj?.approvers?.every(apr => ticketData?.approvers?.some(appr => appr._id?.toString() == apr?._id?.toString())))
+          (Array.isArray(oldObj?.approvers) || Array.isArray(ticketData?.approvers)) &&
+          ((oldObj?.approvers?.length !== ticketData?.approvers?.length) &&
+            (ticketData?.approvers?.some(ap => oldObj?.approvers?.some(a => a._id?.toString() !== ap?._id?.toString()))))
         ) {
           text = `Support Ticket ${adminTicketUri} <br/>Approvers have been modified by <strong>${username || ""} (${ticketData?.updatedBy?.contact?.email || ""})</strong>.`;
           subject = `Support ticket ${ticketName}. Approvers updated`
