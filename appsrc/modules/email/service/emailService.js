@@ -103,7 +103,6 @@ class EmailService {
             params.toEmails = overrideEmail;
             delete params?.ccEmails;
             delete params?.bccEmails;
-            req.body.toEmails = overrideEmail
         }
 
         // SOURCE EMAIL
