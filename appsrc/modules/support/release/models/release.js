@@ -10,6 +10,8 @@ const docSchema = new Schema({
     project: { type: mongoose.Schema.Types.ObjectId, ref: 'Projects', required: true },
     
     name: { type: String , required: true },
+
+    releaseDate: { type: Date },
     
     description: { type: String },
     

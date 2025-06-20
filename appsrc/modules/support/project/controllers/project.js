@@ -100,7 +100,7 @@ exports.patchProject = async (req, res) => {
 };
 
 function getProjectFromReq(req, reqType) {
-  const { projectNo, name, description, customerAccess, isActive, isArchived, loginUser } = req.body;
+  const { projectNo, name, startDate, endDate, description, customerAccess, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType === "new") {
@@ -109,6 +109,8 @@ function getProjectFromReq(req, reqType) {
   
   if ("projectNo" in req.body) doc.projectNo = projectNo;
   if ("name" in req.body) doc.name = name.trim();
+  if ("startDate" in req.body) doc.startDate = startDate;
+  if ("endDate" in req.body) doc.endDate = endDate;
   if ("description" in req.body) doc.description = description?.trim() || '';
   if ("customerAccess" in req.body) doc.customerAccess = customerAccess;
   if ("isActive" in req.body) doc.isActive = isActive;
