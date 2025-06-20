@@ -124,11 +124,15 @@ class TicketEmailService {
           ticketData?.approvers?.forEach((approver) => {
             if (approver.email) toEmails.add(approver.email);
           });
-        } else if (oldObj?.reporter?._id?.toString() == ticketData.reporter?._id?.toString()) {
-          if (ticketData.reporter?.email) toEmails.add(ticketData.reporter.email);
-          ticketData?.assignees?.forEach((assignee) => {
+        }
+
+        if (toEmails.size === 0) {
+          const reporterEmail = ticketData.reporter?.email;
+          if (reporterEmail) toEmails.add(reporterEmail);
+
+          for (const assignee of ticketData?.assignees || []) {
             if (assignee.email) toEmails.add(assignee.email);
-          });
+          }
         }
 
       } else {
