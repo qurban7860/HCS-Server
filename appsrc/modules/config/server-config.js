@@ -46,6 +46,8 @@ const backupRoute = require('../backups/routes');
 const customerPortalRoutes = require('../cp/routes');
 const articleRoutes = require('../support/knowledgeBase/routes');
 const articleCategoryRoutes = require('../support/settings/routes');
+const projectRoute = require('../support/project/routes');
+const releaseRoute = require('../support/release/routes');
 
 const swaggerUi = require('swagger-ui-express');
 const swaggerDocument = require('../../../openapi.json');
@@ -146,6 +148,8 @@ class App {
     documentRoute.registerDocumentRoutes(this.app, apiPath);
     articleRoutes.registerArticleRoutes(this.app, apiPath);
     articleCategoryRoutes.registerArticleCategoryRoutes(this.app, apiPath);
+    projectRoute.registerProjectRoutes(this.app, apiPath);
+    releaseRoute.registerReleaseRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     calenderRoute.registerEventRoutes(this.app, apiPath);
