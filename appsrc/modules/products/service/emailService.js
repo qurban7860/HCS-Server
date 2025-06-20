@@ -5,13 +5,14 @@ const { renderEmail } = require('../../email/utils');
 const logger = require('../../config/logger');
 const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
+const { Product } = require('../../regions/models');
 
 class machineEmailService {
     constructor() {
         this.email = new emailService();
     }
 
-    machineCustomerChange = async ({ req, machine, loginUser }) => {
+    machineCustomerChange = async ({ req, loginUser }) => {
         try {
             const toEmailsQuery = { name: /^EMAILADDRESS_NOTIFY_CHANGE_MACHINE$/i, type: "ADMIN-CONFIG", isArchived: false, isActive: true }
             const toEmails = await Config.findOne(toEmailsQuery).select('value');
@@ -20,10 +21,10 @@ class machineEmailService {
                 logger.error("Machine customer change Email reciver not defined!");
                 return
             }
-
+            const machine = await Product.findOne({ _id: req.params.id });
             const appUrl = process.env.ADMIN_PORTAL_APP_URL;
             const machineUrl = `${appUrl}/products/machines/${req.params.id}/view`;
-            const adminMachineUri = `<a href=${machineUrl} target="_blank" ><strong>${machine?.serialNo}</strong></a>`;
+            const adminMachineUri = `<a href=${machineUrl} target="_blank" ><strong>${machine?.serialNo || ''}</strong></a>`;
 
             // TO EMAILS
             const text = `Machine ${adminMachineUri} customer has been changed by <strong>${loginUser?.name || ""} (${loginUser?.email || ''})</strong>.`;
