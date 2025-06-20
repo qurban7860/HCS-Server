@@ -1,6 +1,3 @@
-//'use strict'
-
-const apiPath = process.env.API_ROOT;
 const articleRoute = require('./article');
 
 exports.registerArticleRoutes = (app, apiPath) => {
