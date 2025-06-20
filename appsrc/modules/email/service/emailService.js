@@ -36,9 +36,8 @@ class EmailService {
             .map(email => email.trim().toLowerCase()).filter(Boolean);
         if (overrideEmail?.length) {
             params.toEmails = overrideEmail;
-            delete params?.ccEmails;
-            delete params?.bccEmails;
-            req.body.toEmails = overrideEmail
+            // delete params?.ccEmails;
+            // delete params?.bccEmails;
         }
 
         // SOURCE EMAIL
