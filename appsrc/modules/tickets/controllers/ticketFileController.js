@@ -87,7 +87,7 @@ const saveTicketFiles = async (req) => {
         throw new Error('File not found!');
       }
 
-      const processedFile = await processFile(file, req.body?.loginUser?.userId, process.env.SUPPORT_TICKET_FOLDER_NAME);
+      const processedFile = await processFile(file, req.body?.loginUser?.userId, process.env.S3_SUPPORT_TICKET_FOLDER_NAME);
 
       req.body = {
         loginUser: req.body.loginUser,
