@@ -5,7 +5,7 @@ const { renderEmail } = require('../../email/utils');
 const logger = require('../../config/logger');
 const emailService = require('../../email/service/emailService');
 const { Config } = require('../../config/models');
-const { Product } = require('../../regions/models');
+const { Product } = require('../models');
 
 class machineEmailService {
     constructor() {
