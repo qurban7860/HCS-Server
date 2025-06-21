@@ -57,6 +57,7 @@ exports.postIntegrationPortalKey = async (req, res, next) => {
       return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
     }
 
+    // Reset Machine Integration Sync Status in case of Key Regeneration
     if (machine.portalKey?.length > 0 && machine.machineIntegrationSyncStatus?.syncStatus) {
       machine.machineIntegrationSyncStatus = {
         syncStatus: false,

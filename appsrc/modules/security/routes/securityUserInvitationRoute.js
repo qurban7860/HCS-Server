@@ -21,6 +21,8 @@ router.post(`${baseRoute}/postUserInvite/`, controller.postUserInvite);
 
 router.get(`${baseRoute}/sendUserInvite/:id`, checkIDs(validate.id), controller.sendUserInvite);
 
+router.post(`${baseRoute}/resendUserInvite/:id`, checkIDs(validate.id), controller.resendUserInvite);
+
 router.get(`${baseRoute}/verifyInviteCode/:id/:code`, checkIDs(validate.id), controller.verifyInviteCode);
 
 router.patch(`${baseRoute}/:id`, controller.patchUserInvitation);
