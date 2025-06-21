@@ -60,15 +60,15 @@ exports.postArticle = async (req, res) => {
   }
 
   const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
-  // console.log({ isCategoryExists, body: req.body })
+
   if (!isCategoryExists) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
   }
 
-  // const exists = await this.dbservice.isExists(Article, { title: req.body.title });
-  // if (exists) {
-  //   return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
-  // }
+  const exists = await this.dbservice.isExists(Article, { title: req.body.title });
+  if (exists) {
+    return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
+  }
 
   try {
 
