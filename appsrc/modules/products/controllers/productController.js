@@ -708,119 +708,123 @@ exports.postConnectedProduct = async (req) => {
 };
 
 exports.patchProduct = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    await updateArchivedStatus(req);
-    const duplicateReport = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
-    if (duplicateReport) {
-      return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
-    }
-
-    let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
-    if (machine.status?.slug && machine.status.slug === 'transferred' && !("isArchived" in req.body)) {
-      if (!("isVerified" in req.body)) {
-        return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Transferred machine cannot be edited'));
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    } else {
+      await updateArchivedStatus(req);
+      const duplicateReport = await exports.checkDuplicateSerialNumber(req, res, req.params.id, false);
+      if (duplicateReport) {
+        return res.status(StatusCodes.BAD_REQUEST).json("The serialNo is already linked to a machine.");
       }
-    }
 
-
-    if (machine && req.body.isVerified) {
-      if (!Array.isArray(machine.verifications))
-        machine.verifications = [];
-
-      for (let verif of machine.verifications) {
-        if (verif.verifiedBy == req.body.loginUser.userId)
-          return res.status(StatusCodes.BAD_REQUEST).json({ message: "Already verified" });
-      }
-      machine.verifications.push({
-        verifiedBy: req.body.loginUser.userId,
-        verifiedDate: new Date()
-      })
-      machine = await machine.save();
-      return res.status(StatusCodes.ACCEPTED).json(machine);
-    }
-
-    if (machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus) {
-      let queryString = { slug: 'intransfer' }
-      let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
-      if (machineStatus) {
-        req.body.status = machineStatus._id;
-      }
-    }
-    else {
-      if (machine && Array.isArray(machine.machineConnections) && Array.isArray(req.body.machineConnections)) {
-        let oldMachineConnections = machine.machineConnections;
-        let newMachineConnections = req.body.machineConnections;
-        let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
-        if (!isSame) {
-          let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
-          if (toBeDisconnected.length > 0) {
-            machine = await disconnectMachine_(machine.id, toBeDisconnected);
-          }
-          let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
-          if (toBeConnected.length > 0) {
-            machine = await connectMachines(machine.id, toBeConnected);
-          }
-          req.body.machineConnections = machine.machineConnections;
+      let machine = await dbservice.getObjectById(Product, this.fields, req.params.id, this.populate);
+      if (machine.status?.slug && machine.status.slug === 'transferred' && !("isArchived" in req.body)) {
+        if (!("isVerified" in req.body)) {
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'Transferred machine cannot be edited'));
         }
       }
-    }
 
 
+      if (machine && req.body.isVerified) {
+        if (!Array.isArray(machine.verifications))
+          machine.verifications = [];
 
-    dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
-    async function callbackFunc(error, result) {
-      if (error) {
-        console.log({ error })
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-          error._message
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        if (machine?.customer?._id !== req.body?.customer) {
-          let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
-          const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
-          if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
-            await machineEmailService.machineCustomerChange({ req, machine, loginUser })
-          } else {
-            return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
+        for (let verif of machine.verifications) {
+          if (verif.verifiedBy == req.body.loginUser.userId)
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: "Already verified" });
+        }
+        machine.verifications.push({
+          verifiedBy: req.body.loginUser.userId,
+          verifiedDate: new Date()
+        })
+        machine = await machine.save();
+        return res.status(StatusCodes.ACCEPTED).json(machine);
+      }
+
+      if (machine && "updateTransferStatus" in req.body && req.body.updateTransferStatus) {
+        let queryString = { slug: 'intransfer' }
+        let machineStatus = await dbservice.getObject(ProductStatus, queryString, this.populate);
+        if (machineStatus) {
+          req.body.status = machineStatus._id;
+        }
+      }
+      else {
+        if (machine && Array.isArray(machine.machineConnections) && Array.isArray(req.body.machineConnections)) {
+          let oldMachineConnections = machine.machineConnections;
+          let newMachineConnections = req.body.machineConnections;
+          let isSame = _.isEqual(oldMachineConnections.sort(), newMachineConnections.sort());
+          if (!isSame) {
+            let toBeDisconnected = oldMachineConnections.filter(x => !newMachineConnections.includes(x.toString()));
+            if (toBeDisconnected.length > 0) {
+              machine = await disconnectMachine_(machine.id, toBeDisconnected);
+            }
+            let toBeConnected = newMachineConnections.filter(x => !oldMachineConnections.includes(x));
+            if (toBeConnected.length > 0) {
+              machine = await connectMachines(machine.id, toBeConnected);
+            }
+            req.body.machineConnections = machine.machineConnections;
           }
         }
-        if (req.body?.isUpdateConnectedMachines) {
-          if (Array.isArray(req.body?.machineConnections) && req.body?.machineConnections?.length > 0) {
-            try {
-              const validateIds = req.body?.machineConnections?.map(id => mongoose.Types.ObjectId(id))
-              const getMachineConnections = await ProductConnection.find({ _id: { $in: validateIds } });
-              const machineIds = getMachineConnections?.map(el => mongoose.Types.ObjectId(el?.connectedMachine))
-              const updateClause = { $set: {} };
-              if (req.body.customer) updateClause.$set.customer = req.body.customer;
-              if (req.body.instalationSite) updateClause.$set.instalationSite = req.body.instalationSite;
-              if (req.body.siteMilestone) updateClause.$set.siteMilestone = req.body.siteMilestone;
-              if (req.body.billingSite) updateClause.$set.billingSite = req.body.billingSite;
-              if (req.body.manufactureDate) updateClause.$set.manufactureDate = req.body.manufactureDate;
-              if (req.body.purchaseDate) updateClause.$set.purchaseDate = req.body.purchaseDate;
-              if (req.body.shippingDate) updateClause.$set.shippingDate = req.body.shippingDate;
-              if (req.body.installationDate) updateClause.$set.installationDate = req.body.installationDate;
-              if (req.body.decommissionedDate) updateClause.$set.decommissionedDate = req.body.decommissionedDate;
-              if (req.body.supportExpireDate) updateClause.$set.supportExpireDate = req.body.supportExpireDate;
-              if (req.body.accountManager) updateClause.$set.accountManager = req.body.accountManager;
-              if (req.body.projectManager) updateClause.$set.projectManager = req.body.projectManager;
-              if (req.body.supportManager) updateClause.$set.supportManager = req.body.supportManager;
-              const isUpdated = await Product.updateMany({ _id: { $in: machineIds } }, updateClause);
-            } catch (err) {
-              logger.error(new Error(err));
-              return res.status(StatusCodes.ACCEPTED).send("Update Connected machines failed!");
+      }
+
+
+
+      dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
+      async function callbackFunc(error, result) {
+        if (error) {
+          console.log({ error })
+          logger.error(new Error(error));
+          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+            error._message
+            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+          );
+        } else {
+          if (machine?.customer?._id !== req.body?.customer) {
+            let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
+            const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
+            if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
+              await machineEmailService.machineCustomerChange({ req, machine, loginUser })
+            } else {
+              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
             }
           }
+          if (req.body?.isUpdateConnectedMachines) {
+            if (Array.isArray(req.body?.machineConnections) && req.body?.machineConnections?.length > 0) {
+              try {
+                const validateIds = req.body?.machineConnections?.map(id => mongoose.Types.ObjectId(id))
+                const getMachineConnections = await ProductConnection.find({ _id: { $in: validateIds } });
+                const machineIds = getMachineConnections?.map(el => mongoose.Types.ObjectId(el?.connectedMachine))
+                const updateClause = { $set: {} };
+                if (req.body.customer) updateClause.$set.customer = req.body.customer;
+                if (req.body.instalationSite) updateClause.$set.instalationSite = req.body.instalationSite;
+                if (req.body.siteMilestone) updateClause.$set.siteMilestone = req.body.siteMilestone;
+                if (req.body.billingSite) updateClause.$set.billingSite = req.body.billingSite;
+                if (req.body.manufactureDate) updateClause.$set.manufactureDate = req.body.manufactureDate;
+                if (req.body.purchaseDate) updateClause.$set.purchaseDate = req.body.purchaseDate;
+                if (req.body.shippingDate) updateClause.$set.shippingDate = req.body.shippingDate;
+                if (req.body.installationDate) updateClause.$set.installationDate = req.body.installationDate;
+                if (req.body.decommissionedDate) updateClause.$set.decommissionedDate = req.body.decommissionedDate;
+                if (req.body.supportExpireDate) updateClause.$set.supportExpireDate = req.body.supportExpireDate;
+                if (req.body.accountManager) updateClause.$set.accountManager = req.body.accountManager;
+                if (req.body.projectManager) updateClause.$set.projectManager = req.body.projectManager;
+                if (req.body.supportManager) updateClause.$set.supportManager = req.body.supportManager;
+                const isUpdated = await Product.updateMany({ _id: { $in: machineIds } }, updateClause);
+              } catch (err) {
+                logger.error(new Error(err));
+                return res.status(StatusCodes.ACCEPTED).send("Update Connected machines failed!");
+              }
+            }
+          }
+          // let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
+          // await postProductAuditLog(machineAuditLog);
+          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
         }
-        // let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
-        // await postProductAuditLog(machineAuditLog);
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
     }
+  } catch (error) {
+    res.status(StatusCodes.BAD_REQUEST).send(error?.message || error);
   }
 };
 
