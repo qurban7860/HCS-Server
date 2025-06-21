@@ -108,7 +108,7 @@ exports.patchRelease = async (req, res) => {
 };
 
 function getReleaseFromReq(req, reqType) {
-  const { releaseNo, project, name, releaseDate, description, isActive, isArchived, loginUser } = req.body;
+  const { releaseNo, project, name, status, releaseDate, description, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType === "new") {
@@ -118,6 +118,7 @@ function getReleaseFromReq(req, reqType) {
   if ("releaseNo" in req.body) doc.releaseNo = releaseNo;
   if ("project" in req.body) doc.project = project;
   if ("name" in req.body) doc.name = name.trim();
+  if ("status" in req.body) doc.status = status;
   if ("releaseDate" in req.body) doc.releaseDate = releaseDate;
   if ("description" in req.body) doc.description = description?.trim() || '';
   if ("isActive" in req.body) doc.isActive = isActive;
