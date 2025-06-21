@@ -7,22 +7,23 @@ const baseSchema = require('../../../../base/baseSchema');
 const Schema = mongoose.Schema;
 const articleSchema = new Schema({
 
-                articleNo: { type: String },
-                // name/title of field
+        articleNo: { type: String },
+        // name/title of field
 
-                title: { type: String, required: true },
-                // name/title of field
+        title: { type: String, required: true },
+        // name/title of field
 
-                category: { type: mongoose.Schema.Types.ObjectId, ref: 'ArticleCategories', required: true },
+        category: { type: mongoose.Schema.Types.ObjectId, ref: 'ArticleCategories', required: true },
 
-                status: { type: String, enum: ['DRAFT', 'APPROVED', 'PUBLISHED'], required: true, default: 'DRAFT' },
+        status: { type: String, enum: ['DRAFT', 'APPROVED', 'PUBLISHED'], required: true, default: 'DRAFT' },
 
-                customerAccess: { type: Boolean, default: false },
+        customerAccess: { type: Boolean, default: false },
 
-                description: { type: String },
-                // detailed description of field
+        description: { type: String },
 
-        },
+        files: [{ type: Schema.Types.ObjectId, ref: 'ArticleFile' }],
+
+},
         {
                 collection: 'Articles'
         });
@@ -39,4 +40,4 @@ articleSchema.index({ "customerAccess": 1 })
 
 articleSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('Articles', articleSchema);
+module.exports = mongoose.model('Article', articleSchema);

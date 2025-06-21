@@ -144,7 +144,7 @@ class App {
     securityRoutes.registerSecurityRoutes(this.app, apiPath);
     dashboardRoute.registerDashboardRoutes(this.app, apiPath);
     documentRoute.registerDocumentRoutes(this.app, apiPath);
-    articleRoutes.registerArticleRoutes(this.app, apiPath);
+    articleRoutes.registerknowledgeBaseRoutes(this.app, apiPath);
     articleCategoryRoutes.registerArticleCategoryRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
