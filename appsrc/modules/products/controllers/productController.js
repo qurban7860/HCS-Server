@@ -781,7 +781,7 @@ exports.patchProduct = async (req, res, next) => {
       //       //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
       //     );
       //   } else {
-      if (machine?.customer?._id !== req.body?.customer) {
+      if ((machine?.customer?._id || req.body?.customer) && (machine?.customer?._id?.toString() !== req.body?.customer)) {
         let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
         const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
         if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
