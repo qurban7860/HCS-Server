@@ -11,6 +11,8 @@ const docSchema = new Schema({
     
     name: { type: String , required: true },
 
+    status: { type: String, enum: ['To Do', 'In Progress', 'Complete'], required: true, default: 'To Do' },
+
     releaseDate: { type: Date },
     
     description: { type: String },
