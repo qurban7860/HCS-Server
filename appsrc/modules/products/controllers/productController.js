@@ -819,7 +819,7 @@ exports.patchProduct = async (req, res, next) => {
       }
       // let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
       // await postProductAuditLog(machineAuditLog);
-      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED));
       // }
       // }
     }
