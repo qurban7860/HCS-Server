@@ -1,15 +1,15 @@
 const mongoose = require('mongoose');
 const { validationResult } = require('express-validator');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-const logger = require('../../config/logger');
-let { processFile } = require('../../files/utils')
-let { allowedMimeTypes } = require('../../files/constant')
-let ticketDBService = require('../service/ticketDBService')
-this.dbservice = new ticketDBService();
-const awsService = require('../../../base/aws');
+const logger = require('../../../config/logger');
+let { processFile } = require('../../../files/utils')
+let { allowedMimeTypes } = require('../../../files/constant')
+let articleDBService = require('../service/articleDBService')
+this.dbservice = new articleDBService();
+const awsService = require('../../../../base/aws');
 const _ = require('lodash');
-const { Config } = require('../../config/models');
-const { Ticket, TicketFile } = require('../models');
+const { Config } = require('../../../config/models');
+const { Article, ArticleFile } = require('../models');
 
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -22,13 +22,13 @@ this.populate = [
 ];
 
 
-exports.getTicketFile = async (req, res, next) => {
+exports.getArticleFile = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    this.query.ticket = req.params.ticketId;
+    this.query.article = req.params.articleId;
     this.query._id = req.params.id;
 
-    const file = await this.dbservice.getObject(TicketFile, this.query, this.populate);
+    const file = await this.dbservice.getObject(ArticleFile, this.query, this.populate);
 
     if (!file?._id) {
       return res.status(StatusCodes.BAD_REQUEST).send('File not found!');
@@ -58,15 +58,15 @@ exports.getTicketFile = async (req, res, next) => {
   }
 };
 
-exports.getTicketFiles = async (req, res, next) => {
+exports.getArticleFiles = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    this.query.ticket = req.params.ticketId
+    this.query.article = req.params.articleId
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    let result = await this.dbservice.getObjectList(req, TicketFile, this.fields, this.query, this.orderBy, this.populate);
+    let result = await this.dbservice.getObjectList(req, ArticleFile, this.fields, this.query, this.orderBy, this.populate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
     logger.error(new Error(error));
@@ -74,7 +74,7 @@ exports.getTicketFiles = async (req, res, next) => {
   }
 };
 
-const saveTicketFiles = async (req) => {
+const saveArticleFiles = async (req) => {
   try {
     if (!req?.files?.images?.length) {
       return [];
@@ -87,7 +87,7 @@ const saveTicketFiles = async (req) => {
         throw new Error('File not found!');
       }
 
-      const processedFile = await processFile(file, req.body?.loginUser?.userId, process.env.S3_SUPPORT_TICKET_FOLDER_NAME);
+      const processedFile = await processFile(file, req.body?.loginUser?.userId, process.env.S3_KNOWLEDGE_BASE_FOLDER_NAME);
 
       req.body = {
         loginUser: req.body.loginUser,
@@ -96,15 +96,15 @@ const saveTicketFiles = async (req) => {
         extension: processedFile.fileExt,
         awsETag: processedFile.awsETag,
         eTag: processedFile.eTag,
-        ticket: req.params.ticketId,
+        article: req.params.articleId,
         name: processedFile.name,
         thumbnail: processedFile.base64thumbNailData || undefined,
       };
 
-      let ticketFile = await getDocFromReq(req, 'new');
+      let articleFile = await getDocFromReq(req, 'new');
 
-      ticketFile = await this.dbservice.postObject(ticketFile);
-      let result = { ...ticketFile?._doc }
+      articleFile = await this.dbservice.postObject(articleFile);
+      let result = { ...articleFile?._doc }
       if (result?.fileType?.startsWith('video')) {
         result.src = await awsService.generateDownloadURL({ key: result.path, name: result.name, extension: result.extension });
         delete result.path;
@@ -116,7 +116,7 @@ const saveTicketFiles = async (req) => {
     const savedFiles = await Promise.all(fileProcessingPromises);
     if (Array.isArray(savedFiles) && savedFiles?.length > 0) {
       const filesIds = savedFiles?.map(sf => sf?._id)
-      const isUpdated = await this.dbservice.patchObject(Ticket, req.params.ticketId, { $push: { files: { $each: filesIds } } });
+      const isUpdated = await this.dbservice.patchObject(Article, req.params.articleId, { $push: { files: { $each: filesIds } } });
     }
     return savedFiles;
   } catch (error) {
@@ -124,17 +124,17 @@ const saveTicketFiles = async (req) => {
   }
 }
 
-exports.saveTicketFiles = saveTicketFiles;
+exports.saveArticleFiles = saveArticleFiles;
 
-exports.postTicketFile = async (req, res, next) => {
+exports.postArticleFiles = async (req, res, next) => {
   try {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       logger.error(new Error(errors));
       return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
     }
-    req.body.ticket = req.params?.ticketId;
-    const files = await saveTicketFiles(req)
+    req.body.article = req.params?.articleId;
+    const files = await saveArticleFiles(req)
     return res.status(StatusCodes.OK).json(files);
   } catch (error) {
     logger.error(new Error(error));
@@ -142,16 +142,16 @@ exports.postTicketFile = async (req, res, next) => {
   }
 };
 
-exports.deleteTicketFile = async (req, res, next) => {
+exports.deleteArticleFile = async (req, res, next) => {
   try {
     req.body.isActive = false;
     req.body.isArchived = true;
     if (!mongoose.Types.ObjectId(req.params.id)) {
       return res.status(StatusCodes.BAD_REQUEST).send("Invalid File Id!");
     }
-    await this.dbservice.patchObject(TicketFile, req.params.id, getDocFromReq(req));
-    await this.dbservice.patchObject(Ticket, req.params.ticketId, { $pull: { files: req.params.id } });
-    return res.status(StatusCodes.OK).send("Ticket file deleted successfully!");
+    await this.dbservice.patchObject(ArticleFile, req.params.id, getDocFromReq(req));
+    await this.dbservice.patchObject(Article, req.params.articleId, { $pull: { files: req.params.id } });
+    return res.status(StatusCodes.OK).send("Article file deleted successfully!");
   } catch (error) {
     logger.error(new Error(error));
     return res.status(StatusCodes.BAD_REQUEST).send(error?.message);
@@ -160,8 +160,8 @@ exports.deleteTicketFile = async (req, res, next) => {
 
 function getDocFromReq(req, reqType) {
   const { loginUser } = req.body;
-  const doc = reqType === "new" ? new TicketFile({}) : {};
-  const allowedFields = ["ticket", "name", "path", "fileType", "extension", "thumbnail", "awsETag", "eTag", "isActive", "isArchived"];
+  const doc = reqType === "new" ? new ArticleFile({}) : {};
+  const allowedFields = ["article", "name", "path", "fileType", "extension", "thumbnail", "awsETag", "eTag", "isActive", "isArchived"];
 
   allowedFields.forEach((field) => {
     if (field in req.body) {

@@ -5,16 +5,18 @@ const logger = require('../../../config/logger');
 const rtnMsg = require('../../../config/static/static');
 
 const CounterController = require('../../../counter/controllers/counterController');
+const articleFilesController = require('./articleFilesController');
 const articleDBService = require('../service/articleDBService');
 this.dbservice = new articleDBService();
 
-const Article = require('../models/article');
+const { Article } = require('../models');
 const ArticleCategory = require('../../settings/models/articleCategory');
 
 this.fields = {};
 this.query = {};
 this.orderBy = { serialNumber: 1 };
 this.populate = [
+  { path: 'files', select: 'name fileType extension thumbnail eTag path' },
   { path: 'category', select: 'name' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
@@ -58,20 +60,23 @@ exports.postArticle = async (req, res) => {
   }
 
   const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
+  // console.log({ isCategoryExists, body: req.body })
   if (!isCategoryExists) {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
   }
 
-  const exists = await this.dbservice.isExists(Article, { title: req.body.title });
-  if (exists) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
-  }
+  // const exists = await this.dbservice.isExists(Article, { title: req.body.title });
+  // if (exists) {
+  //   return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
+  // }
 
   try {
-    
+
     const articleNumber = await CounterController.getPaddedCounterSequence('article');
     req.body.articleNo = articleNumber.toString() || '';
     const response = await this.dbservice.postObject(getArticleFromReq(req, "new"));
+    req.params.articleId = response._id;
+    await articleFilesController.saveArticleFiles(req)
     res.status(StatusCodes.CREATED).json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -85,14 +90,14 @@ exports.patchArticle = async (req, res) => {
     return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   }
 
-  if("category" in req.body){
+  if ("category" in req.body) {
     const isCategoryExists = await this.dbservice.isExists(ArticleCategory, { _id: mongoose.Types.ObjectId(req.body.category) });
     if (!isCategoryExists) {
       return res.status(StatusCodes.BAD_REQUEST).send('Invalid category ID.');
     }
   }
-  
-  if("title" in req.body){
+
+  if ("title" in req.body) {
     const exists = await this.dbservice.isExists(Article, { title: req.body.title, _id: { $ne: req.params.id } });
     if (exists) {
       return res.status(StatusCodes.BAD_REQUEST).send('Article title already exists.');
