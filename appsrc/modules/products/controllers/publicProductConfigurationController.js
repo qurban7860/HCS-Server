@@ -36,6 +36,14 @@ exports.postProductConfiguration = async (req, res, next) => {
         req.body.machine = productObject._id;
       }
     }
+    
+    // If machine not found via inputGUID/inputSerialNo, use machine from verifyMachineAuth middleware
+    if (!req.body.machine && req.machine) {
+      req.body.machine = req.machine._id;
+      // Also set the input values from the authenticated machine for consistency
+      req.body.inputGUID = req.machine._id;
+      req.body.inputSerialNo = req.machine.serialNo;
+    }
 
     if (req.body.machine && roleAPIFound) {
       let productConfObjec = getDocFromReq(req);
@@ -130,7 +138,7 @@ function replaceDotsWithSlashes(obj) {
 }
 
 
-function getDocFromReq(req) {
+function getDocFromReq(req, reqType = "new") {
 
   const { type, backupid, inputGUID, inputSerialNo, machine, configuration, isManufacture, backupDate, loginUser, clientInfo } = req.body;
 
