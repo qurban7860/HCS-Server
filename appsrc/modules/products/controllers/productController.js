@@ -771,57 +771,57 @@ exports.patchProduct = async (req, res, next) => {
 
 
 
-      dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req), callbackFunc);
-      async function callbackFunc(error, result) {
-        if (error) {
-          console.log({ error })
-          logger.error(new Error(error));
-          res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
-            error._message
-            //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+      await dbservice.patchObject(Product, req.params.id, getDocumentFromReq(req));
+      // async function callbackFunc(error, result) {
+      //   if (error) {
+      //     console.log({ error })
+      //     logger.error(new Error(error));
+      //     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
+      //       error._message
+      //       //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+      //     );
+      //   } else {
+      if (machine?.customer?._id !== req.body?.customer) {
+        let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
+        const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
+        if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
+          await machineEmailService.machineCustomerChange({ req, machine, loginUser })
         } else {
-          if (machine?.customer?._id !== req.body?.customer) {
-            let loginUser = await SecurityUser.findById(req.body.loginUser.userId).select("name email roles").populate({ path: 'roles', select: 'name' }).lean();
-            const allowedRoles = ['SuperAdmin', 'Sales Manager', 'Technical Manager']
-            if (loginUser?.roles?.some(r => allowedRoles?.includes(r?.name))) {
-              await machineEmailService.machineCustomerChange({ req, machine, loginUser })
-            } else {
-              return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
-            }
-          }
-          if (req.body?.isUpdateConnectedMachines) {
-            if (Array.isArray(req.body?.machineConnections) && req.body?.machineConnections?.length > 0) {
-              try {
-                const validateIds = req.body?.machineConnections?.map(id => mongoose.Types.ObjectId(id))
-                const getMachineConnections = await ProductConnection.find({ _id: { $in: validateIds } });
-                const machineIds = getMachineConnections?.map(el => mongoose.Types.ObjectId(el?.connectedMachine))
-                const updateClause = { $set: {} };
-                if (req.body.customer) updateClause.$set.customer = req.body.customer;
-                if (req.body.instalationSite) updateClause.$set.instalationSite = req.body.instalationSite;
-                if (req.body.siteMilestone) updateClause.$set.siteMilestone = req.body.siteMilestone;
-                if (req.body.billingSite) updateClause.$set.billingSite = req.body.billingSite;
-                if (req.body.manufactureDate) updateClause.$set.manufactureDate = req.body.manufactureDate;
-                if (req.body.purchaseDate) updateClause.$set.purchaseDate = req.body.purchaseDate;
-                if (req.body.shippingDate) updateClause.$set.shippingDate = req.body.shippingDate;
-                if (req.body.installationDate) updateClause.$set.installationDate = req.body.installationDate;
-                if (req.body.decommissionedDate) updateClause.$set.decommissionedDate = req.body.decommissionedDate;
-                if (req.body.supportExpireDate) updateClause.$set.supportExpireDate = req.body.supportExpireDate;
-                if (req.body.accountManager) updateClause.$set.accountManager = req.body.accountManager;
-                if (req.body.projectManager) updateClause.$set.projectManager = req.body.projectManager;
-                if (req.body.supportManager) updateClause.$set.supportManager = req.body.supportManager;
-                const isUpdated = await Product.updateMany({ _id: { $in: machineIds } }, updateClause);
-              } catch (err) {
-                logger.error(new Error(err));
-                return res.status(StatusCodes.ACCEPTED).send("Update Connected machines failed!");
-              }
-            }
-          }
-          // let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
-          // await postProductAuditLog(machineAuditLog);
-          res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+          return res.status(StatusCodes.BAD_REQUEST).send(rtnMsg.recordCustomMessageJSON(StatusCodes.BAD_REQUEST, 'You do not have the right to change the customer!'));
         }
       }
+      if (req.body?.isUpdateConnectedMachines) {
+        if (Array.isArray(req.body?.machineConnections) && req.body?.machineConnections?.length > 0) {
+          // try {
+          const validateIds = req.body?.machineConnections?.map(id => mongoose.Types.ObjectId(id))
+          const getMachineConnections = await ProductConnection.find({ _id: { $in: validateIds } });
+          const machineIds = getMachineConnections?.map(el => mongoose.Types.ObjectId(el?.connectedMachine))
+          const updateClause = { $set: {} };
+          if (req.body.customer) updateClause.$set.customer = req.body.customer;
+          if (req.body.instalationSite) updateClause.$set.instalationSite = req.body.instalationSite;
+          if (req.body.siteMilestone) updateClause.$set.siteMilestone = req.body.siteMilestone;
+          if (req.body.billingSite) updateClause.$set.billingSite = req.body.billingSite;
+          if (req.body.manufactureDate) updateClause.$set.manufactureDate = req.body.manufactureDate;
+          if (req.body.purchaseDate) updateClause.$set.purchaseDate = req.body.purchaseDate;
+          if (req.body.shippingDate) updateClause.$set.shippingDate = req.body.shippingDate;
+          if (req.body.installationDate) updateClause.$set.installationDate = req.body.installationDate;
+          if (req.body.decommissionedDate) updateClause.$set.decommissionedDate = req.body.decommissionedDate;
+          if (req.body.supportExpireDate) updateClause.$set.supportExpireDate = req.body.supportExpireDate;
+          if (req.body.accountManager) updateClause.$set.accountManager = req.body.accountManager;
+          if (req.body.projectManager) updateClause.$set.projectManager = req.body.projectManager;
+          if (req.body.supportManager) updateClause.$set.supportManager = req.body.supportManager;
+          const isUpdated = await Product.updateMany({ _id: { $in: machineIds } }, updateClause);
+          // } catch (err) {
+          //   logger.error(new Error(err));
+          //   return res.status(StatusCodes.ACCEPTED).send("Update Connected machines failed!");
+          // }
+        }
+      }
+      // let machineAuditLog = createMachineAuditLogRequest(machine, 'Update', req.body.loginUser.userId);
+      // await postProductAuditLog(machineAuditLog);
+      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+      // }
+      // }
     }
   } catch (error) {
     res.status(StatusCodes.BAD_REQUEST).send(error?.message || error);
