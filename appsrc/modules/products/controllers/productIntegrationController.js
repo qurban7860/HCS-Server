@@ -21,7 +21,9 @@ exports.getIntegrationDetails = async (req, res, next) => {
   try {
     const { machineId } = req.params;
 
-    const machine = await Product.findById(machineId).select('portalKey computerGUID IPC_SerialNo machineIntegrationSyncStatus');
+    const machine = await Product.findById(machineId)
+      .select('portalKey computerGUID IPC_SerialNo machineIntegrationSyncStatus')
+      .populate('portalKey.createdBy', 'name');
 
     if (!machine) {
       return res.status(StatusCodes.NOT_FOUND).send(getReasonPhrase(StatusCodes.NOT_FOUND));
@@ -73,7 +75,7 @@ exports.postIntegrationPortalKey = async (req, res, next) => {
       createdBy: req?.body?.loginUser?.userId,
     });
 
-    const updatedMachine = await Product.findById(machineId);
+    const updatedMachine = await Product.findById(machineId).populate('portalKey.createdBy', 'name');
 
     // broadcastIntegrationDetails(machineId, {
     //   computerGUID: updatedMachine?.machinecomputerGUID,
