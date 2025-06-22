@@ -15,6 +15,10 @@ const docSchema = new Schema({
 
         assignees: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
+        // Backup fields for migration
+        old_reporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        old_assignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+
         approvers: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
         changeReason: { type: Schema.Types.ObjectId, ref: 'TicketChangeReason' },
