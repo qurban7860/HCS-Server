@@ -57,18 +57,21 @@ const findSecurityUserForContact = async (contactId) => {
     }
 };
 
-// Migrate Ticket collection
+// Migrate Ticket collection using native MongoDB operations
 const migrateTickets = async () => {
     console.log('Starting Ticket migration...');
     
     try {
-        // Find all tickets that have old structure (reporter/assignee as CustomerContact)
-        const tickets = await Ticket.find({
+        // Get the native MongoDB collection
+        const ticketsCollection = mongoose.connection.collection('Tickets');
+        
+        // Find all tickets that have old structure using native MongoDB
+        const tickets = await ticketsCollection.find({
             $or: [
                 { reporter: { $exists: true }, old_reporter: { $exists: false } },
                 { assignee: { $exists: true }, old_assignee: { $exists: false } }
             ]
-        });
+        }).toArray();
         
         console.log(`Found ${tickets.length} tickets to migrate`);
         
@@ -78,6 +81,7 @@ const migrateTickets = async () => {
         for (const ticket of tickets) {
             try {
                 const updateData = {};
+                const unsetData = {};
                 
                 // Handle reporter migration
                 if (ticket.reporter && !ticket.old_reporter) {
@@ -96,7 +100,7 @@ const migrateTickets = async () => {
                     if (newAssigneeId) {
                         updateData.old_assignee = ticket.assignee;
                         updateData.assignees = [newAssigneeId];
-                        updateData.$unset = { assignee: 1 }; // Remove old assignee field
+                        unsetData.assignee = 1; // Remove old assignee field
                     } else {
                         console.log(`Could not find SecurityUser for assignee in ticket ${ticket._id}`);
                     }
@@ -104,15 +108,16 @@ const migrateTickets = async () => {
                 
                 // Update the ticket if we have changes
                 if (Object.keys(updateData).length > 0) {
-                    if (updateData.$unset) {
-                        await Ticket.updateOne(
-                            { _id: ticket._id },
-                            { $set: updateData, $unset: updateData.$unset }
-                        );
-                        delete updateData.$unset;
-                    } else {
-                        await Ticket.updateOne({ _id: ticket._id }, { $set: updateData });
+                    const updateQuery = { $set: updateData };
+                    if (Object.keys(unsetData).length > 0) {
+                        updateQuery.$unset = unsetData;
                     }
+                    
+                    await ticketsCollection.updateOne(
+                        { _id: ticket._id },
+                        updateQuery
+                    );
+                    
                     successCount++;
                     console.log(`Successfully migrated ticket ${ticket._id}`);
                 } else {
@@ -132,20 +137,23 @@ const migrateTickets = async () => {
     }
 };
 
-// Migrate TicketChangeHistory collection
+// Migrate TicketChangeHistory collection using native MongoDB operations
 const migrateTicketChangeHistory = async () => {
     console.log('Starting TicketChangeHistory migration...');
     
     try {
-        // Find all change history records that need migration
-        const changeHistories = await TicketChangeHistory.find({
+        // Get the native MongoDB collection
+        const changeHistoryCollection = mongoose.connection.collection('TicketChangeHistories');
+        
+        // Find all change history records that need migration using native MongoDB
+        const changeHistories = await changeHistoryCollection.find({
             $or: [
                 { previousReporter: { $exists: true }, old_previousReporter: { $exists: false } },
                 { newReporter: { $exists: true }, old_newReporter: { $exists: false } },
                 { previousAssignee: { $exists: true }, old_previousAssignee: { $exists: false } },
                 { newAssignee: { $exists: true }, old_newAssignee: { $exists: false } }
             ]
-        });
+        }).toArray();
         
         console.log(`Found ${changeHistories.length} change history records to migrate`);
         
@@ -202,7 +210,11 @@ const migrateTicketChangeHistory = async () => {
                         updateQuery.$unset = unsetData;
                     }
                     
-                    await TicketChangeHistory.updateOne({ _id: history._id }, updateQuery);
+                    await changeHistoryCollection.updateOne(
+                        { _id: history._id },
+                        updateQuery
+                    );
+                    
                     successCount++;
                     console.log(`Successfully migrated change history ${history._id}`);
                 } else {
@@ -243,20 +255,24 @@ const runMigration = async () => {
     }
 };
 
-// Rollback function (in case we need to revert)
+// Rollback function using native MongoDB operations
 const rollbackMigration = async () => {
     console.log('Starting rollback migration...');
     
     try {
         await connectDB();
         
+        // Get native collections
+        const ticketsCollection = mongoose.connection.collection('Tickets');
+        const changeHistoryCollection = mongoose.connection.collection('TicketChangeHistories');
+        
         // Rollback Tickets
-        const tickets = await Ticket.find({
+        const tickets = await ticketsCollection.find({
             $or: [
                 { old_reporter: { $exists: true } },
                 { old_assignee: { $exists: true } }
             ]
-        });
+        }).toArray();
         
         for (const ticket of tickets) {
             const updateData = {};
@@ -274,7 +290,7 @@ const rollbackMigration = async () => {
             }
             
             if (Object.keys(updateData).length > 0) {
-                await Ticket.updateOne(
+                await ticketsCollection.updateOne(
                     { _id: ticket._id },
                     { $set: updateData, $unset: unsetData }
                 );
@@ -282,14 +298,14 @@ const rollbackMigration = async () => {
         }
         
         // Rollback TicketChangeHistory
-        const changeHistories = await TicketChangeHistory.find({
+        const changeHistories = await changeHistoryCollection.find({
             $or: [
                 { old_previousReporter: { $exists: true } },
                 { old_newReporter: { $exists: true } },
                 { old_previousAssignee: { $exists: true } },
                 { old_newAssignee: { $exists: true } }
             ]
-        });
+        }).toArray();
         
         for (const history of changeHistories) {
             const updateData = {};
@@ -318,7 +334,7 @@ const rollbackMigration = async () => {
             }
             
             if (Object.keys(updateData).length > 0) {
-                await TicketChangeHistory.updateOne(
+                await changeHistoryCollection.updateOne(
                     { _id: history._id },
                     { $set: updateData, $unset: unsetData }
                 );
