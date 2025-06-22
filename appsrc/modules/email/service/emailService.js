@@ -36,9 +36,8 @@ class EmailService {
             .map(email => email.trim().toLowerCase()).filter(Boolean);
         if (overrideEmail?.length) {
             params.toEmails = overrideEmail;
-            delete params?.ccEmails;
-            delete params?.bccEmails;
-            req.body.toEmails = overrideEmail
+            // delete params?.ccEmails;
+            // delete params?.bccEmails;
         }
 
         // SOURCE EMAIL
@@ -78,6 +77,7 @@ class EmailService {
                 await simpleEmailService(params);
                 req.body.status = "SUBMITTED";
                 await emailController.newEmailLog(req);
+
             }
         } catch (error) {
             req.body.status = "FAILED";
@@ -98,13 +98,13 @@ class EmailService {
 
         const params = req.body;
         // OVERRIDE EMAILS ADDRESS
+
         const overrideEmail = process.env.NOTIFY_RECEIVER_EMAIL?.split(',')
             .map(email => email.trim().toLowerCase()).filter(Boolean);
         if (overrideEmail?.length) {
             params.toEmails = overrideEmail;
-            delete params?.ccEmails;
-            delete params?.bccEmails;
-            req.body.toEmails = overrideEmail
+            // delete params?.ccEmails;
+            // delete params?.bccEmails;
         }
 
         // SOURCE EMAIL

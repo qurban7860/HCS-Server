@@ -1,0 +1,93 @@
+const mongoose = require("mongoose");
+var async = require("async");
+
+let dbService = require("../../../db/dbService");
+const { response } = require("express");
+
+class projectDBService {
+  constructor() {
+    this.db = new dbService();
+  }
+
+  async isExists(model, query, callback) {
+    try {
+      if (callback) {
+        return this.db.isExists(model, query, callback);
+      } else {
+        return await this.db.isExists(model, query);
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getObject(model, query, populate, callback) {
+    try {
+      if (callback) {
+        return this.db.getObject(model, query, populate, callback);
+      } else {
+        return await this.db.getObject(model, query, populate);
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getObjectById(model, fields, id, populate, callback) {
+    try {
+      if (callback) {
+        return this.db.getObjectById(model, fields, id, populate, callback);
+      } else {
+        return await this.db.getObjectById(model, fields, id, populate);
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async getObjectList(req, model, fields, query, orderBy) {
+    try {
+      return await this.db.getObjectList(req, model, fields, query, orderBy);
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async deleteObject(model, id, callback) {
+    try {
+      if (callback) {
+        return this.db.deleteObject(model, id, callback);
+      } else {
+        return await this.db.deleteObject(model, id);
+      }
+    } catch (error) {
+      return error;
+    }
+  }
+
+  async postObject(document, callback) {
+    try {
+      if (callback) {
+        return this.db.postObject(document, callback);
+      } else {
+        return await this.db.postObject(document);
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async patchObject(model, id, document, callback) {
+    try {
+      if (callback) {
+        return this.db.patchObject(model, id, document, callback);
+      } else {
+        return await this.db.patchObject(model, id, document);
+      }
+    } catch (error) {
+      throw error;
+    }
+  }
+}
+
+module.exports = projectDBService;

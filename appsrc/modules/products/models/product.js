@@ -26,6 +26,12 @@ const docSchema = new Schema({
     
     alias: [{ type: String  }],
 
+    efficiency: { type: String },
+    // efficiency of machine in percentage
+
+    generation: { type: String },
+    // generation of machine
+
     description: { type: String },
     // detailed description of machine
 
@@ -182,17 +188,17 @@ docSchema.index({"isArchived":1})
 docSchema.add(baseSchema.docVisibilitySchema);
 docSchema.add(baseSchema.docAuditSchema);
 
-docSchema.pre('find', function() {
-    this.populate('portalKey.createdBy', 'name');
-  });
+// docSchema.pre('find', function() {
+//     this.populate('portalKey.createdBy', 'name');
+//   });
   
-docSchema.pre('findOne', function() {
-this.populate('portalKey.createdBy', 'name');
-});
+// docSchema.pre('findOne', function() {
+// this.populate('portalKey.createdBy', 'name');
+// });
 
-docSchema.pre('findById', function() {
-this.populate('portalKey.createdBy', 'name');
-});
+// docSchema.pre('findById', function() {
+// this.populate('portalKey.createdBy', 'name');
+// });
 
 docSchema.plugin(uniqueValidator);
 

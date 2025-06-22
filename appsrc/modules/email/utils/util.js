@@ -34,7 +34,7 @@ async function loadTemplates() {
 
 async function renderEmail(subject, content) {
     try {
-        let hostUrl = process.env.CLIENT_APP_URL || 'https://admin.portal.howickltd.com';
+        let hostUrl = process.env.ADMIN_PORTAL_APP_URL || 'https://admin.portal.howickltd.com';
 
         const { headerHTML, footerHTML, emailHTML } = await loadTemplates();
 

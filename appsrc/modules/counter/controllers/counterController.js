@@ -12,7 +12,9 @@ class CounterController {
             counters: {
                 serviceReport: 0,
                 supportTicket: 0,
-                article: 0
+                article: 0,
+                project: 0,
+                release: 0
             }
         });
     }
@@ -43,7 +45,10 @@ static async BackSequence(counterType) {
           counters: {
               serviceReport: 0,
               supportTicket: 0,
-              article: 0
+              article: 0,
+              project: 0,
+              release: 0
+
           }
       });
   }
@@ -72,7 +77,9 @@ static async BackSequence(counterType) {
         counters: {
           serviceReport: 0,
           supportTicket: 0,
-          article: 0
+          article: 0,
+          project: 0,
+          release: 0
         },
       }));
 
