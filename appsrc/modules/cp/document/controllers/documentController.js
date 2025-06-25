@@ -95,7 +95,9 @@ exports.getDocuments = async (req, res, next) => {
 
     this.query = req.query != "undefined" ? req.query : {};
     this.query.customerAccess = true;
+
     const docCategoryQuery = { isArchived: false, isActive: true }
+
     if (typeof this.query.customerAccess === 'boolean') {
       docCategoryQuery.customerAccess = this.query.customerAccess;
     }
@@ -112,7 +114,11 @@ exports.getDocuments = async (req, res, next) => {
 
     const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, this.fields, docCategoryQuery);
     this.query.docCategory = { $in: docCategories?.map((dc) => dc?._id.toString()) }
-    // const docTypeQuery = { customerAccess: true, isArchived: false, isActive: true, }
+
+    // const docTypeQuery = { isArchived: false, isActive: true, }
+    // if (typeof this.query.customerAccess === 'boolean') {
+    //   docTypeQuery.customerAccess = this.query.customerAccess;
+    // }
     // const docTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, docTypeQuery);
     // this.query.docType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
     if (
