@@ -57,7 +57,12 @@ exports.getApiLogs = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
 
     if(this.query.orderBy) {
-      this.orderBy = this.query.orderBy;
+      if (typeof this.query.orderBy === 'string') {
+        const [field, direction] = this.query.orderBy.split(':');
+        this.orderBy = { [field]: parseInt(direction) || -1 };
+      } else {
+        this.orderBy = this.query.orderBy;
+      }
       delete this.query.orderBy;
     }
 

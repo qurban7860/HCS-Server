@@ -175,13 +175,13 @@ exports.syncMachineConnection = async (req, res, next) => {
         responseData: {
           statusCode: StatusCodes.NOT_FOUND,
           body: getReasonPhrase(StatusCodes.NOT_FOUND),
-          context: "Machine not found or has been transferred or decommissioned",
+          context: "Machine not found",
         },
         machine,
         createdIP: clientIP,
         createdBy: clientInfo,
       });
-      return res.status(StatusCodes.NOT_FOUND).json({ message: "Machine not found or has been transferred or decommissioned" });
+      return res.status(StatusCodes.NOT_FOUND).json({ message: "Machine not found" });
     }
 
     const latestPortalKey = machine.portalKey[0]?.key;
