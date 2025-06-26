@@ -95,26 +95,35 @@ exports.getDocuments = async (req, res, next) => {
 
     this.query = req.query != "undefined" ? req.query : {};
     this.query.customerAccess = true;
-    const docCategoryQuery = { customerAccess: true, isArchived: false, isActive: true }
-    if (this.query.forCustomer) {
-      docCategoryQuery.customer = true;
+
+    const docCategoryQuery = { isArchived: false, isActive: true }
+
+    if (typeof this.query.customerAccess === 'boolean') {
+      docCategoryQuery.customerAccess = this.query.customerAccess;
+    }
+    if (typeof this.query.forCustomer === 'boolean') {
+      docCategoryQuery.customer = this.query.forCustomer;
       delete this.query.forCustomer
-    } else if (this.query.forMachine) {
-      docCategoryQuery.machine = true;
+    } else if (typeof this.query.forMachine === 'boolean') {
+      docCategoryQuery.machine = this.query.forMachine;
       delete this.query.forMachine
-    } else if (this.query.forDrawing) {
-      docCategoryQuery.drawing = true;
+    } else if (typeof this.query.forDrawing === 'boolean') {
+      docCategoryQuery.drawing = this.query.forDrawing;
       delete this.query.forDrawing
     }
 
     const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, this.fields, docCategoryQuery);
     this.query.docCategory = { $in: docCategories?.map((dc) => dc?._id.toString()) }
-    const docTypeQuery = { customerAccess: true, isArchived: false, isActive: true, }
-    const docTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, docTypeQuery);
-    this.query.docType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
+
+    // const docTypeQuery = { isArchived: false, isActive: true, }
+    // if (typeof this.query.customerAccess === 'boolean') {
+    //   docTypeQuery.customerAccess = this.query.customerAccess;
+    // }
+    // const docTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, docTypeQuery);
+    // this.query.docType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
     if (
-      (Array.isArray(docCategories) && !docCategories?.length > 0) ||
-      (Array.isArray(docTypes) && !docTypes?.length > 0)
+      (Array.isArray(docCategories) && !docCategories?.length > 0)
+      // ||  (Array.isArray(docTypes) && !docTypes?.length > 0)
     ) {
       if (req.body?.page) {
         return res.json({
