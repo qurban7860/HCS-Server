@@ -19,13 +19,13 @@ this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE !=
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };    
+this.orderBy = { createdAt: -1 };
 this.populate = [
-  {path: 'document', select: 'displayName referenceNumber stockNumber isActive isArchived'},
-  {path: 'documentCategory', select: 'name'},
-  {path: 'documentType', select: 'name'},
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'}
+  { path: 'document', select: 'displayName referenceNumber stockNumber isActive isArchived' },
+  { path: 'documentCategory', select: 'name customerAccess' },
+  { path: 'documentType', select: 'name customerAccess' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 
 exports.getProductDrawing = async (req, res, next) => {
@@ -39,8 +39,8 @@ exports.getProductDrawing = async (req, res, next) => {
 
 exports.getProductDrawings = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();  
-  if(this.query.orderBy) {
+  let docTypes_ = await DocumentType.find({ isPrimaryDrawing: true }).select('_id').lean();
+  if (this.query.orderBy) {
     // this.orderBy = this.query.orderBy;
     delete this.query.orderBy;
   }
@@ -52,16 +52,16 @@ exports.getProductDrawings = async (req, res, next) => {
     } else {
       if (response?.length > 0 && docTypes_?.length > 0) {
         response.sort((a, b) => {
-            const indexA = docTypes_.findIndex(doc => doc._id.toString() === a.documentType._id.toString());
-            const indexB = docTypes_.findIndex(doc => doc._id.toString() === b.documentType._id.toString());
-            
-            if (indexA !== -1 && indexB === -1) {
-                return -1; // Move a before b
-            } else if (indexA === -1 && indexB !== -1) {
-                return 1; // Move b before a
-            } else {
-                return 0; // Keep the order unchanged
-            }
+          const indexA = docTypes_.findIndex(doc => doc._id.toString() === a.documentType._id.toString());
+          const indexB = docTypes_.findIndex(doc => doc._id.toString() === b.documentType._id.toString());
+
+          if (indexA !== -1 && indexB === -1) {
+            return -1; // Move a before b
+          } else if (indexA === -1 && indexB !== -1) {
+            return 1; // Move b before a
+          } else {
+            return 0; // Keep the order unchanged
+          }
         });
       }
       res.json(response);
@@ -87,19 +87,19 @@ exports.postProductDrawing = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     let documentId = req.body.documentId;
-    
+
     let documentCategory = req.body.documentCategory;
     let documentType = req.body.documentType;
     let machine = req.body.machine
-    if(documentId) {
-      const documentObject = await Document.findOne({_id: documentId}).select('docCategory docType').lean();
-      if(documentObject) {
-        if(!req.body.documentCategory) {
+    if (documentId) {
+      const documentObject = await Document.findOne({ _id: documentId }).select('docCategory docType').lean();
+      if (documentObject) {
+        if (!req.body.documentCategory) {
           documentCategory = documentObject.docCategory;
           req.body.documentCategory = documentObject.docCategory;
         }
 
-        if(!req.body.documentType) {
+        if (!req.body.documentType) {
           documentType = documentObject.docType;
           req.body.documentType = documentObject.docType;
         }
@@ -107,8 +107,8 @@ exports.postProductDrawing = async (req, res, next) => {
     };
 
 
-    let alreadyExists = await ProductDrawing.findOne( { machine, document:documentId, documentCategory, documentType } );
-    if(!alreadyExists) {
+    let alreadyExists = await ProductDrawing.findOne({ machine, document: documentId, documentCategory, documentType });
+    if (!alreadyExists) {
       this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
       function callbackFunc(error, response) {
         if (error) {
@@ -116,7 +116,7 @@ exports.postProductDrawing = async (req, res, next) => {
           res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
             error._message
             //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-            );
+          );
         } else {
           res.status(StatusCodes.CREATED).json({ MachineCategory: response });
         }
@@ -141,7 +141,7 @@ exports.patchProductDrawing = async (req, res, next) => {
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(
           error._message
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -150,36 +150,36 @@ exports.patchProductDrawing = async (req, res, next) => {
 };
 
 
-function getDocumentFromReq(req, reqType){
+function getDocumentFromReq(req, reqType) {
   const { machine, documentCategory, documentType, documentId, isActive, isArchived, loginUser } = req.body;
-  
+
   let doc = {};
-  if (reqType && reqType == "new"){
+  if (reqType && reqType == "new") {
     doc = new ProductDrawing({});
   }
 
-  if ("machine" in req.body){
+  if ("machine" in req.body) {
     doc.machine = machine;
   }
-  if ("documentCategory" in req.body){
+  if ("documentCategory" in req.body) {
     doc.documentCategory = documentCategory;
   }
-  if ("documentType" in req.body){
+  if ("documentType" in req.body) {
     doc.documentType = documentType;
   }
-  if ("documentId" in req.body){
+  if ("documentId" in req.body) {
     doc.document = documentId;
   }
-  
-  if ("isActive" in req.body){
+
+  if ("isActive" in req.body) {
     doc.isActive = isActive;
   }
 
-  if ("isArchived" in req.body){
+  if ("isArchived" in req.body) {
     doc.isArchived = isArchived;
   }
-  
-  if (reqType == "new" && "loginUser" in req.body ){
+
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -187,7 +187,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
   //console.log("doc in http req: ", doc);
   return doc;
