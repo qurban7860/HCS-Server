@@ -12,8 +12,8 @@ this.query = {};
 this.orderBy = { 'document.displayName': 1 };
 this.populate = [
   { path: 'document', select: 'displayName referenceNumber stockNumber isActive isArchived customerAccess' },
-  { path: 'documentCategory', select: 'name' },
-  { path: 'documentType', select: 'name' },
+  { path: 'documentCategory', select: 'name customerAccess' },
+  { path: 'documentType', select: 'name customerAccess' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];

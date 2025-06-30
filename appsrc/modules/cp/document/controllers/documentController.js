@@ -29,9 +29,9 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'docType', select: 'name' },
+  { path: 'docType', select: 'name customerAccess' },
   { path: 'previousDocType', select: 'name' },
-  { path: 'docCategory', select: 'name drawing' },
+  { path: 'docCategory', select: 'name drawing customerAccess' },
   { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
@@ -51,7 +51,8 @@ exports.getDocument = async (req, res, next) => {
     this.query._id = req.params.id
     this.query.isArchived = false
     let document_ = await this.dbservice.getObject(Document, this.query, this.populate);
-    if (!document?._id || !document?.customerAccess || !document?.docCategory?.customerAccess || !document?.docType?.customerAccess) {
+    console.log({ document_ })
+    if (!document_?._id || !document_?.customerAccess || !document_?.docCategory?.customerAccess || !document_?.docType?.customerAccess) {
       return res.json({});
     }
     if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
