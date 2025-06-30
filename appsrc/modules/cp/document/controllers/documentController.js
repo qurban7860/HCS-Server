@@ -49,9 +49,11 @@ exports.getDocument = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id
-    this.query.customerAccess = true
     this.query.isArchived = false
     let document_ = await this.dbservice.getObject(Document, this.query, this.populate);
+    if (!document?._id || !document?.customerAccess || !document?.docCategory?.customerAccess || !document?.docType?.customerAccess) {
+      return res.json({});
+    }
     if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
 
       document_ = JSON.parse(JSON.stringify(document_));
@@ -124,7 +126,6 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     this.query.$or = orConditions;
-    console.log({ query: this.query })
     // Keep your search functionality
     if (this.query?.searchString) {
       const regexCondition = { $regex: escapeRegExp(this.query.searchString), $options: 'i' };
