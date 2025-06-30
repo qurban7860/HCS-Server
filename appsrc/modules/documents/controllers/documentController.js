@@ -34,8 +34,8 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'docType', select: 'name' },
-  { path: 'docCategory', select: 'name drawing' },
+  { path: 'docType', select: 'name customerAccess' },
+  { path: 'docCategory', select: 'name drawing customerAccess' },
   { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
