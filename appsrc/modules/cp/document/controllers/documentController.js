@@ -51,7 +51,7 @@ exports.getDocument = async (req, res, next) => {
     this.query._id = req.params.id
     this.query.isArchived = false
     let document_ = await this.dbservice.getObject(Document, this.query, this.populate);
-    if (!document_?._id || !document_?.customerAccess || !document_?.docCategory?.customerAccess || !document_?.docType?.customerAccess) {
+    if (!document_?._id && !document_?.customerAccess && !document_?.docCategory?.customerAccess && !document_?.docType?.customerAccess) {
       return res.json({});
     }
     if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {

@@ -24,7 +24,7 @@ exports.getProductDrawing = async (req, res, next) => {
     this.query._id = req.params.id
     this.query.isArchived = false
     let drawing = await this.dbservice.getObject(ProductDrawing, this.query, this.populate);
-    if (!drawing?.document?._id || !drawing?.document?.customerAccess || !drawing?.documentCategory?.customerAccess || !drawing?.documentType?.customerAccess) {
+    if (!drawing?.document?._id && !drawing?.document?.customerAccess && !drawing?.documentCategory?.customerAccess && !drawing?.documentType?.customerAccess) {
       return res.json({});
     }
     let document_ = await this.dbservice.getObject(Document, { _id: drawing?.document?._id, isArchived: false }, documentPopolate);
