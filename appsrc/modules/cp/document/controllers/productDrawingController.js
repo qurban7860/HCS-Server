@@ -66,16 +66,13 @@ exports.getProductDrawing = async (req, res, next) => {
   }
 };
 
+
 exports.getProductDrawings = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query.isArchived = false
 
-    const docCategoryQuery = { isArchived: false, isActive: true }
-
-    if (typeof this.query.customerAccess === 'boolean') {
-      docCategoryQuery.customerAccess = this.query.customerAccess;
-    }
+    const docCategoryQuery = { isArchived: false, isActive: true, customerAccess: true }
 
     if (this.query.forCustomer) {
       docCategoryQuery.customer = true;
@@ -88,37 +85,30 @@ exports.getProductDrawings = async (req, res, next) => {
       delete this.query.forDrawing
     }
 
-    const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, this.fields, docCategoryQuery);
-    this.query.documentCategory = { $in: docCategories?.map((dc) => dc?._id.toString()) }
+    const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, ['_id'], docCategoryQuery);
+    const docCategoryIds = docCategories?.map((dc) => dc?._id.toString())
 
     // non primary drawing document types
-
-    // const docTypeQuery = { isArchived: false, isActive: true, }
-    // if (typeof this.query.customerAccess === 'boolean') {
-    //   docTypeQuery.customerAccess = this.query.customerAccess;
-    // }
-    // const docTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, docTypeQuery);
-    // this.query.docType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
+    const docTypeQuery = { isArchived: false, isActive: true, customerAccess: true }
+    const docTypes = await this.dbservice.getObjectList(null, DocumentType, ['_id'], docTypeQuery);
+    const docTypeIds = docTypes?.map((dt) => dt?._id.toString())
 
     // primary drawing document types
     // const primaryDocTypeQuery = { customerAccess: true, isArchived: false, isActive: true, isPrimaryDrawing: true }
-    // const primaryDocTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, primaryDocTypeQuery);
-    // this.query.documentType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
+    // const primaryDocTypes = await this.dbservice.getObjectList(null, DocumentType, ['_id'], primaryDocTypeQuery);
+    // const primaryDocumentTypeIds = docTypes?.map((dt) => dt?._id.toString())
 
-    if (
-      (Array.isArray(docCategories) && !docCategories?.length > 0)
-      // || (Array.isArray(docTypes) && !docTypes?.length > 0)
-    ) {
-      if (req.body?.page) {
-        return res.json({
-          data: [],
-          totalPages: 0,
-          currentPage: 0,
-          pageSize: req.body.pageSize,
-          totalCount: 0
-        })
-      }
-      return res.json([]);
+    // Build OR condition
+    const orConditions = [];
+    if (Array.isArray(docCategoryIds) && docCategoryIds?.length > 0) {
+      orConditions.push({ documentCategory: { $in: docCategoryIds } });
+    }
+    if (Array.isArray(docTypeIds) && docTypeIds?.length > 0) {
+      orConditions.push({ documentType: { $in: docTypeIds } });
+    }
+
+    if (orConditions.length > 0) {
+      this.query.$or = orConditions;
     }
 
     if (this.query.orderBy) {
@@ -126,26 +116,14 @@ exports.getProductDrawings = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    let response = await this.dbservice.getObjectList(req, ProductDrawing, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, ProductDrawing, this.field, this.query, this.orderBy, this.populate);
+
     response = {
       ...response,
       data: response?.data?.filter(d => d?.document.customerAccess)
-    }
+    };
     response.totalCount = response.data.length;
-    // if (response?.length > 0 && docTypes?.length > 0) {
-    //   response.sort((a, b) => {
-    //     const indexA = docTypes.findIndex(doc => doc._id.toString() === a.documentType._id.toString());
-    //     const indexB = docTypes.findIndex(doc => doc._id.toString() === b.documentType._id.toString());
 
-    //     if (indexA !== -1 && indexB === -1) {
-    //       return -1; // Move a before b
-    //     } else if (indexA === -1 && indexB !== -1) {
-    //       return 1; // Move b before a
-    //     } else {
-    //       return 0; // Keep the order unchanged
-    //     }
-    //   });
-    // }
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
