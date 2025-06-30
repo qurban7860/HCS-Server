@@ -29,9 +29,9 @@ this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' },
-  { path: 'docType', select: 'name' },
+  { path: 'docType', select: 'name customerAccess' },
   { path: 'previousDocType', select: 'name' },
-  { path: 'docCategory', select: 'name drawing' },
+  { path: 'docCategory', select: 'name drawing customerAccess' },
   { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
@@ -49,9 +49,11 @@ exports.getDocument = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     this.query._id = req.params.id
-    this.query.customerAccess = true
     this.query.isArchived = false
     let document_ = await this.dbservice.getObject(Document, this.query, this.populate);
+    if (!document_?._id && !document_?.customerAccess && !document_?.docCategory?.customerAccess && !document_?.docType?.customerAccess) {
+      return res.json({});
+    }
     if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
 
       document_ = JSON.parse(JSON.stringify(document_));
@@ -92,15 +94,10 @@ exports.getDocument = async (req, res, next) => {
 
 exports.getDocuments = async (req, res, next) => {
   try {
+    this.query = req.query !== "undefined" ? req.query : {};
 
-    this.query = req.query != "undefined" ? req.query : {};
-    this.query.customerAccess = true;
-
-    const docCategoryQuery = { isArchived: false, isActive: true }
-
-    if (typeof this.query.customerAccess === 'boolean') {
-      docCategoryQuery.customerAccess = this.query.customerAccess;
-    }
+    // Fetch doc categories with customerAccess
+    const docCategoryQuery = { customerAccess: true, isArchived: false, isActive: true }
     if (typeof this.query.forCustomer === 'boolean') {
       docCategoryQuery.customer = this.query.forCustomer;
       delete this.query.forCustomer
@@ -112,29 +109,38 @@ exports.getDocuments = async (req, res, next) => {
       delete this.query.forDrawing
     }
 
-    const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, this.fields, docCategoryQuery);
-    this.query.docCategory = { $in: docCategories?.map((dc) => dc?._id.toString()) }
+    const docCategoriesCustomerAccess = await this.dbservice.getObjectList(null, DocumentCategory, ['_id'], docCategoryQuery);
+    const docCategoryIds = docCategoriesCustomerAccess.map(dc => dc._id.toString());
 
-    // const docTypeQuery = { isArchived: false, isActive: true, }
-    // if (typeof this.query.customerAccess === 'boolean') {
-    //   docTypeQuery.customerAccess = this.query.customerAccess;
-    // }
-    // const docTypes = await this.dbservice.getObjectList(null, DocumentType, this.fields, docTypeQuery);
-    // this.query.docType = { $in: docTypes?.map((dt) => dt?._id.toString()) }
-    if (
-      (Array.isArray(docCategories) && !docCategories?.length > 0)
-      // ||  (Array.isArray(docTypes) && !docTypes?.length > 0)
-    ) {
-      if (req.body?.page) {
-        return res.json({
-          data: [],
-          totalPages: 0,
-          currentPage: 0,
-          pageSize: req.body.pageSize,
-          totalCount: 0
-        })
-      }
-      return res.json([]);
+    // Fetch doc types with customerAccess
+    const docTypesCustomerAccess = await this.dbservice.getObjectList(null, DocumentType, ['_id'], { customerAccess: true, isArchived: false, isActive: true });
+    const docTypeIds = docTypesCustomerAccess.map(dt => dt._id.toString());
+
+    // Build OR condition
+    const orConditions = [{ customerAccess: true }];
+    if (docCategoryIds?.length > 0) {
+      orConditions.push({ docCategory: { $in: docCategoryIds } });
+    }
+    if (docTypeIds?.length > 0) {
+      orConditions.push({ docType: { $in: docTypeIds } });
+    }
+
+    this.query.$or = orConditions;
+    // Keep your search functionality
+    if (this.query?.searchString) {
+      const regexCondition = { $regex: escapeRegExp(this.query.searchString), $options: 'i' };
+
+      this.query.$and = [
+        {
+          $or: [
+            { name: regexCondition },
+            { displayName: regexCondition },
+            { referenceNumber: regexCondition },
+            { stockNumber: regexCondition }
+          ]
+        }
+      ];
+      delete this.query.searchString;
     }
 
     if (this.query.orderBy) {
@@ -143,27 +149,19 @@ exports.getDocuments = async (req, res, next) => {
     }
 
     let basicInfo = false;
-
     if (this.query && (this.query.basic == true || this.query.basic == 'true')) {
       basicInfo = true;
       delete this.query.basic;
     }
 
-    const orCondition = [];
-
-    if (this.query?.searchString) {
-      const regexCondition = { $regex: escapeRegExp(this.query.searchString), $options: 'i' };
-      orCondition.push({ name: regexCondition });
-      orCondition.push({ displayName: regexCondition });
-      orCondition.push({ referenceNumber: regexCondition });
-      orCondition.push({ stockNumber: regexCondition });
-      delete this.query.searchString;
-
-      if (orCondition?.length > 0) {
-        this.query.$or = orCondition;
-      }
-    }
-    const response = await this.dbservice.getObjectList(req, Document, this.fields, this.query, this.orderBy, this.populate);
+    const response = await this.dbservice.getObjectList(
+      req,
+      Document,
+      this.fields,
+      this.query,
+      this.orderBy,
+      this.populate
+    );
 
     return res.json(response);
   } catch (error) {
