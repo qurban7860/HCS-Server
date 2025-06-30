@@ -32,14 +32,14 @@ this.fields = {};
 this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
-  { path: 'createdBy', select: 'name' },
-  { path: 'updatedBy', select: 'name' },
   { path: 'docType', select: 'name customerAccess' },
   { path: 'docCategory', select: 'name drawing customerAccess' },
   { path: 'machineModel', select: 'name' },
   { path: 'customer', select: 'name' },
   { path: 'machine', select: 'name serialNo' },
   { path: 'site', select: 'name' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' },
 ];
 this.populateHistory = [
   { path: 'createdBy', select: 'name' },
@@ -50,7 +50,19 @@ this.populateHistory = [
 
 exports.getDocument = async (req, res, next) => {
   try {
-    let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, this.populate);
+    const docPopulate = [
+      { path: 'docType', select: 'name customerAccess' },
+      { path: 'docCategory', select: 'name drawing customerAccess' },
+      { path: 'machineModel', select: 'name' },
+      { path: 'customer', select: 'name' },
+      { path: 'machine', select: 'name serialNo' },
+      { path: 'site', select: 'name' },
+      { path: 'createdBy', select: 'name' },
+      { path: 'updatedBy', select: 'name' },
+    ];
+
+    let document_ = await dbservice.getObjectById(Document, this.fields, req.params.id, docPopulate);
+
     if (document_ && Array.isArray(document_.documentVersions) && document_.documentVersions.length > 0) {
 
       document_ = JSON.parse(JSON.stringify(document_));
