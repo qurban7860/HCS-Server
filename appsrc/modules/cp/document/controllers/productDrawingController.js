@@ -2,6 +2,7 @@ const { StatusCodes, getReasonPhrase } = require('http-status-codes');
 const logger = require('../../../config/logger');
 let productDBService = require('../../../products/service/productDBService')
 this.dbservice = new productDBService();
+const mongoose = require('mongoose')
 const { ProductDrawing } = require('../../../products/models');
 const { Document, DocumentFile, DocumentVersion, DocumentType, DocumentCategory } = require('../../../documents/models');
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -72,66 +73,129 @@ exports.getProductDrawings = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     this.query.isArchived = false
 
-    const docCategoryQuery = { isArchived: false, isActive: true, customerAccess: true }
+    const drawingsAggregate = [
+      {
+        $lookup: {
+          from: "DocumentTypes",
+          localField: "documentType",
+          foreignField: "_id",
+          as: "documentType"
+        }
+      },
+      {
+        $unwind: {
+          path: "$documentType",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "DocumentCategories",
+          localField: "documentCategory",
+          foreignField: "_id",
+          as: "documentCategory"
+        }
+      },
+      {
+        $unwind: {
+          path: "$documentCategory",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "Documents",
+          localField: "document",
+          foreignField: "_id",
+          as: "document"
+        }
+      },
+      {
+        $unwind: {
+          path: "$document",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "SecurityUsers",
+          localField: "createdBy",
+          foreignField: "_id",
+          as: "createdBy"
+        }
+      },
+      {
+        $unwind: {
+          path: "$createdBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $lookup: {
+          from: "SecurityUsers",
+          localField: "updatedBy",
+          foreignField: "_id",
+          as: "updatedBy"
+        }
+      },
+      {
+        $unwind: {
+          path: "$updatedBy",
+          preserveNullAndEmptyArrays: true
+        }
+      },
 
-    if (this.query.forCustomer) {
-      docCategoryQuery.customer = true;
-      delete this.query.forCustomer
-    } else if (this.query.forMachine) {
-      docCategoryQuery.machine = true;
-      delete this.query.forMachine
-    } else if (this.query.forDrawing) {
-      docCategoryQuery.drawing = true;
-      delete this.query.forDrawing
-    }
+      {
+        $match: {
+          $and: [
+            { isActive: true },
+            { isArchived: false },
+            { machine: mongoose.Types.ObjectId(req.query.machine) },
+            {
+              $or: [
+                { "document.customerAccess": true },
+                { "documentType.customerAccess": true },
+                { "documentCategory.customerAccess": true }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          machine: 1,
+          "document.customerAccess": 1,
+          "document.displayName": 1,
+          "document.referenceNumber": 1,
+          "document.stockNumber": 1,
+          "document.isActive": 1,
+          "document.isArchived": 1,
+          "documentType._id": 1,
+          "documentType.name": 1,
+          "documentType.customerAccess": 1,
+          "documentCategory._id": 1,
+          "documentCategory.name": 1,
+          "documentCategory.customerAccess": 1,
+          "createdBy._id": 1,
+          "createdBy.name": 1,
+          "updatedBy._id": 1,
+          "updatedBy.name": 1,
+        }
+      }
+    ]
 
-    const docCategories = await this.dbservice.getObjectList(null, DocumentCategory, ['_id'], docCategoryQuery);
-    const docCategoryIds = docCategories?.map((dc) => dc?._id.toString())
 
-    // non primary drawing document types
-    const docTypeQuery = { isArchived: false, isActive: true, customerAccess: true }
-    const docTypes = await this.dbservice.getObjectList(null, DocumentType, ['_id'], docTypeQuery);
-    const docTypeIds = docTypes?.map((dt) => dt?._id.toString())
-
-    // primary drawing document types
-    // const primaryDocTypeQuery = { customerAccess: true, isArchived: false, isActive: true, isPrimaryDrawing: true }
-    // const primaryDocTypes = await this.dbservice.getObjectList(null, DocumentType, ['_id'], primaryDocTypeQuery);
-    // const primaryDocumentTypeIds = docTypes?.map((dt) => dt?._id.toString())
-
-    // Build OR condition
-    const orConditions = [];
-    if (Array.isArray(docCategoryIds) && docCategoryIds?.length > 0) {
-      orConditions.push({ documentCategory: { $in: docCategoryIds } });
-    }
-    if (Array.isArray(docTypeIds) && docTypeIds?.length > 0) {
-      orConditions.push({ documentType: { $in: docTypeIds } });
-    }
-
-    if (orConditions.length > 0) {
-      this.query.$or = orConditions;
-    }
-
-    if (this.query.orderBy) {
-      this.orderBy = this.query.orderBy;
-      delete this.query.orderBy;
-    }
-
-    let categoryorTypeDocs = await this.dbservice.getObjectList(null, ProductDrawing, ['_id'], this.query, this.orderBy);
-    const categoryOrTypeIds = categoryorTypeDocs.map(doc => doc._id?.toString());
-
-    delete this.query.$or
-    let response = await this.dbservice.getObjectList(req, ProductDrawing, this.field, this.query, this.orderBy, this.populate);
-    let resetData = response?.data?.filter(doc => {
-      const idMatch = categoryOrTypeIds.includes(doc._id?.toString());
-      const customerAccess = doc.document.customerAccess === true;
-      return idMatch || customerAccess;
-    });
+    let response = await this.dbservice.getObjectListWithAggregate(ProductDrawing, drawingsAggregate);
+    console.log({ response })
 
     response = {
-      ...response,
-      data: resetData
+      data: response,
+      totalPages: Math.ceil(response.length / req.body?.pageSize),
+      currentPage: req.body?.page,
+      pageSize: req.body?.pageSize,
+      totalCount: response.length
     };
-    response.totalCount = resetData.length;
 
     return res.json(response);
   } catch (error) {
