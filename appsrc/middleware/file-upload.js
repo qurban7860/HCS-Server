@@ -10,6 +10,7 @@ const Config = require('../modules/config/models/config');
 const awsService = require('../base/aws'); // Assuming you have an awsService module
 const logger = require('../modules/config/logger');
 
+
 const validExtensions = [
   'png',
   'jpeg',
@@ -61,6 +62,7 @@ const validExtensions = [
   'xcf',
   'xpm',
   'xwd',
+  // office files
   'pdf',
   'doc',
   'docx',
@@ -75,7 +77,6 @@ const validExtensions = [
   'odt',
   'ott',
   'rtf',
-  'json',
   'txt',
   'xlsm',
   // videos
@@ -85,6 +86,8 @@ const validExtensions = [
   'wmv',
   'flv',
   'mkv',
+  //others
+  'zip', 'rar', '7z', 'log', 'config', 'conf', 'ini', 'json', 'xml'
 ];
 
 const fileUpload = multer({
@@ -162,15 +165,15 @@ const isHeicFile = (buffer) => {
     // Check for HEIC/HEIF file signatures
     // HEIC files typically start with specific byte patterns
     if (buffer.length < 12) return false;
-    
+
     // Check for 'ftyp' box at offset 4-8
     const ftypBox = buffer.slice(4, 8).toString('ascii');
     if (ftypBox !== 'ftyp') return false;
-    
+
     // Check for HEIC/HEIF brand identifiers
     const brand = buffer.slice(8, 12).toString('ascii');
     const heicBrands = ['heic', 'heix', 'hevc', 'hevx', 'heim', 'heis', 'hevm', 'hevs', 'mif1', 'msf1'];
-    
+
     return heicBrands.includes(brand);
   } catch (error) {
     return false;
@@ -181,48 +184,48 @@ const convertHeicToPng = async (file) => {
   try {
     // Read the file first to validate it
     const inputBuffer = await promisify(fs.readFile)(file.path);
-    
+
     // Check if file is empty
     if (inputBuffer.length === 0) {
       logger.warn(`File ${file.originalname} is empty, skipping HEIC conversion`);
       return file;
     }
-    
+
     // Validate if it's actually a HEIC file
     if (!isHeicFile(inputBuffer)) {
       logger.warn(`File ${file.originalname} has HEIC/HEIF extension but is not a valid HEIC image, skipping conversion`);
       return file;
     }
-    
+
     // Convert to PNG
     const outputBuffer = await convert({
       buffer: inputBuffer,
       format: 'PNG'
     });
-    
+
     // Generate new filename with PNG extension
     const { dir, name } = path.parse(file.path);
     const newFilename = `${name}.png`;
     const newPath = path.join(dir, newFilename);
-    
+
     // Write the converted PNG file
     await promisify(fs.writeFile)(newPath, outputBuffer);
-    
+
     // Remove the original HEIC/HEIF file
     await promisify(fs.unlink)(file.path);
-    
+
     // Update file properties
     file.path = newPath;
     file.filename = newFilename;
     file.mimetype = 'image/png';
     file.originalname = file.originalname.replace(/\.(heic|heif)$/i, '.png');
-    
+
     logger.info(`Successfully converted ${file.originalname} from HEIC/HEIF to PNG`);
-    
+
     return file;
   } catch (error) {
     logger.error(`Error converting HEIC/HEIF file ${file.originalname}: ${error.message}`);
-    
+
     // If conversion fails, log the error but don't throw - let the original file continue processing
     logger.warn(`Skipping HEIC conversion for ${file.originalname}, continuing with original file`);
     return file;
@@ -231,13 +234,13 @@ const convertHeicToPng = async (file) => {
 
 const imageOptimization = async (req, res, next) => {
   try {
-    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i"); 
-    let configObject = await Config.findOne({name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true}).select('value'); 
-    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true:false;
-    
-    if(req.files && req.files['images']) {
+    const regex = new RegExp("^OPTIMIZE_IMAGE_ON_UPLOAD$", "i");
+    let configObject = await Config.findOne({ name: regex, type: "ADMIN-CONFIG", isArchived: false, isActive: true }).select('value');
+    configObject = configObject && configObject.value.trim().toLowerCase() === 'true' ? true : false;
+
+    if (req.files && req.files['images']) {
       const documents_ = req.files['images'];
-      
+
       await Promise.all(documents_.map(async (docx) => {
         try {
           // Check if file is HEIC or HEIF and convert to PNG
@@ -245,12 +248,12 @@ const imageOptimization = async (req, res, next) => {
           if (fileExtension === '.heic' || fileExtension === '.heif') {
             await convertHeicToPng(docx);
           }
-          
+
           // Generate ETag for the file (after potential conversion)
           docx.eTag = await awsService.generateEtag(docx.path);
-          
+
           // Apply image optimization if enabled
-          if(configObject){
+          if (configObject) {
             await awsService.processImageFile(docx);
           }
         } catch (error) {

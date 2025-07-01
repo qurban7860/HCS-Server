@@ -116,13 +116,14 @@ exports.getProductDrawings = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    let categoryorTypeDocs = await this.dbservice.getObjectList(null, ProductDrawing, ['_id'], this.query, this.orderBy);
-    const categoryOrTypeIds = categoryorTypeDocs.map(doc => doc._id?.toString());
+    let categoryorTypeDrawingIds = await this.dbservice.getObjectList(null, ProductDrawing, ['_id'], this.query, this.orderBy);
+    const categoryOrTypeDrawingIds = categoryorTypeDrawingIds.map(d => d._id?.toString());
 
     delete this.query.$or
     let response = await this.dbservice.getObjectList(req, ProductDrawing, this.field, this.query, this.orderBy, this.populate);
+
     let resetData = response?.data?.filter(doc => {
-      const idMatch = categoryOrTypeIds.includes(doc._id?.toString());
+      const idMatch = categoryOrTypeDrawingIds.includes(doc._id?.toString());
       const customerAccess = doc.document.customerAccess === true;
       return idMatch || customerAccess;
     });
