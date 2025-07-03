@@ -408,16 +408,16 @@ exports.postTicket = async (req, res, next) => {
       if (!Array.isArray(req.body?.assignees) || req.body?.assignees?.length === 0) {
         const asssigneeRoleType = configurations.find((c) => c?.name?.trim()?.toLowerCase() === 'supportticketassigneeroletype')?.value?.trim();
         const asssigneeRoles = await SecurityRole.find({ roleType: { $in: asssigneeRoleType }, isActive: true, isArchived: false });
-        const defaultAsssignee = configurations.find((c) => c?.name?.trim()?.toLowerCase() === 'defaultsupportticketassignee')?.value?.split(',')?.map((e) => e.trim()?.toLowerCase());
-        const asssigneeSecurityUsers = await SecurityUser.find({ roles: { $in: asssigneeRoles?.map(r => r?._id) }, email: { $in: defaultAsssignee }, isActive: true, isArchived: false, invitationStatus: false }).populate([{ path: "customer", select: "type" }]);
+        const defaultAsssignees = configurations.find((c) => c?.name?.trim()?.toLowerCase() === 'defaultsupportticketassignee')?.value?.split(',')?.map((e) => e.trim()?.toLowerCase());
+        const asssigneeSecurityUsers = await SecurityUser.find({ roles: { $in: asssigneeRoles?.map(r => r?._id) }, login: { $in: defaultAsssignees }, isActive: true, isArchived: false, invitationStatus: false }).populate([{ path: "customer", select: "type" }]);
         req.body.assignees = asssigneeSecurityUsers?.filter(s => s?.customer?.type == 'SP')?.map(s => s?._id);;
       }
 
       if (!Array.isArray(req.body?.approvers) || req.body?.approvers?.length === 0) {
         const approverRoleType = configurations.find((c) => c?.name?.trim()?.toLowerCase() === 'supportticketapproverroletype')?.value?.trim();
         const approverRoles = await SecurityRole.find({ roleType: { $in: approverRoleType }, isActive: true, isArchived: false });
-        const defaultApprover = configurations.find((c) => c?.name?.trim()?.toLowerCase() === 'defaultsupportticketapprover')?.value?.split(',')?.map((e) => e.trim()?.toLowerCase());
-        const approverSecurityUsers = await SecurityUser.find({ roles: { $in: approverRoles?.map(r => r?._id) }, email: { $in: defaultApprover }, isActive: true, isArchived: false, invitationStatus: false }).populate([{ path: "customer", select: "type" }]);
+        const defaultApprovers = configurations.find((c) => c?.name?.trim()?.toLowerCase() === 'defaultsupportticketapprover')?.value?.split(',')?.map((e) => e.trim()?.toLowerCase());
+        const approverSecurityUsers = await SecurityUser.find({ roles: { $in: approverRoles?.map(r => r?._id) }, login: { $in: defaultApprovers }, isActive: true, isArchived: false, invitationStatus: false }).populate([{ path: "customer", select: "type" }]);
         req.body.approvers = approverSecurityUsers?.filter(s => s?.customer?.type == 'SP')?.map(s => s?._id);
       }
     }
