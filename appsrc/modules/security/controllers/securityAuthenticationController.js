@@ -63,21 +63,21 @@ exports.login = async (req, res, next) => {
     });
 
 
-    let matchedwhiteListIPs = false;
-    if (!matchedBlackListIps) {
-      let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
-      if (validIps && validIps.length > 0) {
-        validIps.forEach((ipObj) => {
-          if (clientIP == ipObj.whiteListIP) {
-            matchedwhiteListIPs = true;
-          } else if (ipRangeCheck(clientIP, ipObj.whiteListIP)) {
-            matchedwhiteListIPs = true;
-          }
-        });
-      } else {
-        matchedwhiteListIPs = true;
-      }
-    }
+    let matchedwhiteListIPs = true;
+    // if (!matchedBlackListIps) {
+    //   let validIps = await SecurityConfigWhiteListIP.find({ isActive: true, isArchived: false });
+    //   if (validIps && validIps.length > 0) {
+    //     validIps.forEach((ipObj) => {
+    //       if (clientIP == ipObj.whiteListIP) {
+    //         matchedwhiteListIPs = true;
+    //       } else if (ipRangeCheck(clientIP, ipObj.whiteListIP)) {
+    //         matchedwhiteListIPs = true;
+    //       }
+    //     });
+    //   } else {
+    //     matchedwhiteListIPs = true;
+    //   }
+    // }
 
 
     if (matchedwhiteListIPs && !matchedBlackListIps) {
