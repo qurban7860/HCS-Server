@@ -51,7 +51,7 @@ exports.getCustomerContact = async (req, res, next) => {
     }
     this.query._id = req.params.id;
 
-    const response = await this.dbservice.getObject(CustomerContact, this.query, this.populate);
+    let response = await this.dbservice.getObject(CustomerContact, this.query, this.populate);
 
     let operatorsList = await ProductServiceReports.find({ operators: { $in: [response._id] } }).select('_id serviceDate serviceReportTemplate machine').populate({ path: "serviceReportTemplate", select: "reportTitle" });
 

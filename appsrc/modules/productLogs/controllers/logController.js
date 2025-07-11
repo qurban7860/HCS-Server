@@ -48,19 +48,36 @@ exports.getLogs = async (req, res, next) => {
     delete this.query.type;
 
     if (this.query.searchKey && this.query.searchColumn) {
-      if (this.query.searchColumn === '_id') {
-        // For _id, we need to match the entire string
-        if (mongoose.Types.ObjectId.isValid(this.query.searchKey)) {
-          this.query._id = mongoose.Types.ObjectId(this.query.searchKey);
+      if (this.query.multiColumnSearch) {
+        if (Array.isArray(this.query.searchColumn) && this.query.searchColumn.length > 0) {
+          const orConditions = [];
+          this.query.searchColumn.forEach((column) => {
+            orConditions.push({
+              [column]: { $regex: this.query.searchKey, $options: "i" },
+            });
+          });
+          if (orConditions.length > 0) {
+            this.query.$or = orConditions;
+          }
         } else {
-          return res.status(400).send("Invalid _id format");
+          return res.status(400).json({error: "Invalid searchColumn format for multi-column search. Expected array of column names."});
         }
       } else {
-        // For other fields, use regex as before
-        this.query[this.query.searchColumn] = { $regex: this.query.searchKey, $options: 'i' };
+        if (this.query.searchColumn === '_id') {
+          // For _id, we need to match the entire string
+          if (mongoose.Types.ObjectId.isValid(this.query.searchKey)) {
+            this.query._id = mongoose.Types.ObjectId(this.query.searchKey);
+          } else {
+            return res.status(400).send("Invalid _id format");
+          }
+        } else {
+          // For other fields, use regex as before
+          this.query[this.query.searchColumn] = { $regex: this.query.searchKey, $options: 'i' };
+        }
       }
       delete this.query.searchKey;
       delete this.query.searchColumn;
+      delete this.query.multiColumnSearch;
     }
 
     if( !(isValidDate(this.query?.fromDate) && isValidDate(this.query?.toDate)) && this.query?.toDate >= this.query?.fromDate ){

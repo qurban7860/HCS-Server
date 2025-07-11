@@ -137,6 +137,55 @@ exports.sendUserInvite = async (req, res, next) => {
   }
 }
 
+exports.resendUserInvite = async (req, res, next) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+    }
+
+    const invitation = await SecurityUserInvite.findById(req.params.id);
+    
+    if (!invitation) {
+      return res.status(StatusCodes.NOT_FOUND).send("Invitation not found!");
+    }
+
+    // only PENDING or EXPIRED invitations can be resent
+    if (!['PENDING', 'EXPIRED'].includes(invitation.invitationStatus)) {
+      return res.status(StatusCodes.BAD_REQUEST).send("Cannot resend invitation with current status!");
+    }
+
+    const newInviteCode = (Math.random() + 1).toString(36).substring(7);
+    const inviteCodeExpireHours = parseInt(process.env.INVITE_EXPIRE_HOURS) || 48;
+    const newExpireTime = new Date(Date.now() + inviteCodeExpireHours * 60 * 60 * 1000);
+
+    // Update invitation with new code and expiry
+    const updateData = {
+      inviteCode: newInviteCode,
+      inviteExpireTime: newExpireTime,
+      invitationStatus: 'PENDING',
+      statusUpdatedAt: new Date(),
+      inviteSentCount: invitation.inviteSentCount + 1,
+      lastInviteSentAt: new Date()
+    };
+
+    if (req.body.loginUser) {
+      updateData.updatedBy = req.body.loginUser.userId;
+      updateData.updatedIP = req.body.loginUser.userIP;
+    }
+
+    await this.dbservice.patchObject(SecurityUserInvite, req.params.id, updateData);
+
+    // Send the new invitation email
+    await this.userEmailService.sendUserInviteEmail(req, res);
+
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send("Resending user invite failed!");
+  }
+};
+
+
 exports.verifyInviteCode = async (req, res, next) => {
   const invitation = await SecurityUserInvite.findOne({
     inviteCode: req.params.code,

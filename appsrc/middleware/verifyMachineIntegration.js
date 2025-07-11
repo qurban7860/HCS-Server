@@ -29,7 +29,7 @@ const verifyMachineAuth = async (req, res, next) => {
 
     if (!machine) {
       return res.status(StatusCodes.NOT_FOUND).json({
-        message: "Machine not found or has been transferred or decommissioned"
+        message: "Machine not found"
       });
     }
 

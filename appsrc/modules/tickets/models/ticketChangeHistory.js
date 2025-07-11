@@ -13,6 +13,12 @@ const docSchema = new Schema({
         previousAssignees: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
         newAssignees: [{ type: Schema.Types.ObjectId, ref: 'SecurityUser' }],
 
+        // Backup fields for migration
+        old_previousReporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        old_newReporter: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        old_previousAssignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+        old_newAssignee: { type: Schema.Types.ObjectId, ref: 'CustomerContact' },
+
         previousPriority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
         newPriority: { type: Schema.Types.ObjectId, ref: 'TicketPriority' },
 
