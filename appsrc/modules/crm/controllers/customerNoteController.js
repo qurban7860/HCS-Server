@@ -163,6 +163,11 @@ function getDocumentFromReq(req, reqType) {
   if ("contact" in req.body) {
     doc.contact = contact;
   }
+
+  if ("isInternal" in req.body) {
+    doc.isInternal = isInternal;
+  }
+
   if ("user" in req.body) {
     doc.user = user;
   }

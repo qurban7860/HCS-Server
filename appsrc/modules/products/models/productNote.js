@@ -7,17 +7,20 @@ const GUID = require('mongoose-guid')(mongoose);
 const Schema = mongoose.Schema;
 
 const docSchema = new Schema({
-    machine: { type: Schema.Types.ObjectId, required:true, ref: 'Machine' },
+    machine: { type: Schema.Types.ObjectId, required: true, ref: 'Machine' },
     // machine for which license is generated
-  
+
     note: { type: String, required: true },
     // license key
 
-    archivedByMachine: {type: Boolean, default: false},
+
+    isInternal: { type: Boolean, default: false },
+
+    archivedByMachine: { type: Boolean, default: false },
 },
-{
-    collection: 'MachineNotes'
-});
+    {
+        collection: 'MachineNotes'
+    });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);
@@ -25,9 +28,9 @@ docSchema.add(baseSchema.docAuditSchema);
 
 docSchema.plugin(uniqueValidator);
 
-docSchema.index({"machine":1})
-docSchema.index({"isActive":1})
-docSchema.index({"isArchived":1})
+docSchema.index({ "machine": 1 })
+docSchema.index({ "isActive": 1 })
+docSchema.index({ "isArchived": 1 })
 
 
 module.exports = mongoose.model('MachineNote', docSchema);

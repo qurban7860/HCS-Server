@@ -160,6 +160,9 @@ function getDocumentFromReq(req, reqType) {
     doc.note = note;
   }
 
+  if ("isInternal" in req.body) {
+    doc.isInternal = isInternal;
+  }
 
   if ("isActive" in req.body) {
     doc.isActive = isActive;
