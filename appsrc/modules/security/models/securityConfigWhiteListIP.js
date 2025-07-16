@@ -6,12 +6,15 @@ const baseSchema = require('../../../base/baseSchema');
 
 const Schema = mongoose.Schema;
 const docSchema = new Schema({
-        whiteListIP: { type: String, required: true},
-        // list of white IPs
+        ipAddress: { type: String, required: true },
+        customer: { type: Schema.ObjectId, ref: 'Customer', required: true },
+        user: { type: Schema.ObjectId, ref: 'SecurityUser', required: true },
+        Application: { type: String, required: true },
+        description: { type: String },
 },
-{
-        collection: 'SecurityConfigWhiteListIPs'
-});
+        {
+                collection: 'SecurityConfigWhiteListIPs'
+        });
 
 docSchema.set('timestamps', true);
 docSchema.add(baseSchema.docVisibilitySchema);

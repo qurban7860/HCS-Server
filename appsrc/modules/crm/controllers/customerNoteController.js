@@ -145,8 +145,7 @@ exports.patchCustomerNote = async (req, res, next) => {
 };
 
 function getDocumentFromReq(req, reqType) {
-  const { site, contact, user, note, isInternal,
-    isActive, isArchived, loginUser } = req.body;
+  const { site, contact, user, note, isInternal, isActive, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
