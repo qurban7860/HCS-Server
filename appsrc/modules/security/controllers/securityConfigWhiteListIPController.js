@@ -150,7 +150,7 @@ exports.patchSecurityConfigWhiteListIP = async (req, res, next) => {
 
 function getDocumentFromReq(req, reqType) {
   const { loginUser } = req.body;
-  const allowedFields = ["ipAddress", "customer", "user", "Application", "description", "isActive", "isArchived"]
+  const allowedFields = ["ipAddress", "customer", "user", "application", "description", "isActive", "isArchived"]
   const doc = reqType === "new" ? new Ticket({}) : {};
 
   allowedFields.forEach((f) => {
