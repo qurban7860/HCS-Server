@@ -168,7 +168,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
 async function removeSessions(userId) {
   await Promise.all([
     SecuritySession.deleteMany({ "session.user": userId }),
-    SecuritySession.deleteMany({ "session.user": { $exists: false } }),
+    // SecuritySession.deleteMany({ "session.user": { $exists: false } }),
     SecurityUser.updateOne({ _id: userId }, { token: {} })
   ]);
 

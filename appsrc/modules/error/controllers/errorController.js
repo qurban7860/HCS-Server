@@ -45,6 +45,7 @@ exports.postError = async (req, res, next) => {
     const response = await this.dbservice.postObject(getDoc(req, 'new'));
     res.status(StatusCodes.CREATED).json({ Error: response });
   } catch (error) {
+    console.log({ error })
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
   }
@@ -74,7 +75,7 @@ function getDoc(req, reqType) {
   const { loginUser } = req.body;
   const doc = reqType === "new" ? new Error({}) : {};
 
-  const allowedFields = ["subject", "code", "slug", "description", "isActive", "isArchived"];
+  const allowedFields = ["subject", "internalCode", "userCode", "slug", "description", "isActive", "isArchived"];
 
   allowedFields.forEach((f) => {
     if (f in req.body) {

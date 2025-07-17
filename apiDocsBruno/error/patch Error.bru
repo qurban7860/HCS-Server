@@ -1,0 +1,21 @@
+meta {
+  name: patch Error
+  type: http
+  seq: 5
+}
+
+patch {
+  url: {{baseUrl}}/error/6878ac97caa0f99baaa88786
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+    "name": "Damaged"
+  }
+}
