@@ -8,7 +8,6 @@ const docSchema = new Schema({
     internalCode: { type: Number, required: true },
     userCode: { type: Number, required: true },
     slug: { type: String, required: true },
-    userMessage: { type: String },
     description: { type: String },
 },
     {

@@ -8,7 +8,7 @@ const Schema = mongoose.Schema;
 const docSchema = new Schema({
         ipAddress: { type: String, required: true },
         customer: { type: Schema.ObjectId, ref: 'Customer', required: true },
-        user: { type: Schema.ObjectId, ref: 'SecurityUser', required: true },
+        user: { type: Schema.ObjectId, ref: 'SecurityUser' },
         application: { type: String, required: true },
         description: { type: String },
 },
