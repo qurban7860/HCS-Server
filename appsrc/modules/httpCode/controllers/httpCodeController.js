@@ -2,9 +2,9 @@ const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-let errorDBService = require('../service/errorDBService')
+let errorDBService = require('../service/httpCodeDBService')
 this.dbservice = new errorDBService();
-const { Error } = require('../models');
+const { HttpCode } = require('../models');
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
@@ -15,9 +15,9 @@ this.populate = [
   { path: 'updatedBy', select: 'name' }
 ];
 
-exports.getError = async (req, res, next) => {
+exports.getHttpCode = async (req, res, next) => {
   try {
-    const response = await this.dbservice.getObjectById(Error, this.fields, req.params.id, this.populate);
+    const response = await this.dbservice.getObjectById(HttpCode, this.fields, req.params.id, this.populate);
     res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -25,14 +25,14 @@ exports.getError = async (req, res, next) => {
   }
 };
 
-exports.getErrors = async (req, res, next) => {
+exports.getHttpCodes = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
       delete this.query.orderBy;
     }
-    let response = await this.dbservice.getObjectList(req, Error, this.fields, this.query, this.orderBy, this.populate);
+    let response = await this.dbservice.getObjectList(req, HttpCode, this.fields, this.query, this.orderBy, this.populate);
     return res.json(response);
   } catch (error) {
     logger.error(new Error(error));
@@ -40,10 +40,10 @@ exports.getErrors = async (req, res, next) => {
   }
 };
 
-exports.postError = async (req, res, next) => {
+exports.postHttpCode = async (req, res, next) => {
   try {
     const response = await this.dbservice.postObject(getDoc(req, 'new'));
-    res.status(StatusCodes.CREATED).json({ Error: response });
+    res.status(StatusCodes.CREATED).json({ HttpCode: response });
   } catch (error) {
     console.log({ error })
     logger.error(new Error(error));
@@ -51,9 +51,9 @@ exports.postError = async (req, res, next) => {
   }
 };
 
-exports.patchError = async (req, res, next) => {
+exports.patchHttpCode = async (req, res, next) => {
   try {
-    const result = await this.dbservice.patchObject(Error, req.params.id, getDoc(req));
+    const result = await this.dbservice.patchObject(HttpCode, req.params.id, getDoc(req));
     res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -61,9 +61,9 @@ exports.patchError = async (req, res, next) => {
   }
 };
 
-exports.deleteError = async (req, res, next) => {
+exports.deleteHttpCode = async (req, res, next) => {
   try {
-    const result = await this.dbservice.deleteObject(Error, req.params.id);
+    const result = await this.dbservice.deleteObject(HttpCode, req.params.id);
     res.status(StatusCodes.OK).send(rtnMsg.recordDelMessage(StatusCodes.OK, result));
   } catch (error) {
     logger.error(new Error(error));
@@ -73,7 +73,7 @@ exports.deleteError = async (req, res, next) => {
 
 function getDoc(req, reqType) {
   const { loginUser } = req.body;
-  const doc = reqType === "new" ? new Error({}) : {};
+  const doc = reqType === "new" ? new HttpCode({}) : {};
 
   const allowedFields = ["subject", "internalCode", "userCode", "slug", "description", "isActive", "isArchived"];
 

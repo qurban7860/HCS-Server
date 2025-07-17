@@ -1,11 +1,11 @@
 meta {
-  name: post Error
+  name: patch Http Code
   type: http
   seq: 4
 }
 
-post {
-  url: {{baseUrl}}/error/
+patch {
+  url: {{baseUrl}}/httpCode/6878ac97caa0f99baaa88786
   body: json
   auth: bearer
 }
@@ -16,11 +16,12 @@ auth:bearer {
 
 body:json {
   {
-      "subject": "Customer is not authorized",
+      "subject": "Customer is not authorized updated",
       "internalCode": 470,
       "userCode": 470,
       "slug": "userMissing",
       "userMessage": "Not authorised",
-      "description": "it's for checking the user if user exist!"
+      "description": "it's for checking the user if user exist!",
+      "isArchived": true
   }
 }
