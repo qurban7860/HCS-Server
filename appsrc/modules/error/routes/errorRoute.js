@@ -9,8 +9,8 @@ const router = express.Router();
 router.use(checkAuth);
 
 // - /api/1.0.0/error/
-router.get(`/`, controller.getError);
-router.get(`/:id`, controller.getErrors);
+router.get(`/`, controller.getErrors);
+router.get(`/:id`, controller.getError);
 router.post(`/`, controller.postError);
 router.patch(`/:id`, controller.patchError);
 router.delete(`/:id`, verifyDelete, controller.deleteError);

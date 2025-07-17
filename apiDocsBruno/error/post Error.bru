@@ -1,0 +1,26 @@
+meta {
+  name: post Error
+  type: http
+  seq: 4
+}
+
+post {
+  url: {{baseUrl}}/error/
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{token}}
+}
+
+body:json {
+  {
+      "subject": "Customer is not authorized",
+      "internalCode": 470,
+      "userCode": 470,
+      "slug": "userMissing",
+      "userMessage": "Not authorised",
+      "description": "it's for checking the user if user exist!"
+  }
+}
