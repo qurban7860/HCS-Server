@@ -107,40 +107,35 @@ exports.deleteCustomerNote = async (req, res, next) => {
 };
 
 exports.postCustomerNote = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    this.dbservice.postObject(getDocumentFromReq(req, 'new'), callbackFunc);
-    function callbackFunc(error, response) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.CREATED).json({ CustomerNote: response });
-      }
-    }
+  try {
+    this.customer = req.params.customerId;
+    this.query = { customer: this.customer, isActive: true, isArchived: false };
+    const note = await this.dbservice.simplePostObject(getDocumentFromReq(req, 'new'));
+    const notesList = await this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate);
+    res.status(StatusCodes.ACCEPTED).json({ note, notesList });
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+      //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+    );
   }
 };
 
 exports.patchCustomerNote = async (req, res, next) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-  } else {
-    this.dbservice.patchObject(CustomerNote, req.params.id, getDocumentFromReq(req), callbackFunc);
-    function callbackFunc(error, result) {
-      if (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
-          //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-        );
-      } else {
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-      }
-    }
+  try {
+    this.customer = req.params.customerId;
+    this.query = { customer: this.customer, isActive: true, isArchived: false };
+    const note = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+    const notesList = await this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate);
+    res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, {
+      note,
+      notesList
+    }));
+  } catch (error) {
+    logger.error(new Error(error));
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
+      //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
+    );
   }
 };
 

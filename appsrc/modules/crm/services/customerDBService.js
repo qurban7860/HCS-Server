@@ -11,7 +11,7 @@ class CustomerService {
   }
 
   async getObject(model, query, populate, callback) {
-    if(callback){
+    if (callback) {
       this.db.getObject(model, query, populate, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
@@ -23,20 +23,20 @@ class CustomerService {
   }
 
   async getObjectById(model, fields, id, populate, callback) {
-    if(callback) {
+    if (callback) {
       this.db.getObjectById(model, fields, id, populate, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
         else callback(null, response);
       }
     } else {
-      return await this.db.getObjectById(model, fields, id, populate); 
+      return await this.db.getObjectById(model, fields, id, populate);
     }
 
   }
 
   async getObjectList(req, model, fields, query, orderBy, populate, callback) {
-    if(callback){
+    if (callback) {
       this.db.getObjectList(req, model, fields, query, orderBy, populate, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
@@ -48,7 +48,7 @@ class CustomerService {
   };
 
   async getObjectListWithAggregate(model, aggregate, params, callback) {
-    if(callback) {
+    if (callback) {
       this.db.getObjectListWithAggregate(model, aggregate, params, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
@@ -61,7 +61,7 @@ class CustomerService {
   };
 
   async deleteObject(model, id, res, callback) {
-    if(callback) {
+    if (callback) {
       this.db.deleteObject(model, id, res, callbackFunc);
       function callbackFunc(error, response) {
         if (error) callback(error, {});
@@ -105,8 +105,8 @@ class CustomerService {
             }
           }
         } else {
-          if(newdocument?.isTechnicalContactSameAsBillingContact)
-          newdocument.primaryTechnicalContact = newdocument.primaryBillingContact;
+          if (newdocument?.isTechnicalContactSameAsBillingContact)
+            newdocument.primaryTechnicalContact = newdocument.primaryBillingContact;
           callback(null, newdocument);
         }
       }.bind(this),
@@ -138,15 +138,17 @@ class CustomerService {
     }.bind(this));
   }
 
-
+  async simplePostObject(document) {
+    return await this.db.postObject(document);
+  };
 
   async patchObject(model, id, newValues, callback) {
-    if(callback){
+    if (callback) {
       this.db.patchObject(model, id, newValues, callbackFunc);
       function callbackFunc(error, result) {
         if (error) callback(error, {});
         else callback(null, result);
-      }  
+      }
     } else {
       return await this.db.patchObject(model, id, newValues);
     }
