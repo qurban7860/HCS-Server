@@ -123,9 +123,12 @@ exports.postCustomerNote = async (req, res, next) => {
 
 exports.patchCustomerNote = async (req, res, next) => {
   try {
+    if (req.body.isArchived) {
+      req.body.isActive = false;
+    }
     this.customer = req.params.customerId;
     this.query = { customer: this.customer, isActive: true, isArchived: false };
-    const note = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
+    const note = await this.dbservice.patchObject(CustomerNote, req.params.id, getDocumentFromReq(req, 'new'));
     const notesList = await this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate);
     res.status(StatusCodes.ACCEPTED).json({ note, notesList });
   } catch (error) {
