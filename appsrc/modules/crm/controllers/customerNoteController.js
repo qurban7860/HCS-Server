@@ -127,10 +127,7 @@ exports.patchCustomerNote = async (req, res, next) => {
     this.query = { customer: this.customer, isActive: true, isArchived: false };
     const note = await this.dbservice.postObject(getDocumentFromReq(req, 'new'));
     const notesList = await this.dbservice.getObjectList(req, CustomerNote, this.fields, this.query, this.orderBy, this.populate);
-    res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, {
-      note,
-      notesList
-    }));
+    res.status(StatusCodes.ACCEPTED).json({ note, notesList });
   } catch (error) {
     logger.error(new Error(error));
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
