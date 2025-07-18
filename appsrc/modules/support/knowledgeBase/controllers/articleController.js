@@ -104,6 +104,10 @@ exports.patchArticle = async (req, res) => {
     }
   }
 
+  if (req.body?.isArchived) {
+    req.body.isActive = false;
+  }
+
   try {
     const result = await this.dbservice.patchObject(Article, req.params.id, getArticleFromReq(req, "update"));
     res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
