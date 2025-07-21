@@ -24,6 +24,7 @@ this.populate = [
 
 
 this.populateList = [
+  { path: 'httpCode', select: 'subject internalCode slug' },
   {
     path: 'user', select: 'name email login customer contact roles',
     populate: [
