@@ -15,7 +15,7 @@ const router = express.Router();
 
 const baseRouteForObject = `/machines/:machineId/notes`;
 
-router.use(checkAuth, checkCustomer);
+router.use(checkAuth);
 
 router.get(`${baseRouteForObject}`, checkProductID, controller.getProductNotes);
 
