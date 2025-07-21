@@ -38,13 +38,13 @@ this.populate = [
 ];
 
 exports.login = async (req, res, next) => {
+  const isClientPage = req.headers['x-client-page'];
   const errors = validationResult(req);
   const clientIP = req.headers['x-forwarded-for']?.split(',').shift() || req.socket?.remoteAddress;
   var _this = this;
 
   if (!errors.isEmpty()) {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-
   } else {
     if (process.env.RECAPCHA_SECRET_KEY) {
       await validateRecaptcha({ req, res })
@@ -94,7 +94,7 @@ exports.login = async (req, res, next) => {
           ) {
             let blockedCustomer = await SecurityConfigBlockedCustomer.findOne({ blockedCustomer: existingUser.customer._id, isActive: true, isArchived: false });
             if (blockedCustomer) {
-              const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP);
+              const securityLogs = await addAccessLog('blockedCustomer', req.body.email, existingUser._id, clientIP, null, isClientPage ? 'adminPortal' : 'APIaccess');
               dbService.postObject(securityLogs, callbackFunc);
               async function callbackFunc(error, response) {
                 if (error) {
@@ -105,7 +105,7 @@ exports.login = async (req, res, next) => {
             } else {
               let blockedUser = await SecurityConfigBlockedUser.findOne({ blockedUser: existingUser._id, isActive: true, isArchived: false });
               if (blockedUser) {
-                securityLogs = await addAccessLog('blockedUser', req.body.email, existingUser._id, clientIP);
+                securityLogs = await addAccessLog('blockedUser', req.body.email, existingUser._id, clientIP, null, isClientPage ? 'adminPortal' : 'APIaccess');
                 dbService.postObject(securityLogs, callbackFunc);
                 async function callbackFunc(error, response) {
                   if (error) {
@@ -169,7 +169,7 @@ exports.login = async (req, res, next) => {
                 }
               }
 
-              const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP);
+              const securityLogs = await addAccessLog('invalidCredentials', req.body.email, existingUser._id, clientIP, null, isClientPage ? 'adminPortal' : 'APIaccess');
               dbService.postObject(securityLogs, callbackFunc);
               async function callbackFunc(error, response) {
                 if (error) {
@@ -185,9 +185,9 @@ exports.login = async (req, res, next) => {
           else {
             let securityLogs = null;
             if (existingUser) {
-              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser);
+              securityLogs = await addAccessLog('existsButNotAuth', req.body.email, existingUser._id, clientIP, existingUser, isClientPage ? 'adminPortal' : 'APIaccess');
             } else {
-              securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP);
+              securityLogs = await addAccessLog('invalidRequest', req.body.email, null, clientIP, null, isClientPage ? 'adminPortal' : 'APIaccess');
             }
             dbService.postObject(securityLogs, callbackFunc);
             async function callbackFunc(error, response) {
@@ -207,7 +207,7 @@ exports.login = async (req, res, next) => {
         }
       }
     } else {
-      const securityLogs = await addAccessLog('invalidIPs', req.body.email, null, clientIP);
+      const securityLogs = await addAccessLog('invalidIPs', req.body.email, null, clientIP, null, isClientPage ? 'adminPortal' : 'APIaccess');
       dbService.postObject(securityLogs, callbackFunc);
       async function callbackFunc(error, response) {
         if (error) {
@@ -407,7 +407,7 @@ exports.verifyForgottenPassword = async (req, res, next) => {
 
 async function validateAndLoginUser(req, res, existingUser) {
   try {
-
+    const isClientPage = req.headers['x-client-page'];
     const accessToken = await issueToken({
       userId: existingUser._id,
       email: existingUser.login,
@@ -446,7 +446,9 @@ async function validateAndLoginUser(req, res, existingUser) {
       "login",
       req.body.email,
       existingUser._id,
-      (req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress)
+      (req.headers["x-forwarded-for"]?.split(",").shift() || req.socket?.remoteAddress),
+      null,
+      isClientPage ? 'adminPortal' : 'APIaccess'
     );
     await dbService.postObject(loginLogResponse);
 

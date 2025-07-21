@@ -178,7 +178,7 @@ exports.patchSignInLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { requestedLogin, user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
+  const { requestedLogin, loginSource, user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
 
   let doc = {};
 
@@ -186,9 +186,12 @@ function getDocumentFromReq(req, reqType) {
     doc = new SecuritySignInLog({});
   }
 
-
   if ("requestedLogin" in req.body) {
     doc.requestedLogin = requestedLogin;
+  }
+
+  if ("loginSource" in req.body) {
+    doc.loginSource = loginSource;
   }
 
   if ("user" in req.body) {
