@@ -11,7 +11,7 @@ const docSchema = new Schema({
     description: { type: String },
 },
     {
-        collection: 'Errors'
+        collection: 'HttpCode'
     });
 
 docSchema.set('timestamps', true);
@@ -23,4 +23,4 @@ docSchema.index({ "isArchived": 1 })
 
 docSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model('Errors', docSchema);
+module.exports = mongoose.model('HttpCodes', docSchema);
