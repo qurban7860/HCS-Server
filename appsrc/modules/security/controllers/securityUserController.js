@@ -599,14 +599,23 @@ async function getDocumentFromReq(req, reqType) {
   //   doc.invitationStatus = invitationStatus;
   // }
 
-  if (customer) {
-    const customerId = typeof customer === 'string' ? customer : customer?._id;
-    const uniqueCustomers = new Set(doc.customers || []);
-    if (typeof customerId === 'string' && !uniqueCustomers.has(customerId)) {
-      uniqueCustomers.add(customerId);
-      doc.customers = Array.from(uniqueCustomers);
+  let allCustomerIds = [];
+
+  // Include "customers" array from req.body
+  if (Array.isArray(req.body.customers)) {
+    allCustomerIds = req.body.customers.map(c => typeof c === 'string' ? c : c?._id?.toString?.()).filter(Boolean);
+  }
+
+  // Include single "customer" field
+  if (req.body.customer) {
+    const customerId = typeof req.body.customer === 'string' ? req.body.customer : req.body.customer?._id?.toString?.();
+    if (customerId) {
+      allCustomerIds.push(customerId);
     }
   }
+
+  // Deduplicate and assign
+  doc.customers = Array.from(new Set(allCustomerIds));
 
   if ("loginUser" in req.body) {
     if (reqType === "new" || reqType === "invite") {
