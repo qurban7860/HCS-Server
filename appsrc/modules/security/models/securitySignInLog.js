@@ -20,7 +20,7 @@ const docSchema = new Schema({
     loginIP: { type: String },
 
     statusCode: { type: Number },
-
+    loginSource: { type: String },
     httpCode: { type: Schema.Types.ObjectId, ref: 'HttpCode' },
 
     loggedOutBy: { type: String, enum: ["SYSTEM", "ADMIN", "SELF"] }

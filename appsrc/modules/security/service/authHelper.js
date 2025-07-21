@@ -120,7 +120,7 @@ async function updateUserToken(accessToken) {
   }
 }
 
-async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo) {
+async function addAccessLog(actionType, requestedLogin, userID, ip = null, userInfo, loginSource) {
   let existsButNotAuthCode = 470;
   if (userInfo && !_.isEmpty(userInfo) && actionType == 'existsButNotAuth') {
     const isValidRole = userInfo.roles.some(role => role.isActive === true && role.isArchived === false);
@@ -136,6 +136,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
       requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
+      loginSource,
       statusCode: 200
     };
   } else if (actionType == 'invalidCredentials' || actionType == 'blockedCustomer' || actionType == 'blockedUser'
@@ -144,6 +145,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
       requestedLogin: requestedLogin,
       user: userID,
       loginIP: ip,
+      loginSource,
       statusCode: actionType == 'invalidCredentials' ? 461 : //Only password issue
         actionType == 'blockedCustomer' ? 462 :
           actionType == 'blockedUser' ? 463 :
@@ -153,6 +155,7 @@ async function addAccessLog(actionType, requestedLogin, userID, ip = null, userI
     var signInLog = {
       requestedLogin: requestedLogin,
       loginIP: ip,
+      loginSource,
       statusCode: actionType == 'invalidIPs' ? 464 :
         actionType == 'invalidRequest' ? 465 : 470
     };
