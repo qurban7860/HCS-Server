@@ -281,6 +281,7 @@ exports.getTicketSettings = async (req, res, next) => {
       issueTypes,
       requestTypes,
       priorities,
+      statusTypes,
       statuses,
       faults
     ] = await Promise.all([
@@ -291,6 +292,7 @@ exports.getTicketSettings = async (req, res, next) => {
       this.dbservice.getObjectList(req, TicketIssueType, this.settingFields, this.query, this.orderBy),
       this.dbservice.getObjectList(req, TicketRequestType, this.settingFields, this.query, this.orderBy, requestTypePopulate),
       this.dbservice.getObjectList(req, TicketPriority, this.settingFields, this.query, this.orderBy),
+      this.dbservice.getObjectList(req, TicketStatusType, this.settingFields, this.query, this.orderBy),
       this.dbservice.getObjectList(req, TicketStatus, this.settingFields, this.query, this.orderBy, statusPopulate),
       this.dbservice.getObjectList(req, TicketFault, this.settingFields, this.query, this.orderBy),
     ]);
@@ -303,6 +305,7 @@ exports.getTicketSettings = async (req, res, next) => {
       issueTypes,
       requestTypes,
       priorities,
+      statusTypes,
       statuses,
       faults
     }
