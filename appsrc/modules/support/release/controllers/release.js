@@ -62,10 +62,10 @@ exports.postRelease = async (req, res) => {
     return res.status(StatusCodes.BAD_REQUEST).send('Invalid project ID.');
   }
 
-  const exists = await this.dbservice.isExists(Release, { name: req.body.name });
-  if (exists) {
-    return res.status(StatusCodes.BAD_REQUEST).send('Release Name already exists.');
-  }
+  // const exists = await this.dbservice.isExists(Release, { name: req.body.name });
+  // if (exists) {
+  //   return res.status(StatusCodes.BAD_REQUEST).send('Release Name already exists.');
+  // }
 
   try {
     const releaseNumber = await CounterController.getPaddedCounterSequence('release');
@@ -91,12 +91,12 @@ exports.patchRelease = async (req, res) => {
     }
   }
 
-  if("name" in req.body){
-    const exists = await this.dbservice.isExists(Release, { name: req.body.name, _id: { $ne: req.params.id } });
-    if (exists) {
-      return res.status(StatusCodes.BAD_REQUEST).send('Release Name already exists.');
-    }
-  }
+  // if("name" in req.body){
+  //   const exists = await this.dbservice.isExists(Release, { name: req.body.name, _id: { $ne: req.params.id } });
+  //   if (exists) {
+  //     return res.status(StatusCodes.BAD_REQUEST).send('Release Name already exists.');
+  //   }
+  // }
 
   try {
     const result = await this.dbservice.patchObject(Release, req.params.id, getReleaseFromReq(req, "update"));
