@@ -1,6 +1,5 @@
 const express = require('express');
 const { check } = require('express-validator');
-
 const checkAuth = require('../../../../middleware/check-auth');
 const roleCheck = require('../../../../middleware/role-check');
 const verifyDelete = require('../../../../middleware/verifyDelete');
@@ -11,15 +10,16 @@ const controller = controllers.customerController;
 
 const router = express.Router();
 
-//  - base route for module
 // - /api/1.0.0/crm/
 const baseRouteForObject = `/customers`;
-
 
 router.use(checkAuth, roleCheck);
 
 // - /api/1.0.0/crm/sites/export
 router.get(`${baseRouteForObject}/export`, controller.exportCustomersJSONForCSV);
+
+// - /api/1.0.0/crm/customers/light
+router.get(`${baseRouteForObject}/light`, controller.getLightCustomers);
 
 // - /api/1.0.0/crm/customers/get/:flag/:id
 router.get(`${baseRouteForObject}/:id`, checkIDs(validate.idAndCustomer), controller.getCustomer);
