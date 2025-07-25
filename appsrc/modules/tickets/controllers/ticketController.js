@@ -344,7 +344,12 @@ exports.getTickets = async (req, res, next) => {
       delete this.query.isResolved
       delete this.query.statusType
     }
-
+      if(Array.isArray(this.query?.assignees) && this.query?.assignees?.length > 0 ){
+        this.query.assignees = { $in: this.query.assignees?.map( a => ObjectId(a) )}
+      }
+      if(Array.isArray(this.query?.faults) && this.query?.faults?.length > 0 ){
+        this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
+      }
     const finalQuery = await applyTicketFilter(req);
     if (finalQuery) {
       this.query = {
@@ -352,7 +357,7 @@ exports.getTickets = async (req, res, next) => {
         ...finalQuery
       }
     }
-
+    
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
