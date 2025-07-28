@@ -5,6 +5,7 @@ const { Region } = require('../regions/models');
 const { Country } = require('../config/models');
 
 async function processUserRoles(req) {
+  
   if (!req.query.unfiltered) {
     if (
       !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
