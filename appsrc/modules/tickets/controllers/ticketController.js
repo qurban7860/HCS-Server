@@ -23,7 +23,6 @@ const {
 } = require('../models');
 const { SecurityUser, SecurityRole } = require('../../security/models');
 const { Config } = require('../../config/models');
-const applyTicketFilter = require('../utils/ticketFilter');
 const getDateFromUnitAndValue = require('../utils/getDateFromUnit');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
@@ -31,6 +30,8 @@ const { statusPopulate } = require('./statusController');
 const { requestTypePopulate } = require('./requestTypeController');
 const { getDefaultTicketFaults } = require('./faultController');
 const TicketEmailService = require('../service/ticketEmailService');
+const processUserRoles = require('../../utils/processUserRoles');
+
 this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -80,15 +81,16 @@ this.settingFields = "name issueType slug icon color description isDefault isRes
 
 exports.getTicket = async (req, res, next) => {
   try {
+
     this.query = req.query != "undefined" ? req.query : {};
-    this.query._id = req.params.id;
-    const finalQuery = await applyTicketFilter(req);
+    const finalQuery = await processUserRoles(req);
     if (finalQuery) {
       this.query = {
         ...this.query,
         ...finalQuery
       }
     }
+    this.query._id = req.params.id;
     let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
 
     if (Array.isArray(result.files) && result.files.length > 0) {
@@ -350,13 +352,15 @@ exports.getTickets = async (req, res, next) => {
       if(Array.isArray(this.query?.faults) && this.query?.faults?.length > 0 ){
         this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
       }
-    const finalQuery = await applyTicketFilter(req);
+    const finalQuery = await applyUserFilter(req);
     if (finalQuery) {
       this.query = {
         ...this.query,
         ...finalQuery
       }
     }
+    
+    logger.info("finalQuery::::::::",finalQuery, this.query)
     
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
