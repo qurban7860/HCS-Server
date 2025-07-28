@@ -33,6 +33,7 @@ const customerRoutes = require('../crm/routes');
 const dashboardRoute = require('../dashboard/routes');
 const documentRoute = require('../documents/routes');
 const emailRoute = require('../email/routes');
+const httpCodeRoute = require('../httpCode/routes');
 const regionRoute = require('../regions/routes');
 const calenderRoute = require('../calenders/routes');
 const apiclientRoute = require('../apiclient/routes');
@@ -151,6 +152,7 @@ class App {
     projectRoute.registerProjectRoutes(this.app, apiPath);
     releaseRoute.registerReleaseRoutes(this.app, apiPath);
     emailRoute.registerEmailRoutes(this.app, apiPath);
+    httpCodeRoute.registerHttpCodeRoutes(this.app, apiPath);
     regionRoute.registerRegionRoutes(this.app, apiPath);
     calenderRoute.registerEventRoutes(this.app, apiPath);
     apiclientRoute.registerapiClientRoutes(this.app, apiPath);

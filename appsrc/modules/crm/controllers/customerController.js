@@ -167,8 +167,6 @@ exports.getCustomers = async (req, res, next) => {
   }
 
   delete req.query.unfiltered;
-
-  //TODO: to remove this in feature.
   req.body.pageSize = 2000;
   this.dbservice.getObjectList(req, Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
@@ -178,6 +176,31 @@ exports.getCustomers = async (req, res, next) => {
     } else {
       res.json(response);
     }
+  }
+};
+
+exports.getLightCustomers = async (req, res, next) => {
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    this.orderBy = { name: 1 };
+    if (this.query.orderBy) {
+      this.orderBy = this.query.orderBy;
+      delete this.query.orderBy;
+    }
+
+    const finalQuery = await applyUserFilter(req);
+
+    if (finalQuery) {
+      this.query = {
+        ...this.query,
+        ...finalQuery
+      }
+    }
+    delete req.query.unfiltered;
+    const result = await this.dbservice.getObjectList(req, Customer, '_id, name', this.query, this.orderBy);
+    res.json(result);
+  } catch (error) {
+    return res.status(error?.code || StatusCodes.BAD_REQUEST).send(error?.message || getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 

@@ -147,7 +147,7 @@ function broadcastNotes(machine, notes) {
 }
 
 function getDocumentFromReq(req, reqType) {
-  const { note, isActive, isArchived, loginUser } = req.body;
+  const { note, isActive, isInternal, isArchived, loginUser } = req.body;
 
   let doc = {};
   if (reqType && reqType == "new") {
@@ -160,6 +160,9 @@ function getDocumentFromReq(req, reqType) {
     doc.note = note;
   }
 
+  if ("isInternal" in req.body) {
+    doc.isInternal = isInternal;
+  }
 
   if ("isActive" in req.body) {
     doc.isActive = isActive;

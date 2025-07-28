@@ -24,6 +24,7 @@ this.populate = [
 
 
 this.populateList = [
+  // { path: 'httpCode', select: 'subject internalCode slug' },
   {
     path: 'user', select: 'name email login customer contact roles',
     populate: [
@@ -178,7 +179,7 @@ exports.patchSignInLog = async (req, res, next) => {
 
 
 function getDocumentFromReq(req, reqType) {
-  const { requestedLogin, user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
+  const { requestedLogin, loginSource, user, loginTime, logoutTime, loginIP, loggedOutBy, statusCode, considerLog } = req.body;
 
   let doc = {};
 
@@ -186,9 +187,12 @@ function getDocumentFromReq(req, reqType) {
     doc = new SecuritySignInLog({});
   }
 
-
   if ("requestedLogin" in req.body) {
     doc.requestedLogin = requestedLogin;
+  }
+
+  if ("loginSource" in req.body) {
+    doc.loginSource = loginSource;
   }
 
   if ("user" in req.body) {

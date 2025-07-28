@@ -268,8 +268,6 @@ exports.patchSecurityUser = async (req, res, next) => {
     res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
   } else {
     if (ObjectId.isValid(req.params.id)) {
-      let loginUser = await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
-      // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
       let hasSuperAdminRole = false;
       if (req.body.loginUser?.roleTypes?.includes("SuperAdmin") ||
         req.body.loginUser?.roleTypes?.includes("Developer")) {
@@ -280,8 +278,6 @@ exports.patchSecurityUser = async (req, res, next) => {
         // if admin is updating password
         if (req.body.isAdmin) {
           if (req.body.loginUser.userId) {
-            // let loginUser =  await this.dbservice.getObjectById(SecurityUser, this.fields, req.body.loginUser.userId, this.populate);
-            // const hasSuperAdminRole = loginUser.roles.some(role => role.roleType === 'SuperAdmin');
             if (!hasSuperAdminRole) {
               return res.status("Only superadmins are allowed to access this feature");
             }
@@ -315,6 +311,9 @@ exports.patchSecurityUser = async (req, res, next) => {
       } else {
         // delete(archive) user
         if ("isArchived" in req.body) {
+          if (req.body?.isArchived) {
+            req.body.isActive = false
+          }
           let user = await SecurityUser.findById(req.params.id);
           if (!(_.isEmpty(user))) {
             if (req.body.loginUser?.userId == user._id || !hasSuperAdminRole) {
@@ -600,14 +599,23 @@ async function getDocumentFromReq(req, reqType) {
   //   doc.invitationStatus = invitationStatus;
   // }
 
-  if (customer) {
-    const customerId = typeof customer === 'string' ? customer : customer?._id;
-    const uniqueCustomers = new Set(doc.customers || []);
-    if (typeof customerId === 'string' && !uniqueCustomers.has(customerId)) {
-      uniqueCustomers.add(customerId);
-      doc.customers = Array.from(uniqueCustomers);
+  let allCustomerIds = [];
+
+  // Include "customers" array from req.body
+  if (Array.isArray(req.body.customers)) {
+    allCustomerIds = req.body.customers.map(c => typeof c === 'string' ? c : c?._id?.toString?.()).filter(Boolean);
+  }
+
+  // Include single "customer" field
+  if (req.body.customer) {
+    const customerId = typeof req.body.customer === 'string' ? req.body.customer : req.body.customer?._id?.toString?.();
+    if (customerId) {
+      allCustomerIds.push(customerId);
     }
   }
+
+  // Deduplicate and assign
+  doc.customers = Array.from(new Set(allCustomerIds));
 
   if ("loginUser" in req.body) {
     if (reqType === "new" || reqType === "invite") {

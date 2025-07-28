@@ -1,10 +1,5 @@
 const { validationResult } = require('express-validator');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-const _ = require('lodash');
 const { ReasonPhrases, StatusCodes, getReasonPhrase, getStatusCode } = require('http-status-codes');
-var ObjectId = require('mongoose').Types.ObjectId;
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
@@ -14,20 +9,16 @@ this.dbservice = new securityDBService();
 
 const { SecurityConfigWhiteListIP } = require('../models');
 
-
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
 this.fields = {};
 this.query = {};
-this.orderBy = { createdAt: -1 };  
+this.orderBy = { createdAt: -1 };
 this.populate = [
-  {path: 'createdBy', select: 'name'},
-  {path: 'updatedBy', select: 'name'} 
-];
-
-
-this.populateList = [ 
-  {path: 'createdBy', select: 'name'}
+  { path: 'customer', select: 'name' },
+  { path: 'user', select: 'name' },
+  { path: 'createdBy', select: 'name' },
+  { path: 'updatedBy', select: 'name' }
 ];
 
 exports.searchSecurityConfigWhiteListIP = async (req, res, next) => {
@@ -40,8 +31,8 @@ exports.searchSecurityConfigWhiteListIP = async (req, res, next) => {
     this.query = req.query != "undefined" ? req.query : {};
     let searchName = this.query.name;
     delete this.query.name;
-    this.dbservice.getObjectList(req, SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
-    
+    this.dbservice.getObjectList(req, SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
+
     function callbackFunc(error, securityConfigs) {
 
       if (error) {
@@ -49,20 +40,20 @@ exports.searchSecurityConfigWhiteListIP = async (req, res, next) => {
         return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
       } else {
 
-        if(searchName) {
+        if (searchName) {
           let filterSecurityConfigWhiteListIPs = [];
-          
-          for(let securityConfig of securityConfigs) {
+
+          for (let securityConfig of securityConfigs) {
             let name = securityConfig.blockedUsers.name.toLowerCase();
-            if(name.search(searchName.toLowerCase())>-1) {
+            if (name.search(searchName.toLowerCase()) > -1) {
               filterSecurityConfigWhiteListIPs.push(securityConfig);
             }
           }
 
           securityConfigs = filterSecurityConfigWhiteListIPs;
 
-        } 
-        
+        }
+
         return res.status(StatusCodes.OK).json(securityConfigs);
       }
     }
@@ -86,7 +77,7 @@ exports.getSecurityConfigWhiteListIP = async (req, res, next) => {
 
 exports.getSecurityConfigWhiteListIPs = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  this.dbservice.getObjectList(req, SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
+  this.dbservice.getObjectList(req, SecurityConfigWhiteListIP, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
   function callbackFunc(error, response) {
     if (error) {
       logger.error(new Error(error));
@@ -148,7 +139,7 @@ exports.patchSecurityConfigWhiteListIP = async (req, res, next) => {
         logger.error(new Error(error));
         res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error
           //getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR)
-          );
+        );
       } else {
         res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
       }
@@ -157,28 +148,22 @@ exports.patchSecurityConfigWhiteListIP = async (req, res, next) => {
 };
 
 
-function getDocumentFromReq(req, reqType){
-  const { whiteListIP, loginUser, isActive, isArchived} = req.body;
+function getDocumentFromReq(req, reqType) {
+  const { loginUser } = req.body;
+  const allowedFields = ["ipAddress", "customer", "user", "application", "description", "isActive", "isArchived"]
+  const doc = reqType === "new" ? new SecurityConfigWhiteListIP({}) : {};
 
+  allowedFields.forEach((f) => {
+    if (f in req.body) {
+      if (req.body[f] === "null") {
+        doc[f] = null;
+      } else {
+        doc[f] = req.body[f];
+      }
+    }
+  });
 
-  let doc = {};
-  if (reqType && reqType == "new"){
-    doc = new SecurityConfigWhiteListIP({});
-  }
-
-  if ("whiteListIP" in req.body){
-    doc.whiteListIP = whiteListIP;
-  }
-
-  if ("isActive" in req.body){
-    doc.isActive = isActive;
-  }
-
-  if ("isArchived" in req.body){
-    doc.isArchived = isArchived;
-  }
-
-  if (reqType == "new" && "loginUser" in req.body ){
+  if (reqType == "new" && "loginUser" in req.body) {
     doc.createdBy = loginUser.userId;
     doc.updatedBy = loginUser.userId;
     doc.createdIP = loginUser.userIP;
@@ -186,7 +171,7 @@ function getDocumentFromReq(req, reqType){
   } else if ("loginUser" in req.body) {
     doc.updatedBy = loginUser.userId;
     doc.updatedIP = loginUser.userIP;
-  } 
+  }
 
   return doc;
 }

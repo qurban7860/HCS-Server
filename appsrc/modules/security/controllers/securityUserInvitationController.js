@@ -28,22 +28,22 @@ this.query = {};
 this.orderBy = { createdAt: -1 };
 this.populate = [
   { path: 'senderInvitationUser', select: 'name' },
+  { path: 'customer', select: 'name' },
+  { path: 'contact', select: 'firstName lastName' },
   { path: 'createdBy', select: 'name' },
   { path: 'updatedBy', select: 'name' }
 ];
 
 
 exports.getUserInvitation = async (req, res, next) => {
-  this.query = req.query != "undefined" ? req.query : {};
-  this.query._id = req.params.id;
-  this.dbservice.getObject(SecurityUserInvite, this.query, this.populate, callbackFunc);
-  function callbackFunc(error, response) {
-    if (error) {
-      logger.error(new Error(error));
-      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
-    } else {
-      res.json(response);
-    }
+  try {
+    this.query = req.query != "undefined" ? req.query : {};
+    this.query._id = req.params.id;
+    const response = await this.dbservice.getObject(SecurityUserInvite, this.query, this.populate);
+    return res.json(response);
+  } catch (error) {
+    logger.error(new Error(error));
+    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(getReasonPhrase(StatusCodes.INTERNAL_SERVER_ERROR));
   }
 };
 
@@ -61,27 +61,27 @@ exports.getUserInvitations = async (req, res, next) => {
 };
 
 
-  exports.patchUserInvitation = async (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
-    } else {
-      try {
-        const updateData = getDocumentFromReq(req);
-        
-        if (req.body.status === 'CANCELLED') {
-          updateData.invitationStatus = 'REVOKED';
-          updateData.statusUpdatedAt = new Date();
-        }
+exports.patchUserInvitation = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    res.status(StatusCodes.BAD_REQUEST).send(getReasonPhrase(StatusCodes.BAD_REQUEST));
+  } else {
+    try {
+      const updateData = getDocumentFromReq(req);
 
-        const result = await this.dbservice.patchObject(SecurityUserInvite, req.params.id, updateData);
-        res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
-      } catch (error) {
-        logger.error(new Error(error));
-        res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
+      if (req.body.status === 'CANCELLED') {
+        updateData.invitationStatus = 'REVOKED';
+        updateData.statusUpdatedAt = new Date();
       }
+
+      const result = await this.dbservice.patchObject(SecurityUserInvite, req.params.id, updateData);
+      res.status(StatusCodes.ACCEPTED).send(rtnMsg.recordUpdateMessage(StatusCodes.ACCEPTED, result));
+    } catch (error) {
+      logger.error(new Error(error));
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).send(error._message);
     }
-  };
+  }
+};
 
 exports.postUserInvite = async (req, res, next) => {
   try {
@@ -144,7 +144,7 @@ exports.resendUserInvite = async (req, res, next) => {
     }
 
     const invitation = await SecurityUserInvite.findById(req.params.id);
-    
+
     if (!invitation) {
       return res.status(StatusCodes.NOT_FOUND).send("Invitation not found!");
     }
