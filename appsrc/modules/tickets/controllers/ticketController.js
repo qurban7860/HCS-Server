@@ -363,8 +363,6 @@ exports.getTickets = async (req, res, next) => {
       this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
     }
     
-    logger.info('finalQuery',this.query.toString());
-    console.log('finalQuery',this.query)
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
   } catch (error) {
