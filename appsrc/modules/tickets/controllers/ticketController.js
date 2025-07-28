@@ -352,15 +352,13 @@ exports.getTickets = async (req, res, next) => {
       if(Array.isArray(this.query?.faults) && this.query?.faults?.length > 0 ){
         this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
       }
-    const finalQuery = await applyUserFilter(req);
+    const finalQuery = await processUserRoles(req);
     if (finalQuery) {
       this.query = {
         ...this.query,
         ...finalQuery
       }
     }
-    
-    logger.info("finalQuery::::::::",finalQuery, this.query)
     
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
