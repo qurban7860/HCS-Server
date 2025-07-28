@@ -331,7 +331,7 @@ exports.getTickets = async (req, res, next) => {
       }
     }
 
-    logger.info(this.query, roleBasedQuery);
+    logger.info(this.query.toString(), roleBasedQuery.toString());
 
     this.orderBy = { name: 1 };
     if (this.query.orderBy) {
@@ -365,7 +365,7 @@ exports.getTickets = async (req, res, next) => {
       this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
     }
     
-    logger.info('finalQuery',this.query);
+    logger.info('finalQuery',this.query.toString());
 
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
     return res.status(StatusCodes.OK).json(result);
