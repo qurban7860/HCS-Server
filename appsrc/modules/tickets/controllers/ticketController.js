@@ -23,7 +23,6 @@ const {
 } = require('../models');
 const { SecurityUser, SecurityRole } = require('../../security/models');
 const { Config } = require('../../config/models');
-const applyTicketFilter = require('../utils/ticketFilter');
 const getDateFromUnitAndValue = require('../utils/getDateFromUnit');
 const CounterController = require('../../counter/controllers/counterController');
 const { sentenceCase } = require('../../../configs/utils/change_string_case');
@@ -31,6 +30,8 @@ const { statusPopulate } = require('./statusController');
 const { requestTypePopulate } = require('./requestTypeController');
 const { getDefaultTicketFaults } = require('./faultController');
 const TicketEmailService = require('../service/ticketEmailService');
+const processUserRoles = require('../../utils/processUserRoles');
+
 this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
 
@@ -80,16 +81,18 @@ this.settingFields = "name issueType slug icon color description isDefault isRes
 
 exports.getTicket = async (req, res, next) => {
   try {
-    this.query = req.query != "undefined" ? req.query : {};
-    this.query._id = req.params.id;
-    const finalQuery = await applyTicketFilter(req);
-    if (finalQuery) {
-      this.query = {
-        ...this.query,
-        ...finalQuery
-      }
-    }
-    let result = await this.dbservice.getObject(Ticket, this.query, this.populate);
+
+    // this.query = req.query != "undefined" ? req.query : {};
+    // const finalQuery = await processUserRoles(req);
+    // if (finalQuery) {
+    //   this.query = {
+    //     ...this.query,
+    //     ...finalQuery
+    //   }
+    // }
+    // this.query._id = req.params.id;
+    
+    let result = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
     if (Array.isArray(result.files) && result.files.length > 0) {
       for (const file of result.files) {
@@ -320,6 +323,14 @@ exports.getTicketSettings = async (req, res, next) => {
 exports.getTickets = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
+    const roleBasedQuery = await processUserRoles(req);
+    if (roleBasedQuery) {
+      this.query = {
+        ...this.query,
+        ...roleBasedQuery
+      }
+    }
+
     this.orderBy = { name: 1 };
     if (this.query.orderBy) {
       this.orderBy = this.query.orderBy;
@@ -327,14 +338,14 @@ exports.getTickets = async (req, res, next) => {
     }
 
     if (this.query?.isResolved || this.query?.statusType || !this.query?.status) {
-      let query = { isActive: true, isArchived: false };
+      let statusQuery = { isActive: true, isArchived: false };
       let statusTypes = [];
       let statusTypesIds = [];
       let statusIds = [];
-      if (this.query?.statusType) query._id = this.query?.statusType;
-      if (this.query?.isResolved) query.isResolved = JSON.parse(this.query?.isResolved);
-      if (Object.keys(query).length > 0 && !this.query?.status) {
-        statusTypes = await TicketStatusType.find(query).select('_id').lean();
+      if (this.query?.statusType) statusQuery._id = this.query?.statusType;
+      if (this.query?.isResolved) statusQuery.isResolved = JSON.parse(this.query?.isResolved);
+      if (Object.keys(statusQuery).length > 0 && !this.query?.status) {
+        statusTypes = await TicketStatusType.find(statusQuery).select('_id').lean();
         statusTypesIds = statusTypes?.map(st => st._id);
 
         const statuses = await TicketStatus.find({ statusType: { $in: statusTypesIds }, isActive: true, isArchived: false }).select('_id').lean();
@@ -344,18 +355,12 @@ exports.getTickets = async (req, res, next) => {
       delete this.query.isResolved
       delete this.query.statusType
     }
-      if(Array.isArray(this.query?.assignees) && this.query?.assignees?.length > 0 ){
-        this.query.assignees = { $in: this.query.assignees?.map( a => ObjectId(a) )}
-      }
-      if(Array.isArray(this.query?.faults) && this.query?.faults?.length > 0 ){
-        this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
-      }
-    const finalQuery = await applyTicketFilter(req);
-    if (finalQuery) {
-      this.query = {
-        ...this.query,
-        ...finalQuery
-      }
+
+    if(Array.isArray(this.query?.assignees) && this.query?.assignees?.length > 0 ){
+      this.query.assignees = { $in: this.query.assignees?.map( a => ObjectId(a) )}
+    }
+    if(Array.isArray(this.query?.faults) && this.query?.faults?.length > 0 ){
+      this.query.faults = { $in: this.query.faults?.map( f => ObjectId(f) )}
     }
     
     let result = await this.dbservice.getObjectList(req, Ticket, this.fields, this.query, this.orderBy, this.listPopulate);
