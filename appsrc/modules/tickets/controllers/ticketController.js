@@ -30,7 +30,6 @@ const { statusPopulate } = require('./statusController');
 const { requestTypePopulate } = require('./requestTypeController');
 const { getDefaultTicketFaults } = require('./faultController');
 const TicketEmailService = require('../service/ticketEmailService');
-const processUserRoles = require('../../utils/processUserRoles');
 
 this.ticketEmailService = new TicketEmailService();
 this.debug = process.env.LOG_TO_CONSOLE != null && process.env.LOG_TO_CONSOLE != undefined ? process.env.LOG_TO_CONSOLE : false;
@@ -81,16 +80,6 @@ this.settingFields = "name issueType slug icon color description isDefault isRes
 
 exports.getTicket = async (req, res, next) => {
   try {
-
-    // this.query = req.query != "undefined" ? req.query : {};
-    // const finalQuery = await processUserRoles(req);
-    // if (finalQuery) {
-    //   this.query = {
-    //     ...this.query,
-    //     ...finalQuery
-    //   }
-    // }
-    // this.query._id = req.params.id;
     
     let result = await this.dbservice.getObjectById(Ticket, this.fields, req.params.id, this.populate);
 
@@ -323,13 +312,6 @@ exports.getTicketSettings = async (req, res, next) => {
 exports.getTickets = async (req, res, next) => {
   try {
     this.query = req.query != "undefined" ? req.query : {};
-    const roleBasedQuery = await processUserRoles(req);
-    if (roleBasedQuery) {
-      this.query = {
-        ...this.query,
-        ...roleBasedQuery
-      }
-    }
 
     this.orderBy = { name: 1 };
     if (this.query.orderBy) {
