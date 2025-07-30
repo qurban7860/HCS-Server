@@ -18,15 +18,11 @@ const { Event } = require('../../calenders/models');
 
 const { Document } = require('../../documents/models');
 
-const applyUserFilter = require('../utils/userFilters');
-
 const { Config, Country } = require('../../config/models');
 const { Product } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const { Region } = require('../../regions/models');
 var ObjectId = require('mongoose').Types.ObjectId;
-
-
 
 const fs = require('fs');
 const path = require('path');
@@ -44,6 +40,27 @@ this.populate = [
   { path: 'primaryTechnicalContact', select: 'firstName lastName' },
 ];
 
+const getAuthorizedSitesQuery = function(loginUser) {
+
+  let query;
+
+  const { authorizedSites=[], authorizedCustomers=[] } = loginUser;
+
+  let authorizedQuery = [];
+  if (authorizedSites.length > 0) {
+    authorizedQuery.push({ _id: { $in: authorizedSites } });
+  }
+
+  if (authorizedCustomers.length > 0) {
+    authorizedQuery.push({ customer: { $in: authorizedCustomers } });
+  }
+
+  if (authorizedQuery.length > 0) {
+    query = { $or: authorizedQuery };
+  }
+
+  return query;
+}
 
 exports.getCustomerSite = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
@@ -73,19 +90,17 @@ exports.getCustomerSites = async (req, res, next) => {
     delete this.query.orderBy;
   }
 
-  const finalQuery = await applyUserFilter(req);
-  if (finalQuery) {
-    const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-    if (allowedCustomers?.length > 0) {
-      this.query.customer = { $in: allowedCustomers };
-    }
-  }
-
   this.customerId = req.params.customerId;
   let customerObj;
   if (this.customerId) {
     this.query.customer = this.customerId;
     customerObj = await Customer.findOne({ _id: this.customerId }).lean().select('mainSite');
+  }
+
+  const authorizedQuery = getAuthorizedSitesQuery(req.body.loginUser);
+
+  if (authorizedQuery) {
+    this.query = { ...this.query, ...authorizedQuery };
   }
 
   this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);
@@ -319,13 +334,10 @@ exports.exportSitesJSONForCSV = async (req, res, next) => {
       strength: 2
     };
 
+    const { authorizedCustomers=[] } = req.body.loginUser;
 
-    const finalQuery = await applyUserFilter(req);
-    if (finalQuery) {
-      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-      if (allowedCustomers?.length > 0) {
-        queryString_.customer = { $in: allowedCustomers };
-      }
+    if (authorizedCustomers.length > 0) {
+      queryString_.customer = { $in: authorizedCustomers };
     }
 
     let sites = await CustomerSite.find(queryString_).collation(collationOptions).sort({ name: 1 })

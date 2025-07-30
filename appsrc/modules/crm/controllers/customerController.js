@@ -15,7 +15,6 @@ const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../mo
 
 const { Document } = require('../../documents/models');
 
-const applyUserFilter = require('../utils/userFilters');
 const { Product, ProductStatus } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const _ = require('lodash');
@@ -58,6 +57,24 @@ this.populateList = [
   { path: 'projectManager', select: 'firstName lastName phoneNumbers' }
 ];
 
+const getAuthorizedCustomerQuery = function(loginUser) {
+
+  let query;
+
+  const { authorizedCustomers=[] } = loginUser;
+
+  let authorizedQuery = [];
+  if (authorizedCustomers.length > 0) {
+    authorizedQuery.push({ _id: { $in: authorizedCustomers } });
+  }
+
+  if (authorizedQuery.length > 0) {
+    query = { $or: authorizedQuery };
+  }
+
+  return query;
+}
+
 
 exports.getCustomer = async (req, res, next) => {
   let validFlag = 'basic';
@@ -74,10 +91,10 @@ exports.getCustomer = async (req, res, next) => {
   let populatedNotes;
   let populatedVerfications;
 
+  const authorizedCustomerQuery = getAuthorizedCustomerQuery(req.body.loginUser);
 
-  const queryString = await applyUserFilter(req);
-  if (queryString) {
-    const query_ = { ...queryString, _id: req.params.id };
+  if (authorizedCustomerQuery) {
+    const query_ = { ...authorizedCustomerQuery, _id: req.params.id };
     const cusObj = await Customer.findOne(query_).select('_id').lean();
 
     if (!cusObj) {
@@ -158,11 +175,12 @@ exports.getCustomers = async (req, res, next) => {
   if (!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  const finalQuery = await applyUserFilter(req);
-  if (finalQuery) {
+  const authorizedCustomerQuery = getAuthorizedCustomerQuery(req.body.loginUser);
+
+  if (authorizedCustomerQuery) {
     this.query = {
       ...this.query,
-      ...finalQuery
+      ...authorizedCustomerQuery
     }
   }
 
@@ -188,12 +206,12 @@ exports.getLightCustomers = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    const finalQuery = await applyUserFilter(req);
+    const authorizedCustomerQuery = getAuthorizedCustomerQuery(req.body.loginUser);
 
-    if (finalQuery) {
+    if (authorizedCustomerQuery) {
       this.query = {
         ...this.query,
-        ...finalQuery
+        ...authorizedCustomerQuery
       }
     }
     delete req.query.unfiltered;

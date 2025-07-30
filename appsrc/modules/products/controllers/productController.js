@@ -12,7 +12,6 @@ this.email = new EmailService();
 const HttpError = require('../../config/models/http-error');
 const logger = require('../../config/logger');
 let rtnMsg = require('../../config/static/static')
-const processUserRoles = require('../../utils/processUserRoles');
 
 let productDBService = require('../service/productDBService')
 let machineEmailService = require('../service/emailService')
@@ -77,10 +76,35 @@ this.populate = [
   }
 ];
 
+const getAuthorizedMachineQuery = function(loginUser) {
+
+  let query;
+
+  const { authorizedSites=[], authorizedMachines=[], authorizedCustomers=[] } = loginUser;
+
+  let authorizedQuery = [];
+  if (authorizedSites.length > 0) {
+    authorizedQuery.push({ mainSite: { $in: authorizedSites } });
+  }
+  if (authorizedMachines.length > 0) {
+    authorizedQuery.push({ _id: { $in: authorizedMachines } });
+  }
+
+  if (authorizedCustomers.length > 0) {
+    authorizedQuery.push({ customer: { $in: authorizedCustomers } });
+  }
+
+  if (authorizedQuery.length > 0) {
+    query = { $or: authorizedQuery };
+  }
+
+  return query;
+}
+
 exports.getProduct = async (req, res, next) => {
-  const queryString = await processUserRoles(req);
-  if (queryString) {
-    const query_ = { ...queryString, _id: req.params.id };
+  const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+  if (authorizedMachineQuery) {
+    const query_ = { ...authorizedMachineQuery, _id: req.params.id };
     const proObj = await Product.findOne(query_).select('_id').lean();
 
     if (!proObj) {
@@ -193,6 +217,7 @@ exports.getProduct = async (req, res, next) => {
 };
 
 exports.getProducts = async (req, res, next) => {
+  
   const listPopulate = [
     { path: 'parentMachine', select: '_id serialNo name ' },
     { path: 'machineModel', select: '_id name category', populate: { path: 'category', select: '_id name' } },
@@ -225,16 +250,6 @@ exports.getProducts = async (req, res, next) => {
     delete this.query.customerArr;
   }
 
-  const queryString = await processUserRoles(req);
-  if (queryString) {
-    if (queryString.$or.length > 0) {
-      this.query = {
-        ...this.query,
-        ...queryString
-      }
-    }
-  }
-
   delete req.query.unfiltered;
 
   if (!this.query.customer) {
@@ -243,6 +258,11 @@ exports.getProducts = async (req, res, next) => {
     this.query.customer = { $in: customerIds };
   }
 
+  const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+
+  if (authorizedMachineQuery) {
+    this.query = { ...this.query, ...authorizedMachineQuery };
+  }
 
   // console.log(JSON.stringify(this.query));
   dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
@@ -342,7 +362,6 @@ exports.getMachineLifeCycle = async (req, res, next) => {
 };
 
 exports.getProductId = async (req, res, next) => {
-  const queryString = await processUserRoles(req);
 
   if (!req?.query?.serialNo) {
     return res.status(StatusCodes.BAD_REQUEST).send("provide serial No and custoemr reference number!");
@@ -357,8 +376,9 @@ exports.getProductId = async (req, res, next) => {
 
   const product_ = await Product.findOne(queryStringVal).sort({ _id: -1 }).select('_id').lean();
   if (product_) {
-    if (queryString) {
-      const query_ = { ...queryString, _id: product_._id };
+    const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+    if (authorizedMachineQuery) {
+      const query_ = { ...authorizedMachineQuery, _id: product_._id };
       const proObj = await Product.findOne(query_).select('_id').lean();
 
       if (!proObj) {
@@ -1166,128 +1186,17 @@ function createMachineAuditLogRequest(recordType, activityType, oldObject, newOb
   return machineAuditLog;
 }
 
-// TODO: NOT USING SHOULD BE REMOVED IN NEXT RELEASE .
-async function applyUserFilter(req) {
-  if (!req.query.unfiltered) {
-    if (
-      !req.body.loginUser?.roleTypes?.includes("SuperAdmin") &&
-      req?.body?.userInfo?.dataAccessibilityLevel !== 'GLOBAL' &&
-      !req.body.loginUser?.roleTypes?.includes("Developer")
-    ) {
-      let user = await SecurityUser.findById(req.body.loginUser.userId).select(
-        'regions customers machines'
-      ).lean();
-
-      if (user) {
-        let finalQuery = {
-          $or: []
-        };
-
-        // region
-        if (Array.isArray(user.regions) && user.regions.length > 0) {
-          let regions = await Region.find({ _id: { $in: user.regions } }).select(
-            'countries'
-          ).lean();
-          let countries = [];
-          let countryNames = [];
-          let customerSites = [];
-
-          for (let region of regions) {
-            if (Array.isArray(region.countries) && region.countries.length > 0)
-              countries = [...region.countries];
-          }
-
-          if (Array.isArray(countries) && countries.length > 0) {
-            let countriesDB = await Country.find({ _id: { $in: countries } }).select(
-              'country_name'
-            ).lean();
-
-            if (Array.isArray(countriesDB) && countriesDB.length > 0)
-              countryNames = countriesDB.map((c) => c.country_name);
-          }
-
-          console.log("***countryNames", countryNames);
-
-          if (Array.isArray(countryNames) && countryNames.length > 0) {
-            customerSitesDB = await CustomerSite.find(
-              { "address.country": { $in: countryNames } }
-            ).select('_id').lean();
-
-            if (Array.isArray(customerSitesDB) && customerSitesDB.length > 0)
-              customerSites = customerSitesDB.map((site) => site._id);
-          }
-
-          let mainSiteQuery = { $in: customerSites };
-          finalQuery.$or.push({ mainSite: mainSiteQuery });
-        }
-
-        // customer
-        if (Array.isArray(user.customers) && user.customers.length > 0) {
-          let idQuery = { $in: user.customers };
-          finalQuery.$or.push({ _id: idQuery });
-        }
-
-        //machine
-        if (Array.isArray(user.machines) && user.machines.length > 0) {
-          let listProducts = await Product.find({ _id: { $in: user.machines } }).select(
-            'customer'
-          ).lean();
-          const listCustomers = listProducts.map((item) => item.customer);
-          let idQuery = { $in: listCustomers };
-          finalQuery.$or.push({ _id: idQuery });
-        }
-
-        // project, support and account manager query.
-        if (req?.body?.userInfo?.contact) {
-          const query___ = {
-            $or: [
-              { accountManager: req?.body?.userInfo?.contact },
-              { projectManager: req?.body?.userInfo?.contact },
-              { supportManager: req?.body?.userInfo?.contact }
-            ]
-          };
-          let customerAllowed = await Customer.find(query___).select('_id').lean();
-
-          if (customerAllowed && customerAllowed.length > 0) {
-            finalQuery.$or.push({ _id: { $in: customerAllowed } });
-          }
-
-          // Allowed customer from machines.
-          const productCustomers = await Product.find(query___).select('-_id customer').lean();
-          const customerIds = productCustomers.map(customer => customer.customer);
-          if (customerIds && customerIds.length > 0) {
-            finalQuery.$or.push({ _id: { $in: customerIds } });
-          }
-        }
-
-        if (finalQuery && finalQuery.$or.length > 0) {
-          return finalQuery;
-        } else {
-          return null;
-        }
-      } else {
-        return null;
-      }
-    }
-  } else {
-    delete req.query.unfiltered;
-    return null;
-  }
-}
-
 exports.getProductsSiteCoordinates = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-
-  const queryString__ = await processUserRoles(req);
+  const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
 
   let customerQuery = { "excludeReports": { $ne: true }, isArchived: false };
 
-  if (queryString__) {
+  if (authorizedMachineQuery) {
     // Apply transformation to customerQuery based on queryString__
-    customerQuery = { ...customerQuery, ...queryString__ };
+    customerQuery = { ...customerQuery, ...authorizedMachineQuery };
   }
 
-  console.log("log: customerQuery", customerQuery);
   let listCustomers = await Customer.find(customerQuery).select('_id').lean();
   let customerIds = listCustomers.map((c) => c._id);
 
@@ -1348,7 +1257,6 @@ exports.getProductsSiteCoordinates = async (req, res, next) => {
         customerName: { $arrayElemAt: ["$customerInfo.name", 0] },
       }
     },
-
   ])
 
   var params = {};

@@ -1,6 +1,7 @@
 const express = require('express');
 
 const checkAuth = require('../../../../middleware/check-auth');
+const roleCheck = require('../../../../middleware/role-check');
 const verifyDelete = require('../../../../middleware/verifyDelete');
 const checkIDs = require('../../../../middleware/validateParamIDs');
 const validate = require('../../utils/validate');
@@ -13,7 +14,7 @@ const router = express.Router();
 router.use(checkAuth);
 
 // - /api/1.0.0/crm/customers/sites/
-router.get('/customers/sites/all', controller.getCustomerSites);
+router.get('/customers/sites/all', roleCheck, controller.getCustomerSites);
 
 // - /api/1.0.0/crm/sites/search
 router.get(`${baseRouteForObject}/search`, controller.searchCustomerSites);
