@@ -83,9 +83,11 @@ module.exports = async (req, res, next) => {
         const customers = await Customer.find(customerQuery).select('_id').lean();
         assignedCustomers = customers.map(customer => customer._id);
 
-        // getting site machines
-        const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
-        assignedMachines = machines.map(machine => machine._id);
+        if(req?.body?.userInfo?.machines.length === 0){
+          // getting site machines
+          const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
+          assignedMachines = machines.map(machine => machine._id);
+        }
       
       }
       

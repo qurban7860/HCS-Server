@@ -86,9 +86,6 @@ const getAuthorizedMachineQuery = function(loginUser) {
   if (authorizedSites.length > 0) {
     authorizedQuery.push({ mainSite: { $in: authorizedSites } });
   }
-  if (authorizedMachines.length > 0) {
-    authorizedQuery.push({ _id: { $in: authorizedMachines } });
-  }
 
   if (authorizedCustomers.length > 0) {
     authorizedQuery.push({ customer: { $in: authorizedCustomers } });
@@ -96,6 +93,10 @@ const getAuthorizedMachineQuery = function(loginUser) {
 
   if (authorizedQuery.length > 0) {
     query = { $or: authorizedQuery };
+  }
+
+  if (authorizedMachines.length > 0) {
+    query = { _id: { $in: authorizedMachines } };
   }
 
   return query;
