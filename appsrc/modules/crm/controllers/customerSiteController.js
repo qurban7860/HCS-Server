@@ -46,17 +46,12 @@ const getAuthorizedSitesQuery = function(loginUser) {
 
   const { authorizedSites=[], authorizedCustomers=[] } = loginUser;
 
-  let authorizedQuery = [];
-  if (authorizedSites.length > 0) {
-    authorizedQuery.push({ _id: { $in: authorizedSites } });
-  }
-
   if (authorizedCustomers.length > 0) {
-    authorizedQuery.push({ customer: { $in: authorizedCustomers } });
+    query = { customer: { $in: authorizedCustomers } };
   }
 
-  if (authorizedQuery.length > 0) {
-    query = { $or: authorizedQuery };
+  if (authorizedSites.length > 0) {
+    query = { _id: { $in: authorizedSites } };
   }
 
   return query;

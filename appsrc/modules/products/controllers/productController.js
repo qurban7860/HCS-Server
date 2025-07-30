@@ -195,13 +195,6 @@ exports.getProduct = async (req, res, next) => {
 
         productLists.sort((a, b) => new Date(b.purchaseDate) - new Date(a.purchaseDate));
 
-        // let productLists = await Product.aggregate([
-        //   { $match: { globelMachineID: ObjectId(machine.globelMachineID) } },
-        //   { $project: { purchaseDate: 1,  transferredDate: 1,  transferredToMachine: 1,  transferredFromMachine: 1, customer: 1} },
-        //   { $sort: { purchaseDate: -1 } }
-        // ]);
-        // productLists = await Product.populate(productLists, populateArray_);
-
         if (
           productLists?.length === 1 &&
           productLists[0]?.globelMachineID !== undefined &&
@@ -264,8 +257,7 @@ exports.getProducts = async (req, res, next) => {
   if (authorizedMachineQuery) {
     this.query = { ...this.query, ...authorizedMachineQuery };
   }
-
-  // console.log(JSON.stringify(this.query));
+  
   dbservice.getObjectList(req, Product, listFields, this.query, this.orderBy, listPopulate, callbackFunc);
   async function callbackFunc(error, products) {
     if (error) {

@@ -59,20 +59,13 @@ this.populateList = [
 
 const getAuthorizedCustomerQuery = function(loginUser) {
 
-  let query;
-
   const { authorizedCustomers=[] } = loginUser;
-
-  let authorizedQuery = [];
+  
   if (authorizedCustomers.length > 0) {
-    authorizedQuery.push({ _id: { $in: authorizedCustomers } });
+    return { _id: { $in: authorizedCustomers } };
   }
 
-  if (authorizedQuery.length > 0) {
-    query = { $or: authorizedQuery };
-  }
-
-  return query;
+  return {};
 }
 
 

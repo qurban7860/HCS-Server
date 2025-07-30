@@ -35,8 +35,8 @@ module.exports = async (req, res, next) => {
   ) {
     try {
       logger.error(new Error("is not super admin and global manager"));
-      let assignedCustomers=req?.body?.loginUser?.customers || [];
-      let assignedMachines=req?.body?.loginUser?.machines || [];
+      let assignedCustomers=req?.body?.userInfo?.customers || [];
+      let assignedMachines=req?.body?.userInfo?.machines || [];
       let customerSites = [];
 
       if (Array.isArray(user.regions) && user.regions.length > 0) {
@@ -76,7 +76,7 @@ module.exports = async (req, res, next) => {
         
         const customerQuery = {
             mainSite: {$in: customerSites},
-            _id: {$in: req.body.userInfo.customers}
+            _id: {$in: assignedCustomers}
         }
 
         // getting site customers if not assigned
