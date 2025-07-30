@@ -35,8 +35,8 @@ module.exports = async (req, res, next) => {
   ) {
     try {
       logger.error(new Error("is not super admin and global manager"));
-      let assignedCustomers=[];
-      let assignedMachines=[];
+      let assignedCustomers=req?.body?.loginUser?.customers || [];
+      let assignedMachines=req?.body?.loginUser?.machines || [];
       let customerSites = [];
 
       if (Array.isArray(user.regions) && user.regions.length > 0) {
@@ -79,30 +79,26 @@ module.exports = async (req, res, next) => {
             _id: {$in: req.body.userInfo.customers}
         }
 
-        // getting site customers
-        const customers = await Customer.find(customerQuery).select('_id').lean();
-        assignedCustomers = customers.map(customer => customer._id);
-
-        if(req?.body?.userInfo?.machines.length === 0){
-          // getting site machines
-          const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
-          assignedMachines = machines.map(machine => machine._id);
+        // getting site customers if not assigned
+        if(assignedCustomers.length === 0){
+          const customers = await Customer.find(customerQuery).select('_id').lean();
+          const siteCustomers = customers.map(customer => customer._id);
+          assignedCustomers = siteCustomers;
         }
-      
-      }
-      
-      if(req?.body?.userInfo?.customers.length > 0){
-        assignedCustomers = req?.body?.userInfo?.customers;
-        
-        if(req?.body?.userInfo?.machines.length === 0){
-          // getting customer machines
+
+        // getting site machines if not assigned
+        if(assignedMachines.length === 0){
           const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
-          assignedMachines = [...assignedMachines, ...machines.map(machine => machine._id)];
+          const siteMachines = machines.map(machine => machine._id);
+          assignedMachines = siteMachines;
         }
       }
-
-      if(req?.body?.userInfo?.machines.length > 0){
-        assignedMachines = [...assignedMachines, ...req?.body?.userInfo?.machines];
+      
+      // getting customer machines if not assigned
+      if(assignedCustomers.length > 0 && assignedMachines.length === 0){
+        const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
+        const customerMachines = machines.map(machine => machine._id);
+        assignedMachines = customerMachines;
       }
         
       req.body.loginUser.authorizedCustomers = assignedCustomers;
