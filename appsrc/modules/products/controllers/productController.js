@@ -87,7 +87,7 @@ exports.getProduct = async (req, res, next) => {
     }
   }
 
-  delete req.query.unfiltered;
+  delete this.query.unfiltered;
 
 
   if (!req.params.id || !ObjectId.isValid(req.params.id)) {
@@ -218,7 +218,7 @@ exports.getProducts = async (req, res, next) => {
     delete this.query.customerArr;
   }
 
-  delete req.query.unfiltered;
+  delete this.query.unfiltered;
 
   if (!this.query.customer) {
     let listCustomers = await Customer.find({ "excludeReports": { $ne: true } }).select('_id').lean();
@@ -353,7 +353,7 @@ exports.getProductId = async (req, res, next) => {
       }
     }
 
-    delete req.query.unfiltered;
+    delete this.query.unfiltered;
     if (!product_._id || !ObjectId.isValid(product_._id)) {
       return res.status(StatusCodes.BAD_REQUEST).send("Machine uuid is not valid!");
     }

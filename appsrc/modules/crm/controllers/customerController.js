@@ -165,7 +165,7 @@ exports.getCustomers = async (req, res, next) => {
     }
   }
 
-  delete req.query.unfiltered;
+  delete this.query.unfiltered;
   req.body.pageSize = 2000;
   this.dbservice.getObjectList(req, Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
@@ -195,7 +195,8 @@ exports.getLightCustomers = async (req, res, next) => {
         ...authorizedCustomerQuery
       }
     }
-    delete req.query.unfiltered;
+
+    delete this.query.unfiltered;
     const result = await this.dbservice.getObjectList(req, Customer, '_id, name', this.query, this.orderBy);
     res.json(result);
   } catch (error) {
