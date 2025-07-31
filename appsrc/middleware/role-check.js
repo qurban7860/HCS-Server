@@ -71,7 +71,6 @@ module.exports = async (req, res, next) => {
 
       if(assignedSites.length > 0){
         // assigned sites to loginUser
-        // req.body.loginUser.authorizedSites = customerSites;
         
         const siteQuery = {
             mainSite: {$in: assignedSites},
