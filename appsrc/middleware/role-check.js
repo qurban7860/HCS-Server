@@ -36,7 +36,7 @@ module.exports = async (req, res, next) => {
     try {
       logger.error(new Error("is not super admin and global manager"));
       let assignedCustomers=req?.body?.userInfo?.customers || [];
-      let customerSites = [];
+      let assignedSites = [];
 
       if (Array.isArray(user.regions) && user.regions.length > 0) {
         let regions = await Region.find({ _id: { $in: user.regions } }).select(
@@ -65,29 +65,25 @@ module.exports = async (req, res, next) => {
             ).select('_id').lean();
 
             if (Array.isArray(customerSitesDB) && customerSitesDB.length > 0)
-                customerSites = customerSitesDB.map((site) => site._id);
+                assignedSites = customerSitesDB.map((site) => site._id);
         }
       }
 
-      if(customerSites.length > 0){
+      if(assignedSites.length > 0){
         // assigned sites to loginUser
         // req.body.loginUser.authorizedSites = customerSites;
         
-        const customerQuery = {
-            mainSite: {$in: customerSites},
+        const siteQuery = {
+            mainSite: {$in: assignedSites},
             _id: {$in: assignedCustomers}
         }
 
         // getting site customers if not assigned
-        if(assignedCustomers.length === 0){
-          const customers = await Customer.find(customerQuery).select('_id').lean();
-          const siteCustomers = customers.map(customer => customer._id);
-          assignedCustomers = [...assignedCustomers, ...siteCustomers];
-        }
+        const customers = await Customer.find(siteQuery).select('_id').lean();
+        const siteCustomers = customers.map(customer => customer._id);
+        assignedCustomers = [...assignedCustomers, ...siteCustomers];
       }
         
-      // req.body.loginUser.authorizedCustomers = assignedCustomers;
-
       req.body.loginUser.customerQuery = getAuthorizedCustomerQuery(assignedCustomers, assignedSites, req.body.loginUser.contact);
       req.body.loginUser.machineQuery = getAuthorizedMachineQuery(assignedCustomers, assignedSites, req.body.loginUser.contact);
       req.body.loginUser.siteQuery = getAuthorizedSiteQuery(assignedCustomers, assignedSites, req.body.loginUser.contact);
