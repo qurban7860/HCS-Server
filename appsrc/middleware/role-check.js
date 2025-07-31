@@ -10,7 +10,7 @@ const logger = require('../modules/config/logger');
 module.exports = async (req, res, next) => {
   
   let user = await SecurityUser.findById(req.body.loginUser.userId)
-  .select('customer regions customers machines dataAccessibilityLevel contact')
+  .select('customer regions customers dataAccessibilityLevel contact')
   .populate({ path: 'customer', select: 'name type isActive isArchived' }).lean();
   req.body.userInfo = user;
   if (
@@ -36,7 +36,6 @@ module.exports = async (req, res, next) => {
     try {
       logger.error(new Error("is not super admin and global manager"));
       let assignedCustomers=req?.body?.userInfo?.customers || [];
-      let assignedMachines=req?.body?.userInfo?.machines || [];
       let customerSites = [];
 
       if (Array.isArray(user.regions) && user.regions.length > 0) {
@@ -72,7 +71,7 @@ module.exports = async (req, res, next) => {
 
       if(customerSites.length > 0){
         // assigned sites to loginUser
-        req.body.loginUser.authorizedSites = customerSites;
+        // req.body.loginUser.authorizedSites = customerSites;
         
         const customerQuery = {
             mainSite: {$in: customerSites},
@@ -83,36 +82,23 @@ module.exports = async (req, res, next) => {
         if(assignedCustomers.length === 0){
           const customers = await Customer.find(customerQuery).select('_id').lean();
           const siteCustomers = customers.map(customer => customer._id);
-          assignedCustomers = siteCustomers;
+          assignedCustomers = [...assignedCustomers, ...siteCustomers];
         }
-
-        // getting site machines if not assigned
-        if(assignedMachines.length === 0){
-          const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
-          const siteMachines = machines.map(machine => machine._id);
-          assignedMachines = siteMachines;
-        }
-      }
-      
-      // getting customer machines if not assigned
-      if(assignedCustomers.length > 0 && assignedMachines.length === 0){
-        const machines = await Product.find({customer: {$in: assignedCustomers}}).select('_id').lean();
-        const customerMachines = machines.map(machine => machine._id);
-        assignedMachines = customerMachines;
       }
         
-      req.body.loginUser.authorizedCustomers = assignedCustomers;
-      req.body.loginUser.authorizedMachines = assignedMachines;
+      // req.body.loginUser.authorizedCustomers = assignedCustomers;
+
+      req.body.loginUser.customerQuery = getAuthorizedCustomerQuery(assignedCustomers, assignedSites, req.body.loginUser.contact);
+      req.body.loginUser.machineQuery = getAuthorizedMachineQuery(assignedCustomers, assignedSites, req.body.loginUser.contact);
+      req.body.loginUser.siteQuery = getAuthorizedSiteQuery(assignedCustomers, assignedSites, req.body.loginUser.contact);
 
       if (
            (!user?.regions || user?.regions?.length === 0) 
-        && (!user.customers || user?.customers?.length === 0) 
-        && (!user.machines || user?.machines?.length === 0)
+        && (!user.customers || user?.customers?.length === 0)
         && (assignedCustomers === undefined || assignedCustomers === null)
-        && (assignedMachines === undefined || assignedMachines === null)
         ) {
-        logger.error(new Error("*** The user must be assigned to specific regions, customers, or machines"));
-        return res.status(400).send("The user must be assigned to specific regions, customers, or machines");
+        logger.error(new Error("*** The user must be assigned to specific regions or customers"));
+        return res.status(400).send("The user must be assigned to specific regions or customers");
       } else {
         logger.error(new Error("is not super admin and global manager and assignment find."));
         next();
@@ -125,5 +111,71 @@ module.exports = async (req, res, next) => {
     next();
   }
 };
+
+const getAuthorizedMachineQuery = function(authorizedCustomers=[], authorizedSites=[], contact) {
+
+  let query;
+
+  let authorizedQuery = [];
+  if (authorizedSites.length > 0) {
+    authorizedQuery.push({ instalationSite: { $in: authorizedSites } });
+  }
+
+  if (authorizedCustomers.length > 0) {
+    authorizedQuery.push({ customer: { $in: authorizedCustomers } });
+  }
+
+  authorizedQuery.push({ accountManager: contact });
+  authorizedQuery.push({ projectManager: contact });
+  authorizedQuery.push({ supportManager: contact });
+
+  query = { $or: authorizedQuery };
+
+  return query;
+}
+
+const getAuthorizedCustomerQuery = function(authorizedCustomers=[], authorizedSites=[], contact) {
+
+  let query;
+
+  let authorizedQuery = [];
+  if (authorizedSites.length > 0) {
+    authorizedQuery.push({ mainSite: { $in: authorizedSites } });
+  }
+
+  if (authorizedCustomers.length > 0) {
+    authorizedQuery.push({ _id: { $in: authorizedCustomers } });
+  }
+
+  authorizedQuery.push({ accountManager: contact });
+  authorizedQuery.push({ projectManager: contact });
+  authorizedQuery.push({ supportManager: contact });
+
+  query = { $or: authorizedQuery };
+
+  return query;
+}
+
+const getAuthorizedSiteQuery = function(authorizedCustomers=[], authorizedSites=[], contact) {
+
+  let query;
+
+  let authorizedQuery = [];
+  if (authorizedSites.length > 0) {
+    authorizedQuery.push({ _id: { $in: authorizedSites } });
+  }
+
+  if (authorizedCustomers.length > 0) {
+    authorizedQuery.push({ customer: { $in: authorizedCustomers } });
+  }
+
+  authorizedQuery.push({ primaryBillingContact: contact });
+  authorizedQuery.push({ primaryTechnicalContact: contact });
+
+  query = { $or: authorizedQuery };
+
+  return query;
+}
+
 
 

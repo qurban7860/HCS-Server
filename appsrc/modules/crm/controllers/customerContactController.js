@@ -100,9 +100,13 @@ exports.getCustomerAllContacts = async (req, res, next) => {
     if (this.customerId)
       this.query.customer = this.customerId;
 
-    const { authorizedCustomers=[] } = req.body.loginUser;
-    if (authorizedCustomers.length > 0) {
-      this.query.customer = { $in: authorizedCustomers };
+    const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
+
+    if (authorizedCustomerQuery) {
+      this.query = {
+        ...this.query,
+        ...authorizedCustomerQuery
+      }
     }
 
     const contacts = await this.dbservice.getObjectList(req, CustomerContact, this.fields, this.query, this.orderBy, this.populate);

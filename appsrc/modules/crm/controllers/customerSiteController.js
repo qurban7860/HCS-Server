@@ -40,23 +40,6 @@ this.populate = [
   { path: 'primaryTechnicalContact', select: 'firstName lastName' },
 ];
 
-const getAuthorizedSitesQuery = function(loginUser) {
-
-  let query;
-
-  const { authorizedSites=[], authorizedCustomers=[] } = loginUser;
-
-  if (authorizedCustomers.length > 0) {
-    query = { customer: { $in: authorizedCustomers } };
-  }
-
-  if (authorizedSites.length > 0) {
-    query = { _id: { $in: authorizedSites } };
-  }
-
-  return query;
-}
-
 exports.getCustomerSite = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
 
@@ -92,10 +75,10 @@ exports.getCustomerSites = async (req, res, next) => {
     customerObj = await Customer.findOne({ _id: this.customerId }).lean().select('mainSite');
   }
 
-  const authorizedQuery = getAuthorizedSitesQuery(req.body.loginUser);
+  const siteQuery = req?.body?.loginUser?.siteQuery || {};
 
-  if (authorizedQuery) {
-    this.query = { ...this.query, ...authorizedQuery };
+  if (siteQuery) {
+    this.query = { ...this.query, ...siteQuery };
   }
 
   this.dbservice.getObjectList(req, CustomerSite, this.fields, this.query, this.orderBy, this.populate, callbackFunc);

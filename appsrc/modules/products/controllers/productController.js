@@ -76,34 +76,8 @@ this.populate = [
   }
 ];
 
-const getAuthorizedMachineQuery = function(loginUser) {
-
-  let query;
-
-  const { authorizedSites=[], authorizedMachines=[], authorizedCustomers=[] } = loginUser;
-
-  let authorizedQuery = [];
-  if (authorizedSites.length > 0) {
-    authorizedQuery.push({ mainSite: { $in: authorizedSites } });
-  }
-
-  if (authorizedCustomers.length > 0) {
-    authorizedQuery.push({ customer: { $in: authorizedCustomers } });
-  }
-
-  if (authorizedQuery.length > 0) {
-    query = { $or: authorizedQuery };
-  }
-
-  if (authorizedMachines.length > 0) {
-    query = { _id: { $in: authorizedMachines } };
-  }
-
-  return query;
-}
-
 exports.getProduct = async (req, res, next) => {
-  const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+  const authorizedMachineQuery = req?.body?.loginUser?.machineQuery || {};
   if (authorizedMachineQuery) {
     const query_ = { ...authorizedMachineQuery, _id: req.params.id };
     const proObj = await Product.findOne(query_).select('_id').lean();
@@ -252,7 +226,7 @@ exports.getProducts = async (req, res, next) => {
     this.query.customer = { $in: customerIds };
   }
 
-  const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+  const authorizedMachineQuery = req?.body?.loginUser?.machineQuery || {};
 
   if (authorizedMachineQuery) {
     this.query = { ...this.query, ...authorizedMachineQuery };
@@ -369,7 +343,7 @@ exports.getProductId = async (req, res, next) => {
 
   const product_ = await Product.findOne(queryStringVal).sort({ _id: -1 }).select('_id').lean();
   if (product_) {
-    const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+    const authorizedMachineQuery = req?.body?.loginUser?.machineQuery || {};
     if (authorizedMachineQuery) {
       const query_ = { ...authorizedMachineQuery, _id: product_._id };
       const proObj = await Product.findOne(query_).select('_id').lean();
@@ -1181,13 +1155,13 @@ function createMachineAuditLogRequest(recordType, activityType, oldObject, newOb
 
 exports.getProductsSiteCoordinates = async (req, res, next) => {
   this.query = req.query != "undefined" ? req.query : {};
-  const authorizedMachineQuery = getAuthorizedMachineQuery(req.body.loginUser);
+  const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
 
   let customerQuery = { "excludeReports": { $ne: true }, isArchived: false };
 
-  if (authorizedMachineQuery) {
+  if (authorizedCustomerQuery) {
     // Apply transformation to customerQuery based on queryString__
-    customerQuery = { ...customerQuery, ...authorizedMachineQuery };
+    customerQuery = { ...customerQuery, ...authorizedCustomerQuery };
   }
 
   let listCustomers = await Customer.find(customerQuery).select('_id').lean();

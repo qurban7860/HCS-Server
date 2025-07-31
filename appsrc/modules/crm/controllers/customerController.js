@@ -57,18 +57,6 @@ this.populateList = [
   { path: 'projectManager', select: 'firstName lastName phoneNumbers' }
 ];
 
-const getAuthorizedCustomerQuery = function(loginUser) {
-
-  const { authorizedCustomers=[] } = loginUser;
-  
-  if (authorizedCustomers.length > 0) {
-    return { _id: { $in: authorizedCustomers } };
-  }
-
-  return {};
-}
-
-
 exports.getCustomer = async (req, res, next) => {
   let validFlag = 'basic';
 
@@ -84,7 +72,7 @@ exports.getCustomer = async (req, res, next) => {
   let populatedNotes;
   let populatedVerfications;
 
-  const authorizedCustomerQuery = getAuthorizedCustomerQuery(req.body.loginUser);
+  const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
 
   if (authorizedCustomerQuery) {
     const query_ = { ...authorizedCustomerQuery, _id: req.params.id };
@@ -168,7 +156,7 @@ exports.getCustomers = async (req, res, next) => {
   if (!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  const authorizedCustomerQuery = getAuthorizedCustomerQuery(req.body.loginUser);
+  const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
 
   if (authorizedCustomerQuery) {
     this.query = {
@@ -199,7 +187,7 @@ exports.getLightCustomers = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    const authorizedCustomerQuery = getAuthorizedCustomerQuery(req.body.loginUser);
+    const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
 
     if (authorizedCustomerQuery) {
       this.query = {
