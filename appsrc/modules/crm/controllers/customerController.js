@@ -15,7 +15,6 @@ const { Customer, CustomerSite, CustomerContact, CustomerNote } = require('../mo
 
 const { Document } = require('../../documents/models');
 
-const applyUserFilter = require('../utils/userFilters');
 const { Product, ProductStatus } = require('../../products/models');
 const { SecurityUser } = require('../../security/models');
 const _ = require('lodash');
@@ -58,7 +57,6 @@ this.populateList = [
   { path: 'projectManager', select: 'firstName lastName phoneNumbers' }
 ];
 
-
 exports.getCustomer = async (req, res, next) => {
   let validFlag = 'basic';
 
@@ -74,10 +72,10 @@ exports.getCustomer = async (req, res, next) => {
   let populatedNotes;
   let populatedVerfications;
 
+  const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
 
-  const queryString = await applyUserFilter(req);
-  if (queryString) {
-    const query_ = { ...queryString, _id: req.params.id };
+  if (authorizedCustomerQuery) {
+    const query_ = { ...authorizedCustomerQuery, _id: req.params.id };
     const cusObj = await Customer.findOne(query_).select('_id').lean();
 
     if (!cusObj) {
@@ -158,15 +156,16 @@ exports.getCustomers = async (req, res, next) => {
   if (!req.body.loginUser)
     req.body.loginUser = await getToken(req);
 
-  const finalQuery = await applyUserFilter(req);
-  if (finalQuery) {
+  const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
+
+  if (authorizedCustomerQuery) {
     this.query = {
       ...this.query,
-      ...finalQuery
+      ...authorizedCustomerQuery
     }
   }
 
-  delete req.query.unfiltered;
+  delete this.query.unfiltered;
   req.body.pageSize = 2000;
   this.dbservice.getObjectList(req, Customer, this.fields, this.query, this.orderBy, this.populateList, callbackFunc);
   function callbackFunc(error, response) {
@@ -188,15 +187,16 @@ exports.getLightCustomers = async (req, res, next) => {
       delete this.query.orderBy;
     }
 
-    const finalQuery = await applyUserFilter(req);
+    const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
 
-    if (finalQuery) {
+    if (authorizedCustomerQuery) {
       this.query = {
         ...this.query,
-        ...finalQuery
+        ...authorizedCustomerQuery
       }
     }
-    delete req.query.unfiltered;
+
+    delete this.query.unfiltered;
     const result = await this.dbservice.getObjectList(req, Customer, '_id, name', this.query, this.orderBy);
     res.json(result);
   } catch (error) {

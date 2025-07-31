@@ -11,8 +11,6 @@ const { Event } = require('../../calenders/models');
 const { SecurityUser } = require('../../security/models');
 const { Document, DocumentVersion, DocumentFile } = require('../../documents/models');
 
-const applyUserFilter = require('../utils/userFilters');
-
 const checkCustomerID = require('../../../middleware/check-parentID')('customer', Customer);
 
 const _ = require('lodash');
@@ -102,11 +100,12 @@ exports.getCustomerAllContacts = async (req, res, next) => {
     if (this.customerId)
       this.query.customer = this.customerId;
 
-    const finalQuery = await applyUserFilter(req);
-    if (finalQuery) {
-      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-      if (allowedCustomers?.length > 0) {
-        this.query.customer = { $in: allowedCustomers };
+    const authorizedCustomerQuery = req?.body?.loginUser?.customerQuery || {};
+
+    if (authorizedCustomerQuery) {
+      this.query = {
+        ...this.query,
+        ...authorizedCustomerQuery
       }
     }
 
@@ -509,8 +508,6 @@ async function checkIfContactIsAttached(req, res) {
   }
 }
 
-
-
 exports.exportContactsJSONForCSV = async (req, res, next) => {
   try {
     const regex = new RegExp("^EXPORT_UUID$", "i");
@@ -538,14 +535,10 @@ exports.exportContactsJSONForCSV = async (req, res, next) => {
       strength: 2
     };
 
-    const finalQuery = await applyUserFilter(req);
-    if (finalQuery) {
-      const allowedCustomers = await Customer.find(finalQuery).select('_id').lean();
-      if (allowedCustomers?.length > 0) {
-        queryString_.customer = { $in: allowedCustomers };
-      }
+    const { authorizedCustomers=[] } = req.body.loginUser;
+    if (authorizedCustomers.length > 0) {
+      queryString_.customer = { $in: authorizedCustomers };
     }
-
 
     let contacts = await CustomerContact.find(queryString_).collation(collationOptions)
       .populate(populateValues).sort({ name: 1 });
